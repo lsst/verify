@@ -4,28 +4,35 @@ and validate the astrometry of the results.
 Pre-requisites: install and declare the following
 1. pipe_tasks from the LSST DM stack (note that pipe_tasks is included with lsst_apps, which is the usual thing to install)
 2. obs_cfht from https://github.com/lsst/obs_cfht (this package is not included with lsst_apps); declare this with tag "current"
+3. validation_data_cfht from https://github.com/wmwv/validation_data_cfht
 
 Locate and install the selected input data in `/lsst8/boutigny/valid_cfht/rawDownload` and the custom astrometry_net_data file in `/lsst8/boutigny/valid_cfht/astrometry_net_data`.
 
 To setup for a run:
 ```
 setup pipe_tasks
-setup display_ds9 -k
-setup obs_cfht -k
+setup obs_cfht 
+setup validation_data_cfht
 ```
-If you did not declare obs_cfht current then also specify the version name you used
+If you did not declare obs_cfht and validation_data_cfht current then also specify the version name you used
 
-The following installs the specialied astrometry_net_data directory that contains only the SDSS catalogs for the test data fields of CFHT data.
-```
-setup -r astrometry_net_data -j
-```
+validation_data_cfht contains both the test CFHT data and the SDSS reference catalogs in astrometry.net format.
 
 Run the measurement algorithm processing and astrometry test with
 ```
 sh run_test.sh
 ```
 
-While `run_test.sh` does everything, here is some exampls of running the processing/measurement steps individually:
+The last line of the output will give the median astrometric scatter (in milliarcseconds) for stars with mag < 21.
+
+------
+While `run_test.sh` does everything, here is some examples of running the processing/measurement steps individually:
+
+First make sure the astrometry.net environment variable is pointed to the right place for this validation set:
+
+```
+export ASTROMETRY_NET_DATA_DIR=${VALIDATION_DATA_CFHT_DIR}/astrometry_net_data
+```
 
 1. To process all CCDs with the new (now default) AstrometryTask use newAstrometryConfig.py:
 ```

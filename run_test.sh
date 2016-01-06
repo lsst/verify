@@ -6,23 +6,37 @@ print_error() {
 
 # cleanup and create directories
 echo "Ingesting Raw data"
-if [ -d input ]; then
-   rm -rf input
+INPUT=input
+if [ -d $INPUT ]; then
+   rm -rf $INPUT
 fi
-mkdir input
-if [ -d output ]; then
-   rm -rf output
+mkdir $INPUT
+OUTPUT=output
+if [ -d $OUTPUT ]; then
+   rm -rf $OUTPUT
 fi
-echo "lsst.obs.cfht.MegacamMapper" > input/_mapper
+mkdir $OUTPUT
+
+echo "lsst.obs.cfht.MegacamMapper" > ${INPUT}/_mapper
 
 # ingest CFHT raw data
-RAWDATA=/lsst8/boutigny/valid_cfht
-ingestImages.py input ${RAWDATA}/rawDownload/*.fz --mode link
+RAWDATA=${VALIDATION_DATA_CFHT_DIR}
+ingestImages.py input ${RAWDATA}/raw/*.fz --mode link
+
+# Set up astrometry 
+export ASTROMETRY_NET_DATA_DIR=${VALIDATION_DATA_CFHT_DIR}/astrometry_net_data
 
 # Create calexps and src
 echo "running processCcd"
-NUMPROC=`grep -c processor /proc/cpuinfo`
-NUMPROC=$(($NUMPROC<4?$NUMPROC:4))
+MACH=`uname -s`
+if [ $MACH == Darwin ]; then
+    NUMPROC=`sysctl -a | grep machdep.cpu | grep core_count | cut -d ' ' -f 2`
+    NUMPROC=$(($NUMPROC<4?$NUMPROC:4))
+else
+    NUMPROC=`grep -c processor /proc/cpuinfo`
+    NUMPROC=$(($NUMPROC<4?$NUMPROC:4))
+fi
+
 processCcd.py input --output output @run.list --configfile anetAstrometryConfig.py --clobber-config -j $NUMPROC
 
 # Run astrometry check on src
