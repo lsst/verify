@@ -37,7 +37,7 @@ else
     NUMPROC=$(($NUMPROC<4?$NUMPROC:4))
 fi
 
-processCcd.py input --output output @run.list --configfile anetAstrometryConfig.py --clobber-config -j $NUMPROC
+processCcd.py input --output output @run_cfht.list --configfile anetAstrometryConfig.py --clobber-config -j $NUMPROC
 
 # Run astrometry check on src
 echo "validating"

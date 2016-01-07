@@ -1,10 +1,12 @@
-A set of utilities to run the processCcd task on some CFHT data
+A set of utilities to run the processCcd task on some 
+CFHT data and DECam data
 and validate the astrometry of the results.
 
 Pre-requisites: install and declare the following
 1. pipe_tasks from the LSST DM stack (note that pipe_tasks is included with lsst_apps, which is the usual thing to install)
 2. obs_cfht from https://github.com/lsst/obs_cfht (this package is not included with lsst_apps); declare this with tag "current"
 3. validation_data_cfht from https://github.com/wmwv/validation_data_cfht
+4. validation_data_decam -- This doesn't exist yet.
 
 Locate and install the selected input data in `/lsst8/boutigny/valid_cfht/rawDownload` and the custom astrometry_net_data file in `/lsst8/boutigny/valid_cfht/astrometry_net_data`.
 
@@ -36,12 +38,12 @@ export ASTROMETRY_NET_DATA_DIR=${VALIDATION_DATA_CFHT_DIR}/astrometry_net_data
 
 1. To process all CCDs with the new (now default) AstrometryTask use newAstrometryConfig.py:
 ```
-processCcd.py input @run.list --configfile newAstrometryConfig.py --clobber-config -j 6 --output junk
+processCcd.py input @run_cfht.list --configfile newAstrometryConfig.py --clobber-config -j 6 --output junk
 ```
 
 2. To process all CCDs with the old ANetAstrometryTask:
 ```
-processCcd.py input @run.list --configfile anetAstrometryConfig.py --clobber-config -j 6 --output <outputPath>
+processCcd.py input @run_cfht.list --configfile anetAstrometryConfig.py --clobber-config -j 6 --output <outputPath>
 ./valid_cfht.py <outputPath>
 ```
 
@@ -61,4 +63,4 @@ Files :
 * `valid_cfht.py`    : run some analysis on the output data produced by processCcd.py
 * `newAstrometryConfig.py`  : configuration for running processCcd with the new AstrometryTask
 * `anetAstrometryConfig.py` : configuration for running processCcd ANetAstrometryTask
-* `run.list`         : list of vistits / ccd to be processed by processCcd
+* `run_cfht.list`         : list of vistits / ccd to be processed by processCcd
