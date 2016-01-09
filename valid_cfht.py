@@ -12,21 +12,6 @@ import lsst.afw.table as afwTable
 import lsst.afw.geom as afwGeom
 import lsst.afw.image as afwImage
 
-def angDist(ra_1, dec_1, ra_2, dec_2) :
-# Compute separation angle between 2 positions in the sky given by their (ra,dec)
-    sindec_1 = math.sin(dec_1)
-    cosdec_1 = math.cos(dec_1)
-    sindec_2 = math.sin(dec_2)
-    cosdec_2 = math.cos(dec_2)
-    cosra_2_ra_1 = math.cos(ra_2-ra_1)
-    sinra_2_ra_1 = math.sin(ra_2-ra_1)
-    
-    aux = (cosdec_1 * sindec_2) - (sindec_1 * cosdec_2 * cosra_2_ra_1)
-    num = (cosdec_2 * cosdec_2 * sinra_2_ra_1 * sinra_2_ra_1) + aux*aux
-    den = (sindec_1 * sindec_2) + (cosdec_1 * cosdec_2 * cosra_2_ra_1)
-    
-    return math.atan2(math.sqrt(num), den)
-
 def loadData(repo, visits, ref, ccd, filter) :
 
     Flags = ["base_PixelFlags_flag_saturated", "base_PixelFlags_flag_cr", "base_PixelFlags_flag_interpolated",
