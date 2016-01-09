@@ -62,7 +62,7 @@ def loadData(repo, visits, ref, ccd, filter) :
         matchNum = len(match)
         print "Visit :", v, matchNum, "matches found"
 
-	schemaRef = srcRef.getSchema()
+        schemaRef = srcRef.getSchema()
         schemaVis = srcVis.getSchema()
         extRefKey = schemaRef["base_ClassificationExtendedness_value"].asKey()
         extVisKey = schemaVis["base_ClassificationExtendedness_value"].asKey()
@@ -82,8 +82,8 @@ def loadData(repo, visits, ref, ccd, filter) :
                 if mRef.get(f) :
                     continue
             for f in flagKeysVis :
-            	if mVis.get(f) :
-            	    continue
+                if mVis.get(f) :
+                    continue
             
             # cleanup the reference sources in order to keep only decent star-like objects
             if mRef.get(extRefKey) >= 1.0 or mVis.get(extVisKey) >= 1.0 :
@@ -185,11 +185,11 @@ def main(repo):
     medianMag21 = check_astrometry(repo, mag, dist, match)
 
     if medianMag21 > medianRef :
-	print "Median astrometric scatter %.1f mas is larger than reference : %.1f mas "%(medianMag21, medianRef)
-	sys.exit(99)
+        print "Median astrometric scatter %.1f mas is larger than reference : %.1f mas "%(medianMag21, medianRef)
+        sys.exit(99)
     if match < matchRef :
-    	print "Number of matched sources %d is too small (shoud be > %d)"%(match,matchRef)
-    	sys.exit(99)
+        print "Number of matched sources %d is too small (shoud be > %d)"%(match,matchRef)
+        sys.exit(99)
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
