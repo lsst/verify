@@ -145,6 +145,10 @@ def loadAndMatchData(repo, visitDataIds, refDataIds,
             # Keep only decent star-like objects
             if isExtended(mRef, extRefKey) or isExtended(mVis, extVisKey):
                 continue
+
+            # Skip sources with non-positive flux in reference
+            if mRef.get('base_PsfFlux_flux') <= 0:
+                continue
             
             ang = afwGeom.radToMas(m.distance)
             
