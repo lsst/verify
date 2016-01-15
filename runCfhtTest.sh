@@ -1,7 +1,7 @@
 #!/bin/bash
 
 print_error() {
-    >&2 echo $@
+    >&2 echo "$@"
 }
 
 WORKSPACE=CFHT
@@ -21,21 +21,20 @@ echo "lsst.obs.cfht.MegacamMapper" > ${INPUT}/_mapper
 
 # ingest CFHT raw data
 RAWDATA=${VALIDATION_DATA_CFHT_DIR}
-ingestImages.py ${INPUT} ${RAWDATA}/raw/*.fz --mode link
+ingestImages.py ${INPUT} "${RAWDATA}/raw/*.fz" --mode link
 
 # Set up astrometry 
 export ASTROMETRY_NET_DATA_DIR=${VALIDATION_DATA_CFHT_DIR}/astrometry_net_data
 
 # Create calexps and src
 echo "running processCcd"
-MACH=`uname -s`
-if [ $MACH == Darwin ]; then
-    NUMPROC=`sysctl -a | grep machdep.cpu | grep core_count | cut -d ' ' -f 2`
-    NUMPROC=$(($NUMPROC<4?$NUMPROC:4))
+MACH=$(uname -s)
+if [ "$MACH" == Darwin ]; then
+    NUMPROC=$(sysctl -a | grep machdep.cpu | grep core_count | cut -d ' ' -f 2)
 else
-    NUMPROC=`grep -c processor /proc/cpuinfo`
-    NUMPROC=$(($NUMPROC<4?$NUMPROC:4))
+    NUMPROC=$(grep -c processor /proc/cpuinfo)
 fi
+NUMPROC=$((NUMPROC<8?NUMPROC:8))
 
 processCcd.py ${INPUT} --output ${OUTPUT} @runCfht.list --configfile anetAstrometryConfig.py --clobber-config -j $NUMPROC
 

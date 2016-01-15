@@ -25,9 +25,8 @@ from __future__ import print_function
 import os.path
 import sys
 
-import numpy as np
+import checkAstrometry
 
-from check_astrometry import main, loadAndMatchData
 
 def defaultData(repo):
     # List of visits to be considered
@@ -44,12 +43,12 @@ def defaultData(repo):
     #  for the median astrometric scatter and the number of matches
     good_mag_limit = 21  # [mag]
     medianRef = 25  # [arcsec]
-    matchRef = 10000 # [number of stars]
+    matchRef = 10000  # [number of stars]
 
-    visitDataIds = [[{'visit':v, 'filter':filter, 'ccdnum':c} for v in visits]
+    visitDataIds = [[{'visit': v, 'filter': filter, 'ccdnum': c} for v in visits]
                     for c in ccd]
-    refDataIds = [{'visit':ref, 'filter':filter, 'ccdnum':c} for c in ccd]
-    
+    refDataIds = [{'visit': ref, 'filter': filter, 'ccdnum': c} for c in ccd]
+
     return visitDataIds, refDataIds, good_mag_limit, medianRef, matchRef
 
 if __name__ == "__main__":
@@ -64,5 +63,10 @@ where repo is the path to a repository containing the output of processCcd
         print("Could not find repo %r" % (repo,))
         sys.exit(1)
 
+<<<<<<< HEAD:valid_cosmos.py
     visitDataIds, refDataIds, good_mag_limit, medianRef, matchRef = defaultData(repo)
     main(repo, visitDataIds, refDataIds, good_mag_limit, medianRef, matchRef)
+=======
+    args = defaultData(repo)
+    checkAstrometry.run(repo, *args)
+>>>>>>> 2cf7d91... Fix whitespace, :, line-length.:validateDecam.py
