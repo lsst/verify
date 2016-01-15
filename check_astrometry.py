@@ -165,7 +165,7 @@ def loadAndMatchData(repo, visitDataIds, refDataIds,
     return pipeBase.Struct(
         mag = mag,
         dist = dist,
-        match = matchNum[0]
+        match = sum(matchNum)
     )
 
 
