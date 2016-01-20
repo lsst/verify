@@ -4,7 +4,7 @@ print_error() {
     >&2 echo "$@"
 }
 
-WORKSPACE=CFHT
+WORKSPACE=DECam
 mkdir -p ${WORKSPACE}
 if [ -d ${WORKSPACE} ]; then
    rm -rf ${WORKSPACE}
@@ -17,14 +17,13 @@ mkdir -p $INPUT
 OUTPUT=${WORKSPACE}/output
 mkdir -p $OUTPUT
 
-echo "lsst.obs.cfht.MegacamMapper" > ${INPUT}/_mapper
+echo "lsst.obs.decam.DecamMapper" > ${INPUT}/_mapper
 
-# ingest CFHT raw data
-RAWDATA=${VALIDATION_DATA_CFHT_DIR}
-ingestImages.py ${INPUT} "${RAWDATA}/raw/*.fz" --mode link
+RAWDATA=${VALIDATION_DATA_DECAM_DIR}
+ingestImagesDecam.py ${INPUT} "${RAWDATA}/instcal/*.fz" --mode link
 
 # Set up astrometry 
-export ASTROMETRY_NET_DATA_DIR=${VALIDATION_DATA_CFHT_DIR}/astrometry_net_data
+export ASTROMETRY_NET_DATA_DIR=${VALIDATION_DATA_DECAM_DIR}/astrometry_net_data
 
 # Create calexps and src
 echo "running processCcd"
@@ -36,11 +35,11 @@ else
 fi
 NUMPROC=$((NUMPROC<8?NUMPROC:8))
 
-processCcd.py ${INPUT} --output ${OUTPUT} @runCfht.list --configfile anetAstrometryConfig.py --clobber-config -j $NUMPROC
+processCcdDecam.py ${INPUT} --output ${OUTPUT} @runDecam.list --configfile config/decamConfig.py --clobber-config -j $NUMPROC
 
 # Run astrometry check on src
 echo "validating"
-./validateCfht.py ${OUTPUT}
+./validateDecam.py ${OUTPUT}
 
 if [ $? != 0 ]; then
    print_error "Validation failed"

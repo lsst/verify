@@ -259,7 +259,7 @@ def checkAstrometry(mag, dist, match,
     return astromScatter
 
 
-def main(repo, visitDataIds, refDataIds, good_mag_limit, medianRef, matchRef):
+def run(repo, visitDataIds, refDataIds, good_mag_limit, medianRef, matchRef):
     """Main executable.
     """
 
@@ -309,4 +309,4 @@ where repo is the path to a repository containing the output of processCcd
         sys.exit(1)
 
     visitDataIds, refDataIds, good_mag_limit, medianRef, matchRef = defaultData(repo)
-    main(repo, visitDataIds, refDataIds, good_mag_limit, medianRef, matchRef)
+    run(repo, visitDataIds, refDataIds, good_mag_limit, medianRef, matchRef)

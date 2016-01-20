@@ -33,6 +33,7 @@ validation_data_cfht contains both the test CFHT data and selected SDSS referenc
 
 Run the measurement algorithm processing and astrometry test with
 ```
+cd examples
 sh runCfhtTest.sh
 ```
 
@@ -48,6 +49,7 @@ validation_data_decam contains both the test DECam data and selected SDSS refere
 
 Run the measurement algorithm processing and astrometry test with
 ```
+cd examples
 sh runDecamTest.sh
 ```
 
