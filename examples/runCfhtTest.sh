@@ -23,7 +23,7 @@ echo "lsst.obs.cfht.MegacamMapper" > ${INPUT}/_mapper
 
 # ingest CFHT raw data
 RAWDATA=${VALIDATION_DATA_CFHT_DIR}
-ingestImages.py ${INPUT} "${RAWDATA}/raw/*.fz" --mode link
+ingestImages.py ${INPUT} "${RAWDATA}"/raw/*.fz --mode link
 
 # Set up astrometry 
 export ASTROMETRY_NET_DATA_DIR=${VALIDATION_DATA_CFHT_DIR}/astrometry_net_data
@@ -38,7 +38,11 @@ else
 fi
 NUMPROC=$((NUMPROC<8?NUMPROC:8))
 
-processCcd.py ${INPUT} --output ${OUTPUT} @${PRODUCT_DIR}/examples/runCfht.list --configfile ${PRODUCT_DIR}/config/anetAstrometryConfig.py --clobber-config -j $NUMPROC
+processCcd.py ${INPUT} --output ${OUTPUT} \
+    @"${PRODUCT_DIR}"/examples/runCfht.list \
+    --logdest ${WORKSPACE}/processCcd.log \
+    --configfile "${PRODUCT_DIR}"/config/anetAstrometryConfig.py \
+    -j $NUMPROC
 
 # Run astrometry check on src
 echo "validating"

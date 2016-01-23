@@ -5,25 +5,27 @@ print_error() {
 }
 
 WORKSPACE=DECam
-mkdir -p ${WORKSPACE}
-if [ -d ${WORKSPACE} ]; then
-   rm -rf ${WORKSPACE}
+mkdir -p "${WORKSPACE}"
+if [ -d "${WORKSPACE}" ]; then
+   rm -rf "${WORKSPACE}"
 fi
+
+PRODUCT_DIR=${VALIDATE_DRP_DIR}
 
 # cleanup and create directories
 echo "Ingesting Raw data"
-INPUT=${WORKSPACE}/input
+INPUT="${WORKSPACE}"/input
 mkdir -p $INPUT
-OUTPUT=${WORKSPACE}/output
+OUTPUT="${WORKSPACE}"/output
 mkdir -p $OUTPUT
 
-echo "lsst.obs.decam.DecamMapper" > ${INPUT}/_mapper
+echo "lsst.obs.decam.DecamMapper" > "${INPUT}"/_mapper
 
 RAWDATA=${VALIDATION_DATA_DECAM_DIR}
-ingestImagesDecam.py ${INPUT} "${RAWDATA}/instcal/*.fz" --mode link
+ingestImagesDecam.py "${INPUT}" "${RAWDATA}"/instcal/*.fz --mode link
 
 # Set up astrometry 
-export ASTROMETRY_NET_DATA_DIR=${VALIDATION_DATA_DECAM_DIR}/astrometry_net_data
+export ASTROMETRY_NET_DATA_DIR="${VALIDATION_DATA_DECAM_DIR}"/astrometry_net_data
 
 # Create calexps and src
 echo "running processCcd"
@@ -35,11 +37,15 @@ else
 fi
 NUMPROC=$((NUMPROC<8?NUMPROC:8))
 
-processCcdDecam.py ${INPUT} --output ${OUTPUT} @runDecam.list --configfile config/decamConfig.py --clobber-config -j $NUMPROC
+processCcdDecam.py ${INPUT} --output ${OUTPUT} \
+    @"${PRODUCT_DIR}"/examples/runDecam.list \
+    --logdest "${WORKSPACE}"/processCcdDecam.log \
+    --configfile "${PRODUCT_DIR}"/config/decamConfig.py \
+    --clobber-config -j $NUMPROC
 
 # Run astrometry check on src
 echo "validating"
-./validateDecam.py ${OUTPUT}
+validateDecam.py "${OUTPUT}"
 
 if [ $? != 0 ]; then
    print_error "Validation failed"
