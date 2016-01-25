@@ -25,7 +25,7 @@ from __future__ import print_function
 import os.path
 import sys
 
-import checkAstrometry
+from lsst.validate.drp import checkAstrometry
 
 
 def defaultData(repo):
@@ -63,10 +63,5 @@ where repo is the path to a repository containing the output of processCcd
         print("Could not find repo %r" % (repo,))
         sys.exit(1)
 
-<<<<<<< HEAD:valid_cosmos.py
-    visitDataIds, refDataIds, good_mag_limit, medianRef, matchRef = defaultData(repo)
-    main(repo, visitDataIds, refDataIds, good_mag_limit, medianRef, matchRef)
-=======
     args = defaultData(repo)
     checkAstrometry.run(repo, *args)
->>>>>>> 2cf7d91... Fix whitespace, :, line-length.:validateDecam.py
