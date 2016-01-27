@@ -55,6 +55,11 @@ def getCcdKeyName(dataid):
 
 
 def isExtended(source, extRefKey, extendedThreshold=1.0):
+    """Is the source extended attribute above the threshold.
+
+    Higher values of extendedness indicate a resolved object
+    that is larger than a point source.
+    """
     return source.get(extRefKey) >= extendedThreshold
 
 
@@ -274,6 +279,14 @@ def run(repo, visitDataIds, refDataIds, good_mag_limit, medianRef, matchRef):
 
 
 def defaultData(repo):
+    """Example of loading dataIds for use by checkAstrometry.
+
+    This example is based on the CFHT data in validation_data_cfht
+    and is provided here for reference.
+    For general usage, write your own equivalent to defaultData 
+    and then pass to the `checkAstrometry.run` method.
+    See the same `__main___` below for an example.
+    """
     # List of visits to be considered
     visits = [176846, 176850]
 
