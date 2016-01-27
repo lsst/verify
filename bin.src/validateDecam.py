@@ -30,10 +30,7 @@ from lsst.validate.drp import checkAstrometry
 
 def defaultData(repo):
     # List of visits to be considered
-    visits = [176846]
-
-    # Reference visit (the other visits will be compared to this one)
-    ref = 176837
+    visits = [176837, 176846]
 
     # List of CCD to be considered (source catalogs will be concateneted)
     ccd = [10, 11, 12, 13, 14, 15, 16, 17, 18]
@@ -45,11 +42,10 @@ def defaultData(repo):
     medianRef = 25  # [arcsec]
     matchRef = 10000  # [number of stars]
 
-    visitDataIds = [[{'visit': v, 'filter': filter, 'ccdnum': c} for v in visits]
+    visitDataIds = [{'visit': v, 'filter': filter, 'ccdnum': c} for v in visits
                     for c in ccd]
-    refDataIds = [{'visit': ref, 'filter': filter, 'ccdnum': c} for c in ccd]
 
-    return visitDataIds, refDataIds, good_mag_limit, medianRef, matchRef
+    return visitDataIds, good_mag_limit, medianRef, matchRef
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

@@ -30,10 +30,7 @@ from lsst.validate.drp import checkAstrometry
 
 def defaultData(repo):
     # List of visits to be considered
-    visits = [850587]
-
-    # Reference visit (the other viisits will be compared to this one
-    ref = 849375
+    visits = [849375, 850587]
 
     # List of CCD to be considered (source calalogs will be concateneted)
     ccd = [12, 13, 14, 21, 22, 23]
@@ -44,11 +41,10 @@ def defaultData(repo):
     medianRef = 25
     matchRef = 5600
 
-    visitDataIds = [[{'visit': v, 'filter': filter, 'ccd': c} for v in visits]
+    visitDataIds = [{'visit': v, 'filter': filter, 'ccd': c} for v in visits
                     for c in ccd]
-    refDataIds = [{'visit': ref, 'filter': filter, 'ccd': c} for c in ccd]
 
-    return visitDataIds, refDataIds, good_mag_limit, medianRef, matchRef
+    return visitDataIds, good_mag_limit, medianRef, matchRef
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -62,5 +58,5 @@ where repo is the path to a repository containing the output of processCcd
         print("Could not find repo %r" % (repo,))
         sys.exit(1)
 
-    visitDataIds, refDataIds, good_mag_limit, medianRef, matchRef = defaultData(repo)
-    checkAstrometry.run(repo, visitDataIds, refDataIds, good_mag_limit, medianRef, matchRef)
+    args = defaultData(repo)
+    checkAstrometry.run(repo, *args)

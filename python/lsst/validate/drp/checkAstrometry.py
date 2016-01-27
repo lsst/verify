@@ -20,7 +20,7 @@
 # the GNU General Public License along with this program.  If not,
 # see <https://www.lsstcorp.org/LegalNotices/>.
 
-from __future__ import print_function
+from __future__ import print_function, division
 
 import os.path
 import sys
@@ -30,9 +30,12 @@ import numpy as np
 
 import lsst.daf.persistence as dafPersist
 import lsst.pipe.base as pipeBase
-import lsst.afw.table as afwTable
+from lsst.afw.table import matchRaDec, SimpleCatalog, SourceCatalog, SchemaMapper, Field
+from lsst.afw.table import MultiMatch, SimpleRecord, GroupView
+
 import lsst.afw.geom as afwGeom
 import lsst.afw.image as afwImage
+import lsst.afw.coord as afwCoord
 
 
 def getCcdKeyName(dataid):
@@ -54,132 +57,196 @@ def getCcdKeyName(dataid):
         return None
 
 
-def isExtended(source, extRefKey, extendedThreshold=1.0):
+def isExtended(source, extendedKey, extendedThreshold=1.0):
     """Is the source extended attribute above the threshold.
 
     Higher values of extendedness indicate a resolved object
     that is larger than a point source.
     """
-    return source.get(extRefKey) >= extendedThreshold
+    return source.get(extendedKey) >= extendedThreshold
+
+def averageRaDec(cat):
+    """Calculate the RMS for RA, Dec for a set of observations an object."""
+    ra = np.mean(cat.get('coord_ra'))
+    dec = np.mean(cat.get('coord_dec'))
+    return ra, dec
+
+# Some thoughts from Paul Price on how to do the coordinate differences correctly:
+#    mean = sum([afwGeom.Extent3D(coord.toVector()) 
+#                for coord in coordList, afwGeom.Point3D(0, 0, 0)])
+#    mean /= len(coordList)
+#    mean = afwCoord.IcrsCoord(mean)
+
+def positionDiff(cat):
+    """Calculate the diff RA, Dec from the mean for a set of observations an object for each observation.
+
+    @param[in]  cat -- Collection with a .get method 
+         for 'coord_ra', 'coord_dec' that returns radians.
+
+    @param[out]  pos_median -- median diff of positions in milliarcsec.  Float.
+
+    This is WRONG!
+    Doesn't do wrap-around
+    """
+    ra_avg, dec_avg = averageRaDec(cat)
+    ra, dec = cat.get('coord_ra'), cat.get('coord_dec')
+    # Approximating that the cos(dec) term is roughly the same
+    #   for all observations of this object.
+    ra_diff  = (ra - ra_avg) * np.cos(dec)**2
+    dec_diff = dec - dec_avg
+    pos_diff = np.sqrt(ra_diff**2 + dec_diff**2)  # radians
+    pos_diff = [afwGeom.radToMas(p) for p in pos_diff]  # milliarcsec
+
+    return pos_diff
+
+def positionRms(cat):
+    """Calculate the RMS for RA, Dec for a set of observations an object.
+
+    @param[in]  cat -- Collection with a .get method 
+         for 'coord_ra', 'coord_dec' that returns radians.
+
+    @param[out]  pos_rms -- RMS of positions in milliarcsecond.  Float.
+
+    This is WRONG!
+    Doesn't do wrap-around
+    """
+    ra_avg, dec_avg = averageRaDec(cat)
+    ra, dec = cat.get('coord_ra'), cat.get('coord_dec')
+    # Approximating that the cos(dec) term is roughly the same
+    #   for all observations of this object.
+    ra_var = np.var(ra) * np.cos(dec_avg)**2
+    dec_var = np.var(dec)
+    pos_rms = np.sqrt(ra_var + dec_var)  # radians
+    pos_rms = afwGeom.radToMas(pos_rms)  # milliarcsec
+
+    return pos_rms
 
 
-def loadAndMatchData(repo, visitDataIds, refDataIds,
+def loadAndMatchData(repo, visitDataIds,
                      matchRadius=afwGeom.Angle(1, afwGeom.arcseconds)):
     """Load data from specific visit.  Match with reference.
 
     @param repo  The repository.  This is generally the directory on disk
                     that contains the repository and mapper.
     @param visitDataIds   Butler Data ID of Image catalogs to compare to reference.
-           List of Lists.
-           Should have dimensions of (N, len(refDataId));
-           for a series of N visits.
-    @param refDataIds       Butler Data ID of reference catalog.
-           The actual pixel image is also needed for now.  List.
+           The actual pixel image is also needed for now for the photometric calibration.
+           List.
 
     @param matchRadius    Radius for matching.  afwGeom.Angle().
 
     Return a pipeBase.Struct with mag, dist, and number of matches.
     """
 
-    flags = ["base_PixelFlags_flag_saturated", "base_PixelFlags_flag_cr", "base_PixelFlags_flag_interpolated",
-             "base_PsfFlux_flag_edge"]
-
-    # setup butler
+    # Following 
+    # https://github.com/lsst/afw/blob/tickets/DM-3896/examples/repeatability.ipynb
     butler = dafPersist.Butler(repo)
+    dataset = 'src'
+
+    dataRefs = [dafPersist.ButlerDataRef(butler, vId) for vId in visitDataIds]
 
     # retrieve the schema of the source catalog and extend it in order to add a field to record the ccd number
-    ccdKeyName = getCcdKeyName(refDataIds[0])
+    ccdKeyName = getCcdKeyName(visitDataIds[0])
 
-    oldSrc = butler.get('src', refDataIds[0], immediate=True)
-    oldSchema = oldSrc.getSchema()
-    mapper = afwTable.SchemaMapper(oldSchema)
-    mapper.addMinimalSchema(oldSchema)
-    mapper.addOutputField(afwTable.Field[int](ccdKeyName, "CCD number"))
+    schema = butler.get(dataset + "_schema", immediate=True).schema
+    mapper = SchemaMapper(schema)
+    mapper.addMinimalSchema(schema)
+#    mapper.addOutputField(Field[int](ccdKeyName, "CCD number"))
+    mapper.addOutputField(Field[float]('base_PsfFlux_mag', "PSF magnitude"))
+    mapper.addOutputField(Field[float]('base_PsfFlux_magerr', "PSF magnitude uncertainty"))
     newSchema = mapper.getOutputSchema()
 
-    # create the new extented source catalog
-    srcRef = afwTable.SourceCatalog(newSchema)
+    # Create an object that can match multiple catalogs with the same schema
+    mmatch = MultiMatch(newSchema, 
+                        dataIdFormat = {'visit': int, ccdKeyName: int},
+                        radius=matchRadius,
+                        RecordClass=SimpleRecord)
 
-    for rId in refDataIds:
-        oldSrc = butler.get('src', rId, immediate=True)
-        print(len(oldSrc), "sources in ccd:", rId[ccdKeyName])
+    if False:
+        # Create visit catalogs by merging those from constituent CCDs. We also convert from BaseCatalog to SimpleCatalog, but in the future we'll probably want to have the source transformation tasks generate SimpleCatalogs (or SourceCatalogs) directly.
+        byVisit = {}
+        for dataRef in dataRefs:
+            catalog = byVisit.setdefault(dataRef.dataId["visit"], SimpleRecord.Catalog(schema))
+            catalog.extend(dataRef.get(dataset, immediate=True), deep=True)
+
+        # Loop over visits, adding them to the match.
+        for visit, catalog in byVisit.iteritems():
+            mmatch.add(catalog, dict(visit=visit))
+
+    # create the new extented source catalog
+    srcVis = SourceCatalog(newSchema)
+
+    for vId in visitDataIds:
+        calib = afwImage.Calib(butler.get("calexp_md", vId, immediate=True))
+        calib.setThrowOnNegativeFlux(False)
+        oldSrc = butler.get('src', vId, immediate=True)
+        print(len(oldSrc), "sources in ccd: ", vId[ccdKeyName])
 
         # create temporary catalog
-        tmpCat = afwTable.SourceCatalog(srcRef.table)
+        tmpCat = SourceCatalog(SourceCatalog(newSchema).table)
         tmpCat.extend(oldSrc, mapper=mapper)
-        # fill in the ccd information in numpy mode in order to be efficient
-        tmpCat[ccdKeyName][:] = rId[ccdKeyName]
-        # add on the temporary catalog to the extended source catalog
-        srcRef.extend(tmpCat, deep=False)
+        (tmpCat['base_PsfFlux_mag'][:],
+         tmpCat['base_PsfFlux_magerr'][:]) = \
+             calib.getMagnitude(tmpCat['base_PsfFlux_flux'],
+                                tmpCat['base_PsfFlux_fluxSigma'])
+        srcVis.extend(tmpCat, False)
+        mmatch.add(catalog=tmpCat, dataId=vId)
 
-    print(len(srcRef), "total sources in reference visit.")
+    # Complete the match, returning a catalog that includes all matched sources with object IDs that can be used to group them.
+    matchCat = mmatch.finish()
 
-    mag = []
-    dist = []
-    matchNum = []
-    # Calibration for each 'ccd' in the reference data Id list.
-    # Here ccdKeyName values must be unique.
-    # This is why we need the calibrated images for the ref source catalogs.
-    calib = {rId[ccdKeyName]: afwImage.Calib(butler.get("calexp_md", rId, immediate=True))
-             for rId in refDataIds}
+    # Create a mapping object that allows the matches to be manipulated as a mapping of object ID to catalog of sources.
+    allMatches = GroupView.build(matchCat)
+    
+    # Filter down to matches with at least 2 sources and good flags
+    flagKeys = [allMatches.schema.find("base_PixelFlags_flag_%s" % flag).key
+                for flag in ("saturated", "cr", "bad", "edge")]
+    nMatchesRequired = 2
 
-    for v_set in visitDataIds:
-        srcVis = butler.get('src', v_set[0], immediate=True)
-        for vId in v_set[1:]:
-            srcVis.extend(butler.get('src', vId, immediate=True), False)
-            print(len(srcVis), "sources in ccd: ", vId[ccdKeyName])
 
-        match = afwTable.matchRaDec(srcRef, srcVis, matchRadius)
+    def goodFilter(cat):
+        if len(cat) < nMatchesRequired:
+            return False
+        for flagKey in flagKeys:
+            if cat.get(flagKey).any():
+                return False
+        return True
 
-        matchNum.append(len(match))
-        print("Visits :", v_set, matchNum[-1], "matches found")
+    goodMatches = allMatches.where(goodFilter)
 
-        schemaRef = srcRef.getSchema()
-        schemaVis = srcVis.getSchema()
-        extRefKey = schemaRef["base_ClassificationExtendedness_value"].asKey()
-        extVisKey = schemaVis["base_ClassificationExtendedness_value"].asKey()
-        flagKeysRef = [schemaRef[fl].asKey() for fl in flags]
-        flagKeysVis = [schemaVis[fl].asKey() for fl in flags]
+    psfMagKey = allMatches.schema.find("base_PsfFlux_mag").key
+#    apMagKey = allMatches.schema.find("base_CircularApertureFlux_12_0_mag").key
+    extendedKey = newSchema["base_ClassificationExtendedness_value"].asKey()
 
-        for m in match:
-            mRef = m.first
-            mVis = m.second
+    # Filter further to a limited range in magnitude and extendedness to select bright stars (plotted below). The upturn at the bright end is due to the brighter-fatter effect on the sensors, but shouldn't matter for this test because it will affect all visits in approximately the same way (since they all have the same exposure time).
+    safeMinMag = 16.5
+#    safeMaxMag = 18.0
+    safeMaxMag = 21.0
+    safeMaxExtended = 1.0
+    def safeFilter(cat):
+        psfMag = np.mean(cat.get(psfMagKey))
+#        modelMag = np.mean(cat.get(modelMagKey))
+#        extend = np.abs(psfMag - modelMag)
+        extended = np.max(cat.get(extendedKey))
+        return psfMag >= safeMinMag and extended < safeMaxExtended
 
-            for fl in flagKeysRef:
-                if mRef.get(fl):
-                    continue
-            for fl in flagKeysVis:
-                if mVis.get(fl):
-                    continue
+    safeMatches = goodMatches.where(safeFilter)
 
-            # Keep only decent star-like objects
-            if isExtended(mRef, extRefKey) or isExtended(mVis, extVisKey):
-                continue
-
-            # Skip sources with non-positive flux in reference
-            if mRef.get('base_PsfFlux_flux') <= 0:
-                continue
-
-            ang = afwGeom.radToMas(m.distance)
-
-            # retrieve the CCD corresponding to the reference source
-            ccdRef = mRef.get(ccdKeyName)
-            refMag = calib[ccdRef].getMagnitude(mRef.get('base_PsfFlux_flux'))
-
-            mag.append(refMag)
-            dist.append(ang)
-
-    # 2016-01-14 MWV <wmwv@pitt.edu>:
-    # Need to re-think tracking of MatchNum
-    # Presently, all of the magnitudes and distances are just stored
-    # in one 1D array that serializes all visits.
-    # What should matchNum be?
-    # For now, I'm fixing to the number of matches in the first visit.
+#    SUMMARY_STATISTICS = False
+    SUMMARY_STATISTICS = True
+    if SUMMARY_STATISTICS:
+        # Pass field=psfMagKey so np.mean just gets that as its input
+        goodPsfMag = goodMatches.aggregate(np.mean, field=psfMagKey)
+        # positionRms knows how to query a group so we give it the whole thing
+        #   by going with the default `field=None`.
+        dist = goodMatches.aggregate(positionRms)
+    else:
+        goodPsfMag = goodMatches.apply(lambda x: x, field=psfMagKey)
+        dist = goodMatches.apply(positionDiff)
 
     return pipeBase.Struct(
-        mag=mag,
-        dist=dist,
-        match=sum(matchNum)
+        mag = goodPsfMag,
+        dist = dist,
+        match = len(dist)
     )
 
 
@@ -190,7 +257,7 @@ def plotAstrometry(mag, dist, match, good_mag_limit=19.5):
     plt.rcParams['mathtext.default'] = 'regular'
 
     fig, ax = plt.subplots(ncols=2, nrows=3, figsize=(18, 22))
-    ax[0][0].hist(dist, bins=80)
+    ax[0][0].hist(dist, bins=80, histtype='stepfilled')
     ax[0][1].scatter(mag, dist, s=10, color='b')
     ax[0][0].set_xlim([0., 900.])
     ax[0][0].set_xlabel("Distance in mas", fontsize=20)
@@ -202,7 +269,7 @@ def plotAstrometry(mag, dist, match, good_mag_limit=19.5):
     ax[0][1].tick_params(labelsize=20)
     ax[0][1].set_title("Number of matches : %d" % match, fontsize=20)
 
-    ax[1][0].hist(dist, bins=150)
+    ax[1][0].hist(dist, bins=150, histtype='stepfilled')
     ax[1][0].set_xlim([0., 400.])
     ax[1][1].scatter(mag, dist, s=10, color='b')
     ax[1][1].set_ylim([0., 400.])
@@ -214,7 +281,7 @@ def plotAstrometry(mag, dist, match, good_mag_limit=19.5):
 
     idxs = np.where(np.asarray(mag) < good_mag_limit)
 
-    ax[2][0].hist(np.asarray(dist)[idxs], bins=100)
+    ax[2][0].hist(np.asarray(dist)[idxs], bins=100, histtype='stepfilled')
     ax[2][0].set_xlabel("Distance in mas - mag < %.1f" % good_mag_limit, fontsize=20)
     ax[2][0].set_xlim([0, 200])
     ax[2][0].set_title("Median (mag < %.1f) : %.1f mas" %
@@ -236,6 +303,9 @@ def checkAstrometry(mag, dist, match,
                     good_mag_limit=19.5,
                     medianRef=100, matchRef=500):
     """Print out the astrometric scatter for all stars, and for good stars.
+    @param mag    Magnitude.  List or numpy.array.
+    @param dist   Separation from reference.  List of numpy.array
+    @param match  Number of stars matched.  Integer.
 
     @param medianRef  Median reference astrometric scatter in arcseconds.
     @param matchRef   Should match at least matchRef stars.
@@ -247,6 +317,7 @@ def checkAstrometry(mag, dist, match,
     For SDSS, stars with mag < 19.5 should be completely well measured.
     """
 
+    assert len(mag) == len(dist)
     print("Median value of the astrometric scatter - all magnitudes:",
           np.median(dist), "mas")
 
@@ -264,11 +335,11 @@ def checkAstrometry(mag, dist, match,
     return astromScatter
 
 
-def run(repo, visitDataIds, refDataIds, good_mag_limit, medianRef, matchRef):
+def run(repo, visitDataIds, good_mag_limit, medianRef, matchRef):
     """Main executable.
     """
 
-    struct = loadAndMatchData(repo, visitDataIds, refDataIds)
+    struct = loadAndMatchData(repo, visitDataIds)
     mag = struct.mag
     dist = struct.dist
     match = struct.match
@@ -288,10 +359,7 @@ def defaultData(repo):
     See the same `__main___` below for an example.
     """
     # List of visits to be considered
-    visits = [176846, 176850]
-
-    # Reference visit ('visits' will be compared to this one)
-    ref = 176837
+    visits = [176837, 176846, 176850]
 
     # List of CCD to be considered (source catalogs will be concateneted)
     ccd = [10]  # , 12, 14, 18]
@@ -300,13 +368,12 @@ def defaultData(repo):
     # Reference values for the median astrometric scatter and the number of matches
     good_mag_limit = 21
     medianRef = 25
-    matchRef = 5600
+    matchRef = 5000
 
     visitDataIds = [{'visit': v, 'filter': filter, 'ccdnum': c} for v in visits
                     for c in ccd]
-    refDataIds = [{'visit': ref, 'filter': filter, 'ccdnum': c} for c in ccd]
 
-    return visitDataIds, refDataIds, good_mag_limit, medianRef, matchRef
+    return visitDataIds, good_mag_limit, medianRef, matchRef
 
 
 if __name__ == "__main__":
@@ -321,5 +388,5 @@ where repo is the path to a repository containing the output of processCcd
         print("Could not find repo %r" % (repo,))
         sys.exit(1)
 
-    visitDataIds, refDataIds, good_mag_limit, medianRef, matchRef = defaultData(repo)
-    run(repo, visitDataIds, refDataIds, good_mag_limit, medianRef, matchRef)
+    args = defaultData(repo)
+    run(repo, *args)
