@@ -31,6 +31,7 @@ import lsst.pipe.base as pipeBase
 
 from .util import averageRaFromCat, averageDecFromCat
 from .srdSpec import srdSpec
+from lsst.afw.table import matchRaDec
 
 
 def calcPA1(groupView, magKey):

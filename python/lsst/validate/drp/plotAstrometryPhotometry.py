@@ -31,6 +31,7 @@ from .base import ValidateError
 from .calcSrd import calcPA1
 from .srdSpec import getAstrometricSpec
 
+
 # Plotting defaults
 plt.rcParams['axes.linewidth'] = 2
 plt.rcParams['mathtext.default'] = 'regular'

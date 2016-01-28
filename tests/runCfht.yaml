@@ -1,0 +1,9 @@
+# Configuration information for validate_drp to 
+#   1. build the list of data IDs to analyze
+#   2. load the default magnitude ranges and expected matches.
+good_mag_limit: 21.0  # Only consider stars bright than this limit
+medianRef: 25  # expected median RMS of astrometric variability
+matchRef: 5000  # Number of stars expected to match.  Update if you change the ccd list below
+visits: [849375, 850587]
+filter: 'r'
+ccd: [12, 13, 14, 21, 22, 23]

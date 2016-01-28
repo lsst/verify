@@ -528,7 +528,6 @@ def run(repo, visitDataIds, good_mag_limit,
     printAM2(*args)
     plotAM2(*args)
 
-
 def defaultData(repo):
     """Example of loading dataIds for use by checkAstrometry.
 
