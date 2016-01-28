@@ -236,6 +236,7 @@ def loadAndMatchData(repo, visitDataIds,
     if SUMMARY_STATISTICS:
         # Pass field=psfMagKey so np.mean just gets that as its input
         goodPsfMag = goodMatches.aggregate(np.mean, field=psfMagKey)
+        goodPsfMagRms = goodMatches.aggregate(np.std, field=psfMagKey)  # mmag
         # positionRms knows how to query a group so we give it the whole thing
         #   by going with the default `field=None`.
         dist = goodMatches.aggregate(positionRms)
@@ -245,12 +246,13 @@ def loadAndMatchData(repo, visitDataIds,
 
     return pipeBase.Struct(
         mag = goodPsfMag,
+        mmagrms = 1000*goodPsfMagRms,  # mag -> mmag
         dist = dist,
         match = len(dist)
     )
 
 
-def plotAstrometry(mag, dist, match, good_mag_limit=19.5):
+def plotAstrometry(mag, mmagrms, dist, match, good_mag_limit=19.5):
     """Plot angular distance between matched sources from different exposures."""
 
     plt.rcParams['axes.linewidth'] = 2
@@ -299,7 +301,7 @@ def plotAstrometry(mag, dist, match, good_mag_limit=19.5):
     plt.savefig(plotPath, format="png")
 
 
-def checkAstrometry(mag, dist, match,
+def checkAstrometry(mag, mmagrms, dist, match,
                     good_mag_limit=19.5,
                     medianRef=100, matchRef=500):
     """Print out the astrometric scatter for all stars, and for good stars.
@@ -320,11 +322,16 @@ def checkAstrometry(mag, dist, match,
     assert len(mag) == len(dist)
     print("Median value of the astrometric scatter - all magnitudes:",
           np.median(dist), "mas")
+    print("Median value of the photometric scatter - all magnitudes:",
+          np.median(mmagrms), "mmag")
 
     idxs = np.where(np.asarray(mag) < good_mag_limit)
     astromScatter = np.median(np.asarray(dist)[idxs])
+    photomScatter = np.median(np.asarray(mmagrms)[idxs])
     print("Astrometric scatter (median) - mag < %.1f : %.1f %s" %
           (good_mag_limit, astromScatter, "mas"))
+    print("Photometric scatter (median) - mag < %.1f : %.1f %s" %
+          (good_mag_limit, photomScatter, "mmag"))
 
     if astromScatter > medianRef:
         print("Median astrometric scatter %.1f %s is larger than reference : %.1f %s " %
@@ -341,12 +348,13 @@ def run(repo, visitDataIds, good_mag_limit, medianRef, matchRef):
 
     struct = loadAndMatchData(repo, visitDataIds)
     mag = struct.mag
+    mmagrms = struct.mmagrms
     dist = struct.dist
     match = struct.match
-    checkAstrometry(mag, dist, match,
+    checkAstrometry(mag, mmagrms, dist, match,
                     good_mag_limit=good_mag_limit,
                     medianRef=medianRef, matchRef=matchRef)
-    plotAstrometry(mag, dist, match, good_mag_limit=good_mag_limit)
+    plotAstrometry(mag, mmagrms, dist, match, good_mag_limit=good_mag_limit)
 
 
 def defaultData(repo):

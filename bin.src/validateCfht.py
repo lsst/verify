@@ -39,7 +39,7 @@ def defaultData(repo):
     # Reference values for the median astrometric scatter and the number of matches
     good_mag_limit = 21.0
     medianRef = 25
-    matchRef = 5600
+    matchRef = 5000
 
     visitDataIds = [{'visit': v, 'filter': filter, 'ccd': c} for v in visits
                     for c in ccd]
