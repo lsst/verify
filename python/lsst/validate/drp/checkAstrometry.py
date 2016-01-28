@@ -30,13 +30,19 @@ import numpy as np
 
 import lsst.daf.persistence as dafPersist
 import lsst.pipe.base as pipeBase
-from lsst.afw.table import matchRaDec, SimpleCatalog, SourceCatalog, SchemaMapper, Field
+from lsst.afw.table import SourceCatalog, SchemaMapper, Field
 from lsst.afw.table import MultiMatch, SimpleRecord, GroupView
 
 import lsst.afw.geom as afwGeom
 import lsst.afw.image as afwImage
 import lsst.afw.coord as afwCoord
 
+# Plotting defaults
+plt.rcParams['axes.linewidth'] = 2
+plt.rcParams['mathtext.default'] = 'regular'
+plt.rcParams['font.size'] = 20
+plt.rcParams['axes.labelsize'] = 20
+plt.rcParams['figure.titlesize'] = 30
 
 def getCcdKeyName(dataid):
     """Return the key in a dataId that's referring to the CCD or moral equivalent.
@@ -134,7 +140,7 @@ def loadAndMatchData(repo, visitDataIds,
 
     @param matchRadius    Radius for matching.  afwGeom.Angle().
 
-    Return a pipeBase.Struct with mag, dist, and number of matches.
+    Return a afw.table.GroupView object of matched catalog.
     """
 
     # Following 
@@ -197,11 +203,25 @@ def loadAndMatchData(repo, visitDataIds,
     # Create a mapping object that allows the matches to be manipulated as a mapping of object ID to catalog of sources.
     allMatches = GroupView.build(matchCat)
     
+    return allMatches
+
+def analyzeData(allMatches):
+    """Calculate summary statistics for each star.
+
+    @param[in] allMatches  -- afw.table.GroupView object with matches.
+
+    Return a pipeBase.Struct with mag, dist, and number of matches.
+    """
+
+
     # Filter down to matches with at least 2 sources and good flags
     flagKeys = [allMatches.schema.find("base_PixelFlags_flag_%s" % flag).key
                 for flag in ("saturated", "cr", "bad", "edge")]
     nMatchesRequired = 2
 
+    psfMagKey = allMatches.schema.find("base_PsfFlux_mag").key
+#    apMagKey = allMatches.schema.find("base_CircularApertureFlux_12_0_mag").key
+    extendedKey = allMatches.schema.find("base_ClassificationExtendedness_value").key
 
     def goodFilter(cat):
         if len(cat) < nMatchesRequired:
@@ -209,13 +229,11 @@ def loadAndMatchData(repo, visitDataIds,
         for flagKey in flagKeys:
             if cat.get(flagKey).any():
                 return False
+        if not np.isfinite(cat.get(psfMagKey)).all():
+            return False
         return True
 
     goodMatches = allMatches.where(goodFilter)
-
-    psfMagKey = allMatches.schema.find("base_PsfFlux_mag").key
-#    apMagKey = allMatches.schema.find("base_CircularApertureFlux_12_0_mag").key
-    extendedKey = newSchema["base_ClassificationExtendedness_value"].asKey()
 
     # Filter further to a limited range in magnitude and extendedness to select bright stars (plotted below). The upturn at the bright end is due to the brighter-fatter effect on the sensors, but shouldn't matter for this test because it will affect all visits in approximately the same way (since they all have the same exposure time).
     safeMinMag = 16.5
@@ -224,8 +242,6 @@ def loadAndMatchData(repo, visitDataIds,
     safeMaxExtended = 1.0
     def safeFilter(cat):
         psfMag = np.mean(cat.get(psfMagKey))
-#        modelMag = np.mean(cat.get(modelMagKey))
-#        extend = np.abs(psfMag - modelMag)
         extended = np.max(cat.get(extendedKey))
         return psfMag >= safeMinMag and extended < safeMaxExtended
 
@@ -235,8 +251,8 @@ def loadAndMatchData(repo, visitDataIds,
     SUMMARY_STATISTICS = True
     if SUMMARY_STATISTICS:
         # Pass field=psfMagKey so np.mean just gets that as its input
-        goodPsfMag = goodMatches.aggregate(np.mean, field=psfMagKey)
-        goodPsfMagRms = goodMatches.aggregate(np.std, field=psfMagKey)  # mmag
+        goodPsfMag = goodMatches.aggregate(np.mean, field=psfMagKey)  # mag
+        goodPsfMagRms = goodMatches.aggregate(np.std, field=psfMagKey)  # mag
         # positionRms knows how to query a group so we give it the whole thing
         #   by going with the default `field=None`.
         dist = goodMatches.aggregate(positionRms)
@@ -253,48 +269,46 @@ def loadAndMatchData(repo, visitDataIds,
 
 
 def plotAstrometry(mag, mmagrms, dist, match, good_mag_limit=19.5):
-    """Plot angular distance between matched sources from different exposures."""
+    """Plot angular distance between matched sources from different exposures.
 
-    plt.rcParams['axes.linewidth'] = 2
-    plt.rcParams['mathtext.default'] = 'regular'
+    @param[in] mag    Magnitude.  List or numpy.array.
+    @param[in] mmagrms    Magnitude RMS.  List or numpy.array.
+    @param[in] dist   Separation from reference.  List of numpy.array
+    @param[in] match  Number of stars matched.  Integer.
+    """
 
-    fig, ax = plt.subplots(ncols=2, nrows=3, figsize=(18, 22))
-    ax[0][0].hist(dist, bins=80, histtype='stepfilled')
-    ax[0][1].scatter(mag, dist, s=10, color='b')
-    ax[0][0].set_xlim([0., 900.])
-    ax[0][0].set_xlabel("Distance in mas", fontsize=20)
-    ax[0][0].tick_params(labelsize=20)
-    ax[0][0].set_title("Median : %.1f mas" % (np.median(dist)), fontsize=20, x=0.6, y=0.88)
-    ax[0][1].set_xlabel("Magnitude", fontsize=20)
-    ax[0][1].set_ylabel("Distance in mas", fontsize=20)
-    ax[0][1].set_ylim([0., 900.])
-    ax[0][1].tick_params(labelsize=20)
-    ax[0][1].set_title("Number of matches : %d" % match, fontsize=20)
+    bright, = np.where(np.asarray(mag) < good_mag_limit)
 
-    ax[1][0].hist(dist, bins=150, histtype='stepfilled')
-    ax[1][0].set_xlim([0., 400.])
-    ax[1][1].scatter(mag, dist, s=10, color='b')
-    ax[1][1].set_ylim([0., 400.])
-    ax[1][0].set_xlabel("Distance in mas", fontsize=20)
-    ax[1][1].set_xlabel("Magnitude", fontsize=20)
-    ax[1][1].set_ylabel("Distance in mas", fontsize=20)
-    ax[1][0].tick_params(labelsize=20)
-    ax[1][1].tick_params(labelsize=20)
+    dist_median = np.median(dist) 
+    bright_dist_median = np.median(np.asarray(dist)[bright] 
 
-    idxs = np.where(np.asarray(mag) < good_mag_limit)
+    ax[0].axhline(mmagrms_median, color='blue')
+    ax[0].axhline(bright_mmagrms_median, color='red')
 
-    ax[2][0].hist(np.asarray(dist)[idxs], bins=100, histtype='stepfilled')
-    ax[2][0].set_xlabel("Distance in mas - mag < %.1f" % good_mag_limit, fontsize=20)
-    ax[2][0].set_xlim([0, 200])
-    ax[2][0].set_title("Median (mag < %.1f) : %.1f mas" %
-                       (good_mag_limit, np.median(np.asarray(dist)[idxs])),
-                       fontsize=20, x=0.6, y=0.88)
-    ax[2][1].scatter(np.asarray(mag)[idxs], np.asarray(dist)[idxs], s=10, color='b')
-    ax[2][1].set_xlabel("Magnitude", fontsize=20)
-    ax[2][1].set_ylabel("Distance in mas - mag < %.1f" % good_mag_limit, fontsize=20)
-    ax[2][1].set_ylim([0., 200.])
-    ax[2][0].tick_params(labelsize=20)
-    ax[2][1].tick_params(labelsize=20)
+    fig, ax = plt.subplots(ncols=2, nrows=1, figsize=(18, 12))
+
+    ax[0].hist(dist, bins=100, color='blue',
+               histtype='stepfilled', orientation='horizontal')
+    ax[0].hist(np.asarray(dist)[bright], bins=100, color='red',
+               histtype='stepfilled', orientation='horizontal',
+               label='mag < %.1f' % good_mag_limit)
+
+    ax[0].set_ylim([0., 500.])
+    ax[0].set_ylabel("Distance in mas")
+    ax[0].set_title("Median : %.1f, %.1f mas" % 
+                       (bright_dist_median, dist_median),
+                       x=0.5, y=0.88)
+
+    ax[1].scatter(mag, dist, s=10, color='blue', label='All')
+    ax[1].scatter(np.asarray(mag)[bright], np.asarray(dist)[bright], s=10, 
+                  color='red', 
+                  label='mag < %.1f' % good_mag_limit)
+    ax[1].set_xlabel("Magnitude")
+    ax[1].set_ylabel("Distance in mas")
+    ax[1].set_xlim([17, 24])
+    ax[1].set_ylim([0., 500.])
+    ax[1].set_title("# of matches : %d, %d" % (len(bright), match))
+    ax[1].legend(loc='upper left')
 
     plt.suptitle("Astrometry Check", fontsize=30)
     plotPath = "check_astrometry.png"
@@ -305,33 +319,28 @@ def checkAstrometry(mag, mmagrms, dist, match,
                     good_mag_limit=19.5,
                     medianRef=100, matchRef=500):
     """Print out the astrometric scatter for all stars, and for good stars.
-    @param mag    Magnitude.  List or numpy.array.
-    @param dist   Separation from reference.  List of numpy.array
-    @param match  Number of stars matched.  Integer.
+    @param[in] mag    Magnitude.  List or numpy.array.
+    @param[in] mmagrms    Magnitude RMS.  List or numpy.array.
+    @param[in] dist   Separation from reference.  List of numpy.array
+    @param[in] match  Number of stars matched.  Integer.
 
-    @param medianRef  Median reference astrometric scatter in arcseconds.
+    @param medianRef  Median reference astrometric scatter in milliarcseconds.
     @param matchRef   Should match at least matchRef stars.
 
-    Return the astrometric scatter (RMS, arcsec) for all good stars.
+    Return the astrometric scatter (RMS, milliarcsec) for all good stars.
 
     Notes:
        The scatter and match defaults are appropriate to SDSS are stored here.
     For SDSS, stars with mag < 19.5 should be completely well measured.
     """
 
-    assert len(mag) == len(dist)
     print("Median value of the astrometric scatter - all magnitudes:",
           np.median(dist), "mas")
-    print("Median value of the photometric scatter - all magnitudes:",
-          np.median(mmagrms), "mmag")
 
-    idxs = np.where(np.asarray(mag) < good_mag_limit)
-    astromScatter = np.median(np.asarray(dist)[idxs])
-    photomScatter = np.median(np.asarray(mmagrms)[idxs])
+    bright = np.where(np.asarray(mag) < good_mag_limit)
+    astromScatter = np.median(np.asarray(dist)[bright])
     print("Astrometric scatter (median) - mag < %.1f : %.1f %s" %
           (good_mag_limit, astromScatter, "mas"))
-    print("Photometric scatter (median) - mag < %.1f : %.1f %s" %
-          (good_mag_limit, photomScatter, "mmag"))
 
     if astromScatter > medianRef:
         print("Median astrometric scatter %.1f %s is larger than reference : %.1f %s " %
@@ -342,19 +351,153 @@ def checkAstrometry(mag, mmagrms, dist, match,
     return astromScatter
 
 
-def run(repo, visitDataIds, good_mag_limit, medianRef, matchRef):
+def checkPhotometry(mag, mmagrms, dist, match,
+                    good_mag_limit=19.5,
+                    medianRef=100, matchRef=500):
+    """Print out the astrometric scatter for all stars, and for good stars.
+    @param[in] mag    Magnitude.  List or numpy.array.
+    @param[in] mmagrms    Magnitude RMS.  List or numpy.array.
+    @param[in] dist   Separation from reference.  List of numpy.array
+    @param[in] match  Number of stars matched.  Integer.
+
+    @param medianRef  Median reference photometric scatter in millimagnitudes.
+    @param matchRef   Should match at least matchRef stars.
+
+    Return the photometry scatter (RMS, millimag) for all good stars.
+
+    Notes:
+       The scatter and match defaults are appropriate to SDSS are stored here.
+    For SDSS, stars with mag < 19.5 should be completely well measured.
+    This limit is a band-dependent statement most appropriate to r.
+    """
+
+    print("Median value of the photometric scatter - all magnitudes:",
+          np.median(mmagrms), "mmag")
+
+    bright = np.where(np.asarray(mag) < good_mag_limit)
+    photoScatter = np.median(np.asarray(mmagrms)[bright])
+    print("Photometric scatter (median) - mag < %.1f : %.1f %s" %
+          (good_mag_limit, photoScatter, "mmag"))
+
+    if photoScatter > medianRef:
+        print("Median photometric scatter %.3f %s is larger than reference : %.3f %s " % (photoScatter, "mmag", medianRef, "mag"))
+    if match < matchRef:
+        print("Number of matched sources %d is too small (shoud be > %d)" % (match, matchRef))
+
+    return photoScatter
+
+def plotPhotometryRms(mag, mmagrms, dist, match, good_mag_limit=19.5):
+    """Plot photometric RMS for matched sources.
+
+    @param[in] mag    Magnitude.  List or numpy.array.
+    @param[in] mmagrms    Magnitude RMS.  List or numpy.array.
+    @param[in] dist   Separation from reference.  List of numpy.array
+    @param[in] match  Number of stars matched.  Integer.
+    """
+
+    bright, = np.where(np.asarray(mag) < good_mag_limit)
+
+    mmagrms_median = np.median(mmagrms) 
+    bright_mmagrms_median = np.median(np.asarray(mmagrms)[bright] 
+
+    fig, ax = plt.subplots(ncols=2, nrows=1, figsize=(18, 12))
+    ax[0].hist(mmagrms, bins=100, range=(0, 500), color='blue', label='All',
+                  histtype='stepfilled', orientation='horizontal')
+    ax[0].hist(np.asarray(mmagrms)[bright], bins=100, range=(0, 500), color='red', 
+                  label='mag < %.1f' % good_mag_limit,
+                  histtype='stepfilled', orientation='horizontal')
+    ax[0].set_ylim([0, 500])
+    ax[0].set_ylabel("RMS in mmag")
+    ax[0].set_title("Median : %.1f, %.1f mmag" % 
+                    (bright_mmagrms_median, mmagrms_median),
+                    x=0.55, y=0.88)
+    ax[0].axhline(mmagrms_median, color='blue')
+    ax[0].axhline(bright_mmagrms_median, color='red')
+
+    ax[1].scatter(mag, mmagrms, s=10, color='blue', label='All')
+    ax[1].scatter(np.asarray(mag)[bright], np.asarray(mmagrms)[bright], 
+                     s=10, color='red', 
+                     label='mag < %.1f' % good_mag_limit)
+
+    ax[1].set_xlabel("Magnitude")
+    ax[1].set_ylabel("RMS [mmag]")
+    ax[1].set_xlim([17, 24])
+    ax[1].set_ylim([0, 500])
+    ax[1].set_title("# of matches : %d, %d" % (len(bright), match))
+    ax[1].legend(loc='upper left')
+
+    plt.suptitle("Photometry Check", fontsize=30)
+    plotPath = "check_photometry.png"
+    plt.savefig(plotPath, format="png")
+
+
+def plotPhotometryDelta(mag, delta_mag, dist, match, good_mag_limit=19.5):
+    """Plot photometric changes between matched sources across visits.
+
+    @param[in] mag    Magnitude.  List or numpy.array.
+    @param[in] delta_mag -- Delta magnitude from mean of each source measurement
+                            List or numpy.array.
+    @param[in] dist   Separation from reference.  List of numpy.array
+    @param[in] match  Number of stars matched.  Integer.
+    """
+
+    fig, ax = plt.subplots(ncols=2, nrows=3, figsize=(18,22))
+    ax[0][0].hist(delta_mag*1000, bins=25, histtype='stepfilled')
+    ax[0][1].scatter(mag, delta_mag, s=10, color='b')
+
+    ax[0][0].set_xlim([-1000, +1000])
+    ax[0][0].set_xlabel("Difference in mmag")
+    ax[0][0].set_title("Median : %.3f mmag" % (np.median(delta_mag)*1000), 
+                       x=0.6, y=0.88)
+    ax[0][1].set_xlabel("Magnitude")
+    ax[0][1].set_ylabel("Delta Mag")
+    ax[0][1].set_ylim([-1, +1])
+    ax[0][1].set_title("# of matches : %d" % match)
+
+    dflux_over_flux = 10**(-0.4*delta_mag) - 1
+    ax[1][0].hist(dflux_over_flux, bins=25, histtype='stepfilled')
+    ax[1][0].set_xlim([-1, +1])
+    ax[1][1].scatter(mag, dflux_over_flux, s=10, color='b')
+    ax[1][1].set_ylim([-1, +1])
+    ax[0][1].set_xlabel("Magnitude")
+    ax[0][1].set_ylabel("Delta Mag")
+
+    bright = np.where(np.asarray(mag) < good_mag_limit)
+
+    ax[2][0].hist(np.asarray(dist)[bright], bins=100, histtype='stepfilled')
+    ax[2][0].set_xlabel("Distance in mag for mag < %.1f" % good_mag_limit)
+    ax[2][0].set_xlim([0,200])
+    ax[2][0].set_title("Median (mag < %.1f) : %.3f mag" % (good_mag_limit, np.median(np.asarray(delta_mag)[bright])), x=0.6, y=0.88)
+    ax[2][1].scatter(mag[bright], delta_mag[bright], s=10, color='b')
+    ax[2][1].set_xlabel("Magnitude")
+    ax[2][1].set_ylabel("Difference in mag for mag < %.1f" % good_mag_limit)
+    ax[2][1].set_ylim([-1, +1])
+
+    plt.suptitle("Photometry Check")
+    plotPath = "check_photometry.png"
+    plt.savefig(plotPath, format="png")
+
+
+####
+def run(repo, visitDataIds, good_mag_limit, 
+        medianAstromscatterRef=25, medianPhotoscatterRef=25, matchRef=500):
     """Main executable.
     """
 
-    struct = loadAndMatchData(repo, visitDataIds)
+    allMatches = loadAndMatchData(repo, visitDataIds)
+    struct = analyzeData(allMatches)
     mag = struct.mag
     mmagrms = struct.mmagrms
     dist = struct.dist
     match = struct.match
     checkAstrometry(mag, mmagrms, dist, match,
                     good_mag_limit=good_mag_limit,
-                    medianRef=medianRef, matchRef=matchRef)
+                    medianRef=medianAstromscatterRef, matchRef=matchRef)
+    checkPhotometry(mag, mmagrms, dist, match,
+                    good_mag_limit=good_mag_limit,
+                    medianRef=medianPhotoscatterRef, matchRef=matchRef)
     plotAstrometry(mag, mmagrms, dist, match, good_mag_limit=good_mag_limit)
+    plotPhotometryRms(mag, mmagrms, dist, match, good_mag_limit=good_mag_limit)
 
 
 def defaultData(repo):
@@ -375,13 +518,15 @@ def defaultData(repo):
 
     # Reference values for the median astrometric scatter and the number of matches
     good_mag_limit = 21
-    medianRef = 25
+    medianAstromscatterRef = 25  # mas
+    medianPhotoscatterRef = 25  # mmag
     matchRef = 5000
 
     visitDataIds = [{'visit': v, 'filter': filter, 'ccdnum': c} for v in visits
                     for c in ccd]
 
-    return visitDataIds, good_mag_limit, medianRef, matchRef
+    return (visitDataIds, good_mag_limit, 
+            medianAstromscatterRef, medianPhotoscatterRef, matchRef)
 
 
 if __name__ == "__main__":
