@@ -26,7 +26,6 @@ import os.path
 import sys
 
 import numpy as np
-import scipy.stats
 
 import lsst.daf.persistence as dafPersist
 import lsst.pipe.base as pipeBase
@@ -35,9 +34,9 @@ from lsst.afw.table import MultiMatch, SimpleRecord, GroupView
 
 import lsst.afw.geom as afwGeom
 import lsst.afw.image as afwImage
-import lsst.afw.coord as afwCoord
+# import lsst.afw.coord as afwCoord
 
-from .plotAstrometryPhotometry import plotAstrometry, plotPhotometryRms, plotPA1
+from .plotAstrometryPhotometry import plotAstrometry, plotPhotometry, plotPA1
 from .calcSrd import computeWidths, getRandomDiff, calcPA1, calcPA2
 
 def getCcdKeyName(dataid):
@@ -78,6 +77,23 @@ def averageRaDec(cat):
 #                for coord in coordList, afwGeom.Point3D(0, 0, 0)])
 #    mean /= len(coordList)
 #    mean = afwCoord.IcrsCoord(mean)
+
+def magNormDiff(cat):
+    """Calculate the normalized mag/mag_err difference from the mean for a 
+    set of observations of an objection.
+
+    @param[in]  cat -- Collection with a .get method 
+         for flux, flux+"-" 
+
+    @param[out]  pos_median -- median diff of positions in milliarcsec.  Float.
+    """
+    mag = cat.get('base_PsfFlux_mag')
+    magerr = cat.get('base_PsfFlux_magerr')
+    mag_avg = np.mean(mag)
+    N = len(mag)
+    normDiff = (mag - mag_avg) / magerr
+    
+
 
 def positionDiff(cat):
     """Calculate the diff RA, Dec from the mean for a set of observations an object for each observation.
@@ -217,6 +233,7 @@ def analyzeData(allMatches, good_mag_limit=19.5):
     nMatchesRequired = 2
 
     psfMagKey = allMatches.schema.find("base_PsfFlux_mag").key
+    psfMagErrKey = allMatches.schema.find("base_PsfFlux_magerr").key
 #    apMagKey = allMatches.schema.find("base_CircularApertureFlux_12_0_mag").key
     extendedKey = allMatches.schema.find("base_ClassificationExtendedness_value").key
 
@@ -243,18 +260,14 @@ def analyzeData(allMatches, good_mag_limit=19.5):
 
     safeMatches = goodMatches.where(safeFilter)
 
-#    SUMMARY_STATISTICS = False
-    SUMMARY_STATISTICS = True
-    if SUMMARY_STATISTICS:
-        # Pass field=psfMagKey so np.mean just gets that as its input
-        goodPsfMag = goodMatches.aggregate(np.mean, field=psfMagKey)  # mag
-        goodPsfMagRms = goodMatches.aggregate(np.std, field=psfMagKey)  # mag
-        # positionRms knows how to query a group so we give it the whole thing
-        #   by going with the default `field=None`.
-        dist = goodMatches.aggregate(positionRms)
-    else:
-        goodPsfMag = goodMatches.apply(lambda x: x, field=psfMagKey)
-        dist = goodMatches.apply(positionDiff)
+    # Pass field=psfMagKey so np.mean just gets that as its input
+    goodPsfMag = goodMatches.aggregate(np.mean, field=psfMagKey)  # mag
+    goodPsfMagRms = goodMatches.aggregate(np.std, field=psfMagKey)  # mag
+    goodPsfMagErr = goodMatches.aggregate(np.median, field=psfMagErrKey)
+    goodPsfMagNormDiff = goodMatches.aggregate(magNormDiff)
+    # positionRms knows how to query a group so we give it the whole thing
+    #   by going with the default `field=None`.
+    dist = goodMatches.aggregate(positionRms)
 
     rmsPA1 = []
     iqrPA1 = []
@@ -272,7 +285,8 @@ def analyzeData(allMatches, good_mag_limit=19.5):
 
     info_struct = pipeBase.Struct(
         mag = goodPsfMag,
-        mmagrms = 1000*goodPsfMagRms,  # mag -> mmag
+        magerr = goodPsfMagErr,
+        magrms = goodPsfMagRms,
         dist = dist,
         match = len(dist)
     )
@@ -387,9 +401,13 @@ def run(repo, visitDataIds, good_mag_limit,
     allMatches = loadAndMatchData(repo, visitDataIds)
     struct, safeMatches = analyzeData(allMatches, good_mag_limit)
     magavg = struct.mag
-    mmagrms = struct.mmagrms
+    magerr = struct.magerr
+    magrms = struct.magrms
     dist = struct.dist
     match = struct.match
+
+    mmagerr = 1000*magerr
+    mmagrms = 1000*magrms
 
     checkAstrometry(magavg, mmagrms, dist, match,
                     good_mag_limit=good_mag_limit,
@@ -397,8 +415,8 @@ def run(repo, visitDataIds, good_mag_limit,
     checkPhotometry(magavg, mmagrms, dist, match,
                     good_mag_limit=good_mag_limit,
                     medianRef=medianPhotoscatterRef, matchRef=matchRef)
-    plotAstrometry(magavg, mmagrms, dist, match, good_mag_limit=good_mag_limit, plotbase=plotbase)
-    plotPhotometryRms(magavg, mmagrms, dist, match, good_mag_limit=good_mag_limit, plotbase=plotbase)
+    plotAstrometry(magavg, mmagerr, mmagrms, dist, match, good_mag_limit=good_mag_limit, plotbase=plotbase)
+    plotPhotometry(magavg, mmagerr, mmagrms, dist, match, good_mag_limit=good_mag_limit, plotbase=plotbase)
 
     magKey = allMatches.schema.find("base_PsfFlux_mag").key
     plotPA1(safeMatches, magKey, plotbase=plotbase)
