@@ -25,6 +25,7 @@ from __future__ import print_function, division
 import matplotlib.pylab as plt
 import numpy as np
 import scipy.stats
+from scipy.optimize import curve_fit
 
 from .calcSrd import calcPA1, calcPA2
 
@@ -99,6 +100,43 @@ def plotAstrometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
     plt.savefig(plotPath, format="png")
 
 
+def expModel(x, a, b, norm):
+    return a * np.exp(x/norm) + b
+
+
+def magerrModel(x, a, b):
+    return expModel(x, a, b, norm=5)
+
+
+def plotExpFit(x, y, y_err, deg=2, ax=None, verbose=False):
+    """Fit and plot an exponential quadratic to x, y, y_err.
+    """
+
+    if ax is None:
+        ax = plt.figure()
+        xlim = [10, 30]
+    else:
+        xlim = ax.get_xlim()
+
+    popt, pcov = curve_fit(expModel, x, y, p0=[1, 0.02, 5], sigma=y_err)
+    fit_params = popt
+    x_model = np.linspace(*xlim, num=100)
+    fit_model = expModel(x_model, *fit_params)
+    label = '%.4g exp(mag/%.4g) + %.4g' % (fit_params[0], fit_params[2], fit_params[1])
+    if verbose:  
+        print(fit_params)
+        print(label)
+
+    ax.plot(x_model, fit_model, color='red',
+            label=label)
+
+    return fit_params
+
+
+def plotMagerrFit(*args, **kwargs):
+    plotExpFit(*args, **kwargs)
+
+
 def plotPhotometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
                    plotbase=""):
     """Plot photometric RMS for matched sources.
@@ -141,26 +179,33 @@ def plotPhotometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
     ax[0][1].legend(loc='upper left')
     plotOutlinedLines(ax[0][1], mmagrms_median, bright_mmagrms_median)
 
-    ax[1][0].scatter(mmagerr, mmagrms, s=10, color=color['all'], label='All')
-    ax[1][0].scatter(np.asarray(mmagerr)[bright], np.asarray(mmagrms)[bright], 
+    ax[1][0].scatter(mmagrms, mmagerr, s=10, color=color['all'], label='All')
+    ax[1][0].scatter(np.asarray(mmagrms)[bright], np.asarray(mmagerr)[bright], 
                      s=10, color=color['bright'], 
                      label='mag < %.1f' % good_mag_limit)
+    ax[1][0].set_xscale('log')
+    ax[1][0].set_yscale('log')
     ax[1][0].plot([0, 1000], [0, 1000], 
                   linestyle='--', color='black', linewidth=2)
-    ax[1][0].set_xlabel("Median Quoted Magnitude Err [mmag]")
-    ax[1][0].set_ylabel("RMS of Quoted Magnitude [mmag]")
-    ax[1][0].set_xlim([0, 500])
-    ax[1][0].set_ylim([0, 500])
+    ax[1][0].set_xlabel("RMS of Quoted Magnitude [mmag]")
+    ax[1][0].set_ylabel("Median Quoted Magnitude Err [mmag]")
+    ax[1][0].set_xlim([1, 500])
+    ax[1][0].set_ylim([1, 500])
 
-    ax[1][1].scatter(mag, mmagerr, color=color['all'], label='All')
+    ax[1][1].scatter(mag, mmagerr, color=color['all'], label=None)
+    ax[1][1].set_yscale('log')
     ax[1][1].scatter(np.asarray(mag)[bright], np.asarray(mmagerr)[bright],
                      s=10, color=color['bright'],
-                     label='mag < %.1f' % good_mag_limit)
-    ax[1][1].set_xlabel("Average Magnitude [mag]")
+                     label=None,
+                     )
+    ax[1][1].set_xlabel("Magnitude [mag]")
     ax[1][1].set_ylabel("Median Quoted Magnitude Err [mmag]")
     ax[1][1].set_xlim([17, 24])
-    ax[1][1].set_ylim([0, 500])
+    ax[1][1].set_ylim([1, 500])
 
+    w, = np.where(mmagerr < 200)
+    plotMagerrFit(mag[w], mmagerr[w], mmagerr[w], ax=ax[1][1])
+    ax[1][1].legend(loc='upper left')
 
     plt.suptitle("Photometry Check : %s" % plotbase.rstrip('_'), fontsize=30)
     plotPath = plotbase+"check_photometry.png"
