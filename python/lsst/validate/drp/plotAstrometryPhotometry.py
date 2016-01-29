@@ -29,7 +29,7 @@ import matplotlib.pylab as plt
 import numpy as np
 import scipy.stats
 
-from .calcSrd import calcPA2
+from .calcSrd import calcPA1, calcPA2
 
 # Plotting defaults
 plt.rcParams['axes.linewidth'] = 2
@@ -38,7 +38,11 @@ plt.rcParams['font.size'] = 20
 plt.rcParams['axes.labelsize'] = 20
 # plt.rcParams['figure.titlesize'] = 30
 
-def plotMedians(ax, x1, x2, x1_color='blue', x2_color='red'):
+color = {'all' : 'grey', 'bright' : 'blue', 
+         'iqr' : 'green', 'rms' : 'red'}
+
+
+def plotMedians(ax, x1, x2, x1_color=color['all'], x2_color=color['bright']):
     ax.axhline(x1, color='white', linewidth=4)
     ax.axhline(x2, color='white', linewidth=4)
     ax.axhline(x1, color=x1_color, linewidth=3)
@@ -62,9 +66,9 @@ def plotAstrometry(mag, mmagrms, dist, match, good_mag_limit=19.5,
 
     fig, ax = plt.subplots(ncols=2, nrows=1, figsize=(18, 12))
 
-    ax[0].hist(dist, bins=100, color='blue',
+    ax[0].hist(dist, bins=100, color=color['all'],
                histtype='stepfilled', orientation='horizontal')
-    ax[0].hist(np.asarray(dist)[bright], bins=100, color='red',
+    ax[0].hist(np.asarray(dist)[bright], bins=100, color=color['bright'],
                histtype='stepfilled', orientation='horizontal',
                label='mag < %.1f' % good_mag_limit)
 
@@ -75,9 +79,9 @@ def plotAstrometry(mag, mmagrms, dist, match, good_mag_limit=19.5,
                        x=0.55, y=0.88)
     plotMedians(ax[0], dist_median, bright_dist_median)
 
-    ax[1].scatter(mag, dist, s=10, color='blue', label='All')
+    ax[1].scatter(mag, dist, s=10, color=color['all'], label='All')
     ax[1].scatter(np.asarray(mag)[bright], np.asarray(dist)[bright], s=10, 
-                  color='red', 
+                  color=color['bright'], 
                   label='mag < %.1f' % good_mag_limit)
     ax[1].set_xlabel("Magnitude")
     ax[1].set_ylabel("Distance [mas]")
@@ -87,7 +91,7 @@ def plotAstrometry(mag, mmagrms, dist, match, good_mag_limit=19.5,
     ax[1].legend(loc='upper left')
     plotMedians(ax[1], dist_median, bright_dist_median)
 
-    plt.suptitle("Astrometry Check", fontsize=30)
+    plt.suptitle("Astrometry Check : %s" % plotbase.rstrip('_'), fontsize=30)
     plotPath = plotbase+"check_astrometry.png"
     plt.savefig(plotPath, format="png")
 
@@ -108,9 +112,9 @@ def plotPhotometryRms(mag, mmagrms, dist, match, good_mag_limit=19.5,
     bright_mmagrms_median = np.median(np.asarray(mmagrms)[bright])
 
     fig, ax = plt.subplots(ncols=2, nrows=1, figsize=(18, 12))
-    ax[0].hist(mmagrms, bins=100, range=(0, 500), color='blue', label='All',
+    ax[0].hist(mmagrms, bins=100, range=(0, 500), color=color['all'], label='All',
                   histtype='stepfilled', orientation='horizontal')
-    ax[0].hist(np.asarray(mmagrms)[bright], bins=100, range=(0, 500), color='red', 
+    ax[0].hist(np.asarray(mmagrms)[bright], bins=100, range=(0, 500), color=color['bright'], 
                   label='mag < %.1f' % good_mag_limit,
                   histtype='stepfilled', orientation='horizontal')
     ax[0].set_ylim([0, 500])
@@ -120,9 +124,9 @@ def plotPhotometryRms(mag, mmagrms, dist, match, good_mag_limit=19.5,
                     x=0.55, y=0.88)
     plotMedians(ax[0], mmagrms_median, bright_mmagrms_median)
 
-    ax[1].scatter(mag, mmagrms, s=10, color='blue', label='All')
+    ax[1].scatter(mag, mmagrms, s=10, color=color['all'], label='All')
     ax[1].scatter(np.asarray(mag)[bright], np.asarray(mmagrms)[bright], 
-                     s=10, color='red', 
+                     s=10, color=color['bright'], 
                      label='mag < %.1f' % good_mag_limit)
 
     ax[1].set_xlabel("Magnitude")
@@ -133,33 +137,46 @@ def plotPhotometryRms(mag, mmagrms, dist, match, good_mag_limit=19.5,
     ax[1].legend(loc='upper left')
     plotMedians(ax[1], mmagrms_median, bright_mmagrms_median)
 
-    plt.suptitle("Photometry Check", fontsize=30)
+    plt.suptitle("Photometry Check : %s" % plotbase.rstrip('_'), fontsize=30)
     plotPath = plotbase+"check_photometry.png"
     plt.savefig(plotPath, format="png")
+
 
 def plotPA1(gv, magKey, plotbase=""):
     rmsPA1, iqrPA1, diffs, means = calcPA1(gv, magKey)
 
+    diff_range = (-100, +100)
+
     fig = plt.figure(figsize=(18,12))
     ax1 = fig.add_subplot(1,2,1)
-    ax1.scatter(means, diffs, s=8, linewidth=0, alpha=0.4)
-    ax1.axhline(rmsPA1, color='r')
-    ax1.axhline(-rmsPA1, color='r')
-    ax1.axhline(iqrPA1, color='g')
-    ax1.axhline(-iqrPA1, color='g')
+    ax1.scatter(means, diffs, s=10, color=color['bright'], linewidth=0)
+    ax1.axhline(+rmsPA1, color=color['rms'], linewidth=3)
+    ax1.axhline(-rmsPA1, color=color['rms'], linewidth=3)
+    ax1.axhline(+iqrPA1, color=color['iqr'], linewidth=3)
+    ax1.axhline(-iqrPA1, color=color['iqr'], linewidth=3)
+
     ax2 = fig.add_subplot(1,2,2, sharey=ax1)
-    ax2.hist(diffs, bins=50, orientation='horizontal', normed=True, alpha=0.5)
-    yv = np.linspace(-100, 100, 100)
-    ax2.plot(scipy.stats.norm.pdf(yv, scale=rmsPA1), yv, 'r-', label="PA1(RMS)=%4.2f mmag" % rmsPA1)
-    ax2.plot(scipy.stats.norm.pdf(yv, scale=iqrPA1), yv, 'g-', label="PA1(IQR)=%4.2f mmag" % iqrPA1)
-    ax2.set_ylim(-100, 100)
+    ax2.hist(diffs, bins=25, range=diff_range,
+             orientation='horizontal', histtype='stepfilled',
+             normed=True, color=color['bright'])
+    ax2.set_xlabel("relative # / bin")
+
+    yv = np.linspace(diff_range[0], diff_range[1], 100)
+    ax2.plot(scipy.stats.norm.pdf(yv, scale=rmsPA1), yv, 
+             marker='', linestyle='-', linewidth=3, color=color['rms'],
+             label="PA1(RMS) = %4.2f mmag" % rmsPA1)
+    ax2.plot(scipy.stats.norm.pdf(yv, scale=iqrPA1), yv, 
+             marker='', linestyle='-', linewidth=3, color=color['iqr'],
+             label="PA1(IQR) = %4.2f mmag" % iqrPA1)
+    ax2.set_ylim(*diff_range)
     ax2.legend()
 #    ax1.set_ylabel(u"12-pixel aperture magnitude diff (mmag)")
 #    ax1.set_xlabel(u"12-pixel aperture magnitude")
-    ax1.set_xlabel("psf aperture magnitude")
+    ax1.set_xlabel("psf magnitude")
     ax1.set_ylabel("psf magnitude diff (mmag)")
     for label in ax2.get_yticklabels(): label.set_visible(False)
 
+    plt.suptitle("PA1: %s" % plotbase.rstrip('_'))
     plotPath = "%s%s" % (plotbase, "PA1.png")
     plt.savefig(plotPath, format="png")
 

@@ -203,7 +203,7 @@ def loadAndMatchData(repo, visitDataIds,
 
 
 
-def analyzeData(allMatches):
+def analyzeData(allMatches, good_mag_limit=19.5):
     """Calculate summary statistics for each star.
 
     @param[in] allMatches  -- afw.table.GroupView object with matches.
@@ -232,15 +232,14 @@ def analyzeData(allMatches):
 
     goodMatches = allMatches.where(goodFilter)
 
-    # Filter further to a limited range in magnitude and extendedness to select bright stars (plotted below). The upturn at the bright end is due to the brighter-fatter effect on the sensors, but shouldn't matter for this test because it will affect all visits in approximately the same way (since they all have the same exposure time).
-    safeMinMag = 16.5
-#    safeMaxMag = 18.0
-    safeMaxMag = 21.0
+    # Filter further to a limited range in magnitude and extendedness 
+    # to select bright stars.  
+    safeMaxMag = good_mag_limit
     safeMaxExtended = 1.0
     def safeFilter(cat):
         psfMag = np.mean(cat.get(psfMagKey))
         extended = np.max(cat.get(extendedKey))
-        return psfMag >= safeMinMag and extended < safeMaxExtended
+        return psfMag <= safeMaxMag and extended < safeMaxExtended
 
     safeMatches = goodMatches.where(safeFilter)
 
@@ -268,8 +267,8 @@ def analyzeData(allMatches):
 
     rmsPA1 = np.array(rmsPA1)
     iqrPA1 = np.array(iqrPA1)
-    print("PA1(RMS)=%4.2f+-%4.2f" % (rmsPA1.mean(), rmsPA1.std()))
-    print("PA1(IQR)=%4.2f+-%4.2f" % (iqrPA1.mean(), iqrPA1.std()))
+    print("PA1(RMS) = %4.2f+-%4.2f mmag" % (rmsPA1.mean(), rmsPA1.std()))
+    print("PA1(IQR) = %4.2f+-%4.2f mmag" % (iqrPA1.mean(), iqrPA1.std()))
 
     info_struct = pipeBase.Struct(
         mag = goodPsfMag,
@@ -355,9 +354,27 @@ def checkPhotometry(mag, mmagrms, dist, match,
 
 def printPA2(gv, magKey):
     minPA2, designPA2, stretchPA2 = calcPA2(gv, magKey)
-    print("minimum: PF1=20%% of diffs more than PA2=%4.2f mmag (target is PA2 < 15 mmag)" % minPA2)
-    print("design:  PF1=10%% of diffs more than PA2=%4.2f mmag (target is PA2 < 15 mmag)" % designPA2)
-    print("stretch: PF1= 5%% of diffs more than PA2=%4.2f mmag (target is PA2 < 10 mmag)" % stretchPA2)
+    print("minimum: PF1=20%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 15 mmag)" % minPA2)
+    print("design:  PF1=10%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 15 mmag)" % designPA2)
+    print("stretch: PF1= 5%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 10 mmag)" % stretchPA2)
+
+def repoNameToPrefix(repo):
+    """Generate a base prefix for plots based on the repo name.
+
+    a/b/c -> "a_b_c"
+    CFHT/output -> "CFHT_output"
+    """
+
+    dirnames = []
+    remaining_path = repo
+    while os.path.split(remaining_path):
+        remaining_path, tail = os.path.split(remaining_path)
+        dirnames.append(tail)
+        if remaining_path in ["", "/"]: 
+            break
+
+    base = "_".join(dirnames[::-1])  # reverse to get order right
+    return base
 
 ####
 def run(repo, visitDataIds, good_mag_limit, 
@@ -365,8 +382,10 @@ def run(repo, visitDataIds, good_mag_limit,
     """Main executable.
     """
 
+    plotbase = repoNameToPrefix(repo)
+
     allMatches = loadAndMatchData(repo, visitDataIds)
-    struct, safeMatches = analyzeData(allMatches)
+    struct, safeMatches = analyzeData(allMatches, good_mag_limit)
     magavg = struct.mag
     mmagrms = struct.mmagrms
     dist = struct.dist
@@ -378,12 +397,12 @@ def run(repo, visitDataIds, good_mag_limit,
     checkPhotometry(magavg, mmagrms, dist, match,
                     good_mag_limit=good_mag_limit,
                     medianRef=medianPhotoscatterRef, matchRef=matchRef)
-    plotAstrometry(magavg, mmagrms, dist, match, good_mag_limit=good_mag_limit)
-    plotPhotometryRms(magavg, mmagrms, dist, match, good_mag_limit=good_mag_limit)
+    plotAstrometry(magavg, mmagrms, dist, match, good_mag_limit=good_mag_limit, plotbase=plotbase)
+    plotPhotometryRms(magavg, mmagrms, dist, match, good_mag_limit=good_mag_limit, plotbase=plotbase)
 
-    psfMagKey = allMatches.schema.find("base_PsfFlux_mag").key
-    plotPA1(safeMatches, psfMagKey)
-    printPA2(safeMatches, psfMagKey)
+    magKey = allMatches.schema.find("base_PsfFlux_mag").key
+    plotPA1(safeMatches, magKey, plotbase=plotbase)
+    printPA2(safeMatches, magKey)
 
 
 
