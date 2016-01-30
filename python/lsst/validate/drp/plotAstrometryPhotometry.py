@@ -27,7 +27,7 @@ import numpy as np
 import scipy.stats
 from scipy.optimize import curve_fit
 
-from .calcSrd import calcPA1, calcPA2
+from .calcSrd import calcPA1, calcPA2, calcAM1
 
 # Plotting defaults
 plt.rcParams['axes.linewidth'] = 2
@@ -250,3 +250,43 @@ def plotPA1(gv, magKey, plotbase=""):
     plotPath = "%s%s" % (plotbase, "PA1.png")
     plt.savefig(plotPath, format="png")
 
+
+def plotAM1(rmsDistMAS, D, Annulus, magBinLow, magBinHigh, plotbase=""): 
+
+    if not rmsDistMAS:
+        print('No objects in given mag bins at requested separation in the same visit!')
+        return
+
+    rmsRelSep = np.median(rmsDistMAS)
+    AM1 = 10.0
+    AD1 = 20.0
+    AF1 = 10.0
+    pCentOver = 0
+    for val in rmsDistMAS:
+        if (val > AM1+AD1):
+            pCentOver += 1
+    pCentOver /= float(len(rmsDistMAS))
+    pCentOver *= 100.0
+
+    fig = plt.figure(figsize=(10,6))
+    ax1 = fig.add_subplot(1,1,1)
+    ax1.hist(rmsDistMAS, bins=25, range=(0.0, 100.0),
+             histtype='stepfilled',
+             label='D: %.1f-%.1f arcmin\nMag Bin: %.1f-%.1f' % 
+                   (D-Annulus, D+Annulus, magBinLow, magBinHigh))
+    ax1.axvline(rmsRelSep, 0, 1, linewidth=2,  color='black', 
+                label='median RMS of relative\nseparation: %.2f mas' % (rmsRelSep))
+    ax1.axvline(AM1, 0, 1, linewidth=2, color='red', 
+                label='AM1: %.2f mas' % (AM1))
+    ax1.axvline(AM1+AD1, 0, 1, linewidth=2, color='green',
+                label='AM1+AD1: %.2f mas\nAF1: %2.f%% > AM1+AD1 = %2.f%%' % (AM1+AD1, AF1, pCentOver))
+
+    ax1.set_title('Number of RMS Rel Distances: %d' % len(rmsDistMAS))
+    ax1.set_xlim(0.0,100.0)
+    ax1.set_xlabel('rms Relative Separation (mas)')
+    ax1.set_ylabel('# pairs / bin')
+
+    ax1.legend(loc='upper right', fontsize=16)
+
+    figName = plotbase+'D_%d_ARCMIN_%.1f-%.1f.png' % (int(D), magBinLow, magBinHigh)
+    plt.savefig(figName,dpi=300)

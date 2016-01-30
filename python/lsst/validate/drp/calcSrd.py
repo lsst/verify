@@ -274,3 +274,74 @@ def computeWidths(array):
     return rmsSigma, iqrSigma
 
 
+def calcAM1(safeMatches):
+    import math
+    import pdb
+
+    # First we make a list of the keys that we want the fields for
+    importantKeys = [safeMatches.schema.find(name).key for
+                     name in ['id', 'coord_ra', 'coord_dec', \
+                              'object', 'visit', 'base_PsfFlux_mag']]
+
+    # For every key, we loop over all the groups and get the required values - these
+    matchKeyOutput = [x.get(y) for y in importantKeys for x in safeMatches.groups]
+
+    jump = len(safeMatches)
+
+    IDList = matchKeyOutput[0*jump:1*jump]
+    RAList = matchKeyOutput[1*jump:2*jump]
+    DecList = matchKeyOutput[2*jump:3*jump]
+    NameList = matchKeyOutput[3*jump:4*jump]
+    VisitList = matchKeyOutput[4*jump:5*jump]
+    PSFMagList = matchKeyOutput[5*jump:6*jump]
+
+    meanRAList = list()
+    meanDecList = list()
+
+    for objNum in range(len(IDList)):
+        meanRAList.append(np.mean(RAList[objNum]))
+        meanDecList.append(np.mean(DecList[objNum]))
+
+    def cartDistSq(x1,x2,y1,y2):
+        return math.pow(x1-x2,2.0) + math.pow(y1-y2,2.0)
+
+    def sphDist(ra1,dec1,ra2,dec2):
+        return math.acos(math.sin(dec1)*math.sin(dec2) + math.cos(dec1)*math.cos(dec2)*math.cos(ra1 - ra2))
+
+    Annulus = 2.0  # arcmin
+    D = 5.0  # arcmin
+
+    DPlusAnnulus_RadSq = math.pow((D + Annulus)*(1.0/60.0)*(math.pi/180.0),2.0)
+    DMinusAnnulus_RadSq = math.pow((D - Annulus)*(1.0/60.0)*(math.pi/180.0),2.0)
+
+    magBinLow = 17.0
+    magBinWidth = 4.5
+    magBinHigh = magBinLow + magBinWidth
+
+    rmsDistances = list()
+    for obj1 in range(len(meanRAList)):
+        obj1Mag = np.median(PSFMagList[obj1][:])
+        if ((obj1Mag >= magBinLow) and (obj1Mag < magBinHigh)):
+            for obj2 in range(obj1+1,len(meanRAList)):
+                obj2Mag = np.median(PSFMagList[obj2][:])
+                if ((obj2Mag >= magBinLow) and (obj2Mag < magBinHigh)):
+                    thisCartDist = cartDistSq(meanDecList[obj1],meanDecList[obj2],meanRAList[obj1],meanRAList[obj2])
+                    if ((thisCartDist >= DMinusAnnulus_RadSq) and (thisCartDist <= DPlusAnnulus_RadSq)):
+                        distancesList = list()
+                        for i in range(len(VisitList[obj1])):
+                            for j in range(len(VisitList[obj2])):
+                                if (VisitList[obj1][i] == VisitList[obj2][j]):
+                                    '''We compute the distance'''
+                                    distancesList.append(sphDist(RAList[obj1][i],DecList[obj1][i],RAList[obj2][j],DecList[obj2][j]))
+
+                        if not distancesList:
+                            print("No matches found for objs: %d and %d" % (obj1, obj2))
+                        else:
+                            rmsDistances.append(np.sqrt(np.mean(np.square(distancesList - np.mean(distancesList)))))
+                        del distancesList[:]
+
+
+    rmsDistMAS = [np.rad2deg(rmsDistance)*3600*1000 for rmsDistance in rmsDistances]
+
+    return (rmsDistMAS, D, Annulus, magBinLow, magBinHigh)
+
