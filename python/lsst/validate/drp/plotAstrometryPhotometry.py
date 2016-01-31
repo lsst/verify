@@ -251,22 +251,17 @@ def plotPA1(gv, magKey, plotbase=""):
     plt.savefig(plotPath, format="png")
 
 
-def plotAM1(rmsDistMAS, D, Annulus, magBinLow, magBinHigh, plotbase=""): 
-
+def plotAM1(rmsDistMAS, D, Annulus, magBinLow, magBinHigh, 
+            AM1=10, AD1=20, AF1=10,
+            plotbase=""): 
+    """Plot a histogram of the RMS in relative distance between pairs of stars.
+    """
     if not rmsDistMAS:
         print('No objects in given mag bins at requested separation in the same visit!')
         return
 
     rmsRelSep = np.median(rmsDistMAS)
-    AM1 = 10.0
-    AD1 = 20.0
-    AF1 = 10.0
-    pCentOver = 0
-    for val in rmsDistMAS:
-        if (val > AM1+AD1):
-            pCentOver += 1
-    pCentOver /= float(len(rmsDistMAS))
-    pCentOver *= 100.0
+    pCentOver = np.mean(np.asarray(rmsDistMAS) > AM1+AD1)
 
     fig = plt.figure(figsize=(10,6))
     ax1 = fig.add_subplot(1,1,1)

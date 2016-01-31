@@ -29,6 +29,8 @@ import scipy.stats
 
 import lsst.pipe.base as pipeBase
 
+from .srdSpec import srdSpec
+
 def calcPA1(groupView, magKey):
     """Calculate the photometric repeatability of measurements across a set of observations.
 
@@ -273,8 +275,57 @@ def computeWidths(array):
     iqrSigma = np.subtract.reduce(np.percentile(array, [75, 25])) / (scipy.stats.norm.ppf(0.75)*2)
     return rmsSigma, iqrSigma
 
+def calcAM1(*args, **kwargs):
+    return calcAM(*args, D=srdSpec.D1, annulus=2, **kwargs)
 
-def calcAM1(safeMatches):
+def calcAM2(*args, **kwargs):
+    return calcAM(*args, D=srdSpec.D2, annulus=2, **kwargs)
+
+def calcAM3(*args, **kwargs):
+    return calcAM(*args, D=srdSpec.D3, annulus=2, **kwargs)
+
+def calcAM(safeMatches, D=5, annulus=2, 
+                        magBinLow=17.0, magBinWidth=4.5):
+    """Calculate the SRD definition of astrometric performance
+
+    This table below is provided in this package in the `srdSpec.py` file.
+
+    LPM-17 dated 2011-07-06
+
+    *The relative astrometry*
+    Specification: The rms of the astrometric distance distribution for 
+        stellar pairs with separation of D arcmin (repeatability) 
+        will not exceed AMx milliarcsec (median distribution for a large number
+        of sources). No more than AFx % of the sample will deviate by more than 
+        ADx milliarcsec from the median. AMx, AFx, and ADx are specified for 
+        D=5, 20 and 200 arcmin for x= 1, 2, and 3, in the same order (Table 18).
+
+    The three selected characteristic distances reflect the size of an 
+    individual sensor, a raft, and the camera. The required median astrometric 
+    precision is driven by the desire to achieve a proper motion accuracy of 
+    0.2 mas/yr and parallax accuracy of 1.0 mas over the course of the survey. 
+    These two requirements correspond to relative astrometric precision for a 
+    single image of 10 mas (per coordinate).
+
+    ================== =========== ============ ============
+         Quantity      Design Spec Minimum Spec Stretch Goal
+    ------------------ ----------- ------------ ------------
+    AM1 (milliarcsec)        10          20            5
+    AF1 (%)                  10          20            5
+    AD1 (milliarcsec)        20          40           10
+
+    AM2 (milliarcsec)        10          20            5
+    AF2 (%)                  10          20            5
+    AD2 (milliarcsec)        20          40           10
+
+    AM3 (milliarcsec)        15          30           10
+    AF3 (%)                  10          20            5
+    AD3 (milliarcsec)        30          50           20
+    =================  =========== ============ ============
+    Table 18: The specifications for astrometric precision. 
+    The three blocks of values correspond to D=5, 20 and 200 arcmin, 
+    and to astrometric measurements performed in the r and i bands.
+    """
     import math
     import pdb
 
@@ -308,14 +359,9 @@ def calcAM1(safeMatches):
     def sphDist(ra1,dec1,ra2,dec2):
         return math.acos(math.sin(dec1)*math.sin(dec2) + math.cos(dec1)*math.cos(dec2)*math.cos(ra1 - ra2))
 
-    Annulus = 2.0  # arcmin
-    D = 5.0  # arcmin
+    DPlusAnnulus_RadSq = math.pow((D + annulus)*(1.0/60.0)*(math.pi/180.0),2.0)
+    DMinusAnnulus_RadSq = math.pow((D - annulus)*(1.0/60.0)*(math.pi/180.0),2.0)
 
-    DPlusAnnulus_RadSq = math.pow((D + Annulus)*(1.0/60.0)*(math.pi/180.0),2.0)
-    DMinusAnnulus_RadSq = math.pow((D - Annulus)*(1.0/60.0)*(math.pi/180.0),2.0)
-
-    magBinLow = 17.0
-    magBinWidth = 4.5
     magBinHigh = magBinLow + magBinWidth
 
     rmsDistances = list()
@@ -340,8 +386,7 @@ def calcAM1(safeMatches):
                             rmsDistances.append(np.sqrt(np.mean(np.square(distancesList - np.mean(distancesList)))))
                         del distancesList[:]
 
-
     rmsDistMAS = [np.rad2deg(rmsDistance)*3600*1000 for rmsDistance in rmsDistances]
 
-    return (rmsDistMAS, D, Annulus, magBinLow, magBinHigh)
+    return (rmsDistMAS, D, annulus, magBinLow, magBinHigh)
 

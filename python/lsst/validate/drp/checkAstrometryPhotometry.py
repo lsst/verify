@@ -38,6 +38,7 @@ import lsst.afw.image as afwImage
 
 from .plotAstrometryPhotometry import plotAstrometry, plotPhotometry, plotPA1
 from .calcSrd import computeWidths, getRandomDiff, calcPA1, calcPA2
+from .srdSpec import srdSpec
 
 def getCcdKeyName(dataid):
     """Return the key in a dataId that's referring to the CCD or moral equivalent.
@@ -388,97 +389,6 @@ def checkPhotometry(mag, mmagrms, dist, match,
 
     return photoScatter
 
-def plotPhotometryRms(mag, mmagrms, dist, match, good_mag_limit=19.5):
-    """Plot photometric RMS for matched sources.
-
-    @param[in] mag    Magnitude.  List or numpy.array.
-    @param[in] mmagrms    Magnitude RMS.  List or numpy.array.
-    @param[in] dist   Separation from reference.  List of numpy.array
-    @param[in] match  Number of stars matched.  Integer.
-    """
-
-    bright, = np.where(np.asarray(mag) < good_mag_limit)
-
-    mmagrms_median = np.median(mmagrms) 
-    bright_mmagrms_median = np.median(np.asarray(mmagrms)[bright] 
-
-    fig, ax = plt.subplots(ncols=2, nrows=1, figsize=(18, 12))
-    ax[0].hist(mmagrms, bins=100, range=(0, 500), color='blue', label='All',
-                  histtype='stepfilled', orientation='horizontal')
-    ax[0].hist(np.asarray(mmagrms)[bright], bins=100, range=(0, 500), color='red', 
-                  label='mag < %.1f' % good_mag_limit,
-                  histtype='stepfilled', orientation='horizontal')
-    ax[0].set_ylim([0, 500])
-    ax[0].set_ylabel("RMS in mmag")
-    ax[0].set_title("Median : %.1f, %.1f mmag" % 
-                    (bright_mmagrms_median, mmagrms_median),
-                    x=0.55, y=0.88)
-    ax[0].axhline(mmagrms_median, color='blue')
-    ax[0].axhline(bright_mmagrms_median, color='red')
-
-    ax[1].scatter(mag, mmagrms, s=10, color='blue', label='All')
-    ax[1].scatter(np.asarray(mag)[bright], np.asarray(mmagrms)[bright], 
-                     s=10, color='red', 
-                     label='mag < %.1f' % good_mag_limit)
-
-    ax[1].set_xlabel("Magnitude")
-    ax[1].set_ylabel("RMS [mmag]")
-    ax[1].set_xlim([17, 24])
-    ax[1].set_ylim([0, 500])
-    ax[1].set_title("# of matches : %d, %d" % (len(bright), match))
-    ax[1].legend(loc='upper left')
-
-    plt.suptitle("Photometry Check", fontsize=30)
-    plotPath = "check_photometry.png"
-    plt.savefig(plotPath, format="png")
-
-
-def plotPhotometryDelta(mag, delta_mag, dist, match, good_mag_limit=19.5):
-    """Plot photometric changes between matched sources across visits.
-
-    @param[in] mag    Magnitude.  List or numpy.array.
-    @param[in] delta_mag -- Delta magnitude from mean of each source measurement
-                            List or numpy.array.
-    @param[in] dist   Separation from reference.  List of numpy.array
-    @param[in] match  Number of stars matched.  Integer.
-    """
-
-    fig, ax = plt.subplots(ncols=2, nrows=3, figsize=(18,22))
-    ax[0][0].hist(delta_mag*1000, bins=25, histtype='stepfilled')
-    ax[0][1].scatter(mag, delta_mag, s=10, color='b')
-
-    ax[0][0].set_xlim([-1000, +1000])
-    ax[0][0].set_xlabel("Difference in mmag")
-    ax[0][0].set_title("Median : %.3f mmag" % (np.median(delta_mag)*1000), 
-                       x=0.6, y=0.88)
-    ax[0][1].set_xlabel("Magnitude")
-    ax[0][1].set_ylabel("Delta Mag")
-    ax[0][1].set_ylim([-1, +1])
-    ax[0][1].set_title("# of matches : %d" % match)
-
-    dflux_over_flux = 10**(-0.4*delta_mag) - 1
-    ax[1][0].hist(dflux_over_flux, bins=25, histtype='stepfilled')
-    ax[1][0].set_xlim([-1, +1])
-    ax[1][1].scatter(mag, dflux_over_flux, s=10, color='b')
-    ax[1][1].set_ylim([-1, +1])
-    ax[0][1].set_xlabel("Magnitude")
-    ax[0][1].set_ylabel("Delta Mag")
-
-    bright = np.where(np.asarray(mag) < good_mag_limit)
-
-    ax[2][0].hist(np.asarray(dist)[bright], bins=100, histtype='stepfilled')
-    ax[2][0].set_xlabel("Distance in mag for mag < %.1f" % good_mag_limit)
-    ax[2][0].set_xlim([0,200])
-    ax[2][0].set_title("Median (mag < %.1f) : %.3f mag" % (good_mag_limit, np.median(np.asarray(delta_mag)[bright])), x=0.6, y=0.88)
-    ax[2][1].scatter(mag[bright], delta_mag[bright], s=10, color='b')
-    ax[2][1].set_xlabel("Magnitude")
-    ax[2][1].set_ylabel("Difference in mag for mag < %.1f" % good_mag_limit)
-    ax[2][1].set_ylim([-1, +1])
-
-    plt.suptitle("Photometry Check")
-    plotPath = "check_photometry.png"
-    plt.savefig(plotPath, format="png")
-
 
 def printPA2(gv, magKey):
     """Calculate and print the calculated PA2 from the LSST SRD from a groupView."""
@@ -490,6 +400,41 @@ def printPA2(gv, magKey):
           (pa2.PF1['design'], pa2.design))
     print("stretch: PF1=%2d%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 10 mmag)" % 
           (pa2.PF1['stretch'], pa2.stretch))
+
+
+def printAM1(rmsDistMAS, D, annulus, magBinLow, magBinHigh,
+             level="design", ):
+    """Print the Astrometric performance.
+
+    @param[in]  level -- One of "minimum", "design", "stretch"
+       indicating the level of the specification desired.
+
+    Note:
+    -----
+    Should generalize printAM1 to a base printAMx
+      that is called by printAM1, printAM2, printAM3
+    but haven't decided how to generalize AMx
+    vs. the srdSpec that (correctly) specifies AM1, AF1, AD1
+    as individuals fields of the srdSpec struct.
+    But anyway, the use of 'D' below isn't properly tied to the SRD
+     in the same way that srdSpec.AM1, sprdSpec.AF1, srdSpec.AD1 are
+     because the rmsDistMAS has already assumed a D.
+    """
+    AMx = srdSpec.AM1[level]
+    AFx = srdSpec.AF1[level]
+    ADx = srdSpec.AD1[level]
+
+    rmsRelSep = np.median(rmsDistMAS)
+    pCentOver = 100*np.mean(np.asarray(rmsDistMAS) > AMx+ADx)
+
+    print("Median of distribution of RMS of distance of stellar pairs.")
+    print("For stars from %.2f < mag < %.2f" % (magBinLow, magBinHigh))
+    print("At D = %.2f arcmin, is %.2f mas (target is <= %.2f mas)." % 
+          (D, rmsRelSep, AMx))
+    print("  %.2f%% of sample is > %.2f mas from AMx=%.2f mas (target is <= %.2f%%)" %
+          (pCentOver, ADx, AMx, AFx))
+
+
 
 def repoNameToPrefix(repo):
     """Generate a base prefix for plots based on the repo name.
