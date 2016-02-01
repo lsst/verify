@@ -38,7 +38,8 @@ import lsst.afw.image as afwImage
 
 from .plotAstrometryPhotometry import plotAstrometry, plotPhotometry, plotPA1
 from .calcSrd import computeWidths, getRandomDiff, calcPA1, calcPA2
-from .srdSpec import srdSpec
+from .srdSpec import srdSpec, getAstrometricSpec
+
 
 def getCcdKeyName(dataid):
     """Return the key in a dataId that's referring to the CCD or moral equivalent.
@@ -402,37 +403,46 @@ def printPA2(gv, magKey):
           (pa2.PF1['stretch'], pa2.stretch))
 
 
-def printAM1(rmsDistMAS, D, annulus, magBinLow, magBinHigh,
-             level="design", ):
+def printAM1(*args, **kwargs):
+    return printAMx(*args, x=1, **kwargs)
+
+def printAM2(*args, **kwargs):
+    return printAMx(*args, x=2, **kwargs)
+
+def printAM3(*args, **kwargs):
+    return printAMx(*args, x=3, **kwargs)
+
+def printAMx(rmsDistMAS, D, annulus, magBinLow, magBinHigh,
+             x=None, level="design"):
     """Print the Astrometric performance.
 
     @param[in]  level -- One of "minimum", "design", "stretch"
        indicating the level of the specification desired.
 
+    @param[in]  x -- int in [1,2,3].  Which of AM1, AM2, AM3.
+
+    Raises:
+    -------
+    ValidateError if `x` isn't in `getAstrometricSpec`
+
     Note:
     -----
-    Should generalize printAM1 to a base printAMx
-      that is called by printAM1, printAM2, printAM3
-    but haven't decided how to generalize AMx
-    vs. the srdSpec that (correctly) specifies AM1, AF1, AD1
-    as individuals fields of the srdSpec struct.
-    But anyway, the use of 'D' below isn't properly tied to the SRD
+    The use of 'D' below isn't properly tied to the SRD
      in the same way that srdSpec.AM1, sprdSpec.AF1, srdSpec.AD1 are
      because the rmsDistMAS has already assumed a D.
     """
-    AMx = srdSpec.AM1[level]
-    AFx = srdSpec.AF1[level]
-    ADx = srdSpec.AD1[level]
+    AMx, AFx, ADx = getAstrometricSpec(x=x, level=level)
 
     rmsRelSep = np.median(rmsDistMAS)
     pCentOver = 100*np.mean(np.asarray(rmsDistMAS) > AMx+ADx)
 
     print("Median of distribution of RMS of distance of stellar pairs.")
+    print("%s goals" % level.upper())
     print("For stars from %.2f < mag < %.2f" % (magBinLow, magBinHigh))
     print("At D = %.2f arcmin, is %.2f mas (target is <= %.2f mas)." % 
           (D, rmsRelSep, AMx))
-    print("  %.2f%% of sample is > %.2f mas from AMx=%.2f mas (target is <= %.2f%%)" %
-          (pCentOver, ADx, AMx, AFx))
+    print("  %.2f%% of sample is > %.2f mas from AM%d=%.2f mas (target is <= %.2f%%)" %
+          (pCentOver, ADx, x, AMx, AFx))
 
 
 

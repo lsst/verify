@@ -27,7 +27,9 @@ import numpy as np
 import scipy.stats
 from scipy.optimize import curve_fit
 
+from .base import ValidateError
 from .calcSrd import calcPA1, calcPA2, calcAM1
+from .srdSpec import getAstrometricSpec
 
 # Plotting defaults
 plt.rcParams['axes.linewidth'] = 2
@@ -251,17 +253,37 @@ def plotPA1(gv, magKey, plotbase=""):
     plt.savefig(plotPath, format="png")
 
 
-def plotAM1(rmsDistMAS, D, Annulus, magBinLow, magBinHigh, 
-            AM1=10, AD1=20, AF1=10,
+def plotAM1(*args, **kwargs):
+    return plotAMx(*args, x=1, **kwargs)
+
+def plotAM2(*args, **kwargs):
+    return plotAMx(*args, x=2, **kwargs)
+
+def plotAM3(*args, **kwargs):
+    return plotAMx(*args, x=3, **kwargs)
+
+def plotAMx(rmsDistMAS, D, Annulus, magBinLow, magBinHigh, 
+            x=None, level="design",
             plotbase=""): 
     """Plot a histogram of the RMS in relative distance between pairs of stars.
+
+    @param[in]  level -- One of "minimum", "design", "stretch"
+       indicating the level of the specification desired.
+
+    @param[in]  x -- int in [1,2,3].  Which of AM1, AM2, AM3.
+
+    Raises:
+    -------
+    ValidateError if `x` isn't in [1,2,3].
     """
+
     if not rmsDistMAS:
-        print('No objects in given mag bins at requested separation in the same visit!')
-        return
+        raise ValidateError('No objects in given mag bins at requested separation in the same visit!')
+
+    AMx, AFx, ADx = getAstrometricSpec(x=x, level=level)
 
     rmsRelSep = np.median(rmsDistMAS)
-    pCentOver = np.mean(np.asarray(rmsDistMAS) > AM1+AD1)
+    pCentOver = np.mean(np.asarray(rmsDistMAS) > AMx+ADx)
 
     fig = plt.figure(figsize=(10,6))
     ax1 = fig.add_subplot(1,1,1)
@@ -271,12 +293,12 @@ def plotAM1(rmsDistMAS, D, Annulus, magBinLow, magBinHigh,
                    (D-Annulus, D+Annulus, magBinLow, magBinHigh))
     ax1.axvline(rmsRelSep, 0, 1, linewidth=2,  color='black', 
                 label='median RMS of relative\nseparation: %.2f mas' % (rmsRelSep))
-    ax1.axvline(AM1, 0, 1, linewidth=2, color='red', 
-                label='AM1: %.2f mas' % (AM1))
-    ax1.axvline(AM1+AD1, 0, 1, linewidth=2, color='green',
-                label='AM1+AD1: %.2f mas\nAF1: %2.f%% > AM1+AD1 = %2.f%%' % (AM1+AD1, AF1, pCentOver))
+    ax1.axvline(AMx, 0, 1, linewidth=2, color='red', 
+                label='AM%d: %.2f mas' % (x, AMx))
+    ax1.axvline(AMx+ADx, 0, 1, linewidth=2, color='green',
+                label='AM%d+AD%d: %.2f mas\nAF%d: %2.f%% > AM%d+AD%d = %2.f%%' % (x, x, AMx+ADx, x, AFx, x, x, pCentOver))
 
-    ax1.set_title('Number of RMS Rel Distances: %d' % len(rmsDistMAS))
+    ax1.set_title('The %d stars separated by D = %.2f arcmin' % (len(rmsDistMAS), D))
     ax1.set_xlim(0.0,100.0)
     ax1.set_xlabel('rms Relative Separation (mas)')
     ax1.set_ylabel('# pairs / bin')
