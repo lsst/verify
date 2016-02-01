@@ -109,6 +109,45 @@ def magNormDiff(cat):
     normDiff = (mag - mag_avg) / magerr
     
 
+# Paul Price suggests the following to calculate average
+#  import lsst.afw.coord 
+#    average = lsst.afw.coord.averageCoord(coords)
+### And then to calculate RMS:
+#    offsets = [cc.getTangentPlaneOffset(average) for cc in coords]
+#    rms = numpy.array([xx[0].asArcseconds() for xx in offsets]).std(), numpy.array([xx[1].asArcseconds() for xx in offsets]).std()
+# 
+#     average = safeMatches.aggregate(getAverageCoord)
+# 
+# def getAverageCoord(cat):
+#     ra = cat.get('coord_ra')
+#     dec = cat.get('coord_dec')
+#     coords = lsst.afw.coord.makeCoord(ra, dec)
+#     lsst.afw.coord.averageCoord(coords)
+
+
+def positionDiff(cat):
+    """Calculate the diff RA, Dec from the mean for a set of observations an object for each observation.
+
+    @param[in]  cat -- Collection with a .get method 
+         for 'coord_ra', 'coord_dec' that returns radians.
+
+    @param[out]  pos_median -- median diff of positions in milliarcsec.  Float.
+
+    This is WRONG!
+    Doesn't do wrap-around
+    """
+    ra_avg, dec_avg = averageRaDec(cat)
+    ra, dec = cat.get('coord_ra'), cat.get('coord_dec')
+    # Approximating that the cos(dec) term is roughly the same
+    #   for all observations of this object.
+    ra_diff  = (ra - ra_avg) * np.cos(dec)**2
+    dec_diff = dec - dec_avg
+    pos_diff = np.sqrt(ra_diff**2 + dec_diff**2)  # radians
+    pos_diff = [afwGeom.radToMas(p) for p in pos_diff]  # milliarcsec
+
+    return pos_diff
+
+
 def positionRms(cat):
     """Calculate the RMS for RA, Dec for a set of observations an object.
 
