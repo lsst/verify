@@ -262,11 +262,13 @@ def plotAM2(*args, **kwargs):
 def plotAM3(*args, **kwargs):
     return plotAMx(*args, x=3, **kwargs)
 
-def plotAMx(rmsDistMAS, D, Annulus, magBinLow, magBinHigh, 
+def plotAMx(rmsDistMAS, annulus, magrange,
             x=None, level="design",
             plotbase=""): 
     """Plot a histogram of the RMS in relative distance between pairs of stars.
 
+    @param[in]  annulus -- inner and outer radius of comparison annulus [arcmin]
+    @param[in]  magrange -- lower and upper magnitude range
     @param[in]  level -- One of "minimum", "design", "stretch"
        indicating the level of the specification desired.
 
@@ -290,7 +292,7 @@ def plotAMx(rmsDistMAS, D, Annulus, magBinLow, magBinHigh,
     ax1.hist(rmsDistMAS, bins=25, range=(0.0, 100.0),
              histtype='stepfilled',
              label='D: %.1f-%.1f arcmin\nMag Bin: %.1f-%.1f' % 
-                   (D-Annulus, D+Annulus, magBinLow, magBinHigh))
+                   (annulus[0], annulus[1], magrange[0], magrange[1]))
     ax1.axvline(rmsRelSep, 0, 1, linewidth=2,  color='black', 
                 label='median RMS of relative\nseparation: %.2f mas' % (rmsRelSep))
     ax1.axvline(AMx, 0, 1, linewidth=2, color='red', 
@@ -298,12 +300,14 @@ def plotAMx(rmsDistMAS, D, Annulus, magBinLow, magBinHigh,
     ax1.axvline(AMx+ADx, 0, 1, linewidth=2, color='green',
                 label='AM%d+AD%d: %.2f mas\nAF%d: %2.f%% > AM%d+AD%d = %2.f%%' % (x, x, AMx+ADx, x, AFx, x, x, pCentOver))
 
-    ax1.set_title('The %d stars separated by D = %.2f arcmin' % (len(rmsDistMAS), D))
+    ax1.set_title('The %d stars separated by D = [%.2f, %.2f] arcmin' % \
+                  (len(rmsDistMAS), annulus[0], annulus[1]))
     ax1.set_xlim(0.0,100.0)
     ax1.set_xlabel('rms Relative Separation (mas)')
     ax1.set_ylabel('# pairs / bin')
 
     ax1.legend(loc='upper right', fontsize=16)
 
-    figName = plotbase+'D_%d_ARCMIN_%.1f-%.1f.png' % (int(D), magBinLow, magBinHigh)
+    figName = plotbase+'D_%d_ARCMIN_%.1f-%.1f.png' % \
+                   (int(sum(annulus)/2), magrange[0], magrange[1])
     plt.savefig(figName,dpi=300)

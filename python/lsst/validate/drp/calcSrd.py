@@ -276,16 +276,15 @@ def computeWidths(array):
     return rmsSigma, iqrSigma
 
 def calcAM1(*args, **kwargs):
-    return calcAM(*args, D=srdSpec.D1, annulus=2, **kwargs)
+    return calcAMx(*args, D=srdSpec.D1, width=2, **kwargs)
 
 def calcAM2(*args, **kwargs):
-    return calcAM(*args, D=srdSpec.D2, annulus=2, **kwargs)
+    return calcAMx(*args, D=srdSpec.D2, width=2, **kwargs)
 
 def calcAM3(*args, **kwargs):
-    return calcAM(*args, D=srdSpec.D3, annulus=2, **kwargs)
+    return calcAMx(*args, D=srdSpec.D3, width=2, **kwargs)
 
-def calcAM(safeMatches, D=5, annulus=2, 
-                        magBinLow=17.0, magBinWidth=4.5):
+def calcAMx(safeMatches, D=5, width=2, magrange=None):
     """Calculate the SRD definition of astrometric performance
 
     This table below is provided in this package in the `srdSpec.py` file.
@@ -329,12 +328,17 @@ def calcAM(safeMatches, D=5, annulus=2,
     import math
     import pdb
 
+    # Default is specified here separately because defaults that are mutable
+    # get overridden by previous calls of the function.
+    if magrange is None:
+        magrange=[17.0, 21.5]
+
     # First we make a list of the keys that we want the fields for
     importantKeys = [safeMatches.schema.find(name).key for
                      name in ['id', 'coord_ra', 'coord_dec', \
                               'object', 'visit', 'base_PsfFlux_mag']]
 
-    # For every key, we loop over all the groups and get the required values - these
+    # List of lists of id, importantValue
     matchKeyOutput = [x.get(y) for y in importantKeys for x in safeMatches.groups]
 
     jump = len(safeMatches)
@@ -346,12 +350,11 @@ def calcAM(safeMatches, D=5, annulus=2,
     VisitList = matchKeyOutput[4*jump:5*jump]
     PSFMagList = matchKeyOutput[5*jump:6*jump]
 
-    meanRAList = list()
-    meanDecList = list()
-
-    for objNum in range(len(IDList)):
-        meanRAList.append(np.mean(RAList[objNum]))
-        meanDecList.append(np.mean(DecList[objNum]))
+    # This RA averaging is WRONG.  Need to fix to handle wrap-around.
+    meanRAList = safeMatches.aggregate(np.mean, 'coord_ra')
+    # This Dec averaging is also technically wrong, but will only matter
+    #  with arcseconds of the poles.
+    meanDecList = safeMatches.aggregate(np.mean, 'coord_dec')
 
     def cartDistSq(x1,x2,y1,y2):
         return math.pow(x1-x2,2.0) + math.pow(y1-y2,2.0)
@@ -359,20 +362,18 @@ def calcAM(safeMatches, D=5, annulus=2,
     def sphDist(ra1,dec1,ra2,dec2):
         return math.acos(math.sin(dec1)*math.sin(dec2) + math.cos(dec1)*math.cos(dec2)*math.cos(ra1 - ra2))
 
-    DPlusAnnulus_RadSq = math.pow((D + annulus)*(1.0/60.0)*(math.pi/180.0),2.0)
-    DMinusAnnulus_RadSq = math.pow((D - annulus)*(1.0/60.0)*(math.pi/180.0),2.0)
-
-    magBinHigh = magBinLow + magBinWidth
+    annulus = D + (width/2)*np.array([-1, +1])
+    DAnnulus_RadSq = np.power(annulus*(1.0/60.0)*(math.pi/180.0), 2)
 
     rmsDistances = list()
     for obj1 in range(len(meanRAList)):
         obj1Mag = np.median(PSFMagList[obj1][:])
-        if ((obj1Mag >= magBinLow) and (obj1Mag < magBinHigh)):
+        if ((obj1Mag >= magrange[0]) and (obj1Mag < magrange[1])):
             for obj2 in range(obj1+1,len(meanRAList)):
                 obj2Mag = np.median(PSFMagList[obj2][:])
-                if ((obj2Mag >= magBinLow) and (obj2Mag < magBinHigh)):
+                if ((obj2Mag >= magrange[0]) and (obj2Mag < magrange[1])):
                     thisCartDist = cartDistSq(meanDecList[obj1],meanDecList[obj2],meanRAList[obj1],meanRAList[obj2])
-                    if ((thisCartDist >= DMinusAnnulus_RadSq) and (thisCartDist <= DPlusAnnulus_RadSq)):
+                    if ((thisCartDist >= DAnnulus_RadSq[0]) and (thisCartDist <= DAnnulus_RadSq[1])):
                         distancesList = list()
                         for i in range(len(VisitList[obj1])):
                             for j in range(len(VisitList[obj2])):
@@ -388,5 +389,5 @@ def calcAM(safeMatches, D=5, annulus=2,
 
     rmsDistMAS = [np.rad2deg(rmsDistance)*3600*1000 for rmsDistance in rmsDistances]
 
-    return (rmsDistMAS, D, annulus, magBinLow, magBinHigh)
+    return rmsDistMAS, annulus, magrange
 

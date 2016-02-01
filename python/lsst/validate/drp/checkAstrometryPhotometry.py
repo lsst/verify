@@ -36,8 +36,8 @@ import lsst.afw.geom as afwGeom
 import lsst.afw.image as afwImage
 # import lsst.afw.coord as afwCoord
 
-from .plotAstrometryPhotometry import plotAstrometry, plotPhotometry, plotPA1
-from .calcSrd import computeWidths, getRandomDiff, calcPA1, calcPA2
+from .plotAstrometryPhotometry import plotAstrometry, plotPhotometry, plotPA1, plotAM1, plotAM2, plotAM3
+from .calcSrd import computeWidths, getRandomDiff, calcPA1, calcPA2, calcAM1, calcAM2, calcAM3
 from .srdSpec import srdSpec, getAstrometricSpec
 
 
@@ -412,10 +412,14 @@ def printAM2(*args, **kwargs):
 def printAM3(*args, **kwargs):
     return printAMx(*args, x=3, **kwargs)
 
-def printAMx(rmsDistMAS, D, annulus, magBinLow, magBinHigh,
+def printAMx(rmsDistMAS, annulus, magrange,
              x=None, level="design"):
     """Print the Astrometric performance.
 
+    @param[in]  rmsDistMAS -- list of RMS variation of relative distance 
+       between stars across a series of visits.
+    @param[in]  annulus -- inner and outer radius of comparison annulus [arcmin]
+    @param[in]  magrange -- lower and upper magnitude range
     @param[in]  level -- One of "minimum", "design", "stretch"
        indicating the level of the specification desired.
 
@@ -427,20 +431,22 @@ def printAMx(rmsDistMAS, D, annulus, magBinLow, magBinHigh,
 
     Note:
     -----
-    The use of 'D' below isn't properly tied to the SRD
+    The use of 'annulus' below isn't properly tied to the SRD
      in the same way that srdSpec.AM1, sprdSpec.AF1, srdSpec.AD1 are
      because the rmsDistMAS has already assumed a D.
     """
     AMx, AFx, ADx = getAstrometricSpec(x=x, level=level)
+
+    magBinLow, magBinHigh = magrange
 
     rmsRelSep = np.median(rmsDistMAS)
     pCentOver = 100*np.mean(np.asarray(rmsDistMAS) > AMx+ADx)
 
     print("Median of distribution of RMS of distance of stellar pairs.")
     print("%s goals" % level.upper())
-    print("For stars from %.2f < mag < %.2f" % (magBinLow, magBinHigh))
-    print("At D = %.2f arcmin, is %.2f mas (target is <= %.2f mas)." % 
-          (D, rmsRelSep, AMx))
+    print("For stars from %.2f < mag < %.2f" % (magrange[0], magrange[1]))
+    print("from D = [%.2f, %.2f] arcmin, is %.2f mas (target is <= %.2f mas)." % 
+          (annulus[0], annulus[1], rmsRelSep, AMx))
     print("  %.2f%% of sample is > %.2f mas from AM%d=%.2f mas (target is <= %.2f%%)" %
           (pCentOver, ADx, x, AMx, AFx))
 
@@ -507,6 +513,14 @@ def run(repo, visitDataIds, good_mag_limit,
     magKey = allMatches.schema.find("base_PsfFlux_mag").key
     plotPA1(safeMatches, magKey, plotbase=plotbase)
     printPA2(safeMatches, magKey)
+
+    args = calcAM1(safeMatches)
+    printAM1(*args)
+    plotAM1(*args)
+
+    args = calcAM2(safeMatches)
+    printAM2(*args)
+    plotAM2(*args)
 
 
 def defaultData(repo):
