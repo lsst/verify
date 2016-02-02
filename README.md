@@ -72,25 +72,25 @@ While `examples/runCfhtTest.sh` does everything, here is some examples of runnin
 
 Once these basic steps are completed, then you can run any of the following:
 
-* To process all CCDs with the new (now default) AstrometryTask use newAstrometryConfig.py:
+* To process all CCDs with the standard AstrometryTask and 6 threads use newAstrometryConfig.py:
     ```
-    processCcd.py CFHT/input @runCfht.list --configfile newAstrometryConfig.py --clobber-config -j 6 --output junk
+    processCcd.py CFHT/input @examples/runCfht.list --configfile config/newAstrometryConfig.py --clobber-config -j 6 --output CFHT/output
     ```
 
-* To process all CCDs with the old ANetAstrometryTask:
+* To process all CCDs with the old ANetAstrometryTask and 6 threads:
     ```
-    processCcd.py CFHT/input @runCfht.list --configfile anetAstrometryConfig.py --clobber-config -j 6 --output CFHT/output
+    processCcd.py CFHT/input @examples/runCfht.list --configfile config/anetAstrometryConfig.py --clobber-config -j 6 --output CFHT/output
     ./validateCfht.py CFHT/output
     ```
 
 * To process one CCD with the new AstrometryTask:
     ```
-    processCcd.py CFHT/input  --id visit=850587 ccd=21 --configfile newAstrometryConfig.py --clobber-config --output junk
+    processCcd.py CFHT/input  --id visit=850587 ccd=21 --configfile config/newAstrometryConfig.py --clobber-config --output tempout
     ```
 
-* Or process one CCD with the ANetAstrometryTask:  
+* Or process one CCD with the ANetAstrometryTask:
     ```
-    processCcd.py CFHT/input --id visit=850587 ccd=21 --configfile anetAstrometryConfig.py --clobber-config --output junk
+    processCcd.py CFHT/input --id visit=850587 ccd=21 --configfile config/anetAstrometryConfig.py --clobber-config --output tempout
     ```
 
 * Run the validation test
