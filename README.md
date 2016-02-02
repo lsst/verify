@@ -8,17 +8,19 @@ Pre-requisites: install and declare the following
 3. `obs_cfht` from https://github.com/lsst/obs_cfht   
 4. `validation_data_cfht` from https://github.com/lsst/validation_data_cfht  
 5. `validation_data_decam` from https://github.com/lsst/validation_data_decam  
+6. `validate_drp` from https://github.com/lsst/validate_drp
+  -- This package.
 
-The `obs_decam` and `obs_cfht` products are also buildable by the standard LSST DM stack tools: `lsstsw` or `eups distrib`.  But they (intentionally) aren't in the dependency tree of `lsst_apps`.  If you have a stack already installed with `lsst_apps`, you can install `obs_decam` and `obs_cfht` in the same manner.  E.g.,
+The `obs_decam`, `obs_cfht`, `validation_data_cfht`, `validation_data_decam`, `validate_drp` products are also buildable by the standard LSST DM stack tools: `lsstsw` or `eups distrib`.  But they (intentionally) aren't in the dependency tree of `lsst_apps`.  If you have a stack already installed with `lsst_apps`, you can install these in the same manner.  E.g.,
 
 ```
-eups distrib obs_decam obs_cfht
+eups distrib obs_decam obs_cfht validation_data_decam validation_data_cfht validate_drp
 ```
 
 XOR
 
 ```
-rebuild obs_decam obs_cfht
+rebuild -u obs_decam obs_cfht validation_data_decam validation_data_cfht validate_drp
 ```
 
 ------
@@ -26,15 +28,15 @@ To setup for a run with CFHT:
 ```
 setup obs_cfht 
 setup validation_data_cfht
+setup validate_drp
 ```
-If you did not declare `obs_cfht` and `validation_data_cfht` current then also specify the version name you used
+If you did not declare these packages current then also specify the version name you used
 
 `validation_data_cfht` contains both the test CFHT data and selected SDSS reference catalogs in astrometry.net format.
 
 Run the measurement algorithm processing and astrometry test with
 ```
-cd validate_drp
-sh examples/runCfhtTest.sh
+sh validate_drp/examples/runCfhtTest.sh
 ```
 
 ------
@@ -42,15 +44,15 @@ To setup for a run with DECam:
 ```
 setup obs_decam
 setup validation_data_decam
+setup validate_drp
 ```
-If you did not declare `obs_decam` and `validation_data_decam` current then also specify the version name you used
+If you did not declare these packages current then also specify the version name you used
 
 `validation_data_decam` contains both the test DECam data and selected SDSS reference catalogs in astrometry.net format.
 
 Run the measurement algorithm processing and astrometry test with
 ```
-cd validate_drp
-sh examples/runDecamTest.sh
+sh validate_drp/examples/runDecamTest.sh
 ```
 
 The last line of the output will give the median astrometric scatter (in milliarcseconds) for stars with mag < 21.
