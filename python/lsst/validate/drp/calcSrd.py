@@ -29,6 +29,8 @@ import scipy.stats
 
 import lsst.pipe.base as pipeBase
 
+from .base import ValidateError
+from .util import averageRaDec
 from .srdSpec import srdSpec
 
 def calcPA1(groupView, magKey):

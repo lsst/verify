@@ -36,6 +36,8 @@ import lsst.afw.geom as afwGeom
 import lsst.afw.image as afwImage
 # import lsst.afw.coord as afwCoord
 
+from .base import ValidateError
+from .util import averageRaDec
 from .plotAstrometryPhotometry import plotAstrometry, plotPhotometry, plotPA1, plotAM1, plotAM2, plotAM3
 from .calcSrd import computeWidths, getRandomDiff, calcPA1, calcPA2, calcAM1, calcAM2, calcAM3
 from .srdSpec import srdSpec, getAstrometricSpec
@@ -81,13 +83,6 @@ def isExtended(source, extendedKey, extendedThreshold=1.0):
     return source.get(extendedKey) >= extendedThreshold
 
 
-def averageRaDec(cat):
-    """Calculate the RMS for RA, Dec for a set of observations an object."""
-    ra = np.mean(cat.get('coord_ra'))
-    dec = np.mean(cat.get('coord_dec'))
-    return ra, dec
-
-
 def magNormDiff(cat):
     """Calculate the normalized mag/mag_err difference from the mean for a 
     set of observations of an objection.
@@ -109,22 +104,6 @@ def magNormDiff(cat):
     normDiff = (mag - mag_avg) / magerr
     
 
-# Paul Price suggests the following to calculate average
-#  import lsst.afw.coord 
-#    average = lsst.afw.coord.averageCoord(coords)
-### And then to calculate RMS:
-#    offsets = [cc.getTangentPlaneOffset(average) for cc in coords]
-#    rms = numpy.array([xx[0].asArcseconds() for xx in offsets]).std(), numpy.array([xx[1].asArcseconds() for xx in offsets]).std()
-# 
-#     average = safeMatches.aggregate(getAverageCoord)
-# 
-# def getAverageCoord(cat):
-#     ra = cat.get('coord_ra')
-#     dec = cat.get('coord_dec')
-#     coords = lsst.afw.coord.makeCoord(ra, dec)
-#     lsst.afw.coord.averageCoord(coords)
-
-
 def positionDiff(cat):
     """Calculate the diff RA, Dec from the mean for a set of observations an object for each observation.
 
@@ -132,9 +111,6 @@ def positionDiff(cat):
          for 'coord_ra', 'coord_dec' that returns radians.
 
     @param[out]  pos_median -- median diff of positions in milliarcsec.  Float.
-
-    This is WRONG!
-    Doesn't do wrap-around
     """
     ra_avg, dec_avg = averageRaDec(cat)
     ra, dec = cat.get('coord_ra'), cat.get('coord_dec')
