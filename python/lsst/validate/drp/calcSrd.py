@@ -32,6 +32,7 @@ import lsst.pipe.base as pipeBase
 from .base import ValidateError
 from .util import averageRaDec
 from .srdSpec import srdSpec
+from lsst.afw.table import matchRaDec
 
 def calcPA1(groupView, magKey):
     """Calculate the photometric repeatability of measurements across a set of observations.
@@ -277,6 +278,38 @@ def computeWidths(array):
     iqrSigma = np.subtract.reduce(np.percentile(array, [75, 25])) / (scipy.stats.norm.ppf(0.75)*2)
     return rmsSigma, iqrSigma
 
+
+def cartDistSq(x1, y1, x2, y2):
+    return np.square(x1-x2) + np.square(y1-y2)
+
+
+def sphDist(ra1, dec1, ra2, dec2):
+    """Calculate distance on the surface of a unit sphere.
+
+    Input and Output are in radians.
+    """
+    return np.arccos(np.sin(dec1)*np.sin(dec2) + np.cos(dec1)*np.cos(dec2)*np.cos(ra1 - ra2))
+
+
+def matchVisitComputeDistance(visit_obj1, ra_obj1, dec_obj1, 
+                              visit_obj2, ra_obj2, dec_obj2):
+    """Match visit_obj1 and visit_obj2 and calculate ra, obj for matches."""
+    distances = []
+    for i in range(len(visit_obj1)):
+        for j in range(len(visit_obj2)):
+            if (visit_obj1[i] == visit_obj2[j]):
+                distances.append(sphDist(ra_obj1[i], dec_obj1[i], 
+                                         ra_obj2[j], dec_obj2[j]))
+    return distances
+
+
+def arcminToRadians(arcmin):
+    return np.deg2rad(arcmin/60)
+
+def radiansToMilliarcsec(rad):
+    return np.rad2deg(rad)*3600*1000
+
+
 def calcAM1(*args, **kwargs):
     return calcAMx(*args, D=srdSpec.D1, width=2, **kwargs)
 
@@ -327,8 +360,6 @@ def calcAMx(safeMatches, D=5, width=2, magrange=None):
     The three blocks of values correspond to D=5, 20 and 200 arcmin, 
     and to astrometric measurements performed in the r and i bands.
     """
-    import math
-    import pdb
 
     # Default is specified here separately because defaults that are mutable
     # get overridden by previous calls of the function.
@@ -340,56 +371,50 @@ def calcAMx(safeMatches, D=5, width=2, magrange=None):
                      name in ['id', 'coord_ra', 'coord_dec', \
                               'object', 'visit', 'base_PsfFlux_mag']]
 
+    # Includes magrange through closure
+    def magInRange(cat):
+        mag = cat.get('base_PsfFlux_mag')
+        w, = np.where(np.isfinite(mag))
+        medianMag = np.median(mag[w])
+        return magrange[0] <= medianMag and medianMag < magrange[1]
+            
+    safeMatchesInMagrange = safeMatches.where(magInRange)
+
     # List of lists of id, importantValue
-    matchKeyOutput = [x.get(y) for y in importantKeys for x in safeMatches.groups]
+    matchKeyOutput = [x.get(y) for y in importantKeys for x in safeMatchesInMagrange.groups]
 
-    jump = len(safeMatches)
+    jump = len(safeMatchesInMagrange)
 
-    IDList = matchKeyOutput[0*jump:1*jump]
-    RAList = matchKeyOutput[1*jump:2*jump]
-    DecList = matchKeyOutput[2*jump:3*jump]
-    NameList = matchKeyOutput[3*jump:4*jump]
-    VisitList = matchKeyOutput[4*jump:5*jump]
-    PSFMagList = matchKeyOutput[5*jump:6*jump]
+    objid = matchKeyOutput[0*jump:1*jump]
+    ra = matchKeyOutput[1*jump:2*jump]
+    dec = matchKeyOutput[2*jump:3*jump]
+    name = matchKeyOutput[3*jump:4*jump]
+    visit = matchKeyOutput[4*jump:5*jump]
 
+    psfMag = safeMatchesInMagrange.aggregate(np.median, 'base_PsfFlux_mag')
     # This RA averaging is WRONG.  Need to fix to handle wrap-around.
-    meanRAList = safeMatches.aggregate(np.mean, 'coord_ra')
+    meanRa = safeMatchesInMagrange.aggregate(np.mean, 'coord_ra')
     # This Dec averaging is also technically wrong, but will only matter
     #  with arcseconds of the poles.
-    meanDecList = safeMatches.aggregate(np.mean, 'coord_dec')
-
-    def cartDistSq(x1,x2,y1,y2):
-        return math.pow(x1-x2,2.0) + math.pow(y1-y2,2.0)
-
-    def sphDist(ra1,dec1,ra2,dec2):
-        return math.acos(math.sin(dec1)*math.sin(dec2) + math.cos(dec1)*math.cos(dec2)*math.cos(ra1 - ra2))
+    meanDec = safeMatchesInMagrange.aggregate(np.mean, 'coord_dec')
 
     annulus = D + (width/2)*np.array([-1, +1])
-    DAnnulus_RadSq = np.power(annulus*(1.0/60.0)*(math.pi/180.0), 2)
+    annulusRadians = arcminToRadians(annulus)
 
     rmsDistances = list()
-    for obj1 in range(len(meanRAList)):
-        obj1Mag = np.median(PSFMagList[obj1][:])
-        if ((obj1Mag >= magrange[0]) and (obj1Mag < magrange[1])):
-            for obj2 in range(obj1+1,len(meanRAList)):
-                obj2Mag = np.median(PSFMagList[obj2][:])
-                if ((obj2Mag >= magrange[0]) and (obj2Mag < magrange[1])):
-                    thisCartDist = cartDistSq(meanDecList[obj1],meanDecList[obj2],meanRAList[obj1],meanRAList[obj2])
-                    if ((thisCartDist >= DAnnulus_RadSq[0]) and (thisCartDist <= DAnnulus_RadSq[1])):
-                        distancesList = list()
-                        for i in range(len(VisitList[obj1])):
-                            for j in range(len(VisitList[obj2])):
-                                if (VisitList[obj1][i] == VisitList[obj2][j]):
-                                    '''We compute the distance'''
-                                    distancesList.append(sphDist(RAList[obj1][i],DecList[obj1][i],RAList[obj2][j],DecList[obj2][j]))
+    for obj1, (ra1, dec1, visit1) in enumerate(zip(meanRa, meanDec, visit)):
+        dist = sphDist(ra1, dec1, meanRa[obj1+1:], meanDec[obj1+1:])
+        objectsInAnnulus, = np.where((annulusRadians[0] <= dist) & (dist < annulusRadians[1]))
+        for obj2 in objectsInAnnulus:
+            distances = matchVisitComputeDistance(visit[obj1], ra[obj1], dec[obj1], 
+                                                  visit[obj2], ra[obj2], dec[obj2])
+            if not distances:
+                print("No matching visits found for objs: %d and %d" % (obj1, obj2))
+            else:
+                rmsDistances.append(np.std(distances))
 
-                        if not distancesList:
-                            print("No matches found for objs: %d and %d" % (obj1, obj2))
-                        else:
-                            rmsDistances.append(np.sqrt(np.mean(np.square(distancesList - np.mean(distancesList)))))
-                        del distancesList[:]
 
-    rmsDistMAS = [np.rad2deg(rmsDistance)*3600*1000 for rmsDistance in rmsDistances]
+    rmsDistMAS = [radiansToMilliarcsec(r) for r in rmsDistances]
 
     return rmsDistMAS, annulus, magrange
 
