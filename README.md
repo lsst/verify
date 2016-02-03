@@ -2,14 +2,12 @@ A set of utilities to run the processCcd task on some
 CFHT data and DECam data
 and validate the astrometry of the results.
 
-Pre-requisites: install and declare the following  
-1. `pipe_tasks` from the LSST DM stack (note that pipe_tasks is included with lsst_apps, which is the usual thing to install)  
-2. `obs_decam` from https://github.com/lsst/obs_decam   
-3. `obs_cfht` from https://github.com/lsst/obs_cfht   
-4. `validation_data_cfht` from https://github.com/lsst/validation_data_cfht  
-5. `validation_data_decam` from https://github.com/lsst/validation_data_decam  
-6. `validate_drp` from https://github.com/lsst/validate_drp
-  -- This package.
+Pre-requisites: install and declare the following
+1. `pipe_tasks` from the LSST DM stack (note that pipe_tasks is included with lsst_apps, which is the usual thing to install)
+2. `obs_decam` from https://github.com/lsst/obs_decam
+3. `obs_cfht` from https://github.com/lsst/obs_cfht
+4. `validation_data_cfht` from https://github.com/lsst/validation_data_cfht
+5. `validation_data_decam` from https://github.com/lsst/validation_data_decam
 
 The `obs_decam`, `obs_cfht`, `validation_data_cfht`, `validation_data_decam`, `validate_drp` products are also buildable by the standard LSST DM stack tools: `lsstsw` or `eups distrib`.  But they (intentionally) aren't in the dependency tree of `lsst_apps`.  If you have a stack already installed with `lsst_apps`, you can install these in the same manner.  E.g.,
 
@@ -30,13 +28,14 @@ setup obs_cfht
 setup validation_data_cfht
 setup validate_drp
 ```
-If you did not declare these packages current then also specify the version name you used
+As usual, if any of these packages are not declared current you will also need to specify a version or tag.
 
 `validation_data_cfht` contains both the test CFHT data and selected SDSS reference catalogs in astrometry.net format.
 
 Run the measurement algorithm processing and astrometry test with
 ```
-sh validate_drp/examples/runCfhtTest.sh
+cd $VALIDATE_DRP_DIR
+sh examples/runCfhtTest.sh
 ```
 
 ------
@@ -46,13 +45,14 @@ setup obs_decam
 setup validation_data_decam
 setup validate_drp
 ```
-If you did not declare these packages current then also specify the version name you used
+As usual, if any of these packages are not declared current you will also need to specify a version or tag.
 
 `validation_data_decam` contains both the test DECam data and selected SDSS reference catalogs in astrometry.net format.
 
 Run the measurement algorithm processing and astrometry test with
 ```
-sh validate_drp/examples/runDecamTest.sh
+cd $VALIDATE_DRP_DIR
+sh examples/runDecamTest.sh
 ```
 
 The last line of the output will give the median astrometric scatter (in milliarcseconds) for stars with mag < 21.
@@ -72,25 +72,25 @@ While `examples/runCfhtTest.sh` does everything, here is some examples of runnin
 
 Once these basic steps are completed, then you can run any of the following:
 
-* To process all CCDs with the new (now default) AstrometryTask use newAstrometryConfig.py:
+* To process all CCDs with the standard AstrometryTask and 6 threads use newAstrometryConfig.py:
     ```
-    processCcd.py CFHT/input @runCfht.list --configfile newAstrometryConfig.py --clobber-config -j 6 --output junk
+    processCcd.py CFHT/input @examples/runCfht.list --configfile config/newAstrometryConfig.py --clobber-config -j 6 --output CFHT/output
     ```
 
-* To process all CCDs with the old ANetAstrometryTask:
+* To process all CCDs with the old ANetAstrometryTask and 6 threads:
     ```
-    processCcd.py CFHT/input @runCfht.list --configfile anetAstrometryConfig.py --clobber-config -j 6 --output CFHT/output
+    processCcd.py CFHT/input @examples/runCfht.list --configfile config/anetAstrometryConfig.py --clobber-config -j 6 --output CFHT/output
     ./validateCfht.py CFHT/output
     ```
 
 * To process one CCD with the new AstrometryTask:
     ```
-    processCcd.py CFHT/input  --id visit=850587 ccd=21 --configfile newAstrometryConfig.py --clobber-config --output junk
+    processCcd.py CFHT/input  --id visit=850587 ccd=21 --configfile config/newAstrometryConfig.py --clobber-config --output tempout
     ```
 
-* Or process one CCD with the ANetAstrometryTask:  
+* Or process one CCD with the ANetAstrometryTask:
     ```
-    processCcd.py CFHT/input --id visit=850587 ccd=21 --configfile anetAstrometryConfig.py --clobber-config --output junk
+    processCcd.py CFHT/input --id visit=850587 ccd=21 --configfile config/anetAstrometryConfig.py --clobber-config --output tempout
     ```
 
 * Run the validation test
