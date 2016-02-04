@@ -72,12 +72,6 @@ def averageRaDec(cat):
     dec = np.mean(cat.get('coord_dec'))
     return ra, dec
 
-# Some thoughts from Paul Price on how to do the coordinate differences correctly:
-#    mean = sum([afwGeom.Extent3D(coord.toVector()) 
-#                for coord in coordList, afwGeom.Point3D(0, 0, 0)])
-#    mean /= len(coordList)
-#    mean = afwCoord.IcrsCoord(mean)
-
 def magNormDiff(cat):
     """Calculate the normalized mag/mag_err difference from the mean for a 
     set of observations of an objection.
@@ -93,29 +87,6 @@ def magNormDiff(cat):
     N = len(mag)
     normDiff = (mag - mag_avg) / magerr
     
-
-
-def positionDiff(cat):
-    """Calculate the diff RA, Dec from the mean for a set of observations an object for each observation.
-
-    @param[in]  cat -- Collection with a .get method 
-         for 'coord_ra', 'coord_dec' that returns radians.
-
-    @param[out]  pos_median -- median diff of positions in milliarcsec.  Float.
-
-    This is WRONG!
-    Doesn't do wrap-around
-    """
-    ra_avg, dec_avg = averageRaDec(cat)
-    ra, dec = cat.get('coord_ra'), cat.get('coord_dec')
-    # Approximating that the cos(dec) term is roughly the same
-    #   for all observations of this object.
-    ra_diff  = (ra - ra_avg) * np.cos(dec)**2
-    dec_diff = dec - dec_avg
-    pos_diff = np.sqrt(ra_diff**2 + dec_diff**2)  # radians
-    pos_diff = [afwGeom.radToMas(p) for p in pos_diff]  # milliarcsec
-
-    return pos_diff
 
 def positionRms(cat):
     """Calculate the RMS for RA, Dec for a set of observations an object.
@@ -162,13 +133,11 @@ def loadAndMatchData(repo, visitDataIds,
 
     dataRefs = [dafPersist.ButlerDataRef(butler, vId) for vId in visitDataIds]
 
-    # retrieve the schema of the source catalog and extend it in order to add a field to record the ccd number
     ccdKeyName = getCcdKeyName(visitDataIds[0])
 
     schema = butler.get(dataset + "_schema", immediate=True).schema
     mapper = SchemaMapper(schema)
     mapper.addMinimalSchema(schema)
-#    mapper.addOutputField(Field[int](ccdKeyName, "CCD number"))
     mapper.addOutputField(Field[float]('base_PsfFlux_mag', "PSF magnitude"))
     mapper.addOutputField(Field[float]('base_PsfFlux_magerr', "PSF magnitude uncertainty"))
     newSchema = mapper.getOutputSchema()
@@ -178,17 +147,6 @@ def loadAndMatchData(repo, visitDataIds,
                         dataIdFormat = {'visit': int, ccdKeyName: int},
                         radius=matchRadius,
                         RecordClass=SimpleRecord)
-
-    if False:
-        # Create visit catalogs by merging those from constituent CCDs. We also convert from BaseCatalog to SimpleCatalog, but in the future we'll probably want to have the source transformation tasks generate SimpleCatalogs (or SourceCatalogs) directly.
-        byVisit = {}
-        for dataRef in dataRefs:
-            catalog = byVisit.setdefault(dataRef.dataId["visit"], SimpleRecord.Catalog(schema))
-            catalog.extend(dataRef.get(dataset, immediate=True), deep=True)
-
-        # Loop over visits, adding them to the match.
-        for visit, catalog in byVisit.iteritems():
-            mmatch.add(catalog, dict(visit=visit))
 
     # create the new extented source catalog
     srcVis = SourceCatalog(newSchema)
@@ -234,7 +192,6 @@ def analyzeData(allMatches, good_mag_limit=19.5):
 
     psfMagKey = allMatches.schema.find("base_PsfFlux_mag").key
     psfMagErrKey = allMatches.schema.find("base_PsfFlux_magerr").key
-#    apMagKey = allMatches.schema.find("base_CircularApertureFlux_12_0_mag").key
     extendedKey = allMatches.schema.find("base_ClassificationExtendedness_value").key
 
     def goodFilter(cat):
@@ -269,17 +226,15 @@ def analyzeData(allMatches, good_mag_limit=19.5):
     #   by going with the default `field=None`.
     dist = goodMatches.aggregate(positionRms)
 
-    rmsPA1 = []
-    iqrPA1 = []
-    for i in range(50):
-#        diffs = safeMatches.aggregate(getRandomDiff, field=apMagKey)
-        diffs = safeMatches.aggregate(getRandomDiff, field=psfMagKey)
-        rmsSigma, iqrSigma = computeWidths(diffs)
-        rmsPA1.append(rmsSigma)
-        iqrPA1.append(iqrSigma)
+    # We calculate differences for 50 different random realizations of the measurement pairs, 
+    # to provide some estimate of the uncertainty on our RMS estimates due to the random shuffling 
+    # This estimate could be stated and calculated from a more formally derived motivation
+    #   but in practice 50 should be sufficient.
+    numRandomShuffles = 50
+    pa1_samples = [calcPA1(safeMatches, psfMagKey) for n in range(numRandomShuffles)]
+    rmsPA1 = np.array([pa1.rms for pa1 in pa1_samples])
+    iqrPA1 = np.array([pa1.iqr for pa1 in pa1_samples])
 
-    rmsPA1 = np.array(rmsPA1)
-    iqrPA1 = np.array(iqrPA1)
     print("PA1(RMS) = %4.2f+-%4.2f mmag" % (rmsPA1.mean(), rmsPA1.std()))
     print("PA1(IQR) = %4.2f+-%4.2f mmag" % (iqrPA1.mean(), iqrPA1.std()))
 
@@ -367,10 +322,13 @@ def checkPhotometry(mag, mmagrms, dist, match,
 
 
 def printPA2(gv, magKey):
-    minPA2, designPA2, stretchPA2 = calcPA2(gv, magKey)
-    print("minimum: PF1=20%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 15 mmag)" % minPA2)
-    print("design:  PF1=10%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 15 mmag)" % designPA2)
-    print("stretch: PF1= 5%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 10 mmag)" % stretchPA2)
+    pa2 = calcPA2(gv, magKey)
+    print("minimum: PF1=%2d%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 15 mmag)" % 
+          (pa2.PF1['minimum'], pa2.minimum))
+    print("design:  PF1=%2d%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 15 mmag)" % 
+          (pa2.PF1['design'], pa2.design))
+    print("stretch: PF1=%2d%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 10 mmag)" % 
+          (pa2.PF1['stretch'], pa2.stretch))
 
 def repoNameToPrefix(repo):
     """Generate a base prefix for plots based on the repo name.
