@@ -455,7 +455,8 @@ def printAMx(rmsDistMAS, annulus, magrange,
     magBinLow, magBinHigh = magrange
 
     rmsRelSep = np.median(rmsDistMAS)
-    pCentOver = 100*np.mean(np.asarray(rmsDistMAS) > AMx+ADx)
+    fractionOver = np.mean(np.asarray(rmsDistMAS) > AMx+ADx)
+    percentOver = 100*fractionOver
 
     print("Median of distribution of RMS of distance of stellar pairs.")
     print("%s goals" % level.upper())
@@ -463,7 +464,7 @@ def printAMx(rmsDistMAS, annulus, magrange,
     print("from D = [%.2f, %.2f] arcmin, is %.2f mas (target is <= %.2f mas)." %
           (annulus[0], annulus[1], rmsRelSep, AMx))
     print("  %.2f%% of sample is > %.2f mas from AM%d=%.2f mas (target is <= %.2f%%)" %
-          (pCentOver, ADx, x, AMx, AFx))
+          (percentOver, ADx, x, AMx, AFx))
 
 
 
