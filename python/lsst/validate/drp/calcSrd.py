@@ -107,6 +107,7 @@ def calcPA1(groupView, magKey):
     diffs = groupView.aggregate(getRandomDiffRmsInMas, field=magKey)
     means = groupView.aggregate(np.mean, field=magKey)
     rmsPA1, iqrPA1 = computeWidths(diffs)
+
     return pipeBase.Struct(rms = rmsPA1, iqr = iqrPA1, 
                            diffs = diffs, means = means)
 
@@ -129,8 +130,9 @@ def calcPA2(groupView, magKey):
     Returns
     -------
     pipeBase.Struct
-       The RMS, inter-quartile range, 
-       differences between pairs of observations, mean mag of each object.
+       Contains PA2, the millimags of varaition at the
+       `design`, `minimum`, and `stretch` fraction of outliers
+       The specified fractions are also avialable as `PF1`.
 
     See Also
     --------
@@ -174,12 +176,13 @@ def calcPA2(groupView, magKey):
     are PF1 = (10, 20, 5) % at PA2 = (15, 15, 10) millimag
       following LPM-17 as of 2011-07-06, available at http://ls.st/LPM-17.
     """
- 
+
     diffs = groupView.aggregate(getRandomDiffRmsInMas, field=magKey)
-    PF1 = {'minimum' : 20, 'design' : 10, 'stretch' : 5}
+    PF1 = {'minimum': 20, 'design': 10, 'stretch': 5}
     PF1_percentiles = 100 - np.asarray([PF1['minimum'], PF1['design'], PF1['stretch']])
     minPA2, designPA2, stretchPA2 = np.percentile(np.abs(diffs), PF1_percentiles)
-    return pipeBase.Struct(design = designPA2, minimum = minPA2, stretch = stretchPA2, PF1 = PF1)
+    return pipeBase.Struct(design=designPA2, minimum=minPA2, stretch=stretchPA2, PF1=PF1)
+
 
 def getRandomDiffRmsInMas(array):
     """Calculate the RMS difference in mmag between a random pairs of magnitudes.
@@ -202,7 +205,7 @@ def getRandomDiffRmsInMas(array):
     Because we have N>=2 measurements for each star, we select a random 
     pair of visits for each star.  We divide each difference by sqrt(2) 
     to obtain RMS about the (unknown) mean magnitude, 
-       instead of obtaining just the RMS difference.
+    instead of obtaining just the RMS difference.
 
     See Also
     --------
@@ -221,6 +224,7 @@ def getRandomDiffRmsInMas(array):
 
 def getRandomDiff(array):
     """Get the difference between two randomly selected elements of an array.
+
     Input
     -----
     array : list or np.array
@@ -291,14 +295,14 @@ def sphDist(ra1, dec1, ra2, dec2):
     return np.arccos(np.sin(dec1)*np.sin(dec2) + np.cos(dec1)*np.cos(dec2)*np.cos(ra1 - ra2))
 
 
-def matchVisitComputeDistance(visit_obj1, ra_obj1, dec_obj1, 
+def matchVisitComputeDistance(visit_obj1, ra_obj1, dec_obj1,
                               visit_obj2, ra_obj2, dec_obj2):
     """Match visit_obj1 and visit_obj2 and calculate ra, obj for matches."""
     distances = []
     for i in range(len(visit_obj1)):
         for j in range(len(visit_obj2)):
             if (visit_obj1[i] == visit_obj2[j]):
-                distances.append(sphDist(ra_obj1[i], dec_obj1[i], 
+                distances.append(sphDist(ra_obj1[i], dec_obj1[i],
                                          ra_obj2[j], dec_obj2[j]))
     return distances
 
@@ -327,18 +331,18 @@ def calcAMx(safeMatches, D=5, width=2, magrange=None):
     LPM-17 dated 2011-07-06
 
     *The relative astrometry*
-    Specification: The rms of the astrometric distance distribution for 
-        stellar pairs with separation of D arcmin (repeatability) 
+    Specification: The rms of the astrometric distance distribution for
+        stellar pairs with separation of D arcmin (repeatability)
         will not exceed AMx milliarcsec (median distribution for a large number
-        of sources). No more than AFx % of the sample will deviate by more than 
-        ADx milliarcsec from the median. AMx, AFx, and ADx are specified for 
+        of sources). No more than AFx % of the sample will deviate by more than
+        ADx milliarcsec from the median. AMx, AFx, and ADx are specified for
         D=5, 20 and 200 arcmin for x= 1, 2, and 3, in the same order (Table 18).
 
-    The three selected characteristic distances reflect the size of an 
-    individual sensor, a raft, and the camera. The required median astrometric 
-    precision is driven by the desire to achieve a proper motion accuracy of 
-    0.2 mas/yr and parallax accuracy of 1.0 mas over the course of the survey. 
-    These two requirements correspond to relative astrometric precision for a 
+    The three selected characteristic distances reflect the size of an
+    individual sensor, a raft, and the camera. The required median astrometric
+    precision is driven by the desire to achieve a proper motion accuracy of
+    0.2 mas/yr and parallax accuracy of 1.0 mas over the course of the survey.
+    These two requirements correspond to relative astrometric precision for a
     single image of 10 mas (per coordinate).
 
     ================== =========== ============ ============
@@ -356,19 +360,19 @@ def calcAMx(safeMatches, D=5, width=2, magrange=None):
     AF3 (%)                  10          20            5
     AD3 (milliarcsec)        30          50           20
     =================  =========== ============ ============
-    Table 18: The specifications for astrometric precision. 
-    The three blocks of values correspond to D=5, 20 and 200 arcmin, 
+    Table 18: The specifications for astrometric precision.
+    The three blocks of values correspond to D=5, 20 and 200 arcmin,
     and to astrometric measurements performed in the r and i bands.
     """
 
     # Default is specified here separately because defaults that are mutable
     # get overridden by previous calls of the function.
     if magrange is None:
-        magrange=[17.0, 21.5]
+        magrange = [17.0, 21.5]
 
     # First we make a list of the keys that we want the fields for
     importantKeys = [safeMatches.schema.find(name).key for
-                     name in ['id', 'coord_ra', 'coord_dec', \
+                     name in ['id', 'coord_ra', 'coord_dec',
                               'object', 'visit', 'base_PsfFlux_mag']]
 
     # Includes magrange through closure
@@ -377,7 +381,7 @@ def calcAMx(safeMatches, D=5, width=2, magrange=None):
         w, = np.where(np.isfinite(mag))
         medianMag = np.median(mag[w])
         return magrange[0] <= medianMag and medianMag < magrange[1]
-            
+
     safeMatchesInMagrange = safeMatches.where(magInRange)
 
     # List of lists of id, importantValue
@@ -406,15 +410,13 @@ def calcAMx(safeMatches, D=5, width=2, magrange=None):
         dist = sphDist(ra1, dec1, meanRa[obj1+1:], meanDec[obj1+1:])
         objectsInAnnulus, = np.where((annulusRadians[0] <= dist) & (dist < annulusRadians[1]))
         for obj2 in objectsInAnnulus:
-            distances = matchVisitComputeDistance(visit[obj1], ra[obj1], dec[obj1], 
+            distances = matchVisitComputeDistance(visit[obj1], ra[obj1], dec[obj1],
                                                   visit[obj2], ra[obj2], dec[obj2])
             if not distances:
                 print("No matching visits found for objs: %d and %d" % (obj1, obj2))
             else:
                 rmsDistances.append(np.std(distances))
 
-
     rmsDistMAS = [radiansToMilliarcsec(r) for r in rmsDistances]
 
     return rmsDistMAS, annulus, magrange
-

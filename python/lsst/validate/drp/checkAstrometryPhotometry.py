@@ -84,7 +84,7 @@ def isExtended(source, extendedKey, extendedThreshold=1.0):
 
 
 def magNormDiff(cat):
-    """Calculate the normalized mag/mag_err difference from the mean for a 
+    """Calculate the normalized mag/mag_err difference from the mean for a
     set of observations of an objection.
 
     Inputs
@@ -102,12 +102,12 @@ def magNormDiff(cat):
     mag_avg = np.mean(mag)
     N = len(mag)
     normDiff = (mag - mag_avg) / magerr
-    
+
 
 def positionDiff(cat):
     """Calculate the diff RA, Dec from the mean for a set of observations an object for each observation.
 
-    @param[in]  cat -- Collection with a .get method 
+    @param[in]  cat -- Collection with a .get method
          for 'coord_ra', 'coord_dec' that returns radians.
 
     @param[out]  pos_median -- median diff of positions in milliarcsec.  Float.
@@ -171,7 +171,7 @@ def loadAndMatchData(repo, visitDataIds,
         An object of matched catalog.
     """
 
-    # Following 
+    # Following
     # https://github.com/lsst/afw/blob/tickets/DM-3896/examples/repeatability.ipynb
     butler = dafPersist.Butler(repo)
     dataset = 'src'
@@ -188,8 +188,8 @@ def loadAndMatchData(repo, visitDataIds,
     newSchema = mapper.getOutputSchema()
 
     # Create an object that can match multiple catalogs with the same schema
-    mmatch = MultiMatch(newSchema, 
-                        dataIdFormat = {'visit': int, ccdKeyName: int},
+    mmatch = MultiMatch(newSchema,
+                        dataIdFormat={'visit': int, ccdKeyName: int},
                         radius=matchRadius,
                         RecordClass=SourceRecord)
 
@@ -217,7 +217,7 @@ def loadAndMatchData(repo, visitDataIds,
 
     # Create a mapping object that allows the matches to be manipulated as a mapping of object ID to catalog of sources.
     allMatches = GroupView.build(matchCat)
-    
+
     return allMatches
 
 
@@ -258,8 +258,8 @@ def analyzeData(allMatches, good_mag_limit=19.5):
 
     goodMatches = allMatches.where(goodFilter)
 
-    # Filter further to a limited range in magnitude and extendedness 
-    # to select bright stars.  
+    # Filter further to a limited range in magnitude and extendedness
+    # to select bright stars.
     safeMaxMag = good_mag_limit
     safeMaxExtended = 1.0
 
@@ -279,8 +279,8 @@ def analyzeData(allMatches, good_mag_limit=19.5):
     #   by going with the default `field=None`.
     dist = goodMatches.aggregate(positionRms)
 
-    # We calculate differences for 50 different random realizations of the measurement pairs, 
-    # to provide some estimate of the uncertainty on our RMS estimates due to the random shuffling 
+    # We calculate differences for 50 different random realizations of the measurement pairs,
+    # to provide some estimate of the uncertainty on our RMS estimates due to the random shuffling
     # This estimate could be stated and calculated from a more formally derived motivation
     #   but in practice 50 should be sufficient.
     numRandomShuffles = 50
@@ -293,11 +293,11 @@ def analyzeData(allMatches, good_mag_limit=19.5):
     print("PA1(IQR) = %4.2f+-%4.2f mmag" % (iqrPA1.mean(), iqrPA1.std()))
 
     info_struct = pipeBase.Struct(
-        mag = goodPsfMag,
-        magerr = goodPsfMagErr,
-        magrms = goodPsfMagRms,
-        dist = dist,
-        match = len(dist)
+        mag=goodPsfMag,
+        magerr=goodPsfMagErr,
+        magrms=goodPsfMagRms,
+        dist=dist,
+        match=len(dist)
     )
 
     return info_struct, safeMatches
@@ -410,11 +410,11 @@ def printPA2(gv, magKey):
     """Calculate and print the calculated PA2 from the LSST SRD from a groupView."""
 
     pa2 = calcPA2(gv, magKey)
-    print("minimum: PF1=%2d%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 15 mmag)" % 
+    print("minimum: PF1=%2d%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 15 mmag)" %
           (pa2.PF1['minimum'], pa2.minimum))
-    print("design:  PF1=%2d%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 15 mmag)" % 
+    print("design:  PF1=%2d%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 15 mmag)" %
           (pa2.PF1['design'], pa2.design))
-    print("stretch: PF1=%2d%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 10 mmag)" % 
+    print("stretch: PF1=%2d%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 10 mmag)" %
           (pa2.PF1['stretch'], pa2.stretch))
 
 
@@ -431,7 +431,7 @@ def printAMx(rmsDistMAS, annulus, magrange,
              x=None, level="design"):
     """Print the Astrometric performance.
 
-    @param[in]  rmsDistMAS -- list of RMS variation of relative distance 
+    @param[in]  rmsDistMAS -- list of RMS variation of relative distance
        between stars across a series of visits.
     @param[in]  annulus -- inner and outer radius of comparison annulus [arcmin]
     @param[in]  magrange -- lower and upper magnitude range
@@ -460,7 +460,7 @@ def printAMx(rmsDistMAS, annulus, magrange,
     print("Median of distribution of RMS of distance of stellar pairs.")
     print("%s goals" % level.upper())
     print("For stars from %.2f < mag < %.2f" % (magrange[0], magrange[1]))
-    print("from D = [%.2f, %.2f] arcmin, is %.2f mas (target is <= %.2f mas)." % 
+    print("from D = [%.2f, %.2f] arcmin, is %.2f mas (target is <= %.2f mas)." %
           (annulus[0], annulus[1], rmsRelSep, AMx))
     print("  %.2f%% of sample is > %.2f mas from AM%d=%.2f mas (target is <= %.2f%%)" %
           (pCentOver, ADx, x, AMx, AFx))
@@ -487,7 +487,7 @@ def repoNameToPrefix(repo):
     return repo.lstrip('\.').strip(os.sep).replace(os.sep, "_")+"_"
 
 
-def run(repo, visitDataIds, good_mag_limit, 
+def run(repo, visitDataIds, good_mag_limit,
         medianAstromscatterRef=25, medianPhotoscatterRef=25, matchRef=500):
     """Main executable.
 
@@ -543,7 +543,7 @@ def defaultData(repo):
 
     This example is based on the CFHT data in validation_data_cfht
     and is provided here for reference.
-    For general usage, write your own equivalent to defaultData 
+    For general usage, write your own equivalent to defaultData
     and then pass to the `checkAstrometry.run` method.
     See the same `__main___` below for an example.
     """
@@ -563,7 +563,7 @@ def defaultData(repo):
     visitDataIds = [{'visit': v, 'filter': filter, 'ccdnum': c} for v in visits
                     for c in ccd]
 
-    return (visitDataIds, good_mag_limit, 
+    return (visitDataIds, good_mag_limit,
             medianAstromscatterRef, medianPhotoscatterRef, matchRef)
 
 
