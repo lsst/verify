@@ -37,7 +37,7 @@ import lsst.afw.image as afwImage
 # import lsst.afw.coord as afwCoord
 
 from .base import ValidateError
-from .util import averageRaDec
+from .util import averageRaDecFromCat, averageRaFromCat, averageDecFromCat
 from .plotAstrometryPhotometry import plotAstrometry, plotPhotometry, plotPA1, plotAM1, plotAM2, plotAM3
 from .calcSrd import computeWidths, getRandomDiff, calcPA1, calcPA2, calcAM1, calcAM2, calcAM3
 from .srdSpec import srdSpec, getAstrometricSpec
@@ -112,7 +112,7 @@ def positionDiff(cat):
 
     @param[out]  pos_median -- median diff of positions in milliarcsec.  Float.
     """
-    ra_avg, dec_avg = averageRaDec(cat)
+    ra_avg, dec_avg = averageRaDecFromCat(cat)
     ra, dec = cat.get('coord_ra'), cat.get('coord_dec')
     # Approximating that the cos(dec) term is roughly the same
     #   for all observations of this object.
@@ -138,7 +138,7 @@ def positionRms(cat):
 
     This routine doesn't handle wrap-around
     """
-    ra_avg, dec_avg = averageRaDec(cat)
+    ra_avg, dec_avg = averageRaDecFromCat(cat)
     ra, dec = cat.get('coord_ra'), cat.get('coord_dec')
     # Approximating that the cos(dec) term is roughly the same
     #   for all observations of this object.

@@ -30,7 +30,7 @@ import scipy.stats
 import lsst.pipe.base as pipeBase
 
 from .base import ValidateError
-from .util import averageRaDec
+from .util import averageRaDecFromCat, averageRaFromCat, averageDecFromCat
 from .srdSpec import srdSpec
 
 
@@ -414,11 +414,8 @@ def calcAMx(safeMatches, D=5, width=2, magrange=None):
     visit = matchKeyOutput[4*jump:5*jump]
 
     psfMag = safeMatchesInMagrange.aggregate(np.median, 'base_PsfFlux_mag')
-    # This RA averaging is WRONG.  Need to fix to handle wrap-around.
-    meanRa = safeMatchesInMagrange.aggregate(np.mean, 'coord_ra')
-    # This Dec averaging is also technically wrong, but will only matter
-    #  with arcseconds of the poles.
-    meanDec = safeMatchesInMagrange.aggregate(np.mean, 'coord_dec')
+    meanRa = safeMatchesInMagrange.aggregate(averageRaFromCat)
+    meanDec = safeMatchesInMagrange.aggregate(averageDecFromCat)
 
     annulus = D + (width/2)*np.array([-1, +1])
     annulusRadians = arcminToRadians(annulus)

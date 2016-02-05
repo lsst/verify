@@ -38,14 +38,15 @@ import lsst.afw.coord as afwCoord
 import lsst.pex.exceptions as pexExcept
 import lsst.utils.tests as utilsTests
 
+from lsst.validate.drp import util, calcSrd
 
 
 class CoordTestCase(unittest.TestCase):
     """Testing basic coordinate calculations."""
 
     def setUp(self):
-        self.simpleRa = [15, 25]
-        self.simpleDec = [30, 45]
+        self.simpleRa = np.deg2rad([15, 25])
+        self.simpleDec = np.deg2rad([30, 45])
         self.zeroDec = np.zeros_like(self.simpleRa)
 
         self.wrapRa = [359.9999, 0.0001, -0.1, +0.1]
@@ -54,14 +55,13 @@ class CoordTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def testZeroDecSimpleAverageCoord(self):
+        meanRa, meanDec = util.getAverageRaDec(self.simpleRa, self.zeroDec)
+        assert_allclose([20, 0], np.rad2deg([meanRa, meanDec]))
+        
     def testSimpleAverageCoord(self):
-        icrs = afwCoord.makeCoordEnum('ICRS')
-        angleRa = [afwGeom.Angle(r, afwGeom.degrees) for r in self.simpleRa]
-        angleDec = [afwGeom.Angle(d, afwGeom.degrees) for d in self.zeroDec]
-        coords = [afwCoord.makeCoord(icrs, ar, ad) for (ar, ad) in zip(angleRa, angleDec)]
-        (meanRa, meanDec) = afwCoord.averageCoord(coords)
-        assert_allclose([20], meanRa.asDegrees())
-        assert_allclose([0], meanDec.asDegrees())
+        meanRa, meanDec = util.getAverageRaDec(self.simpleRa, self.simpleDec)
+        assert_allclose([19.493625,  37.60447], np.rad2deg([meanRa, meanDec]))
         
 
 def suite():

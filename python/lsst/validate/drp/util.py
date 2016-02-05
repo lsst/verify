@@ -24,25 +24,44 @@ from __future__ import print_function, division
 
 import numpy as np
 
+import lsst.afw.geom as afwGeom
+import lsst.afw.coord as afwCoord
+
+
 class ValidateError(Exception):
     """Base classes for exceptions in validate_drp."""
     pass
 
-def averageRaDec(cat):
-    """Calculate the RMS for RA, Dec for a set of observations an object.
 
-    This is WRONG!
-    Doesn't do wrap-around
+def averageRaDec(ra, dec):
+    """Calculate average RA, Dec from input lists using spherical geometry.
+
+    @param[in] ra -- List of RA in [radians]
+    @param[in] dec -- List of Dec in [radians]
+
+    @param[out] meanRa, meanDec -- Tuple of average RA, Dec [radians]
     """
-    ra = np.mean(cat.get('coord_ra'))
-    dec = np.mean(cat.get('coord_dec'))
-    return ra, dec
+    assert(len(ra) == len(dec))
 
-# Some thoughts from Paul Price on how to do the coordinate differences correctly:
-#    mean = sum([afwGeom.Extent3D(coord.toVector())
-#                for coord in coordList, afwGeom.Point3D(0, 0, 0)])
-#    mean /= len(coordList)
-#    mean = afwCoord.IcrsCoord(mean)
+    angleRa = [afwGeom.Angle(r, afwGeom.radians) for r in ra]
+    angleDec = [afwGeom.Angle(d, afwGeom.radians) for d in dec]
+    coords = [afwCoord.IcrsCoord(ar, ad) for (ar, ad) in zip(angleRa, angleDec)]
+
+    meanRa, meanDec = afwCoord.averageCoord(coords)
+
+    return meanRa.asRadians(), meanDec.asRadians()
+
+
+def averageRaDecFromCat(cat):
+    return averageRaDec(cat.get('coord_ra'), cat.get('coord_dec'))
+
+def averageRaFromCat(cat):
+    meanRa, meanDec = averageRaDecFromCat(cat)
+    return meanRa
+
+def averageDecFromCat(cat):
+    meanRa, meanDec = averageRaDecFromCat(cat)
+    return meanDec
 
 # Paul Price suggests the following to calculate average
 #  import lsst.afw.coord
@@ -50,12 +69,3 @@ def averageRaDec(cat):
 ### And then to calculate RMS:
 #    offsets = [cc.getTangentPlaneOffset(average) for cc in coords]
 #    rms = numpy.array([xx[0].asArcseconds() for xx in offsets]).std(), numpy.array([xx[1].asArcseconds() for xx in offsets]).std()
-#
-#     average = safeMatches.aggregate(getAverageCoord)
-#
-# def getAverageCoord(cat):
-#     ra = cat.get('coord_ra')
-#     dec = cat.get('coord_dec')
-#     coords = lsst.afw.coord.makeCoord(ra, dec)
-#     lsst.afw.coord.averageCoord(coords)
-
