@@ -42,12 +42,17 @@ from .calcSrd import computeWidths, getRandomDiff, calcPA1, calcPA2
 def getCcdKeyName(dataid):
     """Return the key in a dataId that's referring to the CCD or moral equivalent.
 
-    @param dataid  A dictionary that will be searched for a key that matches
+    Inputs
+    ------
+    dataid : dict
+        A dictionary that will be searched for a key that matches
         an entry in the hardcoded list of possible names for the CCD field.
 
-    Different camera mappings use different keys
-      to indicate the different amps/ccds in the same exposure.
-    We here look through the reference dataId to determine which one this.
+    Notes
+    -----
+    Motiviation: Different camera mappings use different keys to indicate 
+      the different amps/ccds in the same exposure.  This function looks 
+      through the reference dataId to locate a field that could be the one.
     """
     possibleCcdFieldNames = ['ccd', 'ccdnum', 'camcol']
 
@@ -61,10 +66,18 @@ def getCcdKeyName(dataid):
 def isExtended(source, extendedKey, extendedThreshold=1.0):
     """Is the source extended attribute above the threshold.
 
+    Inputs
+    ------
+    cat : collection with a .get method 
+        for `extendedKey`
+    extendedKey
+        key to look up the extended object parameter from a schema.
+
     Higher values of extendedness indicate a resolved object
     that is larger than a point source.
     """
     return source.get(extendedKey) >= extendedThreshold
+
 
 def averageRaDec(cat):
     """Calculate the RMS for RA, Dec for a set of observations an object."""
@@ -72,14 +85,20 @@ def averageRaDec(cat):
     dec = np.mean(cat.get('coord_dec'))
     return ra, dec
 
+
 def magNormDiff(cat):
     """Calculate the normalized mag/mag_err difference from the mean for a 
     set of observations of an objection.
 
-    @param[in]  cat -- Collection with a .get method 
+    Inputs
+    ------
+    cat : collection with a .get method 
          for flux, flux+"-" 
 
-    @param[out]  pos_median -- median diff of positions in milliarcsec.  Float.
+    Returns
+    -------
+    pos_median : float
+        median diff of positions in milliarcsec.
     """
     mag = cat.get('base_PsfFlux_mag')
     magerr = cat.get('base_PsfFlux_magerr')
@@ -91,13 +110,16 @@ def magNormDiff(cat):
 def positionRms(cat):
     """Calculate the RMS for RA, Dec for a set of observations an object.
 
-    @param[in]  cat -- Collection with a .get method 
+    Inputs
+    ------
+    cat -- collection with a .get method 
          for 'coord_ra', 'coord_dec' that returns radians.
 
-    @param[out]  pos_rms -- RMS of positions in milliarcsecond.  Float.
+    Returns
+    -------
+    pos_rms -- RMS of positions in milliarcsecond.  Float.
 
-    This is WRONG!
-    Doesn't do wrap-around
+    This routine doesn't handle wrap-around
     """
     ra_avg, dec_avg = averageRaDec(cat)
     ra, dec = cat.get('coord_ra'), cat.get('coord_dec')
@@ -115,15 +137,21 @@ def loadAndMatchData(repo, visitDataIds,
                      matchRadius=afwGeom.Angle(1, afwGeom.arcseconds)):
     """Load data from specific visit.  Match with reference.
 
-    @param repo  The repository.  This is generally the directory on disk
-                    that contains the repository and mapper.
-    @param visitDataIds   Butler Data ID of Image catalogs to compare to reference.
-           The actual pixel image is also needed for now for the photometric calibration.
-           List.
+    Inputs
+    ------
+    repo : string
+        The repository.  This is generally the directory on disk
+        that contains the repository and mapper.
+    visitDataIds : list of dict
+        List of `butler` data IDs of Image catalogs to compare to reference.
+        The `calexp` cpixel image is needed for the photometric calibration.
+    matchRadius :  afwGeom.Angle().
+        Radius for matching. 
 
-    @param matchRadius    Radius for matching.  afwGeom.Angle().
-
-    Return a afw.table.GroupView object of matched catalog.
+    Returns
+    -------
+    afw.table.GroupView
+        An object of matched catalog.
     """
 
     # Following 
@@ -176,13 +204,20 @@ def loadAndMatchData(repo, visitDataIds,
     return allMatches
 
 
-
 def analyzeData(allMatches, good_mag_limit=19.5):
     """Calculate summary statistics for each star.
 
-    @param[in] allMatches  -- afw.table.GroupView object with matches.
+    Inputs
+    ------
+    allMatches : afw.table.GroupView 
+        GroupView object with matches.
+    good_mag_limit : float, optional
+        Minimum average brightness (in magnitudes) for a star to be considered.
 
-    Return a pipeBase.Struct with mag, dist, and number of matches.
+    Returns
+    ------- 
+    pipeBase.Struct 
+        Containing mag, magerr, magrms, dist, and number of matches.
     """
 
     # Filter down to matches with at least 2 sources and good flags
@@ -210,6 +245,7 @@ def analyzeData(allMatches, good_mag_limit=19.5):
     # to select bright stars.  
     safeMaxMag = good_mag_limit
     safeMaxExtended = 1.0
+
     def safeFilter(cat):
         psfMag = np.mean(cat.get(psfMagKey))
         extended = np.max(cat.get(extendedKey))
@@ -231,7 +267,8 @@ def analyzeData(allMatches, good_mag_limit=19.5):
     # This estimate could be stated and calculated from a more formally derived motivation
     #   but in practice 50 should be sufficient.
     numRandomShuffles = 50
-    pa1_samples = [calcPA1(safeMatches, psfMagKey) for n in range(numRandomShuffles)]
+    pa1_samples = [calcPA1(safeMatches, psfMagKey) 
+                   for n in range(numRandomShuffles)]
     rmsPA1 = np.array([pa1.rms for pa1 in pa1_samples])
     iqrPA1 = np.array([pa1.iqr for pa1 in pa1_samples])
 
@@ -253,18 +290,34 @@ def checkAstrometry(mag, mmagrms, dist, match,
                     good_mag_limit=19.5,
                     medianRef=100, matchRef=500):
     """Print out the astrometric scatter for all stars, and for good stars.
-    @param[in] mag    Magnitude.  List or numpy.array.
-    @param[in] mmagrms    Magnitude RMS.  List or numpy.array.
-    @param[in] dist   Separation from reference.  List of numpy.array
-    @param[in] match  Number of stars matched.  Integer.
 
-    @param medianRef  Median reference astrometric scatter in milliarcseconds.
-    @param matchRef   Should match at least matchRef stars.
+    Inputs
+    ------
+    mag : list or numpy.array
+        Average magnitudes of each star
+    mmagrms ; list or numpy.array
+        Magnitude RMS of the multiple observation of each star.
+    dist : list or numpy.array
+        Distances between successive measurements of one star
+    match : int
+        Number of stars matched.
 
-    Return the astrometric scatter (RMS, milliarcsec) for all good stars.
+    good_mag_limit : float, optional
+        Minimum average brightness (in magnitudes) for a star to be considered.
+    medianRef : float, optional
+        Median reference astrometric scatter in milliarcseconds.
+    matchRef : int, optional
+        Should match at least matchRef stars.
 
-    Notes:
-       The scatter and match defaults are appropriate to SDSS are stored here.
+    Returns
+    -------
+    float
+        The astrometric scatter (RMS, milliarcsec) for all good stars.
+
+    Notes
+    -----
+    The scatter and match defaults are appropriate to SDSS are the defaults
+      for `medianRef` and `matchRef`
     For SDSS, stars with mag < 19.5 should be completely well measured.
     """
 
@@ -289,18 +342,33 @@ def checkPhotometry(mag, mmagrms, dist, match,
                     good_mag_limit=19.5,
                     medianRef=100, matchRef=500):
     """Print out the astrometric scatter for all stars, and for good stars.
-    @param[in] mag    Magnitude.  List or numpy.array.
-    @param[in] mmagrms    Magnitude RMS.  List or numpy.array.
-    @param[in] dist   Separation from reference.  List of numpy.array
-    @param[in] match  Number of stars matched.  Integer.
 
-    @param medianRef  Median reference photometric scatter in millimagnitudes.
-    @param matchRef   Should match at least matchRef stars.
+    Inputs
+    ------
+    mag : list or numpy.array
+        Average magnitudes of each star
+    mmagrms ; list or numpy.array
+        Magnitude RMS of the multiple observation of each star.
+    dist : list or numpy.array
+        Distances between successive measurements of one star
+    match : int
+        Number of stars matched.
 
-    Return the photometry scatter (RMS, millimag) for all good stars.
+    good_mag_limit : float, optional
+        Minimum average brightness (in magnitudes) for a star to be considered.
+    medianRef : float, optional
+        Median reference astrometric scatter in millimagnitudes
+    matchRef : int, optional
+        Should match at least matchRef stars.
 
-    Notes:
-       The scatter and match defaults are appropriate to SDSS are stored here.
+    Returns
+    -------
+    float
+        The photometry scatter (RMS, millimag) for all good stars.
+
+    Notes
+    -----
+    The scatter and match defaults are appropriate to SDSS are stored here.
     For SDSS, stars with mag < 19.5 should be completely well measured.
     This limit is a band-dependent statement most appropriate to r.
     """
@@ -322,6 +390,8 @@ def checkPhotometry(mag, mmagrms, dist, match,
 
 
 def printPA2(gv, magKey):
+    """Calculate and print the calculated PA2 from the LSST SRD from a groupView."""
+
     pa2 = calcPA2(gv, magKey)
     print("minimum: PF1=%2d%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 15 mmag)" % 
           (pa2.PF1['minimum'], pa2.minimum))
@@ -333,8 +403,14 @@ def printPA2(gv, magKey):
 def repoNameToPrefix(repo):
     """Generate a base prefix for plots based on the repo name.
 
-    a/b/c -> "a_b_c"
-    CFHT/output -> "CFHT_output"
+    Examples
+    --------
+    >>> repoNameToPrefix("a/b/c")
+    "a_b_c"
+    >>> repoNameToPrefix("/bar/foo/")
+    "bar_foo"
+    >>> repoNameToPrefix("CFHT/output")
+    "CFHT_output"
     """
 
     dirnames = []
@@ -352,6 +428,17 @@ def repoNameToPrefix(repo):
 def run(repo, visitDataIds, good_mag_limit, 
         medianAstromscatterRef=25, medianPhotoscatterRef=25, matchRef=500):
     """Main executable.
+
+    Inputs
+    ------
+    repo : string
+        The repository.  This is generally the directory on disk
+        that contains the repository and mapper.
+    visitDataIds : list of dict
+        List of `butler` data IDs of Image catalogs to compare to reference.
+        The `calexp` cpixel image is needed for the photometric calibration.
+    good_mag_limit : float
+        Minimum average brightness (in magnitudes) for a star to be considered.
     """
 
     plotbase = repoNameToPrefix(repo)
