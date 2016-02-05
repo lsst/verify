@@ -32,7 +32,7 @@ import lsst.pipe.base as pipeBase
 from .base import ValidateError
 from .util import averageRaDec
 from .srdSpec import srdSpec
-from lsst.afw.table import matchRaDec
+
 
 def calcPA1(groupView, magKey):
     """Calculate the photometric repeatability of measurements across a set of observations.
@@ -283,10 +283,6 @@ def computeWidths(array):
     return rmsSigma, iqrSigma
 
 
-def cartDistSq(x1, y1, x2, y2):
-    return np.square(x1-x2) + np.square(y1-y2)
-
-
 def sphDist(ra1, dec1, ra2, dec2):
     """Calculate distance on the surface of a unit sphere.
 
@@ -297,7 +293,20 @@ def sphDist(ra1, dec1, ra2, dec2):
 
 def matchVisitComputeDistance(visit_obj1, ra_obj1, dec_obj1,
                               visit_obj2, ra_obj2, dec_obj2):
-    """Match visit_obj1 and visit_obj2 and calculate ra, obj for matches."""
+    """Match visit_obj1 and visit_obj2 and calculate ra, dec distance for matches.
+
+    @param[in] visit_obj1 -- List of visits for object 1.
+    @param[in] ra_obj1 -- List of RA for object 1.
+    @param[in] dec_obj1 -- List of Dec for object 1.
+    @param[in] visit_obj2 -- List of visits for object 2.
+    @param[in] ra_obj2 -- List of RA for object 2.
+    @param[in] dec_obj2 -- List of Dec for object 2.
+
+    For each visit shared between visit_obj1 and visit_obj2, calculate the spherical distance between the
+    matching elements in (ra_obj1, dec_obj1); (ra_obj2, dec_obj2)
+
+    @param[out] distances -- List of spherical distances (in radians) for matching visits.
+    """
     distances = []
     for i in range(len(visit_obj1)):
         for j in range(len(visit_obj2)):
@@ -315,12 +324,21 @@ def radiansToMilliarcsec(rad):
 
 
 def calcAM1(*args, **kwargs):
+    """Calculate the SRD definition of astrometric performance for AM1
+
+    See `calcAMx` for more details."""
     return calcAMx(*args, D=srdSpec.D1, width=2, **kwargs)
 
 def calcAM2(*args, **kwargs):
+    """Calculate the SRD definition of astrometric performance for AM2
+
+    See `calcAMx` for more details."""
     return calcAMx(*args, D=srdSpec.D2, width=2, **kwargs)
 
 def calcAM3(*args, **kwargs):
+    """Calculate the SRD definition of astrometric performance for AM3
+
+    See `calcAMx` for more details."""
     return calcAMx(*args, D=srdSpec.D3, width=2, **kwargs)
 
 def calcAMx(safeMatches, D=5, width=2, magrange=None):
