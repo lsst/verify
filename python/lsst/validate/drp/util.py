@@ -31,10 +31,17 @@ import lsst.afw.coord as afwCoord
 def averageRaDec(ra, dec):
     """Calculate average RA, Dec from input lists using spherical geometry.
 
-    @param[in] ra -- List of RA in [radians]
-    @param[in] dec -- List of Dec in [radians]
+    Inputs
+    ------
+    ra : list of float
+        RA in [radians]
+    dec : list of float
+        Dec in [radians]
 
-    @param[out] meanRa, meanDec -- Tuple of average RA, Dec [radians]
+    Returns
+    -------
+    float, float
+       meanRa, meanDec -- Tuple of average RA, Dec [radians]
     """
     assert(len(ra) == len(dec))
 

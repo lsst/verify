@@ -47,13 +47,17 @@ srdSpec = pipeBase.Struct(
 def getAstrometricSpec(x=None, level='design'):
     """Return SRD specification for given astrometric test.
 
-    @param[in] x  -- One of [1,2,3].
-    @param[in] level -- ["design", "minimum", "stretch"]
+    Inputs
+    ------
+    x : int
+        One of [1,2,3].
+    level : str
+        One of ["design", "minimum", "stretch"]
 
-
-    Returns:
+    Returns
     --------
-       AMx, AFx, ADx  -- tuple of SRD relevant specifications
+    float, float, float
+        AMx, AFx, ADx  -- tuple of SRD relevant specifications
 
     Raises:
     -------

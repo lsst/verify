@@ -411,20 +411,24 @@ def printAMx(rmsDistMAS, annulus, magrange,
              x=None, level="design"):
     """Print the Astrometric performance.
 
-    @param[in]  rmsDistMAS -- list of RMS variation of relative distance
-       between stars across a series of visits.
-    @param[in]  annulus -- inner and outer radius of comparison annulus [arcmin]
-    @param[in]  magrange -- lower and upper magnitude range
-    @param[in]  level -- One of "minimum", "design", "stretch"
-       indicating the level of the specification desired.
+    Inputs
+    ------
+    rmsDistMAS : list or numpy.array of float
+        RMS variation of relative distance between stars across a series of visits.
+    annulus : 2-element list or tuple
+        inner and outer radius of comparison annulus [arcmin]
+    magrange : 2-element list or tuple
+        lower and upper magnitude range
+    level : str
+        One of "minimum", "design", "stretch" indicating the level of the specification desired.
+    x : int
+        Which of AM1, AM2, AM3.  One of [1,2,3].  
 
-    @param[in]  x -- int in [1,2,3].  Which of AM1, AM2, AM3.
-
-    Raises:
-    -------
+    Raises
+    ------
     ValidateError if `x` isn't in `getAstrometricSpec`
 
-    Note:
+    Notes
     -----
     The use of 'annulus' below isn't properly tied to the SRD
      in the same way that srdSpec.AM1, sprdSpec.AF1, srdSpec.AD1 are

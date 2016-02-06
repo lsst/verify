@@ -295,17 +295,28 @@ def matchVisitComputeDistance(visit_obj1, ra_obj1, dec_obj1,
                               visit_obj2, ra_obj2, dec_obj2):
     """Match visit_obj1 and visit_obj2 and calculate ra, dec distance for matches.
 
-    @param[in] visit_obj1 -- List of visits for object 1.
-    @param[in] ra_obj1 -- List of RA for object 1.
-    @param[in] dec_obj1 -- List of Dec for object 1.
-    @param[in] visit_obj2 -- List of visits for object 2.
-    @param[in] ra_obj2 -- List of RA for object 2.
-    @param[in] dec_obj2 -- List of Dec for object 2.
-
     For each visit shared between visit_obj1 and visit_obj2, calculate the spherical distance between the
     matching elements in (ra_obj1, dec_obj1); (ra_obj2, dec_obj2)
 
-    @param[out] distances -- List of spherical distances (in radians) for matching visits.
+    Inputs
+    ------
+    visit_obj1 : list or numpy.array of int or str
+        List of visits for object 1.
+    ra_obj1 : list or numpy.array of float
+        List of RA for object 1.
+    dec_obj1 : list or numpy.array of float
+        List of Dec for object 1.
+    visit_obj2 : list or numpy.array of int or str
+        List of visits for object 2.
+    ra_obj2 : list or numpy.array of float
+        List of RA for object 2.
+    dec_obj2 : list or numpy.array of float
+        List of Dec for object 2.
+
+    Results
+    -------
+    list of float
+        spherical distances (in radians) for matching visits.
     """
     distances = []
     for i in range(len(visit_obj1)):
@@ -341,9 +352,25 @@ def calcAM3(*args, **kwargs):
     See `calcAMx` for more details."""
     return calcAMx(*args, D=srdSpec.D3, width=2, **kwargs)
 
-def calcAMx(safeMatches, D=5, width=2, magrange=None):
+def calcAMx(groupView, D=5, width=2, magrange=None):
     """Calculate the SRD definition of astrometric performance
 
+    Parameters
+    ----------
+    groupView : lsst.afw.table.GroupView 
+         GroupView object of matched observations from MultiMatch.
+    magKey : lookup key to a `schema`
+         The lookup key of the field storing the magnitude of interest.
+         E.g., `magKey = allMatches.schema.find("base_PsfFlux_mag").key`
+         where `allMatches` is a the result of lsst.afw.table.MultiMatch.finish()
+
+    Returns
+    -------
+    list, list, list
+        rmsDistMAS, annulus, magrange
+
+    Notes
+    -----
     This table below is provided in this package in the `srdSpec.py` file.
 
     LPM-17 dated 2011-07-06
@@ -389,7 +416,7 @@ def calcAMx(safeMatches, D=5, width=2, magrange=None):
         magrange = [17.0, 21.5]
 
     # First we make a list of the keys that we want the fields for
-    importantKeys = [safeMatches.schema.find(name).key for
+    importantKeys = [groupView.schema.find(name).key for
                      name in ['id', 'coord_ra', 'coord_dec',
                               'object', 'visit', 'base_PsfFlux_mag']]
 
@@ -400,12 +427,12 @@ def calcAMx(safeMatches, D=5, width=2, magrange=None):
         medianMag = np.median(mag[w])
         return magrange[0] <= medianMag and medianMag < magrange[1]
 
-    safeMatchesInMagrange = safeMatches.where(magInRange)
+    groupViewInMagrange = groupView.where(magInRange)
 
     # List of lists of id, importantValue
-    matchKeyOutput = [x.get(y) for y in importantKeys for x in safeMatchesInMagrange.groups]
+    matchKeyOutput = [x.get(y) for y in importantKeys for x in groupViewInMagrange.groups]
 
-    jump = len(safeMatchesInMagrange)
+    jump = len(groupViewInMagrange)
 
     objid = matchKeyOutput[0*jump:1*jump]
     ra = matchKeyOutput[1*jump:2*jump]
@@ -413,9 +440,9 @@ def calcAMx(safeMatches, D=5, width=2, magrange=None):
     name = matchKeyOutput[3*jump:4*jump]
     visit = matchKeyOutput[4*jump:5*jump]
 
-    psfMag = safeMatchesInMagrange.aggregate(np.median, 'base_PsfFlux_mag')
-    meanRa = safeMatchesInMagrange.aggregate(averageRaFromCat)
-    meanDec = safeMatchesInMagrange.aggregate(averageDecFromCat)
+    psfMag = groupViewInMagrange.aggregate(np.median, 'base_PsfFlux_mag')
+    meanRa = groupViewInMagrange.aggregate(averageRaFromCat)
+    meanDec = groupViewInMagrange.aggregate(averageDecFromCat)
 
     annulus = D + (width/2)*np.array([-1, +1])
     annulusRadians = arcminToRadians(annulus)
@@ -432,6 +459,6 @@ def calcAMx(safeMatches, D=5, width=2, magrange=None):
             else:
                 rmsDistances.append(np.std(distances))
 
-    rmsDistMAS = [radiansToMilliarcsec(r) for r in rmsDistances]
+    rmsDistMAS = radiansToMilliarcsec(rmsDistances)
 
     return rmsDistMAS, annulus, magrange
