@@ -28,11 +28,6 @@ import lsst.afw.geom as afwGeom
 import lsst.afw.coord as afwCoord
 
 
-class ValidateError(Exception):
-    """Base classes for exceptions in validate_drp."""
-    pass
-
-
 def averageRaDec(ra, dec):
     """Calculate average RA, Dec from input lists using spherical geometry.
 
