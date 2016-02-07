@@ -49,7 +49,7 @@ processCcdDecam.py ${INPUT} --output ${OUTPUT} \
 
 # Run astrometry check on src
 echo "validating"
-validateDecam.py "${OUTPUT}"
+validateDrp.py "${OUTPUT}" @"${PRODUCT_DIR}"/examples/runDecam.list
 
 if [ $? != 0 ]; then
    print_error "Validation failed"

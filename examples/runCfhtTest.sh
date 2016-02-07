@@ -49,7 +49,7 @@ processCcd.py ${INPUT} --output ${OUTPUT} \
 
 # Run astrometry check on src
 echo "validating"
-validateCfht.py ${OUTPUT}
+validateDrp.py ${OUTPUT} @"${PRODUCT_DIR}"/examples/runCfht.yaml
 
 if [ $? != 0 ]; then
    print_error "Validation failed"
