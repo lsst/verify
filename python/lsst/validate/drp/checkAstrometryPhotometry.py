@@ -407,13 +407,13 @@ def printAM2(*args, **kwargs):
 def printAM3(*args, **kwargs):
     return printAMx(*args, x=3, **kwargs)
 
-def printAMx(rmsDistMAS, annulus, magrange,
+def printAMx(rmsDistMas, annulus, magrange,
              x=None, level="design"):
     """Print the Astrometric performance.
 
     Inputs
     ------
-    rmsDistMAS : list or numpy.array of float
+    rmsDistMas : list or numpy.array of float
         RMS variation of relative distance between stars across a series of visits.
     annulus : 2-element list or tuple
         inner and outer radius of comparison annulus [arcmin]
@@ -426,20 +426,25 @@ def printAMx(rmsDistMAS, annulus, magrange,
 
     Raises
     ------
-    ValidateError if `x` isn't in `getAstrometricSpec`
+    ValidateError if `rmsDistMas`
+    ValidateError if `x` isn't in `getAstrometricSpec` values of [1,2,3]
 
     Notes
     -----
     The use of 'annulus' below isn't properly tied to the SRD
      in the same way that srdSpec.AM1, sprdSpec.AF1, srdSpec.AD1 are
-     because the rmsDistMAS has already assumed a D.
+     because the rmsDistMas has already been calculated for an assumed D.
     """
+
+    if not list(rmsDistMas):
+        raise ValidateError('Empty `rmsDistMas` array.')
+
     AMx, AFx, ADx = getAstrometricSpec(x=x, level=level)
 
     magBinLow, magBinHigh = magrange
 
-    rmsRelSep = np.median(rmsDistMAS)
-    fractionOver = np.mean(np.asarray(rmsDistMAS) > AMx+ADx)
+    rmsRelSep = np.median(rmsDistMas)
+    fractionOver = np.mean(np.asarray(rmsDistMas) > AMx+ADx)
     percentOver = 100*fractionOver
 
     print("Median of distribution of RMS of distance of stellar pairs.")

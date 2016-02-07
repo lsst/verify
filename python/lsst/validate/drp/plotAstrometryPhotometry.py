@@ -58,11 +58,18 @@ def plotAstrometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
                    plotbase=""):
     """Plot angular distance between matched sources from different exposures.
 
-    @param[in] mag    Magnitude.  List or numpy.array.
-    @param[in] mmagerr    Magnitude err.  List or numpy.array.
-    @param[in] mmagrms    Magnitude RMS.  List or numpy.array.
-    @param[in] dist   Separation from reference.  List of numpy.array
-    @param[in] match  Number of stars matched.  Integer.
+    Inputs
+    ------
+    mag : list or numpy.array
+        Average Magnitude
+    mmagerr : list or numpy.array
+        Average Magnitude uncertainty [millimag]
+    mmagrms ; list or numpy.array
+        Magnitude RMS across visits [millimag]
+    dist : list or numpy.array
+        Separation from reference [mas]
+    match : int
+        Number of stars matched.
     """
 
     bright, = np.where(np.asarray(mag) < good_mag_limit)
@@ -143,11 +150,18 @@ def plotPhotometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
                    plotbase=""):
     """Plot photometric RMS for matched sources.
 
-    @param[in] mag    Magnitude.  List or numpy.array.
-    @param[in] mmagerr    Magnitude err.  List or numpy.array.
-    @param[in] mmagrms    Magnitude RMS.  List or numpy.array.
-    @param[in] dist   Separation from reference.  List of numpy.array
-    @param[in] match  Number of stars matched.  Integer.
+    Inputs
+    ------
+    mag : list or numpy.array
+        Average Magnitude
+    mmagerr : list or numpy.array
+        Average Magnitude uncertainty [millimag]
+    mmagrms ; list or numpy.array
+        Magnitude RMS across visits [millimag]
+    dist : list or numpy.array
+        Separation from reference [mas]
+    match : int
+        Number of stars matched.
     """
 
     bright, = np.where(np.asarray(mag) < good_mag_limit)
@@ -262,34 +276,50 @@ def plotAM2(*args, **kwargs):
 def plotAM3(*args, **kwargs):
     return plotAMx(*args, x=3, **kwargs)
 
-def plotAMx(rmsDistMAS, annulus, magrange,
+def plotAMx(rmsDistMas, annulus, magrange,
             x=None, level="design",
             plotbase=""): 
     """Plot a histogram of the RMS in relative distance between pairs of stars.
 
-    @param[in]  annulus -- inner and outer radius of comparison annulus [arcmin]
-    @param[in]  magrange -- lower and upper magnitude range
-    @param[in]  level -- One of "minimum", "design", "stretch"
-       indicating the level of the specification desired.
+    Inputs
+    ------
+    rmsDistMas : list or numpy.array of float
+        RMS variation of relative distance between stars across a series of visi
+ts.
+    annulus : 2-element list or tuple
+        inner and outer radius of comparison annulus [arcmin]
+    magrange : 2-element list or tuple
+        lower and upper magnitude range
+    level : str
+        One of "minimum", "design", "stretch" indicating the level of the specif
+ication desired.
+    x : int
+        Which of AM1, AM2, AM3.  One of [1,2,3].
 
-    @param[in]  x -- int in [1,2,3].  Which of AM1, AM2, AM3.
+    Raises
+    ------
+    ValidateError if `rmsDistMas`
+    ValidateError if `x` isn't in `getAstrometricSpec` values of [1,2,3]
 
-    Raises:
-    -------
-    ValidateError if `x` isn't in [1,2,3].
+    Notes
+    -----
+    The use of 'annulus' below isn't properly tied to the SRD
+     in the same way that srdSpec.AM1, sprdSpec.AF1, srdSpec.AD1 are
+     because the rmsDistMas has already been calculated for an assumed D.
     """
 
-    if not rmsDistMAS:
-        raise ValidateError('No objects in given mag bins at requested separation in the same visit!')
+    if not list(rmsDistMas):
+        raise ValidateError('Empty `rmsDistMas` array.')
 
     AMx, AFx, ADx = getAstrometricSpec(x=x, level=level)
 
-    rmsRelSep = np.median(rmsDistMAS)
-    pCentOver = np.mean(np.asarray(rmsDistMAS) > AMx+ADx)
+    rmsRelSep = np.median(rmsDistMas)
+    fractionOver = np.mean(np.asarray(rmsDistMas) > AMx+ADx)
+    percentOver = 100*fractionOver
 
     fig = plt.figure(figsize=(10,6))
     ax1 = fig.add_subplot(1,1,1)
-    ax1.hist(rmsDistMAS, bins=25, range=(0.0, 100.0),
+    ax1.hist(rmsDistMas, bins=25, range=(0.0, 100.0),
              histtype='stepfilled',
              label='D: %.1f-%.1f arcmin\nMag Bin: %.1f-%.1f' % 
                    (annulus[0], annulus[1], magrange[0], magrange[1]))
@@ -298,10 +328,10 @@ def plotAMx(rmsDistMAS, annulus, magrange,
     ax1.axvline(AMx, 0, 1, linewidth=2, color='red', 
                 label='AM%d: %.2f mas' % (x, AMx))
     ax1.axvline(AMx+ADx, 0, 1, linewidth=2, color='green',
-                label='AM%d+AD%d: %.2f mas\nAF%d: %2.f%% > AM%d+AD%d = %2.f%%' % (x, x, AMx+ADx, x, AFx, x, x, pCentOver))
+                label='AM%d+AD%d: %.2f mas\nAF%d: %2.f%% > AM%d+AD%d = %2.f%%' % (x, x, AMx+ADx, x, AFx, x, x, percentOver))
 
     ax1.set_title('The %d stars separated by D = [%.2f, %.2f] arcmin' % \
-                  (len(rmsDistMAS), annulus[0], annulus[1]))
+                  (len(rmsDistMas), annulus[0], annulus[1]))
     ax1.set_xlim(0.0,100.0)
     ax1.set_xlabel('rms Relative Separation (mas)')
     ax1.set_ylabel('# pairs / bin')

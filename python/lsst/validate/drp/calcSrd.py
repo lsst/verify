@@ -367,7 +367,7 @@ def calcAMx(groupView, D=5, width=2, magrange=None):
     Returns
     -------
     list, list, list
-        rmsDistMAS, annulus, magrange
+        rmsDistMas, annulus, magrange
 
     Notes
     -----
@@ -459,6 +459,6 @@ def calcAMx(groupView, D=5, width=2, magrange=None):
             else:
                 rmsDistances.append(np.std(distances))
 
-    rmsDistMAS = radiansToMilliarcsec(rmsDistances)
+    rmsDistMas = radiansToMilliarcsec(rmsDistances)
 
-    return rmsDistMAS, annulus, magrange
+    return rmsDistMas, annulus, magrange

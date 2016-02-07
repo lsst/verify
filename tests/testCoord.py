@@ -38,7 +38,9 @@ import lsst.afw.coord as afwCoord
 import lsst.pex.exceptions as pexExcept
 import lsst.utils.tests as utilsTests
 
+from lsst.validate.drp.base import ValidateError
 from lsst.validate.drp import util, calcSrd
+from lsst.validate.drp.plotAstrometryPhotometry import plotAMx
 
 
 class CoordTestCase(unittest.TestCase):
@@ -52,17 +54,31 @@ class CoordTestCase(unittest.TestCase):
         self.wrapRa = [359.9999, 0.0001, -0.1, +0.1]
         self.wrapDec = [1, 0, -1, 0]
 
+        self.simpleRms = [0.1, 0.2, 0.05]
+        self.annulus = [1, 2]
+        self.magrange = [20, 25]
+
+
     def tearDown(self):
         pass
 
+
     def testZeroDecSimpleAverageCoord(self):
-        meanRa, meanDec = util.getAverageRaDec(self.simpleRa, self.zeroDec)
+        meanRa, meanDec = util.averageRaDec(self.simpleRa, self.zeroDec)
         assert_allclose([20, 0], np.rad2deg([meanRa, meanDec]))
         
     def testSimpleAverageCoord(self):
-        meanRa, meanDec = util.getAverageRaDec(self.simpleRa, self.simpleDec)
+        meanRa, meanDec = util.averageRaDec(self.simpleRa, self.simpleDec)
         assert_allclose([19.493625,  37.60447], np.rad2deg([meanRa, meanDec]))
         
+    def testPlotAMxFailureEmpty(self):
+        self.assertRaises(ValidateError, 
+                          plotAMx, [], self.annulus, self.magrange, x=1)
+
+    def testPlotAMxFailureNox(self):
+        self.assertRaises(ValidateError, 
+                          plotAMx, self.simpleRms, self.annulus, self.magrange, x=None)
+
 
 def suite():
     """Returns a suite containing all the test cases in this module."""
