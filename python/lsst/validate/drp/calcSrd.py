@@ -28,6 +28,7 @@ import numpy as np
 import scipy.stats
 
 import lsst.pipe.base as pipeBase
+import lsst.afw.coord as afwCoord
 
 from .base import ValidateError
 from .util import averageRaDecFromCat, averageRaFromCat, averageDecFromCat
@@ -287,8 +288,30 @@ def sphDist(ra1, dec1, ra2, dec2):
     """Calculate distance on the surface of a unit sphere.
 
     Input and Output are in radians.
+
+    Notes
+    -----
+    Uses the Haversine formula to preserve accuracy at small angles.
+
+    Law of cosines approach doesn't work well for the typically very small
+    differences that we're look at here.
     """
-    return np.arccos(np.sin(dec1)*np.sin(dec2) + np.cos(dec1)*np.cos(dec2)*np.cos(ra1 - ra2))
+    # Haversine
+    dra = ra1-ra2
+    ddec = dec1-dec2
+    a = np.square(np.sin(ddec/2)) + \
+        np.cos(dec1)*np.cos(dec2)*np.square(np.sin(dra/2))
+    dist = 2 * np.arcsin(np.sqrt(a))
+
+    # This is what the law of cosines would look like
+#    dist = np.arccos(np.sin(dec1)*np.sin(dec2) + np.cos(dec1)*np.cos(dec2)*np.cos(ra1 - ra2))
+
+    # Could use afwCoord.angularSeparation()
+    #  but (a) that hasn't been made accessible through the Python interface
+    #  and (b) I'm not sure that it would be faster than the numpy interface.
+    #    dist = afwCoord.angularSeparation(ra1-ra2, dec1-dec2, np.cos(dec1), np.cos(dec2))
+
+    return dist
 
 
 def matchVisitComputeDistance(visit_obj1, ra_obj1, dec_obj1,
@@ -300,11 +323,11 @@ def matchVisitComputeDistance(visit_obj1, ra_obj1, dec_obj1,
 
     Inputs
     ------
-    visit_obj1 : list or numpy.array of int or str
+    visit_obj1 : scalar, list, or numpy.array of int or str
         List of visits for object 1.
-    ra_obj1 : list or numpy.array of float
+    ra_obj1 : scalar, list, or numpy.array of float
         List of RA for object 1.
-    dec_obj1 : list or numpy.array of float
+    dec_obj1 : scalar, list or numpy.array of float
         List of Dec for object 1.
     visit_obj2 : list or numpy.array of int or str
         List of visits for object 2.
@@ -322,8 +345,10 @@ def matchVisitComputeDistance(visit_obj1, ra_obj1, dec_obj1,
     for i in range(len(visit_obj1)):
         for j in range(len(visit_obj2)):
             if (visit_obj1[i] == visit_obj2[j]):
-                distances.append(sphDist(ra_obj1[i], dec_obj1[i],
-                                         ra_obj2[j], dec_obj2[j]))
+                if np.isfinite([ra_obj1[i], dec_obj1[i], 
+                                ra_obj2[j], dec_obj2[j]]).all():
+                    distances.append(sphDist(ra_obj1[i], dec_obj1[i],
+                                             ra_obj2[j], dec_obj2[j]))
     return distances
 
 
@@ -456,8 +481,12 @@ def calcAMx(groupView, D=5, width=2, magrange=None):
                                                   visit[obj2], ra[obj2], dec[obj2])
             if not distances:
                 print("No matching visits found for objs: %d and %d" % (obj1, obj2))
-            else:
-                rmsDistances.append(np.std(distances))
+                continue
+
+            finiteEntries, = np.where(np.isfinite(distances))
+            if len(finiteEntries) > 0:
+                rmsDist = np.std(np.array(distances)[finiteEntries])
+                rmsDistances.append(rmsDist)
 
     rmsDistMas = radiansToMilliarcsec(rmsDistances)
 
