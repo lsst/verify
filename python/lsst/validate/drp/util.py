@@ -22,6 +22,8 @@
 
 from __future__ import print_function, division
 
+import os
+
 import lsst.afw.geom as afwGeom
 import lsst.afw.coord as afwCoord
 
@@ -62,3 +64,47 @@ def averageRaFromCat(cat):
 def averageDecFromCat(cat):
     meanRa, meanDec = averageRaDecFromCat(cat)
     return meanDec
+
+
+def getCcdKeyName(dataid):
+    """Return the key in a dataId that's referring to the CCD or moral equivalent.
+
+    Inputs
+    ------
+    dataid : dict
+        A dictionary that will be searched for a key that matches
+        an entry in the hardcoded list of possible names for the CCD field.
+
+    Notes
+    -----
+    Motiviation: Different camera mappings use different keys to indicate
+      the different amps/ccds in the same exposure.  This function looks
+      through the reference dataId to locate a field that could be the one.
+    """
+    possibleCcdFieldNames = ['ccd', 'ccdnum', 'camcol']
+
+    for name in possibleCcdFieldNames:
+        if name in dataid:
+            return name
+    else:
+        return None
+
+
+def repoNameToPrefix(repo):
+    """Generate a base prefix for plots based on the repo name.
+
+    Examples
+    --------
+    >>> repoNameToPrefix('a/b/c')
+    'a_b_c_'
+    >>> repoNameToPrefix('/bar/foo/')
+    'bar_foo_'
+    >>> repoNameToPrefix('CFHT/output')
+    'CFHT_output_'
+    >>> repoNameToPrefix('./CFHT/output')
+    'CFHT_output_'
+    >>> repoNameToPrefix('.a/CFHT/output')
+    'a_CFHT_output_'
+    """
+
+    return repo.lstrip('\.').strip(os.sep).replace(os.sep, "_")+"_"

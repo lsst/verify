@@ -57,12 +57,14 @@ class LoadDataTestCase(unittest.TestCase):
 
 
     def testLoadingOfConfigFile(self):
-        dataIds, good_mag_limit, medianRef, matchRef = \
-            validate.loadDataIdsFromConfigFile(self.configFile)
+        dataIds, good_mag_limit, \
+            medianAstromscatterRef, medianPhotoscatterRef, matchRef = \
+                validate.loadDataIdsAndParameters(self.configFile)
         self.assertAlmostEqual(good_mag_limit, 21.0)
-        self.assertAlmostEqual(medianRef, 25)
+        self.assertAlmostEqual(medianAstromscatterRef, 25)
+        self.assertAlmostEqual(medianPhotoscatterRef, 25)
         self.assertAlmostEqual(matchRef, 5000)
-        # Check that all filters are 'r'
+        # Tests of the dict entries require constructing and comparing sets
         self.assertEqual(set(['r']), set([d['filter'] for d in dataIds]))
         self.assertEqual(set([849375, 850587]), 
                          set([d['visit'] for d in dataIds]))

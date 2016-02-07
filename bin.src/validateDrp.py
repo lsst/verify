@@ -28,29 +28,26 @@ import sys
 from lsst.validate.drp import validate
 
 
-def defaultData(repo):
-    # List of visits to be considered
-    visits = [176837, 176846]
+def loadDataIdsFromConfigFile(configFile):
+    """Load data IDs from a yaml file."""
+    import yaml
+    data = yaml.load(configFile)
 
-    # List of CCD to be considered (source catalogs will be concateneted)
-    ccd = [10, 11, 12, 13, 14, 15, 16, 17, 18]
-    filter = 'z'
+    ccdKeyName = getCcdKeyName(data)
+    visitDataIds = [{'visit': v, 'filter': data['filter'], ccdKeyName: c} 
+                    for v in data['visits']
+                    for c in data[ccdKeyName]]
 
-    # Reference values that the DECam analysis should pass
-    #  for the median astrometric scatter and the number of matches
-    good_mag_limit = 21  # [mag]
-    medianRef = 25  # [arcsec]
-    matchRef = 10000  # [number of stars]
+    return visitDataIds, data['good_mag_limit'], data['medianRef'], data['matchRef']
 
-    visitDataIds = [{'visit': v, 'filter': filter, 'ccdnum': c} for v in visits
-                    for c in ccd]
 
-    return visitDataIds, good_mag_limit, medianRef, matchRef
+    
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
+    if len(sys.argv) < 2:
         print("""Usage: valid_cosmos repo
 where repo is the path to a repository containing the output of processCcd
+and configFile is the path to a YAML configuration file declaring the parameters for this run.
 """)
         sys.exit(1)
 
@@ -59,5 +56,7 @@ where repo is the path to a repository containing the output of processCcd
         print("Could not find repo %r" % (repo,))
         sys.exit(1)
 
-    args = defaultData(repo)
+    configFile = sys.argv[2]
+
+    args = validate.loadDataIdsAndParameters(configFile)
     validate.run(repo, *args)

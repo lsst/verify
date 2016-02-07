@@ -40,7 +40,7 @@ import lsst.utils.tests as utilsTests
 
 from lsst.validate.drp.base import ValidateError
 from lsst.validate.drp import util, calcSrd
-from lsst.validate.drp.plotAstrometryPhotometry import plotAMx
+from lsst.validate.drp.plot import plotAMx
 
 
 class CoordTestCase(unittest.TestCase):

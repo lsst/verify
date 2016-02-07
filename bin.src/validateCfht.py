@@ -25,7 +25,7 @@ from __future__ import print_function
 import os.path
 import sys
 
-from lsst.validate.drp import checkAstrometryPhotometry
+from lsst.validate.drp import validate
 
 
 def defaultData(repo):
@@ -59,4 +59,4 @@ where repo is the path to a repository containing the output of processCcd
         sys.exit(1)
 
     args = defaultData(repo)
-    checkAstrometryPhotometry.run(repo, *args)
+    validate.run(repo, *args)
