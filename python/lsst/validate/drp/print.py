@@ -24,20 +24,22 @@ from __future__ import print_function, division
 
 import numpy as np
 
+from .base import ValidateError
 from .calcSrd import calcPA1, calcPA2
-from .srdSpec import srdSpec, getAstrometricSpec
+from .srdSpec import getAstrometricSpec
+
 
 def printPA1(brightMatches, psfMagKey, numRandomShuffles=50):
     """
     Notes
     -----
-    We calculate differences for 50 different random realizations 
-    of the measurement pairs, to provide some estimate of the uncertainty 
+    We calculate differences for 50 different random realizations
+    of the measurement pairs, to provide some estimate of the uncertainty
     on our RMS estimates due to the random shuffling.
-    This estimate could be stated and calculated from a more formally 
+    This estimate could be stated and calculated from a more formally
     derived motivation but in practice 50 should be sufficient.
     """
-    pa1_samples = [calcPA1(brightMatches, psfMagKey) 
+    pa1_samples = [calcPA1(brightMatches, psfMagKey)
                    for n in range(numRandomShuffles)]
     rmsPA1 = np.array([pa1.rms for pa1 in pa1_samples])
     iqrPA1 = np.array([pa1.iqr for pa1 in pa1_samples])
@@ -81,7 +83,7 @@ def printAMx(rmsDistMas, annulus, magrange,
     level : str
         One of "minimum", "design", "stretch" indicating the level of the specification desired.
     x : int
-        Which of AM1, AM2, AM3.  One of [1,2,3].  
+        Which of AM1, AM2, AM3.  One of [1,2,3].
 
     Raises
     ------

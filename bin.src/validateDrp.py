@@ -28,27 +28,31 @@ import sys
 from lsst.validate.drp import validate
 
 
-def loadDataIdsFromConfigFile(configFile):
-    """Load data IDs from a yaml file."""
-    import yaml
-    data = yaml.load(configFile)
-
-    ccdKeyName = getCcdKeyName(data)
-    visitDataIds = [{'visit': v, 'filter': data['filter'], ccdKeyName: c} 
-                    for v in data['visits']
-                    for c in data[ccdKeyName]]
-
-    return visitDataIds, data['good_mag_limit'], data['medianRef'], data['matchRef']
-
-
-    
-
 if __name__ == "__main__":
+    helpMessage = """Usage: validateDrp.py repo configFile
+
+    Arguments
+    ---------
+    `repo` : str
+        path to a repository containing the output of processCcd
+    `configFile` : str
+        YAML configuration file declaring the parameters for this run.
+
+    Output
+    ------
+    STDOUT
+        Summary of key metrics
+    *.png
+        Plots of key metrics.  Generated in current working directory.
+
+    Notes
+    -----
+    Currently can only work on one filter at a time.
+      -- There is no logic to organize things by filter in the analysis,
+      -- There is no syntax for matching visits with filters in the YAML file.
+    """
     if len(sys.argv) < 2:
-        print("""Usage: valid_cosmos repo
-where repo is the path to a repository containing the output of processCcd
-and configFile is the path to a YAML configuration file declaring the parameters for this run.
-""")
+        print(helpMessage)
         sys.exit(1)
 
     repo = sys.argv[1]

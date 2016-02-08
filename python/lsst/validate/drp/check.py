@@ -22,19 +22,11 @@
 
 from __future__ import print_function, division
 
-import os.path
-import sys
-
 import numpy as np
 
 import lsst.afw.geom as afwGeom
-import lsst.pipe.base as pipeBase
 
-from .base import ValidateError
-from .util import averageRaDecFromCat, averageRaFromCat, averageDecFromCat
-from .calcSrd import computeWidths, getRandomDiff, calcPA1, calcPA2, calcAM1, calcAM2, calcAM3
-from .srdSpec import srdSpec, getAstrometricSpec
-from .print import printPA1, printPA2, printAM1, printAM2, printAM3
+from .util import averageRaDecFromCat
 
 
 def isExtended(source, extendedKey, extendedThreshold=1.0):
@@ -42,7 +34,7 @@ def isExtended(source, extendedKey, extendedThreshold=1.0):
 
     Inputs
     ------
-    cat : collection with a .get method 
+    cat : collection with a .get method
         for `extendedKey`
     extendedKey
         key to look up the extended object parameter from a schema.
@@ -59,8 +51,8 @@ def magNormDiff(cat):
 
     Inputs
     ------
-    cat : collection with a .get method 
-         for flux, flux+"-" 
+    cat : collection with a .get method
+         for flux, flux+"-"
 
     Returns
     -------
@@ -70,8 +62,9 @@ def magNormDiff(cat):
     mag = cat.get('base_PsfFlux_mag')
     magerr = cat.get('base_PsfFlux_magerr')
     mag_avg = np.mean(mag)
-    N = len(mag)
     normDiff = (mag - mag_avg) / magerr
+
+    return normDiff
 
 
 def positionRms(cat):
@@ -79,7 +72,7 @@ def positionRms(cat):
 
     Inputs
     ------
-    cat -- collection with a .get method 
+    cat -- collection with a .get method
          for 'coord_ra', 'coord_dec' that returns radians.
 
     Returns
@@ -196,8 +189,10 @@ def checkPhotometry(mag, mmagrms, dist, match,
           (good_mag_limit, photoScatter, "mmag"))
 
     if photoScatter > medianRef:
-        print("Median photometric scatter %.3f %s is larger than reference : %.3f %s " % (photoScatter, "mmag", medianRef, "mag"))
+        print("Median photometric scatter %.3f %s is larger than reference : %.3f %s "
+              % (photoScatter, "mmag", medianRef, "mag"))
     if match < matchRef:
-        print("Number of matched sources %d is too small (shoud be > %d)" % (match, matchRef))
+        print("Number of matched sources %d is too small (shoud be > %d)"
+              % (match, matchRef))
 
     return photoScatter

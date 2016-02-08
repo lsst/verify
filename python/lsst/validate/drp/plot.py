@@ -334,7 +334,7 @@ ication desired.
                 label='AM%d+AD%d: %.2f mas\nAF%d: %2.f%% > AM%d+AD%d = %2.f%%' %\
                       (x, x, AMx+ADx, x, AFx, x, x, percentOver))
 
-    ax1.set_title('The %d stars separated by D = [%.2f, %.2f] arcmin' % \
+    ax1.set_title('The %d stars separated by D = [%.2f, %.2f] arcmin' %
                   (len(rmsDistMas), annulus[0], annulus[1]))
     ax1.set_xlim(0.0, 100.0)
     ax1.set_xlabel('rms Relative Separation (mas)')
@@ -344,4 +344,5 @@ ication desired.
 
     figName = plotbase+'D_%d_ARCMIN_%.1f-%.1f.png' % \
                    (int(sum(annulus)/2), magrange[0], magrange[1])
+
     plt.savefig(figName, dpi=300)

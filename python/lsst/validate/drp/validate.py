@@ -22,9 +22,6 @@
 
 from __future__ import print_function
 
-import os.path
-import sys
-
 import numpy as np
 import yaml
 
@@ -35,10 +32,10 @@ from lsst.afw.table import MultiMatch, SimpleRecord, GroupView
 import lsst.daf.persistence as dafPersist
 import lsst.pipe.base as pipeBase
 
-from .calcSrd import computeWidths, getRandomDiff, calcPA1, calcPA2, calcAM1, calcAM2, calcAM3
-from .check import checkAstrometry, checkPhotometry, magNormDiff, positionRms
-from .print import printPA1, printPA2, printAM1, printAM2, printAM3
-from .plot import plotAstrometry, plotPhotometry, plotPA1, plotAM1, plotAM2, plotAM3
+from .calcSrd import calcAM1, calcAM2
+from .check import checkAstrometry, checkPhotometry, positionRms
+from .print import printPA1, printPA2, printAM1, printAM2
+from .plot import plotAstrometry, plotPhotometry, plotPA1, plotAM1, plotAM2
 from .util import getCcdKeyName, repoNameToPrefix
 
 
@@ -134,7 +131,10 @@ def loadAndMatchData(repo, visitDataIds,
     butler = dafPersist.Butler(repo)
     dataset = 'src'
 
-    dataRefs = [dafPersist.ButlerDataRef(butler, vId) for vId in visitDataIds]
+    # 2016-02-08 MWV:
+    # I feel like I could be doing something more efficient with
+    # something along the lines of the following:
+    #    dataRefs = [dafPersist.ButlerDataRef(butler, vId) for vId in visitDataIds]
 
     ccdKeyName = getCcdKeyName(visitDataIds[0])
 
@@ -232,7 +232,6 @@ def analyzeData(allMatches, good_mag_limit=19.5):
     goodPsfMag = goodMatches.aggregate(np.mean, field=psfMagKey)  # mag
     goodPsfMagRms = goodMatches.aggregate(np.std, field=psfMagKey)  # mag
     goodPsfMagErr = goodMatches.aggregate(np.median, field=psfMagErrKey)
-    goodPsfMagNormDiff = goodMatches.aggregate(magNormDiff)
     # positionRms knows how to query a group so we give it the whole thing
     #   by going with the default `field=None`.
     dist = goodMatches.aggregate(positionRms)
@@ -305,20 +304,3 @@ def run(repo, visitDataIds, good_mag_limit=21.0,
     args = calcAM2(safeMatches)
     printAM2(*args)
     plotAM2(*args)
-
-
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("""Usage: validateDrp.py repo configFile
-where repo is the path to a repository containing the output of processCcd
-and configFile is the path to a YAML configuration file declaring the parameters for this run.
-""")
-        sys.exit(1)
-
-    repo = sys.argv[1]
-    if not os.path.isdir(repo):
-        print("Could not find repo %r" % (repo,))
-        sys.exit(1)
-
-    args = defaultData(repo)
-    run(repo, *args)
