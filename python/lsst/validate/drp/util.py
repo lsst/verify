@@ -22,8 +22,6 @@
 
 from __future__ import print_function, division
 
-import numpy as np
-
 import lsst.afw.geom as afwGeom
 import lsst.afw.coord as afwCoord
 
@@ -64,10 +62,3 @@ def averageRaFromCat(cat):
 def averageDecFromCat(cat):
     meanRa, meanDec = averageRaDecFromCat(cat)
     return meanDec
-
-# Paul Price suggests the following to calculate average
-#  import lsst.afw.coord
-#    average = lsst.afw.coord.averageCoord(coords)
-### And then to calculate RMS:
-#    offsets = [cc.getTangentPlaneOffset(average) for cc in coords]
-#    rms = numpy.array([xx[0].asArcseconds() for xx in offsets]).std(), numpy.array([xx[1].asArcseconds() for xx in offsets]).std()

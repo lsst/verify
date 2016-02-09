@@ -37,10 +37,10 @@ import lsst.afw.image as afwImage
 # import lsst.afw.coord as afwCoord
 
 from .base import ValidateError
-from .util import averageRaDecFromCat, averageRaFromCat, averageDecFromCat
-from .plotAstrometryPhotometry import plotAstrometry, plotPhotometry, plotPA1, plotAM1, plotAM2, plotAM3
-from .calcSrd import computeWidths, getRandomDiff, calcPA1, calcPA2, calcAM1, calcAM2, calcAM3
-from .srdSpec import srdSpec, getAstrometricSpec
+from .util import averageRaDecFromCat
+from .plotAstrometryPhotometry import plotAstrometry, plotPhotometry, plotPA1, plotAM1, plotAM2
+from .calcSrd import calcPA1, calcPA2, calcAM1, calcAM2
+from .srdSpec import getAstrometricSpec
 
 
 def getCcdKeyName(dataid):
@@ -54,8 +54,8 @@ def getCcdKeyName(dataid):
 
     Notes
     -----
-    Motiviation: Different camera mappings use different keys to indicate 
-      the different amps/ccds in the same exposure.  This function looks 
+    Motiviation: Different camera mappings use different keys to indicate
+      the different amps/ccds in the same exposure.  This function looks
       through the reference dataId to locate a field that could be the one.
     """
     possibleCcdFieldNames = ['ccd', 'ccdnum', 'camcol']
@@ -72,7 +72,7 @@ def isExtended(source, extendedKey, extendedThreshold=1.0):
 
     Inputs
     ------
-    cat : collection with a .get method 
+    cat : collection with a .get method
         for `extendedKey`
     extendedKey
         key to look up the extended object parameter from a schema.
@@ -89,8 +89,8 @@ def magNormDiff(cat):
 
     Inputs
     ------
-    cat : collection with a .get method 
-         for flux, flux+"-" 
+    cat : collection with a .get method
+         for flux, flux+"-"
 
     Returns
     -------
@@ -100,8 +100,9 @@ def magNormDiff(cat):
     mag = cat.get('base_PsfFlux_mag')
     magerr = cat.get('base_PsfFlux_magerr')
     mag_avg = np.mean(mag)
-    N = len(mag)
     normDiff = (mag - mag_avg) / magerr
+
+    return normDiff
 
 
 def positionRms(cat):
@@ -109,7 +110,7 @@ def positionRms(cat):
 
     Inputs
     ------
-    cat -- collection with a .get method 
+    cat -- collection with a .get method
          for 'coord_ra', 'coord_dec' that returns radians.
 
     Returns
@@ -143,7 +144,7 @@ def loadAndMatchData(repo, visitDataIds,
         List of `butler` data IDs of Image catalogs to compare to reference.
         The `calexp` cpixel image is needed for the photometric calibration.
     matchRadius :  afwGeom.Angle().
-        Radius for matching. 
+        Radius for matching.
 
     Returns
     -------
@@ -155,8 +156,6 @@ def loadAndMatchData(repo, visitDataIds,
     # https://github.com/lsst/afw/blob/tickets/DM-3896/examples/repeatability.ipynb
     butler = dafPersist.Butler(repo)
     dataset = 'src'
-
-    dataRefs = [dafPersist.ButlerDataRef(butler, vId) for vId in visitDataIds]
 
     ccdKeyName = getCcdKeyName(visitDataIds[0])
 
@@ -192,10 +191,12 @@ def loadAndMatchData(repo, visitDataIds,
         srcVis.extend(tmpCat, False)
         mmatch.add(catalog=tmpCat, dataId=vId)
 
-    # Complete the match, returning a catalog that includes all matched sources with object IDs that can be used to group them.
+    # Complete the match, returning a catalog that includes all matched sources
+    #   with object IDs that can be used to group them.
     matchCat = mmatch.finish()
 
-    # Create a mapping object that allows the matches to be manipulated as a mapping of object ID to catalog of sources.
+    # Create a mapping object that allows the matches to be manipulated
+    #   as a mapping of object ID to catalog of sources.
     allMatches = GroupView.build(matchCat)
 
     return allMatches
@@ -206,14 +207,14 @@ def analyzeData(allMatches, good_mag_limit=19.5):
 
     Inputs
     ------
-    allMatches : afw.table.GroupView 
+    allMatches : afw.table.GroupView
         GroupView object with matches.
     good_mag_limit : float, optional
         Minimum average brightness (in magnitudes) for a star to be considered.
 
     Returns
-    ------- 
-    pipeBase.Struct 
+    -------
+    pipeBase.Struct
         Containing mag, magerr, magrms, dist, and number of matches.
     """
 
@@ -254,7 +255,6 @@ def analyzeData(allMatches, good_mag_limit=19.5):
     goodPsfMag = goodMatches.aggregate(np.mean, field=psfMagKey)
     goodPsfMagRms = goodMatches.aggregate(np.std, field=psfMagKey)
     goodPsfMagErr = goodMatches.aggregate(np.median, field=psfMagErrKey)
-    goodPsfMagNormDiff = goodMatches.aggregate(magNormDiff)
     # positionRms knows how to query a group so we give it the whole thing
     #   by going with the default `field=None`.
     dist = goodMatches.aggregate(positionRms)
@@ -264,7 +264,7 @@ def analyzeData(allMatches, good_mag_limit=19.5):
     # This estimate could be stated and calculated from a more formally derived motivation
     #   but in practice 50 should be sufficient.
     numRandomShuffles = 50
-    pa1_samples = [calcPA1(safeMatches, psfMagKey) 
+    pa1_samples = [calcPA1(safeMatches, psfMagKey)
                    for n in range(numRandomShuffles)]
     rmsPA1 = np.array([pa1.rms for pa1 in pa1_samples])
     iqrPA1 = np.array([pa1.iqr for pa1 in pa1_samples])
@@ -379,9 +379,11 @@ def checkPhotometry(mag, mmagrms, dist, match,
           (good_mag_limit, photoScatter, "mmag"))
 
     if photoScatter > medianRef:
-        print("Median photometric scatter %.3f %s is larger than reference : %.3f %s " % (photoScatter, "mmag", medianRef, "mag"))
+        print("Median photometric scatter %.3f %s is larger than reference : %.3f %s " % 
+              (photoScatter, "mmag", medianRef, "mag"))
     if match < matchRef:
-        print("Number of matched sources %d is too small (shoud be > %d)" % (match, matchRef))
+        print("Number of matched sources %d is too small (shoud be > %d)" % 
+              (match, matchRef))
 
     return photoScatter
 
@@ -422,7 +424,7 @@ def printAMx(rmsDistMas, annulus, magrange,
     level : str
         One of "minimum", "design", "stretch" indicating the level of the specification desired.
     x : int
-        Which of AM1, AM2, AM3.  One of [1,2,3].  
+        Which of AM1, AM2, AM3.  One of [1,2,3].
 
     Raises
     ------
@@ -454,7 +456,6 @@ def printAMx(rmsDistMas, annulus, magrange,
           (annulus[0], annulus[1], rmsRelSep, AMx))
     print("  %.2f%% of sample is > %.2f mas from AM%d=%.2f mas (target is <= %.2f%%)" %
           (percentOver, ADx, x, AMx, AFx))
-
 
 
 def repoNameToPrefix(repo):

@@ -28,10 +28,8 @@ import numpy as np
 import scipy.stats
 
 import lsst.pipe.base as pipeBase
-import lsst.afw.coord as afwCoord
 
-from .base import ValidateError
-from .util import averageRaDecFromCat, averageRaFromCat, averageDecFromCat
+from .util import averageRaFromCat, averageDecFromCat
 from .srdSpec import srdSpec
 
 
@@ -40,7 +38,7 @@ def calcPA1(groupView, magKey):
 
     Parameters
     ----------
-    groupView : lsst.afw.table.GroupView 
+    groupView : lsst.afw.table.GroupView
          GroupView object of matched observations from MultiMatch.
     magKey : lookup key to a `schema`
          The lookup key of the field storing the magnitude of interest.
@@ -50,7 +48,7 @@ def calcPA1(groupView, magKey):
     Returns
     -------
     pipeBase.Struct
-       The RMS, inter-quartile range, 
+       The RMS, inter-quartile range,
        differences between pairs of observations, mean mag of each object.
 
     Notes
@@ -62,18 +60,18 @@ def calcPA1(groupView, magKey):
       (5, 8, 3) millimag
     following LPM-17 as of 2011-07-06, available at http://ls.st/LPM-17.
 
-    This present routine calculates this quantity in two different ways: 
+    This present routine calculates this quantity in two different ways:
        RMS
        interquartile range (IQR)
     and also returns additional quantities of interest:
-      the pair differences of observations of stars, 
+      the pair differences of observations of stars,
       the mean magnitude of each star
 
-    While the SRD specifies that we should just compute the RMS directly, 
-       the current filter doesn't screen out variable stars as carefully 
-       as the SRD specifies, so using a more robust estimator like the IQR 
-       allows us to reject some outliers. 
-    However, the IRQ is also less sensitive some realistic sources of scatter 
+    While the SRD specifies that we should just compute the RMS directly,
+       the current filter doesn't screen out variable stars as carefully
+       as the SRD specifies, so using a more robust estimator like the IQR
+       allows us to reject some outliers.
+    However, the IRQ is also less sensitive some realistic sources of scatter
        such as bad zero points, that the metric should include.
 
     See Also
@@ -109,19 +107,19 @@ def calcPA1(groupView, magKey):
     means = groupView.aggregate(np.mean, field=magKey)
     rmsPA1, iqrPA1 = computeWidths(diffs)
 
-    return pipeBase.Struct(rms = rmsPA1, iqr = iqrPA1, 
-                           diffs = diffs, means = means)
+    return pipeBase.Struct(rms=rmsPA1, iqr=iqrPA1,
+                           diffs=diffs, means=means)
 
 
 def calcPA2(groupView, magKey):
     """Calculate the fraction of outliers from PA1.
 
-    Calculate the fraction of outliers from the median RMS characterizaing 
+    Calculate the fraction of outliers from the median RMS characterizaing
     the photometric repeatability of measurements as calculated via `calcPA1`.
 
     Parameters
     ----------
-    groupView : lsst.afw.table.GroupView 
+    groupView : lsst.afw.table.GroupView
          GroupView object of matched observations from MultiMatch.
     magKey : lookup key to a `schema`
          The lookup key of the field storing the magnitude of interest.
@@ -171,8 +169,8 @@ def calcPA2(groupView, magKey):
 
     Notes
     -----
-    The LSST Science Requirements Document (LPM-17) is commonly referred 
-    to as the SRD.  The SRD puts a limit that no more than PF1 % of difference 
+    The LSST Science Requirements Document (LPM-17) is commonly referred
+    to as the SRD.  The SRD puts a limit that no more than PF1 % of difference
     will vary by more than PA2 millimag.  The design, minimum, and stretch goals
     are PF1 = (10, 20, 5) % at PA2 = (15, 15, 10) millimag
       following LPM-17 as of 2011-07-06, available at http://ls.st/LPM-17.
@@ -197,15 +195,15 @@ def getRandomDiffRmsInMas(array):
     -------
     float
         RMS difference
-        
+
     Notes
     -----
-    The LSST SRD recommends computing repeatability from a histogram of 
-    magnitude differences for the same star measured on two visits 
-    (using a median over the diffs to reject outliers). 
-    Because we have N>=2 measurements for each star, we select a random 
-    pair of visits for each star.  We divide each difference by sqrt(2) 
-    to obtain RMS about the (unknown) mean magnitude, 
+    The LSST SRD recommends computing repeatability from a histogram of
+    magnitude differences for the same star measured on two visits
+    (using a median over the diffs to reject outliers).
+    Because we have N>=2 measurements for each star, we select a random
+    pair of visits for each star.  We divide each difference by sqrt(2)
+    to obtain RMS about the (unknown) mean magnitude,
     instead of obtaining just the RMS difference.
 
     See Also
@@ -229,28 +227,28 @@ def getRandomDiff(array):
     Input
     -----
     array : list or np.array
-    
+
     Returns
     -------
     float or int
         Difference between two random elements of the array.
 
-    Notes 
+    Notes
     -----
-    * As implemented the returned value is the result of subtracting 
-        two elements of the input array.  In all of the imagined uses 
-        that's going to be a scalar (float, maybe int).  
+    * As implemented the returned value is the result of subtracting
+        two elements of the input array.  In all of the imagined uses
+        that's going to be a scalar (float, maybe int).
         In principle, however the code as implemented returns the result
         of subtracting two elements of the array, which could be any
         arbitrary object that is the result of the subtraction operator
         applied to two elements of the array.
-    * This is not the most efficient way to extract a pair, 
+    * This is not the most efficient way to extract a pair,
         but it's the easiest to write.
-    * Shuffling works correctly for low N (even N=2), where a naive 
-        random generation of entries would result in duplicates.  
-    * In principle it might be more efficient to shuffle the indices, 
-        then extract the difference.  But this probably only would make a 
-        difference for arrays whose elements were objects that were 
+    * Shuffling works correctly for low N (even N=2), where a naive
+        random generation of entries would result in duplicates.
+    * In principle it might be more efficient to shuffle the indices,
+        then extract the difference.  But this probably only would make a
+        difference for arrays whose elements were objects that were
         substantially larger than a float.  And that would only make
         sense for objects that had a subtraction operation defined.
     """
@@ -261,7 +259,7 @@ def getRandomDiff(array):
 
 def computeWidths(array):
     """Compute the RMS and the scaled inter-quartile range of an array.
-  
+
     Input
     -----
     array : list or np.array
@@ -269,15 +267,15 @@ def computeWidths(array):
     Returns
     -------
     float, float
-        RMS and scaled inter-quartile range (IQR).  
-        
+        RMS and scaled inter-quartile range (IQR).
+
     Notes
     -----
-    We estimate the width of the histogram in two ways: 
-       using a simple RMS, 
+    We estimate the width of the histogram in two ways:
+       using a simple RMS,
        using the interquartile range (IQR)
     The IQR is scaled by the IQR/RMS ratio for a Gaussian such that it
-       if the array is Gaussian distributed, then the scaled IQR = RMS. 
+       if the array is Gaussian distributed, then the scaled IQR = RMS.
     """
     rmsSigma = math.sqrt(np.mean(array**2))
     iqrSigma = np.subtract.reduce(np.percentile(array, [75, 25])) / (scipy.stats.norm.ppf(0.75)*2)
@@ -345,7 +343,7 @@ def matchVisitComputeDistance(visit_obj1, ra_obj1, dec_obj1,
     for i in range(len(visit_obj1)):
         for j in range(len(visit_obj2)):
             if (visit_obj1[i] == visit_obj2[j]):
-                if np.isfinite([ra_obj1[i], dec_obj1[i], 
+                if np.isfinite([ra_obj1[i], dec_obj1[i],
                                 ra_obj2[j], dec_obj2[j]]).all():
                     distances.append(sphDist(ra_obj1[i], dec_obj1[i],
                                              ra_obj2[j], dec_obj2[j]))
@@ -382,7 +380,7 @@ def calcAMx(groupView, D=5, width=2, magrange=None):
 
     Parameters
     ----------
-    groupView : lsst.afw.table.GroupView 
+    groupView : lsst.afw.table.GroupView
          GroupView object of matched observations from MultiMatch.
     magKey : lookup key to a `schema`
          The lookup key of the field storing the magnitude of interest.
@@ -459,13 +457,10 @@ def calcAMx(groupView, D=5, width=2, magrange=None):
 
     jump = len(groupViewInMagrange)
 
-    objid = matchKeyOutput[0*jump:1*jump]
     ra = matchKeyOutput[1*jump:2*jump]
     dec = matchKeyOutput[2*jump:3*jump]
-    name = matchKeyOutput[3*jump:4*jump]
     visit = matchKeyOutput[4*jump:5*jump]
 
-    psfMag = groupViewInMagrange.aggregate(np.median, 'base_PsfFlux_mag')
     meanRa = groupViewInMagrange.aggregate(averageRaFromCat)
     meanDec = groupViewInMagrange.aggregate(averageDecFromCat)
 

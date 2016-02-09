@@ -27,20 +27,20 @@ import lsst.pipe.base as pipeBase
 from .base import ValidateError
 
 srdSpec = pipeBase.Struct(
-    levels = ("design", "minimum", "stretch"),
-    PA2 = {"design" : 15, "minimum" : 15, "stretch" : 10},  # mmag
-    D1 = 5,  # arcmin
-    AM1 = {"design" : 10, "minimum" : 20, "stretch" : 5},  # mas
-    AF1 = {"design" : 10, "minimum" : 20, "stretch" : 5},  # %
-    AD1 = {"design" : 20, "minimum" : 40, "stretch" : 10},  # mas
-    D2 = 20,
-    AM2 = {"design" : 10, "minimum" : 20, "stretch" : 5},  # mas
-    AF2 = {"design" : 10, "minimum" : 20, "stretch" : 5},  # %
-    AD2 = {"design" : 20, "minimum" : 40, "stretch" : 10},  # mas
-    D3 = 200,
-    AM3 = {"design" : 15, "minimum" : 30, "stretch" : 10},  # mas
-    AF3 = {"design" : 10, "minimum" : 20, "stretch" : 5},  # %
-    AD3 = {"design" : 30, "minimum" : 50, "stretch" : 20},  # mas
+    levels=("design", "minimum", "stretch"),
+    PA2={"design": 15, "minimum": 15, "stretch": 10},  # mmag
+    D1=5,  # arcmin
+    AM1={"design": 10, "minimum": 20, "stretch": 5},  # mas
+    AF1={"design": 10, "minimum": 20, "stretch": 5},  # %
+    AD1={"design": 20, "minimum": 40, "stretch": 10},  # mas
+    D2=20,
+    AM2={"design": 10, "minimum": 20, "stretch": 5},  # mas
+    AF2={"design": 10, "minimum": 20, "stretch": 5},  # %
+    AD2={"design": 20, "minimum": 40, "stretch": 10},  # mas
+    D3=200,
+    AM3={"design": 15, "minimum": 30, "stretch": 10},  # mas
+    AF3={"design": 10, "minimum": 20, "stretch": 5},  # %
+    AD3={"design": 30, "minimum": 50, "stretch": 20},  # mas
 )
 
 

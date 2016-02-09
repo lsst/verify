@@ -28,7 +28,7 @@ import scipy.stats
 from scipy.optimize import curve_fit
 
 from .base import ValidateError
-from .calcSrd import calcPA1, calcPA2, calcAM1
+from .calcSrd import calcPA1
 from .srdSpec import getAstrometricSpec
 
 # Plotting defaults
@@ -38,14 +38,14 @@ plt.rcParams['font.size'] = 20
 plt.rcParams['axes.labelsize'] = 20
 # plt.rcParams['figure.titlesize'] = 30
 
-color = {'all' : 'grey', 'bright' : 'blue', 
-         'iqr' : 'green', 'rms' : 'red'}
+color = {'all': 'grey', 'bright': 'blue',
+         'iqr': 'green', 'rms': 'red'}
 
 
 def plotOutlinedLines(ax, x1, x2, x1_color=color['all'], x2_color=color['bright']):
     """Plot horizontal lines outlined in white.
 
-    The motivation is to let horizontal lines stand out clearly 
+    The motivation is to let horizontal lines stand out clearly
     even against a cluttered background.
     """
     ax.axhline(x1, color='white', linewidth=4)
@@ -74,7 +74,7 @@ def plotAstrometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
 
     bright, = np.where(np.asarray(mag) < good_mag_limit)
 
-    dist_median = np.median(dist) 
+    dist_median = np.median(dist)
     bright_dist_median = np.median(np.asarray(dist)[bright])
 
     fig, ax = plt.subplots(ncols=2, nrows=1, figsize=(18, 12))
@@ -87,14 +87,14 @@ def plotAstrometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
 
     ax[0].set_ylim([0., 500.])
     ax[0].set_ylabel("Distance [mas]")
-    ax[0].set_title("Median : %.1f, %.1f mas" % 
+    ax[0].set_title("Median : %.1f, %.1f mas" %
                        (bright_dist_median, dist_median),
                        x=0.55, y=0.88)
     plotOutlinedLines(ax[0], dist_median, bright_dist_median)
 
     ax[1].scatter(mag, dist, s=10, color=color['all'], label='All')
-    ax[1].scatter(np.asarray(mag)[bright], np.asarray(dist)[bright], s=10, 
-                  color=color['bright'], 
+    ax[1].scatter(np.asarray(mag)[bright], np.asarray(dist)[bright], s=10,
+                  color=color['bright'],
                   label='mag < %.1f' % good_mag_limit)
     ax[1].set_xlabel("Magnitude")
     ax[1].set_ylabel("Distance [mas]")
@@ -131,8 +131,9 @@ def plotExpFit(x, y, y_err, deg=2, ax=None, verbose=False):
     fit_params = popt
     x_model = np.linspace(*xlim, num=100)
     fit_model = expModel(x_model, *fit_params)
-    label = '%.4g exp(mag/%.4g) + %.4g' % (fit_params[0], fit_params[2], fit_params[1])
-    if verbose:  
+    label = '%.4g exp(mag/%.4g) + %.4g' % \
+            (fit_params[0], fit_params[2], fit_params[1])
+    if verbose:
         print(fit_params)
         print(label)
 
@@ -166,25 +167,25 @@ def plotPhotometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
 
     bright, = np.where(np.asarray(mag) < good_mag_limit)
 
-    mmagrms_median = np.median(mmagrms) 
+    mmagrms_median = np.median(mmagrms)
     bright_mmagrms_median = np.median(np.asarray(mmagrms)[bright])
 
     fig, ax = plt.subplots(ncols=2, nrows=2, figsize=(18, 16))
     ax[0][0].hist(mmagrms, bins=100, range=(0, 500), color=color['all'], label='All',
                   histtype='stepfilled', orientation='horizontal')
-    ax[0][0].hist(np.asarray(mmagrms)[bright], bins=100, range=(0, 500), color=color['bright'], 
+    ax[0][0].hist(np.asarray(mmagrms)[bright], bins=100, range=(0, 500), color=color['bright'],
                   label='mag < %.1f' % good_mag_limit,
                   histtype='stepfilled', orientation='horizontal')
     ax[0][0].set_ylim([0, 500])
     ax[0][0].set_ylabel("RMS [mmag]")
-    ax[0][0].set_title("Median : %.1f, %.1f mmag" % 
-                    (bright_mmagrms_median, mmagrms_median),
-                    x=0.55, y=0.88)
+    ax[0][0].set_title("Median : %.1f, %.1f mmag" %
+                       (bright_mmagrms_median, mmagrms_median),
+                       x=0.55, y=0.88)
     plotOutlinedLines(ax[0][0], mmagrms_median, bright_mmagrms_median)
 
     ax[0][1].scatter(mag, mmagrms, s=10, color=color['all'], label='All')
-    ax[0][1].scatter(np.asarray(mag)[bright], np.asarray(mmagrms)[bright], 
-                     s=10, color=color['bright'], 
+    ax[0][1].scatter(np.asarray(mag)[bright], np.asarray(mmagrms)[bright],
+                     s=10, color=color['bright'],
                      label='mag < %.1f' % good_mag_limit)
 
     ax[0][1].set_xlabel("Magnitude")
@@ -196,12 +197,12 @@ def plotPhotometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
     plotOutlinedLines(ax[0][1], mmagrms_median, bright_mmagrms_median)
 
     ax[1][0].scatter(mmagrms, mmagerr, s=10, color=color['all'], label='All')
-    ax[1][0].scatter(np.asarray(mmagrms)[bright], np.asarray(mmagerr)[bright], 
-                     s=10, color=color['bright'], 
+    ax[1][0].scatter(np.asarray(mmagrms)[bright], np.asarray(mmagerr)[bright],
+                     s=10, color=color['bright'],
                      label='mag < %.1f' % good_mag_limit)
     ax[1][0].set_xscale('log')
     ax[1][0].set_yscale('log')
-    ax[1][0].plot([0, 1000], [0, 1000], 
+    ax[1][0].plot([0, 1000], [0, 1000],
                   linestyle='--', color='black', linewidth=2)
     ax[1][0].set_xlabel("RMS of Quoted Magnitude [mmag]")
     ax[1][0].set_ylabel("Median Quoted Magnitude Err [mmag]")
@@ -233,25 +234,25 @@ def plotPA1(gv, magKey, plotbase=""):
 
     diff_range = (-100, +100)
 
-    fig = plt.figure(figsize=(18,12))
-    ax1 = fig.add_subplot(1,2,1)
+    fig = plt.figure(figsize=(18, 12))
+    ax1 = fig.add_subplot(1, 2, 1)
     ax1.scatter(pa1.means, pa1.diffs, s=10, color=color['bright'], linewidth=0)
     ax1.axhline(+pa1.rms, color=color['rms'], linewidth=3)
     ax1.axhline(-pa1.rms, color=color['rms'], linewidth=3)
     ax1.axhline(+pa1.iqr, color=color['iqr'], linewidth=3)
     ax1.axhline(-pa1.iqr, color=color['iqr'], linewidth=3)
 
-    ax2 = fig.add_subplot(1,2,2, sharey=ax1)
+    ax2 = fig.add_subplot(1, 2, 2, sharey=ax1)
     ax2.hist(pa1.diffs, bins=25, range=diff_range,
              orientation='horizontal', histtype='stepfilled',
              normed=True, color=color['bright'])
     ax2.set_xlabel("relative # / bin")
 
     yv = np.linspace(diff_range[0], diff_range[1], 100)
-    ax2.plot(scipy.stats.norm.pdf(yv, scale=pa1.rms), yv, 
+    ax2.plot(scipy.stats.norm.pdf(yv, scale=pa1.rms), yv,
              marker='', linestyle='-', linewidth=3, color=color['rms'],
              label="PA1(RMS) = %4.2f mmag" % pa1.rms)
-    ax2.plot(scipy.stats.norm.pdf(yv, scale=pa1.iqr), yv, 
+    ax2.plot(scipy.stats.norm.pdf(yv, scale=pa1.iqr), yv,
              marker='', linestyle='-', linewidth=3, color=color['iqr'],
              label="PA1(IQR) = %4.2f mmag" % pa1.iqr)
     ax2.set_ylim(*diff_range)
@@ -260,7 +261,8 @@ def plotPA1(gv, magKey, plotbase=""):
 #    ax1.set_xlabel(u"12-pixel aperture magnitude")
     ax1.set_xlabel("psf magnitude")
     ax1.set_ylabel("psf magnitude diff (mmag)")
-    for label in ax2.get_yticklabels(): label.set_visible(False)
+    for label in ax2.get_yticklabels(): 
+        label.set_visible(False)
 
     plt.suptitle("PA1: %s" % plotbase.rstrip('_'))
     plotPath = "%s%s" % (plotbase, "PA1.png")
@@ -278,7 +280,7 @@ def plotAM3(*args, **kwargs):
 
 def plotAMx(rmsDistMas, annulus, magrange,
             x=None, level="design",
-            plotbase=""): 
+            plotbase=""):
     """Plot a histogram of the RMS in relative distance between pairs of stars.
 
     Inputs
@@ -317,22 +319,23 @@ ication desired.
     fractionOver = np.mean(np.asarray(rmsDistMas) > AMx+ADx)
     percentOver = 100*fractionOver
 
-    fig = plt.figure(figsize=(10,6))
-    ax1 = fig.add_subplot(1,1,1)
+    fig = plt.figure(figsize=(10, 6))
+    ax1 = fig.add_subplot(1, 1, 1)
     ax1.hist(rmsDistMas, bins=25, range=(0.0, 100.0),
              histtype='stepfilled',
-             label='D: %.1f-%.1f arcmin\nMag Bin: %.1f-%.1f' % 
+             label='D: %.1f-%.1f arcmin\nMag Bin: %.1f-%.1f' %
                    (annulus[0], annulus[1], magrange[0], magrange[1]))
-    ax1.axvline(rmsRelSep, 0, 1, linewidth=2,  color='black', 
+    ax1.axvline(rmsRelSep, 0, 1, linewidth=2,  color='black',
                 label='median RMS of relative\nseparation: %.2f mas' % (rmsRelSep))
-    ax1.axvline(AMx, 0, 1, linewidth=2, color='red', 
+    ax1.axvline(AMx, 0, 1, linewidth=2, color='red',
                 label='AM%d: %.2f mas' % (x, AMx))
     ax1.axvline(AMx+ADx, 0, 1, linewidth=2, color='green',
-                label='AM%d+AD%d: %.2f mas\nAF%d: %2.f%% > AM%d+AD%d = %2.f%%' % (x, x, AMx+ADx, x, AFx, x, x, percentOver))
+                label='AM%d+AD%d: %.2f mas\nAF%d: %2.f%% > AM%d+AD%d = %2.f%%' %\
+                      (x, x, AMx+ADx, x, AFx, x, x, percentOver))
 
     ax1.set_title('The %d stars separated by D = [%.2f, %.2f] arcmin' % \
                   (len(rmsDistMas), annulus[0], annulus[1]))
-    ax1.set_xlim(0.0,100.0)
+    ax1.set_xlim(0.0, 100.0)
     ax1.set_xlabel('rms Relative Separation (mas)')
     ax1.set_ylabel('# pairs / bin')
 
@@ -340,4 +343,4 @@ ication desired.
 
     figName = plotbase+'D_%d_ARCMIN_%.1f-%.1f.png' % \
                    (int(sum(annulus)/2), magrange[0], magrange[1])
-    plt.savefig(figName,dpi=300)
+    plt.savefig(figName, dpi=300)
