@@ -68,7 +68,7 @@ def printAM2(*args, **kwargs):
 def printAM3(*args, **kwargs):
     return printAMx(*args, x=3, **kwargs)
 
-def printAMx(rmsDistMas, annulus, magrange,
+def printAMx(rmsDistMas, annulus, magRange,
              x=None, level="design"):
     """Print the Astrometric performance.
 
@@ -78,7 +78,7 @@ def printAMx(rmsDistMas, annulus, magrange,
         RMS variation of relative distance between stars across a series of visits.
     annulus : 2-element list or tuple
         inner and outer radius of comparison annulus [arcmin]
-    magrange : 2-element list or tuple
+    magRange : 2-element list or tuple
         lower and upper magnitude range
     level : str
         One of "minimum", "design", "stretch" indicating the level of the specification desired.
@@ -102,7 +102,7 @@ def printAMx(rmsDistMas, annulus, magrange,
 
     AMx, AFx, ADx = getAstrometricSpec(x=x, level=level)
 
-    magBinLow, magBinHigh = magrange
+    magBinLow, magBinHigh = magRange
 
     rmsRelSep = np.median(rmsDistMas)
     fractionOver = np.mean(np.asarray(rmsDistMas) > AMx+ADx)
@@ -110,7 +110,7 @@ def printAMx(rmsDistMas, annulus, magrange,
 
     print("Median of distribution of RMS of distance of stellar pairs.")
     print("%s goals" % level.upper())
-    print("For stars from %.2f < mag < %.2f" % (magrange[0], magrange[1]))
+    print("For stars from %.2f < mag < %.2f" % (magRange[0], magRange[1]))
     print("from D = [%.2f, %.2f] arcmin, is %.2f mas (target is <= %.2f mas)." %
           (annulus[0], annulus[1], rmsRelSep, AMx))
     print("  %.2f%% of sample is > %.2f mas from AM%d=%.2f mas (target is <= %.2f%%)" %

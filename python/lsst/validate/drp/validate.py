@@ -36,6 +36,7 @@ from .check import checkAstrometry, checkPhotometry, positionRms
 from .print import printPA1, printPA2, printAM1, printAM2
 from .plot import plotAstrometry, plotPhotometry, plotPA1, plotAM1, plotAM2
 from .util import getCcdKeyName, repoNameToPrefix, loadDataIdsAndParameters, constructDataIds, loadRunList, constructRunList 
+from .io import saveAmxToJson
 
 
 def loadAndMatchData(repo, visitDataIds,
@@ -251,8 +252,8 @@ def run(repo, visitDataIds, good_mag_limit=21.0,
     if makePrint:
         printPA1(safeMatches, magKey)
         printPA2(safeMatches, magKey)
-        printAM1(AM1.AM1, AM1.AD1_annulus, AM1.magrange)
-        printAM2(AM2.AM2, AM2.AD2_annulus, AM2.magrange)
+        printAM1(AM1.AM1, AM1.AD1_annulus, AM1.magRange)
+        printAM2(AM2.AM2, AM2.AD2_annulus, AM2.magRange)
 
     if makePlot:
         plotPA1(safeMatches, magKey, plotBase=outputPrefix)

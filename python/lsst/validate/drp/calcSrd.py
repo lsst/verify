@@ -367,7 +367,7 @@ def calcAM1(*args, **kwargs):
         AM1=amxStruct.AMx,
         AD1=srdSpec.D1,
         AD1_annulus=amxStruct.annulus,
-        magrange=amxStruct.magrange,
+        magRange=amxStruct.magRange,
         )
 
 def calcAM2(*args, **kwargs):
@@ -380,7 +380,7 @@ def calcAM2(*args, **kwargs):
         AM2=amxStruct.AMx,
         AD2=srdSpec.D2,
         AD2_annulus=amxStruct.annulus,
-        magrange=amxStruct.magrange,
+        magRange=amxStruct.magRange,
         )
 
 def calcAM3(*args, **kwargs):
@@ -393,7 +393,7 @@ def calcAM3(*args, **kwargs):
         AM3=amxStruct.AMx,
         AD3=srdSpec.D3,
         AD3_annulus=amxStruct.annulus,
-        magrange=amxStruct.magrange,
+        magRange=amxStruct.magRange,
         )
 
 def calcAMx(groupView, D=5, width=2, magRange=None):
@@ -515,5 +515,5 @@ def calcAMx(groupView, D=5, width=2, magRange=None):
         AMx=rmsDistMas,
         D=D,
         annulus=annulus,
-        magrange=magrange,
+        magRange=magRange,
         )

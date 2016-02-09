@@ -279,7 +279,7 @@ def plotAM2(*args, **kwargs):
 def plotAM3(*args, **kwargs):
     return plotAMx(*args, x=3, **kwargs)
 
-def plotAMx(rmsDistMas, annulus, magrange,
+def plotAMx(rmsDistMas, annulus, magRange,
             x=None, level="design",
             plotBase=""):
     """Plot a histogram of the RMS in relative distance between pairs of stars.
@@ -291,7 +291,7 @@ def plotAMx(rmsDistMas, annulus, magrange,
 ts.
     annulus : 2-element list or tuple
         inner and outer radius of comparison annulus [arcmin]
-    magrange : 2-element list or tuple
+    magRange : 2-element list or tuple
         lower and upper magnitude range
     level : str
         One of "minimum", "design", "stretch" indicating the level of the specif
@@ -325,7 +325,7 @@ ication desired.
     ax1.hist(rmsDistMas, bins=25, range=(0.0, 100.0),
              histtype='stepfilled',
              label='D: %.1f-%.1f arcmin\nMag Bin: %.1f-%.1f' %
-                   (annulus[0], annulus[1], magrange[0], magrange[1]))
+                   (annulus[0], annulus[1], magRange[0], magRange[1]))
     ax1.axvline(rmsRelSep, 0, 1, linewidth=2,  color='black',
                 label='median RMS of relative\nseparation: %.2f mas' % (rmsRelSep))
     ax1.axvline(AMx, 0, 1, linewidth=2, color='red',
@@ -343,6 +343,6 @@ ication desired.
     ax1.legend(loc='upper right', fontsize=16)
 
     figName = plotBase+'AM%d_D_%d_ARCMIN_%.1f-%.1f.png' % \
-              (x, int(sum(annulus)/2), magrange[0], magrange[1])
+              (x, int(sum(annulus)/2), magRange[0], magRange[1])
 
     plt.savefig(figName, dpi=300)
