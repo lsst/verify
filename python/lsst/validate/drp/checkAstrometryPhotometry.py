@@ -405,26 +405,21 @@ def repoNameToPrefix(repo):
 
     Examples
     --------
-    >>> repoNameToPrefix("a/b/c")
-    "a_b_c"
-    >>> repoNameToPrefix("/bar/foo/")
-    "bar_foo"
-    >>> repoNameToPrefix("CFHT/output")
-    "CFHT_output"
+    >>> repoNameToPrefix('a/b/c')
+    'a_b_c_'
+    >>> repoNameToPrefix('/bar/foo/')
+    'bar_foo_'
+    >>> repoNameToPrefix('CFHT/output')
+    'CFHT_output_'
+    >>> repoNameToPrefix('./CFHT/output')
+    'CFHT_output_'
+    >>> repoNameToPrefix('.a/CFHT/output')
+    'a_CFHT_output_'
     """
 
-    dirnames = []
-    remaining_path = repo
-    while os.path.split(remaining_path):
-        remaining_path, tail = os.path.split(remaining_path)
-        dirnames.append(tail)
-        if remaining_path in ["", "/"]: 
-            break
+    return repo.lstrip('\.').strip(os.sep).replace(os.sep, "_")+"_"
 
-    base = "_".join(dirnames[::-1])  # reverse to get order right
-    return base
 
-####
 def run(repo, visitDataIds, good_mag_limit, 
         medianAstromscatterRef=25, medianPhotoscatterRef=25, matchRef=500):
     """Main executable.
