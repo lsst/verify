@@ -78,7 +78,7 @@ def calcPA1(groupView, magKey):
     --------
     >>> import lsst.daf.persistence as dafPersist
     >>> from lsst.afw.table import SourceCatalog, SchemaMapper, Field
-    >>> from lsst.afw.table import MultiMatch, SimpleRecord, GroupView
+    >>> from lsst.afw.table import MultiMatch, SourceRecord, GroupView
     >>> repo = "CFHT/output"
     >>> butler = dafPersist.Butler(repo)
     >>> dataset = 'src'
@@ -86,7 +86,7 @@ def calcPA1(groupView, magKey):
     >>> mmatch = MultiMatch(newSchema,
     >>>                     dataIdFormat={'visit': int, 'ccd': int},
     >>>                     radius=matchRadius,
-    >>>                     RecordClass=SimpleRecord)
+    >>>                     RecordClass=SourceRecord)
     >>> for vId in visitDataIds:
     ...     cat = butler.get('src', vId)
     ...     mmatch.add(catalog=cat, dataId=vId)
@@ -135,7 +135,7 @@ def calcPA2(groupView, magKey):
     --------
     >>> import lsst.daf.persistence as dafPersist
     >>> from lsst.afw.table import SourceCatalog, SchemaMapper, Field
-    >>> from lsst.afw.table import MultiMatch, SimpleRecord, GroupView
+    >>> from lsst.afw.table import MultiMatch, SourceRecord, GroupView
     >>> repo = "CFHT/output"
     >>> butler = dafPersist.Butler(repo)
     >>> dataset = 'src'
@@ -143,7 +143,7 @@ def calcPA2(groupView, magKey):
     >>> mmatch = MultiMatch(newSchema,
     >>>                     dataIdFormat={'visit': int, 'ccd': int},
     >>>                     radius=matchRadius,
-    >>>                     RecordClass=SimpleRecord)
+    >>>                     RecordClass=SourceRecord)
     >>> for vId in visitDataIds:
     ...     cat = butler.get('src', vId)
     ...     mmatch.add(catalog=cat, dataId=vId)

@@ -30,7 +30,7 @@ import numpy as np
 import lsst.daf.persistence as dafPersist
 import lsst.pipe.base as pipeBase
 from lsst.afw.table import SourceCatalog, SchemaMapper, Field
-from lsst.afw.table import MultiMatch, SimpleRecord, GroupView
+from lsst.afw.table import MultiMatch, SourceRecord, GroupView
 
 import lsst.afw.geom as afwGeom
 import lsst.afw.image as afwImage
@@ -174,7 +174,7 @@ def loadAndMatchData(repo, visitDataIds,
     mmatch = MultiMatch(newSchema, 
                         dataIdFormat = {'visit': int, ccdKeyName: int},
                         radius=matchRadius,
-                        RecordClass=SimpleRecord)
+                        RecordClass=SourceRecord)
 
     # create the new extented source catalog
     srcVis = SourceCatalog(newSchema)
@@ -254,8 +254,8 @@ def analyzeData(allMatches, good_mag_limit=19.5):
     safeMatches = goodMatches.where(safeFilter)
 
     # Pass field=psfMagKey so np.mean just gets that as its input
-    goodPsfMag = goodMatches.aggregate(np.mean, field=psfMagKey)  # mag
-    goodPsfMagRms = goodMatches.aggregate(np.std, field=psfMagKey)  # mag
+    goodPsfMag = goodMatches.aggregate(np.mean, field=psfMagKey)
+    goodPsfMagRms = goodMatches.aggregate(np.std, field=psfMagKey)
     goodPsfMagErr = goodMatches.aggregate(np.median, field=psfMagErrKey)
     goodPsfMagNormDiff = goodMatches.aggregate(magNormDiff)
     # positionRms knows how to query a group so we give it the whole thing
