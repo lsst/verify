@@ -26,22 +26,22 @@ if [[ -z "$DYLD_LIBRARY_PATH" ]]; then
 fi
 
 WORKSPACE=${CAMERA}
-if [ -d ${WORKSPACE} ]; then
-   rm -rf ${WORKSPACE}
+if [ -d "${WORKSPACE}" ]; then
+   rm -rf "${WORKSPACE}"
 fi
 
 # cleanup and create directories
 echo "Ingesting Raw data"
 INPUT=${WORKSPACE}/input
-mkdir -p $INPUT
+mkdir -p "$INPUT"
 OUTPUT=${WORKSPACE}/output
-mkdir -p $OUTPUT
+mkdir -p "$OUTPUT"
 
-echo $MAPPER > ${INPUT}/_mapper
+echo "$MAPPER" > "${INPUT}"/_mapper
 
 # ingest raw data
 RAWDATA=${VALIDATION_DATA}
-${INGEST} ${INPUT} "${RAWDATA}"/*.fz --mode link
+${INGEST} "${INPUT}" "${RAWDATA}"/*.fz --mode link
 
 # Set up astrometry 
 export ASTROMETRY_NET_DATA_DIR="${VALIDATION_DATA}"/../astrometry_net_data
@@ -64,7 +64,7 @@ makeRunList.py "${YAMLCONFIG}" > "${RUNLIST}"
 ${PROCESSCCD} "${INPUT}" --output "${OUTPUT}" \
     @"${RUNLIST}" \
     --logdest "${WORKSPACE}"/processCcd.log \
-    --configfile ${CONFIG_FILE} \
+    --configfile "${CONFIG_FILE}" \
     -j $NUMPROC
 
 # Run astrometry check on src

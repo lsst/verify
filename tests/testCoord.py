@@ -24,22 +24,17 @@
 
 from __future__ import print_function
 
-import os
 import sys
 
 import unittest
-import warnings
 
 import numpy as np
 from numpy.testing import assert_allclose
 
-import lsst.afw.geom as afwGeom
-import lsst.afw.coord as afwCoord
-import lsst.pex.exceptions as pexExcept
 import lsst.utils.tests as utilsTests
 
 from lsst.validate.drp.base import ValidateError
-from lsst.validate.drp import util, calcSrd
+from lsst.validate.drp import util
 from lsst.validate.drp.plot import plotAMx
 
 
@@ -58,25 +53,23 @@ class CoordTestCase(unittest.TestCase):
         self.annulus = [1, 2]
         self.magrange = [20, 25]
 
-
     def tearDown(self):
         pass
-
 
     def testZeroDecSimpleAverageCoord(self):
         meanRa, meanDec = util.averageRaDec(self.simpleRa, self.zeroDec)
         assert_allclose([20, 0], np.rad2deg([meanRa, meanDec]))
-        
+
     def testSimpleAverageCoord(self):
         meanRa, meanDec = util.averageRaDec(self.simpleRa, self.simpleDec)
         assert_allclose([19.493625,  37.60447], np.rad2deg([meanRa, meanDec]))
-        
+
     def testPlotAMxFailureEmpty(self):
-        self.assertRaises(ValidateError, 
+        self.assertRaises(ValidateError,
                           plotAMx, [], self.annulus, self.magrange, x=1)
 
     def testPlotAMxFailureNox(self):
-        self.assertRaises(ValidateError, 
+        self.assertRaises(ValidateError,
                           plotAMx, self.simpleRms, self.annulus, self.magrange, x=None)
 
 

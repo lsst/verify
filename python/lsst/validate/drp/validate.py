@@ -96,10 +96,9 @@ def loadAndMatchData(repo, visitDataIds,
         # create temporary catalog
         tmpCat = SourceCatalog(SourceCatalog(newSchema).table)
         tmpCat.extend(oldSrc, mapper=mapper)
-        (tmpCat['base_PsfFlux_mag'][:],
-         tmpCat['base_PsfFlux_magerr'][:]) = \
-             calib.getMagnitude(tmpCat['base_PsfFlux_flux'],
-                                tmpCat['base_PsfFlux_fluxSigma'])
+        (tmpCat['base_PsfFlux_mag'][:], tmpCat['base_PsfFlux_magerr'][:]) = \
+         calib.getMagnitude(tmpCat['base_PsfFlux_flux'],
+                            tmpCat['base_PsfFlux_fluxSigma'])
         srcVis.extend(tmpCat, False)
         mmatch.add(catalog=tmpCat, dataId=vId)
 

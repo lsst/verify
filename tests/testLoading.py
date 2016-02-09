@@ -28,19 +28,11 @@ import os
 import sys
 
 import unittest
-import warnings
 
-import numpy as np
-from numpy.testing import assert_allclose
-
-import lsst.afw.geom as afwGeom
-import lsst.afw.coord as afwCoord
-import lsst.pex.exceptions as pexExcept
 import lsst.utils
 import lsst.utils.tests as utilsTests
 
-from lsst.validate.drp.base import ValidateError
-from lsst.validate.drp import util, calcSrd, validate
+from lsst.validate.drp import validate
 
 
 class LoadDataTestCase(unittest.TestCase):
@@ -51,10 +43,8 @@ class LoadDataTestCase(unittest.TestCase):
         testDataDir = os.path.join(validateDrpDir, 'tests')
         self.configFile = os.path.join(testDataDir, 'runCfht.yaml')
 
-
     def tearDown(self):
         pass
-
 
     def testLoadingOfConfigFile(self):
         dataIds, good_mag_limit, \
@@ -66,7 +56,7 @@ class LoadDataTestCase(unittest.TestCase):
         self.assertAlmostEqual(matchRef, 5000)
         # Tests of the dict entries require constructing and comparing sets
         self.assertEqual(set(['r']), set([d['filter'] for d in dataIds]))
-        self.assertEqual(set([849375, 850587]), 
+        self.assertEqual(set([849375, 850587]),
                          set([d['visit'] for d in dataIds]))
 
 

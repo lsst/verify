@@ -89,8 +89,8 @@ def plotAstrometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
     ax[0].set_ylim([0., 500.])
     ax[0].set_ylabel("Distance [mas]")
     ax[0].set_title("Median : %.1f, %.1f mas" %
-                       (bright_dist_median, dist_median),
-                       x=0.55, y=0.88)
+                    (bright_dist_median, dist_median),
+                    x=0.55, y=0.88)
     plotOutlinedLines(ax[0], dist_median, bright_dist_median)
 
     ax[1].scatter(mag, dist, s=10, color=color['all'], label='All')
@@ -262,7 +262,7 @@ def plotPA1(gv, magKey, plotbase=""):
 #    ax1.set_xlabel(u"12-pixel aperture magnitude")
     ax1.set_xlabel("psf magnitude")
     ax1.set_ylabel("psf magnitude diff (mmag)")
-    for label in ax2.get_yticklabels(): 
+    for label in ax2.get_yticklabels():
         label.set_visible(False)
 
     plt.suptitle("PA1: %s" % plotbase.rstrip('_'))
@@ -331,7 +331,7 @@ ication desired.
     ax1.axvline(AMx, 0, 1, linewidth=2, color='red',
                 label='AM%d: %.2f mas' % (x, AMx))
     ax1.axvline(AMx+ADx, 0, 1, linewidth=2, color='green',
-                label='AM%d+AD%d: %.2f mas\nAF%d: %2.f%% > AM%d+AD%d = %2.f%%' %\
+                label='AM%d+AD%d: %.2f mas\nAF%d: %2.f%% > AM%d+AD%d = %2.f%%' %
                       (x, x, AMx+ADx, x, AFx, x, x, percentOver))
 
     ax1.set_title('The %d stars separated by D = [%.2f, %.2f] arcmin' %
@@ -343,6 +343,6 @@ ication desired.
     ax1.legend(loc='upper right', fontsize=16)
 
     figName = plotbase+'D_%d_ARCMIN_%.1f-%.1f.png' % \
-                   (int(sum(annulus)/2), magrange[0], magrange[1])
+              (int(sum(annulus)/2), magrange[0], magrange[1])
 
     plt.savefig(figName, dpi=300)
