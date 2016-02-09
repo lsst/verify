@@ -361,19 +361,40 @@ def calcAM1(*args, **kwargs):
     """Calculate the SRD definition of astrometric performance for AM1
 
     See `calcAMx` for more details."""
-    return calcAMx(*args, D=srdSpec.D1, width=2, **kwargs)
+    amxStruct = calcAMx(*args, D=srdSpec.D1, width=2, **kwargs)
+    return pipeBase.Struct(
+        x=1,
+        AM1=amxStruct.AMx,
+        AD1=srdSpec.D1,
+        AD1_annulus=amxStruct.annulus,
+        magrange=amxStruct.magrange,
+        )
 
 def calcAM2(*args, **kwargs):
     """Calculate the SRD definition of astrometric performance for AM2
 
     See `calcAMx` for more details."""
-    return calcAMx(*args, D=srdSpec.D2, width=2, **kwargs)
+    amxStruct = calcAMx(*args, D=srdSpec.D2, width=2, **kwargs)
+    return pipeBase.Struct(
+        x=2,
+        AM2=amxStruct.AMx,
+        AD2=srdSpec.D2,
+        AD2_annulus=amxStruct.annulus,
+        magrange=amxStruct.magrange,
+        )
 
 def calcAM3(*args, **kwargs):
     """Calculate the SRD definition of astrometric performance for AM3
 
     See `calcAMx` for more details."""
-    return calcAMx(*args, D=srdSpec.D3, width=2, **kwargs)
+    amxStruct = calcAMx(*args, D=srdSpec.D3, width=2, **kwargs)
+    return pipeBase.Struct(
+        x=3,
+        AM3=amxStruct.AMx,
+        AD3=srdSpec.D3,
+        AD3_annulus=amxStruct.annulus,
+        magrange=amxStruct.magrange,
+        )
 
 def calcAMx(groupView, D=5, width=2, magRange=None):
     """Calculate the SRD definition of astrometric performance
@@ -490,4 +511,9 @@ def calcAMx(groupView, D=5, width=2, magRange=None):
 
     rmsDistMas = radiansToMilliarcsec(rmsDistances)
 
-    return rmsDistMas, annulus, magRange
+    return pipeBase.Struct(
+        AMx=rmsDistMas,
+        D=D,
+        annulus=annulus,
+        magrange=magrange,
+        )

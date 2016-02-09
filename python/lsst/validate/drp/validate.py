@@ -181,7 +181,9 @@ def analyzeData(allMatches, good_mag_limit=19.5):
 
 ####
 def run(repo, visitDataIds, good_mag_limit=21.0,
-        medianAstromscatterRef=25, medianPhotoscatterRef=25, matchRef=500):
+        medianAstromscatterRef=25, medianPhotoscatterRef=25, matchRef=500,
+        makePrint=True, makePlot=True, makeJson=True,
+        outputPrefix=None):
     """Main executable.
 
     Inputs
@@ -200,9 +202,25 @@ def run(repo, visitDataIds, good_mag_limit=21.0,
         Expected photometric RMS [mmag] across visits.
     matchRef : int, optional
         Expectation of the number of stars that should be matched across visits.
+    makePrint : bool, optional
+        Print calculated quantities (to stdout).
+    makePlot : bool, optional
+        Create plots for metrics.  Saved to current working directory.
+    makeJson : bool, optional
+        Create JSON output file for metrics.  Saved to current working directory.
+    outputPrefix : str
+        Specify the beginning filename for output files.
+
+    Outputs
+    -------
+    Names of plot files or JSON file are generated based on repository name,  
+    unless overriden by specifying `plotBase`.
+    E.g., Analyzing a repository "CFHT/output"
+        will result in filenames that start with "CFHT_output_".
     """
 
-    plotbase = repoNameToPrefix(repo)
+    if outputPrefix is None:
+        outputPrefix = repoNameToPrefix(repo)
 
     allMatches = loadAndMatchData(repo, visitDataIds)
     struct, safeMatches = analyzeData(allMatches, good_mag_limit)
@@ -221,18 +239,28 @@ def run(repo, visitDataIds, good_mag_limit=21.0,
     checkPhotometry(magavg, mmagrms, dist, match,
                     good_mag_limit=good_mag_limit,
                     medianRef=medianPhotoscatterRef, matchRef=matchRef)
-    plotAstrometry(magavg, mmagerr, mmagrms, dist, match, good_mag_limit=good_mag_limit, plotbase=plotbase)
-    plotPhotometry(magavg, mmagerr, mmagrms, dist, match, good_mag_limit=good_mag_limit, plotbase=plotbase)
+    if makePlot:
+        plotAstrometry(magavg, mmagerr, mmagrms, dist, match,
+                       good_mag_limit=good_mag_limit, plotBase=outputPrefix)
+        plotPhotometry(magavg, mmagerr, mmagrms, dist, match,
+                       good_mag_limit=good_mag_limit, plotBase=outputPrefix)
 
     magKey = allMatches.schema.find("base_PsfFlux_mag").key
-    printPA1(safeMatches, magKey)
-    plotPA1(safeMatches, magKey, plotbase=plotbase)
-    printPA2(safeMatches, magKey)
+    AM1 = calcAM1(safeMatches)
+    AM2 = calcAM2(safeMatches)
+    if makePrint:
+        printPA1(safeMatches, magKey)
+        printPA2(safeMatches, magKey)
+        printAM1(AM1.AM1, AM1.AD1_annulus, AM1.magrange)
+        printAM2(AM2.AM2, AM2.AD2_annulus, AM2.magrange)
 
-    args = calcAM1(safeMatches)
-    printAM1(*args)
-    plotAM1(*args)
+    if makePlot:
+        plotPA1(safeMatches, magKey, plotBase=outputPrefix)
+        plotAM1(AM1.AM1, AM1.AD1_annulus, AM1.magRange, plotBase=outputPrefix)
+        plotAM2(AM2.AM2, AM2.AD2_annulus, AM2.magRange, plotBase=outputPrefix)
 
-    args = calcAM2(safeMatches)
-    printAM2(*args)
-    plotAM2(*args)
+    if makeJson:
+        outfileAM1 = outputPrefix+"AM1.json"
+        saveAmxToJson(AM1, outfileAM1)
+        outfileAM2 = outputPrefix+"AM2.json"
+        saveAmxToJson(AM2, outfileAM2)

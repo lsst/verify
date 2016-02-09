@@ -56,7 +56,7 @@ def plotOutlinedLines(ax, x1, x2, x1_color=color['all'], x2_color=color['bright'
 
 
 def plotAstrometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
-                   plotbase=""):
+                   plotBase=""):
     """Plot angular distance between matched sources from different exposures.
 
     Inputs
@@ -105,8 +105,8 @@ def plotAstrometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
     ax[1].legend(loc='upper left')
     plotOutlinedLines(ax[1], dist_median, bright_dist_median)
 
-    plt.suptitle("Astrometry Check : %s" % plotbase.rstrip('_'), fontsize=30)
-    plotPath = plotbase+"check_astrometry.png"
+    plt.suptitle("Astrometry Check : %s" % plotBase.rstrip('_'), fontsize=30)
+    plotPath = plotBase+"check_astrometry.png"
     plt.savefig(plotPath, format="png")
 
 
@@ -149,7 +149,7 @@ def plotMagerrFit(*args, **kwargs):
 
 
 def plotPhotometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
-                   plotbase=""):
+                   plotBase=""):
     """Plot photometric RMS for matched sources.
 
     Inputs
@@ -225,12 +225,12 @@ def plotPhotometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
     plotMagerrFit(mag[w], mmagerr[w], mmagerr[w], ax=ax[1][1])
     ax[1][1].legend(loc='upper left')
 
-    plt.suptitle("Photometry Check : %s" % plotbase.rstrip('_'), fontsize=30)
-    plotPath = plotbase+"check_photometry.png"
+    plt.suptitle("Photometry Check : %s" % plotBase.rstrip('_'), fontsize=30)
+    plotPath = plotBase+"check_photometry.png"
     plt.savefig(plotPath, format="png")
 
 
-def plotPA1(gv, magKey, plotbase=""):
+def plotPA1(gv, magKey, plotBase=""):
     pa1 = calcPA1(gv, magKey)
 
     diff_range = (-100, +100)
@@ -265,8 +265,8 @@ def plotPA1(gv, magKey, plotbase=""):
     for label in ax2.get_yticklabels():
         label.set_visible(False)
 
-    plt.suptitle("PA1: %s" % plotbase.rstrip('_'))
-    plotPath = "%s%s" % (plotbase, "PA1.png")
+    plt.suptitle("PA1: %s" % plotBase.rstrip('_'))
+    plotPath = "%s%s" % (plotBase, "PA1.png")
     plt.savefig(plotPath, format="png")
 
 
@@ -281,7 +281,7 @@ def plotAM3(*args, **kwargs):
 
 def plotAMx(rmsDistMas, annulus, magrange,
             x=None, level="design",
-            plotbase=""):
+            plotBase=""):
     """Plot a histogram of the RMS in relative distance between pairs of stars.
 
     Inputs
@@ -342,7 +342,7 @@ ication desired.
 
     ax1.legend(loc='upper right', fontsize=16)
 
-    figName = plotbase+'D_%d_ARCMIN_%.1f-%.1f.png' % \
-              (int(sum(annulus)/2), magrange[0], magrange[1])
+    figName = plotBase+'AM%d_D_%d_ARCMIN_%.1f-%.1f.png' % \
+              (x, int(sum(annulus)/2), magrange[0], magrange[1])
 
     plt.savefig(figName, dpi=300)
