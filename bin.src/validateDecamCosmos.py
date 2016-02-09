@@ -30,18 +30,19 @@ from lsst.validate.drp import checkAstrometryPhotometry
 
 def defaultData(repo):
     # List of visits to be considered
-    visits = [849375, 850587]
+    visits = [176837, 176839, 176840, 176841, 176842, 176843, 176844, 176845, 176846]
 
-    # List of CCD to be considered (source calalogs will be concateneted)
-    ccd = [12, 13, 14, 21, 22, 23]
-    filter = 'r'
+    # List of CCD to be considered (source catalogs will be concateneted)
+    ccd = [10, 11, 12, 13, 14, 15, 16, 17, 18]
+    filter = 'z'
 
-    # Reference values for the median astrometric scatter and the number of matches
-    good_mag_limit = 21.0
-    medianRef = 25
-    matchRef = 5000
+    # Reference values that the DECam analysis should pass
+    #  for the median astrometric scatter and the number of matches
+    good_mag_limit = 21  # [mag]
+    medianRef = 25  # [arcsec]
+    matchRef = 10000  # [number of stars]
 
-    visitDataIds = [{'visit': v, 'filter': filter, 'ccd': c} for v in visits
+    visitDataIds = [{'visit': v, 'filter': filter, 'ccdnum': c} for v in visits
                     for c in ccd]
 
     return visitDataIds, good_mag_limit, medianRef, matchRef

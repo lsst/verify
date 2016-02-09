@@ -1,6 +1,6 @@
 A set of utilities to run the processCcd task on some 
 CFHT data and DECam data
-and validate the astrometry of the results.
+and validate the astrometric and photometric repeatability of the results.
 
 Pre-requisites: install and declare the following
 1. `pipe_tasks` from the LSST DM stack (note that pipe_tasks is included with lsst_apps, which is the usual thing to install)
@@ -12,7 +12,7 @@ Pre-requisites: install and declare the following
 The `obs_decam`, `obs_cfht`, `validation_data_cfht`, `validation_data_decam`, `validate_drp` products are also buildable by the standard LSST DM stack tools: `lsstsw` or `eups distrib`.  But they (intentionally) aren't in the dependency tree of `lsst_apps`.  If you have a stack already installed with `lsst_apps`, you can install these in the same manner.  E.g.,
 
 ```
-eups distrib obs_decam obs_cfht validation_data_decam validation_data_cfht validate_drp
+eups distrib install obs_decam obs_cfht validation_data_decam validation_data_cfht validate_drp
 ```
 
 XOR
@@ -100,8 +100,8 @@ Once these basic steps are completed, then you can run any of the following:
 
 Note that the example validation test selects several of the CCDs and will fail if you just pass it a repository with 1 visit or just 1 CCD.
 
-Files :
--------
+Files of Interest:
+------------------
 * `examples/runCfhtTest.sh`  : CFHT Run initialization, ingest, measurement, and astrometry validation.
 * `examples/runDecamTest.sh` : DECam Run initialization, ingest, measurement, and astrometry validation.
 * `examples/validateCfht.py`    : CFHT run some analysis on the output data produced by processCcd.py
@@ -110,4 +110,11 @@ Files :
 * `examples/runDecam.list`   : DECam list of vistits / ccd to be processed by processCcd
 * `config/newAstrometryConfig.py`  : configuration for running processCcd with the new AstrometryTask
 * `config/anetAstrometryConfig.py` : configuration for running processCcd ANetAstrometryTask
+* `bin.src/validateCfht.py` : Wrapper script to analyze CFHT data in validation_data_cfht
+* `bin.src/validateDecam.py` : Wrapper script to analyze DECam data in validation_data_decam
+* `bin.src/validateDecamCosmos.py` : Wrapper script to analyze larger set of DECam data taken in the COSMOS field.
+* `bin.src/validateCfht.py` : Wrapper script to analyze CFHT data in validation_data_cfht
+* `python/lsst/validate/drp/calcSrd.py` : calculate metrics defined by the LSST SRC.
+* `python/lsst/validate/drp/plotAstrometryPhotometry.py` : plotting routines
+* `python/lsst/validate/drp/checkAstrometryPhotometry.py` : coordination and calculation routines.
 * `README.md` : THIS FILE.  Guide and examples.
