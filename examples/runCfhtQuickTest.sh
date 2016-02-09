@@ -10,8 +10,8 @@ if [[ -z "$DYLD_LIBRARY_PATH" ]]; then
     export DYLD_LIBRARY_PATH=$LSST_LIBRARY_PATH
 fi
 
-CAMERA=Decam
-CONFIG_FILE="${PRODUCT_DIR}"/config/decamConfig.py
-MAPPER=lsst.obs.decam.DecamMapper
+CAMERA=CfhtQuick
+CONFIG_FILE="${PRODUCT_DIR}"/config/anetAstrometryConfig.py
+MAPPER=lsst.obs.cfht.MegacamMapper
 
-"${PRODUCT_DIR}"/examples/runExample.sh $CAMERA $MAPPER ${VALIDATION_DATA_DECAM_DIR}/instcal "${CONFIG_FILE}" ingestImagesDecam.py processCcdDecam.py
+"${PRODUCT_DIR}"/examples/runExample.sh $CAMERA $MAPPER ${VALIDATION_DATA_CFHT_DIR}/raw "${CONFIG_FILE}"

@@ -35,10 +35,11 @@ As usual, if any of these packages are not declared current you will also need t
 
 Run the measurement algorithm processing and astrometry test with
 ```
-cd $VALIDATE_DRP_DIR
-sh examples/runCfhtTest.sh
+$VALIDATE_DRP_DIR/examples/runCfhtTest.sh
 ```
+This will create a repository in your current working directory called CFHT.
 
+The last line of the output will give the median astrometric scatter (in milliarcseconds) for stars with mag < 21.
 ------
 To setup for a run with DECam:
 ```
@@ -52,14 +53,14 @@ As usual, if any of these packages are not declared current you will also need t
 
 Run the measurement algorithm processing and astrometry test with
 ```
-cd $VALIDATE_DRP_DIR
-sh examples/runDecamTest.sh
+cd $VALIDATE_DRP_DIR/examples/runDecamTest.sh
 ```
+This will create a repository in your current working directory called DECam.
 
 The last line of the output will give the median astrometric scatter (in milliarcseconds) for stars with mag < 21.
 
 ------
-While `examples/runCfhtTest.sh` does everything, here is some examples of running the processing/measurement steps individually.  While these examples are from  the CFHT validation example, analogous commands would work for DECam.
+While `examples/runCfhtTest.sh` and `examples/runDecamTest.sh` respectively do all of the processing and validation analysis, below are some examples of running the processing/measurement steps individually.  While these examples are from  the CFHT validation example, analogous commands would work for DECam.
 
 1. Make sure the astrometry.net environment variable is pointed to the right place for this validation set:
     ```
@@ -68,7 +69,13 @@ While `examples/runCfhtTest.sh` does everything, here is some examples of runnin
 
 2. Ingest the files into the repository
     ```
+    mkdir -p CFHT/input
     ingestImages.py CFHT/input "${VALIDATION_DATA_CFHT_DIR}"/raw/*.fz --mode link
+    ```
+
+3. Create the `runCfht.list` file from the YAML configuration file
+    ```
+    makeRunList.py "${VALIDATE_DRP_DIR}"/examples/runCfht.yaml > "${VALIDATE_DRP_DIR}"/examples/runCfht.list
     ```
 
 Once these basic steps are completed, then you can run any of the following:
@@ -81,7 +88,7 @@ Once these basic steps are completed, then you can run any of the following:
 * To process all CCDs with the old ANetAstrometryTask and 6 threads:
     ```
     processCcd.py CFHT/input @examples/runCfht.list --configfile config/anetAstrometryConfig.py --clobber-config -j 6 --output CFHT/output
-    validateDrp.py CFHT/output @examples/runCfht.yaml
+    validateDrp.py CFHT/output examples/runCfht.yaml
     ```
 
 * To process one CCD with the new AstrometryTask:
@@ -96,7 +103,7 @@ Once these basic steps are completed, then you can run any of the following:
 
 * Run the validation test
     ```
-    validateDrp.py CFHT/output @examples/runCfht.yaml
+    validateDrp.py CFHT/output examples/runCfht.yaml
     ```
 
 Note that the example validation test selects several of the CCDs and will fail if you just pass it a repository with 1 visit or just 1 CCD.

@@ -10,7 +10,7 @@ if [[ -z "$DYLD_LIBRARY_PATH" ]]; then
     export DYLD_LIBRARY_PATH=$LSST_LIBRARY_PATH
 fi
 
-CAMERA=Decam
+CAMERA=DecamQuick
 CONFIG_FILE="${PRODUCT_DIR}"/config/decamConfig.py
 MAPPER=lsst.obs.decam.DecamMapper
 
