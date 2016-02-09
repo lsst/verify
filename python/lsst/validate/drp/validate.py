@@ -20,10 +20,9 @@
 # the GNU General Public License along with this program.  If not,
 # see <https://www.lsstcorp.org/LegalNotices/>.
 
-from __future__ import print_function
+from __future__ import print_function, absolute_import
 
 import numpy as np
-import yaml
 
 import lsst.afw.geom as afwGeom
 import lsst.afw.image as afwImage
@@ -36,73 +35,7 @@ from .calcSrd import calcAM1, calcAM2
 from .check import checkAstrometry, checkPhotometry, positionRms
 from .print import printPA1, printPA2, printAM1, printAM2
 from .plot import plotAstrometry, plotPhotometry, plotPA1, plotAM1, plotAM2
-from .util import getCcdKeyName, repoNameToPrefix
-
-
-def loadDataIdsAndParameters(configFile):
-    """Load data IDs, magnitude range, and expected metrics from a yaml file.
-
-    Inputs
-    ------
-    configFile : str
-        YAML file that stores visit, filter, ccd, 
-        good_mag_limit, medianAstromscatterRef, medianPhotoscatterRef, matchRef
-
-    Returns
-    -------
-    dict, float, float, float
-        dataIds, good_mag_limit, medianRef, matchRef
-    """
-    stream = open(configFile, mode='r')
-    data = yaml.load(stream)
-
-    ccdKeyName = getCcdKeyName(data)
-    visitDataIds = constructDataIds(data['visits'], data['filter'], 
-                                    data[ccdKeyName], ccdKeyName)
-
-    return (visitDataIds,
-            data['good_mag_limit'],
-            data['medianAstromscatterRef'],
-            data['medianPhotoscatterRef'],
-            data['matchRef'],
-           )
-
-
-def constructDataIds(visits, filter, ccds, ccdKeyName=None):
-    """Construct a comprehensive set of Butler Data IDs for a repository.
-
-    Inputs
-    ------
-    visits : list of int
-    filter : str
-    ccds : list of int
-    ccdKeyName : str, optional; default 'ccd'
-        Name to distinguish different parts of a focal plane.
-        Generally 'ccd', but might be 'ccdnum', or 'amp', or 'ccdamp'.
-        Refer to your `obs_*/policy/*Mapper.paf`.
-
-    Returns
-    -------
-    list
-        dataIDs suitable to be used with the LSST Butler.
-
-    Examples
-    --------
-    >>> dataIds = constructDataIds([100, 200], 'r', [10, 11, 12])
-    >>> print(dataIds)
-    ... [{'filter': 'r', 'visit': 100, None: 10}, {'filter': 'r', 'visit': 100, None: 11}, {'filter': 'r', 'visit': 100, None: 12}, {'filter': 'r', 'visit': 200, None: 10}, {'filter': 'r', 'visit': 200, None: 11}, {'filter': 'r', 'visit': 200, None: 12}]
-
-    Note
-    -----
-    Currently assumes `filter` is a scalar string, e.g., 'g' or 'r-1692 CFHT'.
-    This isn't fundamentally necessary, but one would need to define logic
-    such that filter="ugriz" and filter="r-1692 CFHT" are each processed correctly.
-    """
-    visitDataIds = [{'visit': v, 'filter': filter, ccdKeyName: c} 
-                    for v in visits
-                    for c in ccds]
-
-    return visitDataIds
+from .util import getCcdKeyName, repoNameToPrefix, loadDataIdsAndParameters, constructDataIds, loadRunList, constructRunList 
 
 
 def loadAndMatchData(repo, visitDataIds,
@@ -118,7 +51,7 @@ def loadAndMatchData(repo, visitDataIds,
         List of `butler` data IDs of Image catalogs to compare to reference.
         The `calexp` cpixel image is needed for the photometric calibration.
     matchRadius :  afwGeom.Angle().
-        Radius for matching. 
+        Radius for matching.
 
     Returns
     -------
@@ -184,14 +117,14 @@ def analyzeData(allMatches, good_mag_limit=19.5):
 
     Inputs
     ------
-    allMatches : afw.table.GroupView 
+    allMatches : afw.table.GroupView
         GroupView object with matches.
     good_mag_limit : float, optional
         Minimum average brightness (in magnitudes) for a star to be considered.
 
     Returns
-    ------- 
-    pipeBase.Struct 
+    -------
+    pipeBase.Struct
         Containing mag, magerr, magrms, dist, and number of matches.
     """
 

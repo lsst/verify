@@ -41,15 +41,20 @@ else
 fi
 NUMPROC=$((NUMPROC<8?NUMPROC:8))
 
+# Extract desired dataIds runs from runDecam.yaml
+CONFIGFILE="${PRODUCT_DIR}"/examples/runDecam.yaml 
+RUNLIST="${PRODUCT_DIR}"/examples/runDecam.list
+makeRunList.py "${CONFIGFILE}" > "${RUNLIST}"
+
 processCcdDecam.py ${INPUT} --output ${OUTPUT} \
-    @"${PRODUCT_DIR}"/examples/runDecam.list \
+    @"${RUNLIST}" \
     --logdest "${WORKSPACE}"/processCcdDecam.log \
     --configfile "${PRODUCT_DIR}"/config/decamConfig.py \
     --clobber-config -j $NUMPROC
 
 # Run astrometry check on src
 echo "validating"
-validateDrp.py "${OUTPUT}" @"${PRODUCT_DIR}"/examples/runDecam.list
+validateDrp.py "${OUTPUT}" "${CONFIGFILE}"
 
 if [ $? != 0 ]; then
    print_error "Validation failed"

@@ -7,4 +7,4 @@ medianPhotoscatterRef: 25  # expected photometric variability [mmag]
 matchRef: 10000  # Number of stars expected to match.  Update if you change the ccd list below
 visits: [176837, 176846]
 filter: 'z'
-ccd: [10, 11, 12, 13, 14, 15, 16, 17, 18]
+ccdnum: [10, 11, 12, 13, 14, 15, 16, 17, 18]

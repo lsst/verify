@@ -25,42 +25,36 @@ from __future__ import print_function
 import os.path
 import sys
 
-from lsst.validate.drp import validate, util
+import yaml
+
+from lsst.validate.drp import validate
 
 
 if __name__ == "__main__":
-    helpMessage = """Usage: validateDrp.py repo configFile
+    helpMessage = """Usage: makeRunList.py configFile
 
     Arguments
     ---------
-    `repo` : str
-        path to a repository containing the output of processCcd
     `configFile` : str
         YAML configuration file declaring the parameters for this run.
 
     Output
     ------
     STDOUT
-        Summary of key metrics
-    *.png
-        Plots of key metrics.  Generated in current working directory.
+        List of run IDs suitable for ingestion by `processCcd.py`
 
     Notes
     -----
-    Currently can only work on one filter at a time.
-      -- There is no logic to organize things by filter in the analysis,
-      -- There is no syntax for matching visits with filters in the YAML file.
     """
     if len(sys.argv) < 2:
         print(helpMessage)
         sys.exit(1)
 
-    repo = sys.argv[1]
-    if not os.path.isdir(repo):
-        print("Could not find repo %r" % (repo,))
+    configFile = sys.argv[1]
+    if not os.path.isfile(configFile):
+        print("Could not find config file %r" % (configFile,))
         sys.exit(1)
 
-    configFile = sys.argv[2]
-
-    args = util.loadDataIdsAndParameters(configFile)
-    validate.run(repo, *args)
+    runList = validate.loadRunList(configFile)
+    lines = "\n".join(runList)
+    print(lines)

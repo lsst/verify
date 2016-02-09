@@ -23,6 +23,7 @@
 from __future__ import print_function, division
 
 import os
+import yaml
 
 import lsst.afw.geom as afwGeom
 import lsst.afw.coord as afwCoord
@@ -87,7 +88,7 @@ def getCcdKeyName(dataid):
         if name in dataid:
             return name
     else:
-        return None
+        return 'ccd'
 
 
 def repoNameToPrefix(repo):
@@ -107,4 +108,145 @@ def repoNameToPrefix(repo):
     'a_CFHT_output_'
     """
 
-    return repo.lstrip('\.').strip(os.sep).replace(os.sep, "_")+"_"
+    return repo.lstrip('\.').strip(os.sep).replace(os.sep, "_") + "_"
+
+
+def loadDataIdsAndParameters(configFile):
+    """Load data IDs, magnitude range, and expected metrics from a yaml file.
+
+    Inputs
+    ------
+    configFile : str
+        YAML file that stores visit, filter, ccd,
+        good_mag_limit, medianAstromscatterRef, medianPhotoscatterRef, matchRef
+
+    Returns
+    -------
+    dict, float, float, float
+        dataIds, good_mag_limit, medianRef, matchRef
+    """
+    stream = open(configFile, mode='r')
+    data = yaml.load(stream)
+
+    ccdKeyName = getCcdKeyName(data)
+    visitDataIds = constructDataIds(data['filter'], data['visits'],
+                                    data[ccdKeyName], ccdKeyName)
+
+    return (visitDataIds,
+            data['good_mag_limit'],
+            data['medianAstromscatterRef'],
+            data['medianPhotoscatterRef'],
+            data['matchRef'],
+           )
+
+
+def constructDataIds(filter, visits, ccds, ccdKeyName='ccd'):
+    """Returns a list of dataIds consisting of every combination of visit & ccd for each filter.
+
+    Inputs
+    ------
+    filter : str
+    visits : list of int
+    ccds : list of int
+    ccdKeyName : str, optional
+        Name to distinguish different parts of a focal plane.
+        Generally 'ccd', but might be 'ccdnum', or 'amp', or 'ccdamp'.
+        Refer to your `obs_*/policy/*Mapper.paf`.
+
+    Returns
+    -------
+    list
+        dataIDs suitable to be used with the LSST Butler.
+
+    Examples
+    --------
+    >>> dataIds = constructDataIds('r', [100, 200], [10, 11, 12])
+    >>> print(dataIds)
+    [{'filter': 'r', 'visit': 100, 'ccd': 10}, {'filter': 'r', 'visit': 100, 'ccd': 11}, {'filter': 'r', 'visit': 100, 'ccd': 12}, {'filter': 'r', 'visit': 200, 'ccd': 10}, {'filter': 'r', 'visit': 200, 'ccd': 11}, {'filter': 'r', 'visit': 200, 'ccd': 12}]
+
+    Note
+    -----
+    Currently assumes `filter` is a scalar string, e.g., 'g' or 'r-1692 CFHT'.
+    This isn't fundamentally necessary, but one would need to define logic
+    such that filter="ugriz" and filter="r-1692 CFHT" are each processed correctly.
+    """
+    visitDataIds = [{'visit': v, 'filter': filter, ccdKeyName: c}
+                    for v in visits
+                    for c in ccds]
+
+    return visitDataIds
+
+
+def loadRunList(configFile):
+    """Load run list from a YAML file.
+
+    Inputs
+    ------
+    configFile : str
+        YAML file that stores visit, filter, ccd,
+
+    Returns
+    -------
+    list
+        run list lines.
+
+    Examples
+    --------
+    An example YAML file would include entries of (for some CFHT data)
+        visits: [849375, 850587]
+        filter: 'r'
+        ccd: [12, 13, 14, 21, 22, 23]
+    or (for some DECam data)
+        visits: [176837, 176846]
+        filter: 'z'
+        ccdnum: [10, 11, 12, 13, 14, 15, 16, 17, 18]
+
+    Note 'ccd' for CFHT and 'ccdnum' for DECam.  These entries will be used to build
+    dataIds, so these fields should be as the camera mapping defines them.
+
+    `visits` and `ccd` (or `ccdnum`) must be lists, even if there's only one element.
+    """
+    stream = open(configFile, mode='r')
+    data = yaml.load(stream)
+
+    ccdKeyName = getCcdKeyName(data)
+    runList = constructRunList(data['filter'], data['visits'],
+                               data[ccdKeyName], ccdKeyName=ccdKeyName)
+
+    return runList
+
+
+def constructRunList(filter, visits, ccds, ccdKeyName='ccd'):
+    """Construct a comprehensive runList for processCcd.py.
+
+    Inputs
+    ------
+    filter : str
+    visits : list of int
+    ccds : list of int
+
+    Returns
+    -------
+    list
+        list of strings suitable to be used with the LSST Butler.
+
+    Examples
+    --------
+    >>> runList = constructRunList([100, 200], 'r', [10, 11, 12])
+    >>> print(runList)
+    ['--id visit=100 ccd=10^11^12', '--id visit=200 ccd=10^11^12']
+    >>> runList = constructRunList([100, 200], 'r', [10, 11, 12], ccdKeyName='ccdnum')
+    >>> print(runList)
+    ['--id visit=100 ccdnum=10^11^12', '--id visit=200 ccdnum=10^11^12']
+
+    Note
+    -----
+    The LSST parsing convention is to use '^' as list separators
+        for arguments to `--id`.  While surprising, this convention
+        allows for CCD names to include ','.  E.g., 'R1,2'.
+    Currently ignores `filter`
+    """
+    runList = ["--id visit=%d %s=%s" % (v, ccdKeyName, "^".join([str(c) for c in ccds]))
+               for v in visits]
+
+    return runList

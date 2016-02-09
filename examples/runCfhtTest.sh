@@ -9,8 +9,8 @@ PRODUCT_DIR=${VALIDATE_DRP_DIR}
 if [[ -z "$DYLD_LIBRARY_PATH" ]]; then
     export DYLD_LIBRARY_PATH=$LSST_LIBRARY_PATH
 fi
+
 WORKSPACE=CFHT
-mkdir -p ${WORKSPACE}
 if [ -d ${WORKSPACE} ]; then
    rm -rf ${WORKSPACE}
 fi
@@ -41,15 +41,20 @@ else
 fi
 NUMPROC=$((NUMPROC<8?NUMPROC:8))
 
-processCcd.py ${INPUT} --output ${OUTPUT} \
-    @"${PRODUCT_DIR}"/examples/runCfht.list \
-    --logdest ${WORKSPACE}/processCcd.log \
+# Extract desired dataIds runs from runCfht.yaml
+CONFIGFILE="${PRODUCT_DIR}"/examples/runCfht.yaml 
+RUNLIST="${PRODUCT_DIR}"/examples/runCfht.list
+makeRunList.py "${CONFIGFILE}" > "${RUNLIST}"
+
+processCcd.py "${INPUT}" --output "${OUTPUT}" \
+    @"${RUNLIST}" \
+    --logdest "${WORKSPACE}"/processCcd.log \
     --configfile "${PRODUCT_DIR}"/config/anetAstrometryConfig.py \
     -j $NUMPROC
 
 # Run astrometry check on src
 echo "validating"
-validateDrp.py ${OUTPUT} @"${PRODUCT_DIR}"/examples/runCfht.yaml
+validateDrp.py "${OUTPUT}" "${CONFIGFILE}"
 
 if [ $? != 0 ]; then
    print_error "Validation failed"
