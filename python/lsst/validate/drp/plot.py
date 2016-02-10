@@ -279,63 +279,42 @@ def plotAM2(*args, **kwargs):
 def plotAM3(*args, **kwargs):
     return plotAMx(*args, x=3, **kwargs)
 
-def plotAMx(rmsDistMas, annulus, magRange,
-            x=None, level="design",
-            plotBase=""):
+def plotAMx(AMx, plotBase=""):
     """Plot a histogram of the RMS in relative distance between pairs of stars.
 
     Inputs
     ------
-    rmsDistMas : list or numpy.array of float
-        RMS variation of relative distance between stars across a series of visi
-ts.
-    annulus : 2-element list or tuple
-        inner and outer radius of comparison annulus [arcmin]
-    magRange : 2-element list or tuple
-        lower and upper magnitude range
-    level : str
-        One of "minimum", "design", "stretch" indicating the level of the specif
-ication desired.
-    x : int
-        Which of AM1, AM2, AM3.  One of [1,2,3].
+    AMx : pipeBase.Struct
+        Must contain:
+        AMx, rmsDistMas, fractionOver, annulus, magRange, x, level,
+        AMx_spec, AFx_spec, ADx_spec
 
-    Raises
-    ------
-    ValidateError if `rmsDistMas`
-    ValidateError if `x` isn't in `getAstrometricSpec` values of [1,2,3]
-
-    Notes
-    -----
-    The use of 'annulus' below isn't properly tied to the SRD
-     in the same way that srdSpec.AM1, sprdSpec.AF1, srdSpec.AD1 are
-     because the rmsDistMas has already been calculated for an assumed D.
+    Outputs
+    -------
+    Plot file prefixed with plotBase.
     """
 
-    if not list(rmsDistMas):
-        raise ValidateError('Empty `rmsDistMas` array.')
+    percentOver = 100*AMx.fractionOver
 
-    AMx, AFx, ADx = getAstrometricSpec(x=x, level=level)
-
-    rmsRelSep = np.median(rmsDistMas)
-    fractionOver = np.mean(np.asarray(rmsDistMas) > AMx+ADx)
-    percentOver = 100*fractionOver
+    AMxAsDict = AMx.getDict()
+    AMxAsDict['AMxADx'] = AMxAsDict['AMx_spec']+AMxAsDict['ADx_spec']
+    AMxAsDict['percentOver'] = percentOver
 
     fig = plt.figure(figsize=(10, 6))
     ax1 = fig.add_subplot(1, 1, 1)
-    ax1.hist(rmsDistMas, bins=25, range=(0.0, 100.0),
+    ax1.hist(AMx.rmsDistMas, bins=25, range=(0.0, 100.0),
              histtype='stepfilled',
              label='D: %.1f-%.1f arcmin\nMag Bin: %.1f-%.1f' %
-                   (annulus[0], annulus[1], magRange[0], magRange[1]))
-    ax1.axvline(rmsRelSep, 0, 1, linewidth=2,  color='black',
-                label='median RMS of relative\nseparation: %.2f mas' % (rmsRelSep))
-    ax1.axvline(AMx, 0, 1, linewidth=2, color='red',
-                label='AM%d: %.2f mas' % (x, AMx))
-    ax1.axvline(AMx+ADx, 0, 1, linewidth=2, color='green',
-                label='AM%d+AD%d: %.2f mas\nAF%d: %2.f%% > AM%d+AD%d = %2.f%%' %
-                      (x, x, AMx+ADx, x, AFx, x, x, percentOver))
+                   (AMx.annulus[0], AMx.annulus[1], AMx.magRange[0], AMx.magRange[1]))
+    ax1.axvline(AMx.AMx, 0, 1, linewidth=2,  color='black',
+                label='median RMS of relative\nseparation: %.2f mas' % (AMx.AMx))
+    ax1.axvline(AMx.AMx_spec, 0, 1, linewidth=2, color='red',
+                label='AM%d: %.2f mas' % (AMx.x, AMx.AMx_spec))
+    ax1.axvline(AMx.AMx_spec+AMx.ADx_spec, 0, 1, linewidth=2, color='green',
+                label='AM{x:d}+AD{x:d}: %{AMxADx:.2f} mas\nAF{x:d}: %{AFx_spec:.2f}%% > AM{x:d}+AD{x:d} = %{percentOver:.2f}%%'.format(**AMxAsDict))
 
     ax1.set_title('The %d stars separated by D = [%.2f, %.2f] arcmin' %
-                  (len(rmsDistMas), annulus[0], annulus[1]))
+                  (len(AMx.rmsDistMas), AMx.annulus[0], AMx.annulus[1]))
     ax1.set_xlim(0.0, 100.0)
     ax1.set_xlabel('rms Relative Separation (mas)')
     ax1.set_ylabel('# pairs / bin')
@@ -343,6 +322,6 @@ ication desired.
     ax1.legend(loc='upper right', fontsize=16)
 
     figName = plotBase+'AM%d_D_%d_ARCMIN_%.1f-%.1f.png' % \
-              (x, int(sum(annulus)/2), magRange[0], magRange[1])
+              (AMx.x, int(sum(AMx.annulus)/2), AMx.magRange[0], AMx.magRange[1])
 
     plt.savefig(figName, dpi=300)

@@ -33,8 +33,8 @@ import lsst.pipe.base as pipeBase
 
 from .calcSrd import calcAM1, calcAM2
 from .check import checkAstrometry, checkPhotometry, positionRms
-from .print import printPA1, printPA2, printAM1, printAM2
-from .plot import plotAstrometry, plotPhotometry, plotPA1, plotAM1, plotAM2
+from .plot import plotAstrometry, plotPhotometry, plotPA1, plotAMx
+from .print import printPA1, printPA2, printAMx
 from .util import getCcdKeyName, repoNameToPrefix, loadDataIdsAndParameters, constructDataIds, loadRunList, constructRunList 
 from .io import saveAmxToJson
 
@@ -252,13 +252,13 @@ def run(repo, visitDataIds, good_mag_limit=21.0,
     if makePrint:
         printPA1(safeMatches, magKey)
         printPA2(safeMatches, magKey)
-        printAM1(AM1.AM1, AM1.AD1_annulus, AM1.magRange)
-        printAM2(AM2.AM2, AM2.AD2_annulus, AM2.magRange)
+        printAMx(AM1)
+        printAMx(AM2)
 
     if makePlot:
         plotPA1(safeMatches, magKey, plotBase=outputPrefix)
-        plotAM1(AM1.AM1, AM1.AD1_annulus, AM1.magRange, plotBase=outputPrefix)
-        plotAM2(AM2.AM2, AM2.AD2_annulus, AM2.magRange, plotBase=outputPrefix)
+        plotAM1(AM1.rmsDistMas, AM1.annulus, AM1.magrange, plotBase=outputPrefix)
+        plotAM2(AM2.rmsDistMas, AM2.annulus, AM2.magrange, plotBase=outputPrefix)
 
     if makeJson:
         outfileAM1 = outputPrefix+"AM1.json"

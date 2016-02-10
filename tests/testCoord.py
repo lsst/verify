@@ -64,13 +64,6 @@ class CoordTestCase(unittest.TestCase):
         meanRa, meanDec = util.averageRaDec(self.simpleRa, self.simpleDec)
         assert_allclose([19.493625,  37.60447], np.rad2deg([meanRa, meanDec]))
 
-    def testPlotAMxFailureEmpty(self):
-        self.assertRaises(ValidateError,
-                          plotAMx, [], self.annulus, self.magrange, x=1)
-
-    def testPlotAMxFailureNox(self):
-        self.assertRaises(ValidateError,
-                          plotAMx, self.simpleRms, self.annulus, self.magrange, x=None)
 
 
 def suite():

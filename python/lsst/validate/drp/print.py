@@ -59,59 +59,23 @@ def printPA2(brightMatches, magKey):
           (pa2.PF1['stretch'], pa2.stretch))
 
 
-def printAM1(*args, **kwargs):
-    return printAMx(*args, x=1, **kwargs)
-
-def printAM2(*args, **kwargs):
-    return printAMx(*args, x=2, **kwargs)
-
-def printAM3(*args, **kwargs):
-    return printAMx(*args, x=3, **kwargs)
-
-def printAMx(rmsDistMas, annulus, magRange,
-             x=None, level="design"):
+def printAMx(AMx):
     """Print the Astrometric performance.
 
     Inputs
     ------
-    rmsDistMas : list or numpy.array of float
-        RMS variation of relative distance between stars across a series of visits.
-    annulus : 2-element list or tuple
-        inner and outer radius of comparison annulus [arcmin]
-    magRange : 2-element list or tuple
-        lower and upper magnitude range
-    level : str
-        One of "minimum", "design", "stretch" indicating the level of the specification desired.
-    x : int
-        Which of AM1, AM2, AM3.  One of [1,2,3].
-
-    Raises
-    ------
-    ValidateError if `rmsDistMas`
-    ValidateError if `x` isn't in `getAstrometricSpec` values of [1,2,3]
-
-    Notes
-    -----
-    The use of 'annulus' below isn't properly tied to the SRD
-     in the same way that srdSpec.AM1, sprdSpec.AF1, srdSpec.AD1 are
-     because the rmsDistMas has already been calculated for an assumed D.
+    AMx : pipeBase.Struct
+        Must contain:
+        AMx, fractionOver, annulus, magRange, x, level,
+        AMx_spec, AFx_spec, ADx_spec
     """
 
-    if not list(rmsDistMas):
-        raise ValidateError('Empty `rmsDistMas` array.')
-
-    AMx, AFx, ADx = getAstrometricSpec(x=x, level=level)
-
-    magBinLow, magBinHigh = magRange
-
-    rmsRelSep = np.median(rmsDistMas)
-    fractionOver = np.mean(np.asarray(rmsDistMas) > AMx+ADx)
-    percentOver = 100*fractionOver
+    percentOver = 100*AMx.fractionOver
 
     print("Median of distribution of RMS of distance of stellar pairs.")
-    print("%s goals" % level.upper())
-    print("For stars from %.2f < mag < %.2f" % (magRange[0], magRange[1]))
+    print("%s goals" % AMx.level.upper())
+    print("For stars from %.2f < mag < %.2f" % (AMx.magRange[0], AMx.magRange[1]))
     print("from D = [%.2f, %.2f] arcmin, is %.2f mas (target is <= %.2f mas)." %
-          (annulus[0], annulus[1], rmsRelSep, AMx))
+          (AMx.annulus[0], AMx.annulus[1], AMx.AMx, AMx.AMx_spec))
     print("  %.2f%% of sample is > %.2f mas from AM%d=%.2f mas (target is <= %.2f%%)" %
-          (percentOver, ADx, x, AMx, AFx))
+          (percentOver, AMx.ADx_spec, AMx.x, AMx.AMx_spec, AMx.AFx_spec))
