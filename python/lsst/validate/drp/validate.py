@@ -31,11 +31,12 @@ from lsst.afw.table import MultiMatch, SimpleRecord, GroupView
 import lsst.daf.persistence as dafPersist
 import lsst.pipe.base as pipeBase
 
-from .calcSrd import calcAM1, calcAM2
+from .base import ValidateError, ValidateErrorNoStars
+from .calcSrd import calcAM1, calcAM2, calcAM3
 from .check import checkAstrometry, checkPhotometry, positionRms
 from .plot import plotAstrometry, plotPhotometry, plotPA1, plotAMx
 from .print import printPA1, printPA2, printAMx
-from .util import getCcdKeyName, repoNameToPrefix, loadDataIdsAndParameters, constructDataIds, loadRunList, constructRunList 
+from .util import getCcdKeyName, repoNameToPrefix, calcOrNone
 from .io import saveAmxToJson
 
 
@@ -247,21 +248,25 @@ def run(repo, visitDataIds, good_mag_limit=21.0,
                        good_mag_limit=good_mag_limit, plotBase=outputPrefix)
 
     magKey = allMatches.schema.find("base_PsfFlux_mag").key
-    AM1 = calcAM1(safeMatches)
-    AM2 = calcAM2(safeMatches)
+
+    AM1, AM2, AM3 = [calcOrNone(func, safeMatches, ValidateErrorNoStars)
+                     for func in calcAM1, calcAM2, calcAM3]
+
     if makePrint:
         printPA1(safeMatches, magKey)
         printPA2(safeMatches, magKey)
-        printAMx(AM1)
-        printAMx(AM2)
+        for metric in (AM1, AM2, AM3):
+            if metric:
+                printAMx(metric)
 
     if makePlot:
         plotPA1(safeMatches, magKey, plotBase=outputPrefix)
-        plotAM1(AM1.rmsDistMas, AM1.annulus, AM1.magrange, plotBase=outputPrefix)
-        plotAM2(AM2.rmsDistMas, AM2.annulus, AM2.magrange, plotBase=outputPrefix)
+        for metric in (AM1, AM2, AM3):
+            if metric:
+                plotAMx(metric, plotBase=outputPrefix)
 
     if makeJson:
-        outfileAM1 = outputPrefix+"AM1.json"
-        saveAmxToJson(AM1, outfileAM1)
-        outfileAM2 = outputPrefix+"AM2.json"
-        saveAmxToJson(AM2, outfileAM2)
+        for metric in (AM1, AM2, AM3):
+            if metric:
+                outfileAM = outputPrefix + "AM%d.json" % metric.x
+                saveAmxToJson(metric, outfileAM)

@@ -26,3 +26,7 @@ from __future__ import print_function, division
 class ValidateError(Exception):
     """Base classes for exceptions in validate_drp."""
     pass
+
+class ValidateErrorNoStars(ValidateError):
+    """Base classes for exceptions in validate_drp."""
+    pass

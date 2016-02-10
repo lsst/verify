@@ -20,7 +20,7 @@
 # the GNU General Public License along with this program.  If not,
 # see <https://www.lsstcorp.org/LegalNotices/>.
 
-from __future__ import print_function, division
+from __future__ import print_function, division, absolute_import
 
 import math
 
@@ -29,6 +29,7 @@ import scipy.stats
 
 import lsst.pipe.base as pipeBase
 
+from .base import ValidateError, ValidateErrorNoStars
 from .util import averageRaFromCat, averageDecFromCat
 from .srdSpec import srdSpec, getAstrometricSpec
 
@@ -43,7 +44,7 @@ def calcPA1(groupView, magKey):
     magKey : lookup key to a `schema`
          The lookup key of the field storing the magnitude of interest.
          E.g., `magKey = allMatches.schema.find("base_PsfFlux_mag").key`
-         where `allMatches` is a the result of lsst.afw.table.MultiMatch.finish()
+         where `allMatches` is the result of lsst.afw.table.MultiMatch.finish()
 
     Returns
     -------
@@ -453,7 +454,7 @@ def calcAMx(groupView, D=5, width=2, magRange=None,
         calcRmsDistances(groupView, annulus, magRange=magRange)
 
     if not list(rmsDistances):
-        raise ValidateError('Empty `rmsDistances` array.')
+        raise ValidateErrorNoStars('No stars found that are %.1f--%.1f arcmin apart.' % (annulus[0], annulus[1]))
 
     rmsDistMas = radiansToMilliarcsec(rmsDistances)
     AMx = np.median(rmsDistMas)
