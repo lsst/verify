@@ -382,10 +382,13 @@ def calcAMx(groupView, D=5, width=2, magrange=None):
     ----------
     groupView : lsst.afw.table.GroupView
          GroupView object of matched observations from MultiMatch.
-    magKey : lookup key to a `schema`
-         The lookup key of the field storing the magnitude of interest.
-         E.g., `magKey = allMatches.schema.find("base_PsfFlux_mag").key`
-         where `allMatches` is a the result of lsst.afw.table.MultiMatch.finish()
+    D : float
+        Fiducial distance between two objects to consider. [arcmin]
+    width : float
+        Width around fiducial distance to include. [arcmin]
+    magrange : 2-element list or tuple
+        brighter, fainter limits of the magnitude range to include.
+        E.g., `magrange=[17.5, 21.0]`
 
     Returns
     -------
