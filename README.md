@@ -3,6 +3,7 @@ CFHT data and DECam data
 and validate the astrometric and photometric repeatability of the results.
 
 Pre-requisites: install and declare the following
+
 1. `pipe_tasks` from the LSST DM stack (note that pipe_tasks is included with lsst_apps, which is the usual thing to install)
 2. `obs_decam` from https://github.com/lsst/obs_decam
 3. `obs_cfht` from https://github.com/lsst/obs_cfht
