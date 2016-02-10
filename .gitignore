@@ -1,12 +1,13 @@
 CFHT/
 DECam/
-input/
-output/
+CFHT
+DECam
 test.log
-bin/validateCfht.py
-bin/validateDecam.py
+*.json
 *.png
+*.pkl
 .sconsign.dblite
+.cache
 config.log
 .sconf_temp
 *.o
