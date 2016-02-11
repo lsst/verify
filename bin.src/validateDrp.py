@@ -62,5 +62,10 @@ if __name__ == "__main__":
 
     configFile = sys.argv[2]
 
-    args = util.loadDataIdsAndParameters(configFile)
-    validate.run(repo, *args)
+    visitDataIds, good_mag_limit, medianAstromscatterRef, medianPhotoscatterRef, matchRef = \
+        util.loadDataIdsAndParameters(configFile)
+    validate.run(repo, visitDataIds,
+                 good_mag_limit=good_mag_limit, 
+                 medianAstromscatterRef=medianAstromscatterRef, 
+                 medianPhotoscatterRef=medianPhotoscatterRef, 
+                 matchRef=matchRef)
