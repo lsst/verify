@@ -54,7 +54,7 @@ def getCcdKeyName(dataid):
 
     Notes
     -----
-    Motiviation: Different camera mappings use different keys to indicate
+    Motivation: Different camera mappings use different keys to indicate
       the different amps/ccds in the same exposure.  This function looks
       through the reference dataId to locate a field that could be the one.
     """

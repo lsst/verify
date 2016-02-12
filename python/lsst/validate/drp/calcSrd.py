@@ -292,7 +292,7 @@ def sphDist(ra1, dec1, ra2, dec2):
     Uses the Haversine formula to preserve accuracy at small angles.
 
     Law of cosines approach doesn't work well for the typically very small
-    differences that we're look at here.
+    differences that we're looking at here.
     """
     # Haversine
     dra = ra1-ra2
@@ -314,25 +314,25 @@ def sphDist(ra1, dec1, ra2, dec2):
 
 def matchVisitComputeDistance(visit_obj1, ra_obj1, dec_obj1,
                               visit_obj2, ra_obj2, dec_obj2):
-    """Match visit_obj1 and visit_obj2 and calculate ra, dec distance for matches.
+    """Calculate obj1-obj2 distance for each visit in which both objects are seen.
 
-    For each visit shared between visit_obj1 and visit_obj2, calculate the spherical distance between the
-    matching elements in (ra_obj1, dec_obj1); (ra_obj2, dec_obj2)
+    For each visit shared between visit_obj1 and visit_obj2, 
+    calculate the spherical distance between the obj1 and obj2.
 
     Inputs
     ------
     visit_obj1 : scalar, list, or numpy.array of int or str
         List of visits for object 1.
     ra_obj1 : scalar, list, or numpy.array of float
-        List of RA for object 1.
+        List of RA in each visit for object 1.
     dec_obj1 : scalar, list or numpy.array of float
-        List of Dec for object 1.
+        List of Dec in each visit for object 1.
     visit_obj2 : list or numpy.array of int or str
         List of visits for object 2.
     ra_obj2 : list or numpy.array of float
-        List of RA for object 2.
+        List of RA in each visit for object 2.
     dec_obj2 : list or numpy.array of float
-        List of Dec for object 2.
+        List of Dec in each visit for object 2.
 
     Results
     -------
@@ -375,7 +375,7 @@ def calcAM3(*args, **kwargs):
     See `calcAMx` for more details."""
     return calcAMx(*args, D=srdSpec.D3, width=2, **kwargs)
 
-def calcAMx(groupView, D=5, width=2, magrange=None):
+def calcAMx(groupView, D=5, width=2, magRange=None):
     """Calculate the SRD definition of astrometric performance
 
     Parameters
@@ -386,14 +386,14 @@ def calcAMx(groupView, D=5, width=2, magrange=None):
         Fiducial distance between two objects to consider. [arcmin]
     width : float
         Width around fiducial distance to include. [arcmin]
-    magrange : 2-element list or tuple
+    magRange : 2-element list or tuple
         brighter, fainter limits of the magnitude range to include.
-        E.g., `magrange=[17.5, 21.0]`
+        E.g., `magRange=[17.5, 21.0]`
 
     Returns
     -------
     list, list, list
-        rmsDistMas, annulus, magrange
+        rmsDistMas, annulus, magRange
 
     Notes
     -----
@@ -438,34 +438,36 @@ def calcAMx(groupView, D=5, width=2, magrange=None):
 
     # Default is specified here separately because defaults that are mutable
     # get overridden by previous calls of the function.
-    if magrange is None:
-        magrange = [17.0, 21.5]
+    if magRange is None:
+        magRange = [17.0, 21.5]
 
     # First we make a list of the keys that we want the fields for
     importantKeys = [groupView.schema.find(name).key for
                      name in ['id', 'coord_ra', 'coord_dec',
                               'object', 'visit', 'base_PsfFlux_mag']]
 
-    # Includes magrange through closure
+    # Includes magRange through closure
     def magInRange(cat):
         mag = cat.get('base_PsfFlux_mag')
         w, = np.where(np.isfinite(mag))
         medianMag = np.median(mag[w])
-        return magrange[0] <= medianMag and medianMag < magrange[1]
+        return magRange[0] <= medianMag and medianMag < magRange[1]
 
-    groupViewInMagrange = groupView.where(magInRange)
+    groupViewInMagRange = groupView.where(magInRange)
 
     # List of lists of id, importantValue
-    matchKeyOutput = [x.get(y) for y in importantKeys for x in groupViewInMagrange.groups]
+    matchKeyOutput = [obj.get(key) for key in importantKeys for obj in groupViewInMagRange.groups]
 
-    jump = len(groupViewInMagrange)
+    jump = len(groupViewInMagRange)
 
     ra = matchKeyOutput[1*jump:2*jump]
     dec = matchKeyOutput[2*jump:3*jump]
     visit = matchKeyOutput[4*jump:5*jump]
 
-    meanRa = groupViewInMagrange.aggregate(averageRaFromCat)
-    meanDec = groupViewInMagrange.aggregate(averageDecFromCat)
+    # Calculate the mean position of each object from its constituent visits
+    # `aggregate` calulates a quantity for each object in the groupView.
+    meanRa = groupViewInMagRange.aggregate(averageRaFromCat)
+    meanDec = groupViewInMagRange.aggregate(averageDecFromCat)
 
     annulus = D + (width/2)*np.array([-1, +1])
     annulusRadians = arcminToRadians(annulus)
@@ -488,4 +490,4 @@ def calcAMx(groupView, D=5, width=2, magrange=None):
 
     rmsDistMas = radiansToMilliarcsec(rmsDistances)
 
-    return rmsDistMas, annulus, magrange
+    return rmsDistMas, annulus, magRange
