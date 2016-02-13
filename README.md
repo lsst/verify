@@ -53,11 +53,15 @@ As usual, if any of these packages are not declared current you will also need t
 
 Run the measurement algorithm processing and astrometry test with
 ```
-cd $VALIDATE_DRP_DIR/examples/runDecamTest.sh
+$VALIDATE_DRP_DIR/examples/runDecamTest.sh
 ```
 This will create a repository in your current working directory called DECam.
 
 The last line of the output will give the median astrometric scatter (in milliarcseconds) for stars with mag < 21.
+
+------
+There are also "Quick" versions to run one CCD for quick debugging and verification that things are running properly: `examples/runCfhtQuickTest.sh` and `examples/runDecamQuickTest.sh`.
+
 
 ------
 While `examples/runCfhtTest.sh` and `examples/runDecamTest.sh` respectively do all of the processing and validation analysis, below are some examples of running the processing/measurement steps individually.  While these examples are from  the CFHT validation example, analogous commands would work for DECam.

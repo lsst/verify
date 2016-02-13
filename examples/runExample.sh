@@ -50,7 +50,7 @@ export ASTROMETRY_NET_DATA_DIR="${VALIDATION_DATA}"/../astrometry_net_data
 echo "running processCcd"
 MACH=$(uname -s)
 if [ "$MACH" == Darwin ]; then
-    NUMPROC=$(sysctl -a | grep machdep.cpu | grep core_count | cut -d ' ' -f 2)
+    NUMPROC=$(sysctl -n hw.logicalcpu)
 else
     NUMPROC=$(grep -c processor /proc/cpuinfo)
 fi
