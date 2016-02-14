@@ -32,7 +32,7 @@ import unittest
 import lsst.utils
 import lsst.utils.tests as utilsTests
 
-from lsst.validate.drp import validate
+from lsst.validate.drp import util 
 
 
 class LoadDataTestCase(unittest.TestCase):
@@ -49,7 +49,7 @@ class LoadDataTestCase(unittest.TestCase):
     def testLoadingOfConfigFile(self):
         dataIds, good_mag_limit, \
             medianAstromscatterRef, medianPhotoscatterRef, matchRef = \
-                validate.loadDataIdsAndParameters(self.configFile)
+                util.loadDataIdsAndParameters(self.configFile)
         self.assertAlmostEqual(good_mag_limit, 21.0)
         self.assertAlmostEqual(medianAstromscatterRef, 25)
         self.assertAlmostEqual(medianPhotoscatterRef, 25)
