@@ -37,7 +37,7 @@ from .check import checkAstrometry, checkPhotometry, positionRms
 from .plot import plotAstrometry, plotPhotometry, plotPA1, plotAMx
 from .print import printPA1, printPA2, printAMx
 from .util import getCcdKeyName, repoNameToPrefix, calcOrNone
-from .io import saveAmxToJson
+from .io import saveKpmToJson
 
 
 def loadAndMatchData(repo, visitDataIds,
@@ -251,7 +251,7 @@ def run(repo, visitDataIds, good_mag_limit=21.0,
 
     AM1, AM2, AM3 = [calcOrNone(func, safeMatches, ValidateErrorNoStars)
                      for func in (calcAM1, calcAM2, calcAM3)]
-    PA1, PA2 = [func(safeMatches, magKey) for func in calcPA1, calcPA2]
+    PA1, PA2 = [func(safeMatches, magKey) for func in (calcPA1, calcPA2)]
 
     if makePrint:
         printPA1(PA1)
@@ -267,7 +267,7 @@ def run(repo, visitDataIds, good_mag_limit=21.0,
                 plotAMx(metric, plotBase=outputPrefix)
 
     if makeJson:
-        for metric in (AM1, AM2, AM3):
+        for metric in (AM1, AM2, AM3, PA1, PA2):
             if metric:
-                outfileAM = outputPrefix + "AM%d.json" % metric.x
-                saveAmxToJson(metric, outfileAM)
+                outfile = outputPrefix + "%s.json" % metric.name
+                saveKpmToJson(metric, outfile)

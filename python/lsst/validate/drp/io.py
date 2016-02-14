@@ -25,12 +25,12 @@ from __future__ import print_function, division, absolute_import
 import json
 import numpy as np
 
-def saveAmxToJson(AMxStruct, filename):
-    """Save AMx `lsst.pipe.base.Struct` to JSON file.
+def saveKpmToJson(KpmStruct, filename):
+    """Save Kpm `lsst.pipe.base.Struct` to JSON file.
 
     Inputs
     ------
-    AMxStruct : lsst.pipe.base.Struct
+    KpmStruct : lsst.pipe.base.Struct
         Information to serialize in JSON.
     filename : str
         Output filename.
@@ -39,13 +39,13 @@ def saveAmxToJson(AMxStruct, filename):
     --------
     >>> foo = {'a': b}
     >>> outfile = 'tmp.json'
-    >>> saveAmxToJson(bar, outfile)
+    >>> saveKpmToJson(bar, outfile)
 
     Notes
     -----
     Rewrites `numpy.ndarray` as a list`
     """
-    data = AMxStruct.getDict()
+    data = KpmStruct.getDict()
 
     # Simple check to convert numpy.ndarray to list
     for k, v in data.iteritems():
