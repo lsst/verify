@@ -24,53 +24,40 @@
 
 from __future__ import print_function
 
+import os
 import sys
 
 import unittest
 
-import numpy as np
-from numpy.testing import assert_allclose
-
+import lsst.utils
 import lsst.utils.tests as utilsTests
 
-from lsst.validate.drp.base import ValidateError
-from lsst.validate.drp import util
-from lsst.validate.drp.plot import plotAMx
+from lsst.validate.drp import validate
 
 
-class CoordTestCase(unittest.TestCase):
-    """Testing basic coordinate calculations."""
+class LoadDataTestCase(unittest.TestCase):
+    """Testing loading of configuration files and repo."""
 
     def setUp(self):
-        self.simpleRa = np.deg2rad([15, 25])
-        self.simpleDec = np.deg2rad([30, 45])
-        self.zeroDec = np.zeros_like(self.simpleRa)
-
-        self.wrapRa = [359.9999, 0.0001, -0.1, +0.1]
-        self.wrapDec = [1, 0, -1, 0]
-
-        self.simpleRms = [0.1, 0.2, 0.05]
-        self.annulus = [1, 2]
-        self.magrange = [20, 25]
+        validateDrpDir = lsst.utils.getPackageDir('validate_drp')
+        testDataDir = os.path.join(validateDrpDir, 'tests')
+        self.configFile = os.path.join(testDataDir, 'runCfht.yaml')
 
     def tearDown(self):
         pass
 
-    def testZeroDecSimpleAverageCoord(self):
-        meanRa, meanDec = util.averageRaDec(self.simpleRa, self.zeroDec)
-        assert_allclose([20, 0], np.rad2deg([meanRa, meanDec]))
-
-    def testSimpleAverageCoord(self):
-        meanRa, meanDec = util.averageRaDec(self.simpleRa, self.simpleDec)
-        assert_allclose([19.493625,  37.60447], np.rad2deg([meanRa, meanDec]))
-
-    def testPlotAMxFailureEmpty(self):
-        self.assertRaises(ValidateError,
-                          plotAMx, [], self.annulus, self.magrange, x=1)
-
-    def testPlotAMxFailureNox(self):
-        self.assertRaises(ValidateError,
-                          plotAMx, self.simpleRms, self.annulus, self.magrange, x=None)
+    def testLoadingOfConfigFile(self):
+        dataIds, good_mag_limit, \
+            medianAstromscatterRef, medianPhotoscatterRef, matchRef = \
+                validate.loadDataIdsAndParameters(self.configFile)
+        self.assertAlmostEqual(good_mag_limit, 21.0)
+        self.assertAlmostEqual(medianAstromscatterRef, 25)
+        self.assertAlmostEqual(medianPhotoscatterRef, 25)
+        self.assertAlmostEqual(matchRef, 5000)
+        # Tests of the dict entries require constructing and comparing sets
+        self.assertEqual(set(['r']), set([d['filter'] for d in dataIds]))
+        self.assertEqual(set([849375, 850587]),
+                         set([d['visit'] for d in dataIds]))
 
 
 def suite():
@@ -79,7 +66,7 @@ def suite():
     utilsTests.init()
 
     suites = []
-    suites += unittest.makeSuite(CoordTestCase)
+    suites += unittest.makeSuite(LoadDataTestCase)
     return unittest.TestSuite(suites)
 
 

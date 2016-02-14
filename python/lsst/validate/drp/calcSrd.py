@@ -316,7 +316,7 @@ def matchVisitComputeDistance(visit_obj1, ra_obj1, dec_obj1,
                               visit_obj2, ra_obj2, dec_obj2):
     """Calculate obj1-obj2 distance for each visit in which both objects are seen.
 
-    For each visit shared between visit_obj1 and visit_obj2, 
+    For each visit shared between visit_obj1 and visit_obj2,
     calculate the spherical distance between the obj1 and obj2.
 
     Inputs

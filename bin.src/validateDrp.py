@@ -25,33 +25,34 @@ from __future__ import print_function
 import os.path
 import sys
 
-from lsst.validate.drp import checkAstrometryPhotometry
+from lsst.validate.drp import validate, util
 
-
-def defaultData(repo):
-    # List of visits to be considered
-    visits = [176837, 176839, 176840, 176841, 176842, 176843, 176844, 176845, 176846]
-
-    # List of CCD to be considered (source catalogs will be concateneted)
-    ccd = [10, 11, 12, 13, 14, 15, 16, 17, 18]
-    filter = 'z'
-
-    # Reference values that the DECam analysis should pass
-    #  for the median astrometric scatter and the number of matches
-    good_mag_limit = 21  # [mag]
-    medianRef = 25  # [arcsec]
-    matchRef = 10000  # [number of stars]
-
-    visitDataIds = [{'visit': v, 'filter': filter, 'ccdnum': c} for v in visits
-                    for c in ccd]
-
-    return visitDataIds, good_mag_limit, medianRef, matchRef
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("""Usage: valid_cosmos repo
-where repo is the path to a repository containing the output of processCcd
-""")
+    helpMessage = """Usage: validateDrp.py repo configFile
+
+    Arguments
+    ---------
+    `repo` : str
+        path to a repository containing the output of processCcd
+    `configFile` : str
+        YAML configuration file declaring the parameters for this run.
+
+    Output
+    ------
+    STDOUT
+        Summary of key metrics
+    *.png
+        Plots of key metrics.  Generated in current working directory.
+
+    Notes
+    -----
+    Currently can only work on one filter at a time.
+      -- There is no logic to organize things by filter in the analysis,
+      -- There is no syntax for matching visits with filters in the YAML file.
+    """
+    if len(sys.argv) < 2:
+        print(helpMessage)
         sys.exit(1)
 
     repo = sys.argv[1]
@@ -59,5 +60,7 @@ where repo is the path to a repository containing the output of processCcd
         print("Could not find repo %r" % (repo,))
         sys.exit(1)
 
-    args = defaultData(repo)
-    checkAstrometryPhotometry.run(repo, *args)
+    configFile = sys.argv[2]
+
+    args = util.loadDataIdsAndParameters(configFile)
+    validate.run(repo, *args)

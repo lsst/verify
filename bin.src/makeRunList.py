@@ -25,38 +25,34 @@ from __future__ import print_function
 import os.path
 import sys
 
-from lsst.validate.drp import checkAstrometryPhotometry
+from lsst.validate.drp import validate
 
-
-def defaultData(repo):
-    # List of visits to be considered
-    visits = [849375, 850587]
-
-    # List of CCD to be considered (source calalogs will be concateneted)
-    ccd = [12, 13, 14, 21, 22, 23]
-    filter = 'r'
-
-    # Reference values for the median astrometric scatter and the number of matches
-    good_mag_limit = 21.0
-    medianRef = 25
-    matchRef = 5000
-
-    visitDataIds = [{'visit': v, 'filter': filter, 'ccd': c} for v in visits
-                    for c in ccd]
-
-    return visitDataIds, good_mag_limit, medianRef, matchRef
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("""Usage: valid_cosmos repo
-where repo is the path to a repository containing the output of processCcd
-""")
+    helpMessage = """Usage: makeRunList.py configFile
+
+    Arguments
+    ---------
+    `configFile` : str
+        YAML configuration file declaring the parameters for this run.
+
+    Output
+    ------
+    STDOUT
+        List of run IDs suitable for ingestion by `processCcd.py`
+
+    Notes
+    -----
+    """
+    if len(sys.argv) < 2:
+        print(helpMessage)
         sys.exit(1)
 
-    repo = sys.argv[1]
-    if not os.path.isdir(repo):
-        print("Could not find repo %r" % (repo,))
+    configFile = sys.argv[1]
+    if not os.path.isfile(configFile):
+        print("Could not find config file %r" % (configFile,))
         sys.exit(1)
 
-    args = defaultData(repo)
-    checkAstrometryPhotometry.run(repo, *args)
+    runList = validate.loadRunList(configFile)
+    lines = "\n".join(runList)
+    print(lines)
