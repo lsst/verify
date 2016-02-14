@@ -29,7 +29,7 @@ import scipy.stats
 
 import lsst.pipe.base as pipeBase
 
-from .base import ValidateError, ValidateErrorNoStars
+from .base import ValidateErrorNoStars
 from .util import averageRaFromCat, averageDecFromCat
 from .srdSpec import srdSpec, getAstrometricSpec
 

@@ -55,4 +55,4 @@ def saveAmxToJson(AMxStruct, filename):
     with open(filename, 'w') as outfile:
         # Structure the output with sort_keys, and indent
         # to make comparisons of output results easy on a line-by-line basis.
-        json.dump(data, outfile, sort_keys = True, indent = 4)
+        json.dump(data, outfile, sort_keys=True, indent=4)

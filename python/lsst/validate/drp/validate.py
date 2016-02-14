@@ -31,7 +31,7 @@ from lsst.afw.table import MultiMatch, SimpleRecord, GroupView
 import lsst.daf.persistence as dafPersist
 import lsst.pipe.base as pipeBase
 
-from .base import ValidateError, ValidateErrorNoStars
+from .base import ValidateErrorNoStars
 from .calcSrd import calcAM1, calcAM2, calcAM3
 from .check import checkAstrometry, checkPhotometry, positionRms
 from .plot import plotAstrometry, plotPhotometry, plotPA1, plotAMx
@@ -215,7 +215,7 @@ def run(repo, visitDataIds, good_mag_limit=21.0,
 
     Outputs
     -------
-    Names of plot files or JSON file are generated based on repository name,  
+    Names of plot files or JSON file are generated based on repository name,
     unless overriden by specifying `plotBase`.
     E.g., Analyzing a repository "CFHT/output"
         will result in filenames that start with "CFHT_output_".
@@ -250,7 +250,7 @@ def run(repo, visitDataIds, good_mag_limit=21.0,
     magKey = allMatches.schema.find("base_PsfFlux_mag").key
 
     AM1, AM2, AM3 = [calcOrNone(func, safeMatches, ValidateErrorNoStars)
-                     for func in calcAM1, calcAM2, calcAM3]
+                     for func in (calcAM1, calcAM2, calcAM3)]
 
     if makePrint:
         printPA1(safeMatches, magKey)

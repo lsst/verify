@@ -27,9 +27,7 @@ import numpy as np
 import scipy.stats
 from scipy.optimize import curve_fit
 
-from .base import ValidateError
 from .calcSrd import calcPA1
-from .srdSpec import getAstrometricSpec
 
 
 # Plotting defaults

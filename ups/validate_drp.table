@@ -1,7 +1,6 @@
 setupRequired(utils)
 setupRequired(daf_persistence)
 setupRequired(afw)
-setupRequired(pipe_tasks)
 setupRequired(pipe_base)
 setupRequired(pyyaml)
 
