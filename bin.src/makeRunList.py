@@ -25,7 +25,7 @@ from __future__ import print_function
 import os.path
 import sys
 
-from lsst.validate.drp import validate
+from lsst.validate.drp import util
 
 
 if __name__ == "__main__":
@@ -53,6 +53,6 @@ if __name__ == "__main__":
         print("Could not find config file %r" % (configFile,))
         sys.exit(1)
 
-    runList = validate.loadRunList(configFile)
+    runList = util.loadRunList(configFile)
     lines = "\n".join(runList)
     print(lines)
