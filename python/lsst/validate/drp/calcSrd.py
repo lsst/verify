@@ -53,7 +53,7 @@ def calcPA1(matches, magKey, numRandomShuffles=50):
     pipeBase.Struct
         name -- str: 'PA1'.  Name of Key Performance Metric stored in this struct.
         rms -- average RMS
-        iqr -- and average inter-quartile range (IQR) 
+        iqr -- and average inter-quartile range (IQR)
         rmsStd -- standard deviation of the RMS
         iqrStd -- standard deviation of the IQR
            These 4 quantities are derived from the `numRandomShuffles` trials.
@@ -154,7 +154,7 @@ def doCalcPA1(groupView, magKey):
     magDiffs = groupView.aggregate(getRandomDiffRmsInMas, field=magKey)
     magMean = groupView.aggregate(np.mean, field=magKey)
     rmsPA1, iqrPA1 = computeWidths(magDiffs)
-    return pipeBase.Struct(rms=rmsPA1, iqr=iqrPA1, 
+    return pipeBase.Struct(rms=rmsPA1, iqr=iqrPA1,
                            rmsUnits='mmag', iqrUnits='mmag',
                            magDiffs=magDiffs, magMean=magMean,
                            magDiffsUnits='mmag', magMeanUnits='mag')
@@ -232,7 +232,7 @@ def calcPA2(groupView, magKey):
     PF1_percentiles = 100 - np.asarray([PF1['minimum'], PF1['design'], PF1['stretch']])
     minPA2, designPA2, stretchPA2 = np.percentile(np.abs(magDiffs), PF1_percentiles)
     return pipeBase.Struct(name='PA2', pa2Units='mmag', pf1Units='%',
-                           design=designPA2, minimum=minPA2, stretch=stretchPA2, 
+                           design=designPA2, minimum=minPA2, stretch=stretchPA2,
                            PF1=PF1)
 
 
@@ -506,7 +506,7 @@ def calcAMx(groupView, D=5, width=2, magRange=None,
         calcRmsDistances(groupView, annulus, magRange=magRange)
 
     if not list(rmsDistances):
-        raise ValidateErrorNoStars('No stars found that are %.1f--%.1f arcmin apart.' % 
+        raise ValidateErrorNoStars('No stars found that are %.1f--%.1f arcmin apart.' %
                                    (annulus[0], annulus[1]))
 
     rmsDistMas = radiansToMilliarcsec(rmsDistances)

@@ -104,10 +104,12 @@ def loadAndMatchData(repo, visitDataIds,
         srcVis.extend(tmpCat, False)
         mmatch.add(catalog=tmpCat, dataId=vId)
 
-    # Complete the match, returning a catalog that includes all matched sources with object IDs that can be used to group them.
+    # Complete the match, returning a catalog that includes 
+    # all matched sources with object IDs that can be used to group them.
     matchCat = mmatch.finish()
 
-    # Create a mapping object that allows the matches to be manipulated as a mapping of object ID to catalog of sources.
+    # Create a mapping object that allows the matches to be manipulated 
+    # as a mapping of object ID to catalog of sources.
     allMatches = GroupView.build(matchCat)
 
     return allMatches
