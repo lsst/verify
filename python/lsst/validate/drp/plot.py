@@ -27,9 +27,6 @@ import numpy as np
 import scipy.stats
 from scipy.optimize import curve_fit
 
-from .calcSrd import calcPA1
-
-
 # Plotting defaults
 plt.rcParams['axes.linewidth'] = 2
 plt.rcParams['mathtext.default'] = 'regular'
@@ -249,16 +246,16 @@ def plotPA1(pa1, plotBase=""):
     yv = np.linspace(diffRange[0], diffRange[1], 100)
     ax2.plot(scipy.stats.norm.pdf(yv, scale=pa1.rms), yv,
              marker='', linestyle='-', linewidth=3, color=color['rms'],
-             label="PA1(RMS) = %4.2f mmag" % pa1.rms)
+             label="PA1(RMS) = %4.2f %s" % (pa1.rms, pa1.rmsUnits))
     ax2.plot(scipy.stats.norm.pdf(yv, scale=pa1.iqr), yv,
              marker='', linestyle='-', linewidth=3, color=color['iqr'],
-             label="PA1(IQR) = %4.2f mmag" % pa1.iqr)
+             label="PA1(IQR) = %4.2f %s" % (pa1.iqr, pa1.iqrUnits))
     ax2.set_ylim(*diffRange)
     ax2.legend()
 #    ax1.set_ylabel(u"12-pixel aperture magnitude diff (mmag)")
 #    ax1.set_xlabel(u"12-pixel aperture magnitude")
     ax1.set_xlabel("psf magnitude")
-    ax1.set_ylabel("psf magnitude diff (mmag)")
+    ax1.set_ylabel("psf magnitude diff (%s)" % pa1.magDiffsUnits)
     for label in ax2.get_yticklabels():
         label.set_visible(False)
 
@@ -301,24 +298,24 @@ def plotAMx(AMx, plotBase=""):
     ax1 = fig.add_subplot(1, 1, 1)
     ax1.hist(AMx.rmsDistMas, bins=25, range=(0.0, 100.0),
              histtype='stepfilled',
-             label='D: %.1f-%.1f arcmin\nMag Bin: %.1f-%.1f' %
-                   (AMx.annulus[0], AMx.annulus[1], AMx.magRange[0], AMx.magRange[1]))
+             label='D: %.1f-%.1f %s\nMag Bin: %.1f-%.1f' %
+                   (AMx.annulus[0], AMx.annulus[1], AMx.annulusUnits, AMx.magRange[0], AMx.magRange[1]))
     ax1.axvline(AMx.AMx, 0, 1, linewidth=2,  color='black',
-                label='median RMS of relative\nseparation: %.2f mas' % (AMx.AMx))
+                label='median RMS of relative\nseparation: %.2f %s' % (AMx.AMx, AMx.amxUnits))
     ax1.axvline(AMx.AMx_spec, 0, 1, linewidth=2, color='red',
-                label='AM%d: %.2f mas' % (AMx.x, AMx.AMx_spec))
+                label='%s: %.0f %s' % (AMx.name, AMx.AMx_spec, AMx.amxUnits))
     ax1.axvline(AMx.AMx_spec+AMx.ADx_spec, 0, 1, linewidth=2, color='green',
-                label='AM{x:d}+AD{x:d}: %{AMxADx:.2f} mas\nAF{x:d}: %{AFx_spec:.2f}%% > AM{x:d}+AD{x:d} = %{percentOver:.2f}%%'.format(**AMxAsDict))
+                label='AM{x:d}+AD{x:d}: {AMxADx:.0f} {amxUnits:s}\nAF{x:d}: {AFx_spec:.2f}{afxUnits:s} > AM{x:d}+AD{x:d} = {percentOver:.2f}%'.format(**AMxAsDict))
 
-    ax1.set_title('The %d stars separated by D = [%.2f, %.2f] arcmin' %
-                  (len(AMx.rmsDistMas), AMx.annulus[0], AMx.annulus[1]))
+    ax1.set_title('The %d stars separated by D = [%.2f, %.2f] %s' %
+                  (len(AMx.rmsDistMas), AMx.annulus[0], AMx.annulus[1], AMx.annulusUnits))
     ax1.set_xlim(0.0, 100.0)
-    ax1.set_xlabel('rms Relative Separation (mas)')
+    ax1.set_xlabel('rms Relative Separation (%s)' % AMx.rmsUnits)
     ax1.set_ylabel('# pairs / bin')
 
     ax1.legend(loc='upper right', fontsize=16)
 
-    figName = plotBase+'AM%d_D_%d_ARCMIN_%.1f-%.1f.png' % \
-              (AMx.x, int(sum(AMx.annulus)/2), AMx.magRange[0], AMx.magRange[1])
+    figName = plotBase+'%s_D_%d_%s_%.1f-%.1f.png' % \
+              (AMx.name, int(sum(AMx.annulus)/2), AMx.DUnits.upper(), AMx.magRange[0], AMx.magRange[1])
 
     plt.savefig(figName, dpi=300)

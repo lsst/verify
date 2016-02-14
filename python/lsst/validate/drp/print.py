@@ -22,22 +22,21 @@
 
 from __future__ import print_function, division
 
-import numpy as np
-
 from .srdSpec import srdSpec
 
 def printPA1(PA1):
     """Print the calculated PA1 from the LSST SRD.  
     """
-    print("PA1(RMS) = %4.2f+-%4.2f mmag" % (PA1.rms, PA1.rmsStd))
-    print("PA1(IQR) = %4.2f+-%4.2f mmag" % (PA1.iqr, PA1.iqrStd))
+    print("PA1(RMS) = %4.2f+-%4.2f %s" % (PA1.rms, PA1.rmsStd, PA1.rmsUnits))
+    print("PA1(IQR) = %4.2f+-%4.2f %s" % (PA1.iqr, PA1.iqrStd, PA1.iqrUnits))
 
 
 def printPA2(pa2):
     """Print the calculated PA2 from the LSST SRD."""
     for level in ('minimum', 'design', 'stretch'):
-        print("%-7s: PF1=%2d%% of diffs more than PA2 = %4.2f mmag (target is < %2.0f mmag)" %
-              (level, pa2.PF1[level], pa2.getDict()[level], srdSpec.PA2[level]))
+        print("%-7s: PF1=%2d%s of diffs more than PA2 = %4.2f %s (target is < %2.0f %s)" %
+              (level, pa2.PF1[level], pa2.pf1Units, pa2.getDict()[level], pa2.pa2Units, 
+               srdSpec.PA2[level], srdSpec.pa2Units))
 
 
 def printAMx(AMx):
@@ -56,7 +55,8 @@ def printAMx(AMx):
     print("Median of distribution of RMS of distance of stellar pairs.")
     print("%s goals" % AMx.level.upper())
     print("For stars from %.2f < mag < %.2f" % (AMx.magRange[0], AMx.magRange[1]))
-    print("from D = [%.2f, %.2f] arcmin, is %.2f mas (target is <= %.2f mas)." %
-          (AMx.annulus[0], AMx.annulus[1], AMx.AMx, AMx.AMx_spec))
-    print("  %.2f%% of sample is > %.2f mas from AM%d=%.2f mas (target is <= %.2f%%)" %
-          (percentOver, AMx.ADx_spec, AMx.x, AMx.AMx_spec, AMx.AFx_spec))
+    print("from D = [%.2f, %.2f] %s, %s=%.2f %s (target is < %.0f %s)." %
+          (AMx.annulus[0], AMx.annulus[1], AMx.annulusUnits, 
+           AMx.name, AMx.AMx, AMx.amxUnits, AMx.AMx_spec, AMx.amxUnits))
+    print("  %.2f%% of sample deviates by >%.0f %s (target is < %.0f%%)" %
+          (percentOver, AMx.ADx_spec+AMx.AMx_spec, AMx.adxUnits, AMx.AFx_spec))

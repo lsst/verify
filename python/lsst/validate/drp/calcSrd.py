@@ -125,9 +125,11 @@ def calcPA1(matches, magKey, numRandomShuffles=50):
     iqrPA1 = np.array([pa1.iqr for pa1 in pa1Samples])
 
     return pipeBase.Struct(name='PA1',
-                           rms=np.mean(rmsPA1), iqr=np.mean(iqrPA1), 
+                           rms=np.mean(rmsPA1), iqr=np.mean(iqrPA1),
                            rmsStd=np.std(rmsPA1), iqrStd=np.std(iqrPA1),
-                           magDiffs=pa1Samples[0].magDiffs, magMean=pa1Samples[0].magMean)
+                           rmsUnits='mmag', iqrUnits='mmag',
+                           magDiffs=pa1Samples[0].magDiffs, magMean=pa1Samples[0].magMean,
+                           magDiffsUnits='mmag', magMeanUnits='mag')
 
 
 def doCalcPA1(groupView, magKey):
@@ -152,7 +154,10 @@ def doCalcPA1(groupView, magKey):
     magDiffs = groupView.aggregate(getRandomDiffRmsInMas, field=magKey)
     magMean = groupView.aggregate(np.mean, field=magKey)
     rmsPA1, iqrPA1 = computeWidths(magDiffs)
-    return pipeBase.Struct(rms=rmsPA1, iqr=iqrPA1, magDiffs=magDiffs, magMean=magMean)
+    return pipeBase.Struct(rms=rmsPA1, iqr=iqrPA1, 
+                           rmsUnits='mmag', iqrUnits='mmag',
+                           magDiffs=magDiffs, magMean=magMean,
+                           magDiffsUnits='mmag', magMeanUnits='mag')
 
 
 def calcPA2(groupView, magKey):
@@ -226,7 +231,9 @@ def calcPA2(groupView, magKey):
     PF1 = {'minimum': 20, 'design': 10, 'stretch': 5}
     PF1_percentiles = 100 - np.asarray([PF1['minimum'], PF1['design'], PF1['stretch']])
     minPA2, designPA2, stretchPA2 = np.percentile(np.abs(magDiffs), PF1_percentiles)
-    return pipeBase.Struct(name='PA2', design=designPA2, minimum=minPA2, stretch=stretchPA2, PF1=PF1)
+    return pipeBase.Struct(name='PA2', pa2Units='mmag', pf1Units='%',
+                           design=designPA2, minimum=minPA2, stretch=stretchPA2, 
+                           PF1=PF1)
 
 
 def getRandomDiffRmsInMas(array):
@@ -509,16 +516,23 @@ def calcAMx(groupView, D=5, width=2, magRange=None,
     return pipeBase.Struct(
         name='AM%d' % x,
         AMx=AMx,
+        amxUnits='mas',
         rmsDistMas=rmsDistMas,
+        rmsUnits='mas',
         fractionOver=fractionOver,
         D=D,
+        DUnits='arcmin',
         annulus=annulus,
+        annulusUnits='arcmin',
         magRange=magRange,
+        magRangeUnits='mag',
         x=x,
         level=level,
         AMx_spec=AMx_spec,
         AFx_spec=AFx_spec,
         ADx_spec=ADx_spec,
+        afxUnits='%',
+        adxUnits='mas',
         )
 
 
