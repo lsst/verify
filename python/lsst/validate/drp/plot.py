@@ -228,33 +228,32 @@ def plotPhotometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
     plt.savefig(plotPath, format="png")
 
 
-def plotPA1(gv, magKey, plotBase=""):
-    pa1 = calcPA1(gv, magKey)
-
-    diff_range = (-100, +100)
+def plotPA1(pa1, plotBase=""):
+    """Plot the results of calculating the LSST SRC requirement PA1."""
+    diffRange = (-100, +100)
 
     fig = plt.figure(figsize=(18, 12))
     ax1 = fig.add_subplot(1, 2, 1)
-    ax1.scatter(pa1.means, pa1.diffs, s=10, color=color['bright'], linewidth=0)
+    ax1.scatter(pa1.magMean, pa1.magDiffs, s=10, color=color['bright'], linewidth=0)
     ax1.axhline(+pa1.rms, color=color['rms'], linewidth=3)
     ax1.axhline(-pa1.rms, color=color['rms'], linewidth=3)
     ax1.axhline(+pa1.iqr, color=color['iqr'], linewidth=3)
     ax1.axhline(-pa1.iqr, color=color['iqr'], linewidth=3)
 
     ax2 = fig.add_subplot(1, 2, 2, sharey=ax1)
-    ax2.hist(pa1.diffs, bins=25, range=diff_range,
+    ax2.hist(pa1.magDiffs, bins=25, range=diffRange,
              orientation='horizontal', histtype='stepfilled',
              normed=True, color=color['bright'])
     ax2.set_xlabel("relative # / bin")
 
-    yv = np.linspace(diff_range[0], diff_range[1], 100)
+    yv = np.linspace(diffRange[0], diffRange[1], 100)
     ax2.plot(scipy.stats.norm.pdf(yv, scale=pa1.rms), yv,
              marker='', linestyle='-', linewidth=3, color=color['rms'],
              label="PA1(RMS) = %4.2f mmag" % pa1.rms)
     ax2.plot(scipy.stats.norm.pdf(yv, scale=pa1.iqr), yv,
              marker='', linestyle='-', linewidth=3, color=color['iqr'],
              label="PA1(IQR) = %4.2f mmag" % pa1.iqr)
-    ax2.set_ylim(*diff_range)
+    ax2.set_ylim(*diffRange)
     ax2.legend()
 #    ax1.set_ylabel(u"12-pixel aperture magnitude diff (mmag)")
 #    ax1.set_xlabel(u"12-pixel aperture magnitude")

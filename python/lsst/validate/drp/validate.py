@@ -32,7 +32,7 @@ import lsst.daf.persistence as dafPersist
 import lsst.pipe.base as pipeBase
 
 from .base import ValidateErrorNoStars
-from .calcSrd import calcAM1, calcAM2, calcAM3
+from .calcSrd import calcAM1, calcAM2, calcAM3, calcPA1, calcPA2
 from .check import checkAstrometry, checkPhotometry, positionRms
 from .plot import plotAstrometry, plotPhotometry, plotPA1, plotAMx
 from .print import printPA1, printPA2, printAMx
@@ -251,16 +251,17 @@ def run(repo, visitDataIds, good_mag_limit=21.0,
 
     AM1, AM2, AM3 = [calcOrNone(func, safeMatches, ValidateErrorNoStars)
                      for func in (calcAM1, calcAM2, calcAM3)]
+    PA1, PA2 = [func(safeMatches, magKey) for func in calcPA1, calcPA2]
 
     if makePrint:
-        printPA1(safeMatches, magKey)
-        printPA2(safeMatches, magKey)
+        printPA1(PA1)
+        printPA2(PA2)
         for metric in (AM1, AM2, AM3):
             if metric:
                 printAMx(metric)
 
     if makePlot:
-        plotPA1(safeMatches, magKey, plotBase=outputPrefix)
+        plotPA1(PA1, plotBase=outputPrefix)
         for metric in (AM1, AM2, AM3):
             if metric:
                 plotAMx(metric, plotBase=outputPrefix)

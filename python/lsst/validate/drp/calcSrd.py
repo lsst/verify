@@ -34,26 +34,40 @@ from .util import averageRaFromCat, averageDecFromCat
 from .srdSpec import srdSpec, getAstrometricSpec
 
 
-def calcPA1(groupView, magKey):
+def calcPA1(matches, magKey, numRandomShuffles=50):
     """Calculate the photometric repeatability of measurements across a set of observations.
 
     Parameters
     ----------
-    groupView : lsst.afw.table.GroupView
+    matches : lsst.afw.table.GroupView
          GroupView object of matched observations from MultiMatch.
     magKey : lookup key to a `schema`
          The lookup key of the field storing the magnitude of interest.
          E.g., `magKey = allMatches.schema.find("base_PsfFlux_mag").key`
          where `allMatches` is the result of lsst.afw.table.MultiMatch.finish()
+    numRandomShuffles : int
+        Number of times to draw random pairs from the different observations.
 
     Returns
     -------
     pipeBase.Struct
-       The RMS, inter-quartile range,
-       differences between pairs of observations, mean mag of each object.
+        name -- str: 'PA1'.  Name of Key Performance Metric stored in this struct.
+        rms -- average RMS
+        iqr -- and average inter-quartile range (IQR) 
+        rmsStd -- standard deviation of the RMS
+        iqrStd -- standard deviation of the IQR
+           These 4 quantities are derived from the `numRandomShuffles` trials.
+        magDiffs -- differences between pairs of observations.  Selected from one random trial.
+        magMean -- mean magnitude of each object.
 
     Notes
     -----
+    We calculate differences for 50 different random realizations
+    of the measurement pairs, to provide some estimate of the uncertainty
+    on our RMS estimates due to the random shuffling.
+    This estimate could be stated and calculated from a more formally
+    derived motivation but in practice 50 should be sufficient.
+
     The LSST Science Requirements Document (LPM-17), or SRD,
     characterizes the photometric repeatability by putting a requirement
     on the median RMS of measurements of non-variable bright stars.
@@ -77,6 +91,7 @@ def calcPA1(groupView, magKey):
 
     See Also
     --------
+    doCalcPA1 : Worker routine that calculates PA1 for one random sample.
     calcPA2 : Calculate photometric repeatability outlier fraction.
 
     Examples
@@ -100,16 +115,44 @@ def calcPA1(groupView, magKey):
     >>> allMatches = GroupView.build(matchCat)
     >>> allMatches
     >>> psfMagKey = allMatches.schema.find("base_PsfFlux_mag").key
-    >>> pa1_sample = calcPA1(allMatches, psfMagKey)
-    >>> print("The RMS was %.3f, the IQR was %.3f" % (pa1_sample.rms, pa1_sample.iqr))
+    >>> pa1 = calcPA1(allMatches, psfMagKey)
+    >>> print("LSST SRD Key Performance Metric %s" % pa1.name)
+    >>> print("The RMS was %.3f+-%.3f, the IQR was %.3f+-%.3f" % (pa1.rms, pa1.iqr, pa1.rmsStd, pa1.iqrStd))
     """
 
-    diffs = groupView.aggregate(getRandomDiffRmsInMas, field=magKey)
-    means = groupView.aggregate(np.mean, field=magKey)
-    rmsPA1, iqrPA1 = computeWidths(diffs)
+    pa1Samples = [doCalcPA1(matches, magKey) for n in range(numRandomShuffles)]
+    rmsPA1 = np.array([pa1.rms for pa1 in pa1Samples])
+    iqrPA1 = np.array([pa1.iqr for pa1 in pa1Samples])
 
-    return pipeBase.Struct(rms=rmsPA1, iqr=iqrPA1,
-                           diffs=diffs, means=means)
+    return pipeBase.Struct(name='PA1',
+                           rms=np.mean(rmsPA1), iqr=np.mean(iqrPA1), 
+                           rmsStd=np.std(rmsPA1), iqrStd=np.std(iqrPA1),
+                           magDiffs=pa1Samples[0].magDiffs, magMean=pa1Samples[0].magMean)
+
+
+def doCalcPA1(groupView, magKey):
+    """Calculate PA1 for one random realization.
+
+    Parameters
+    ----------
+    groupView : lsst.afw.table.GroupView
+         GroupView object of matched observations from MultiMatch.
+    magKey : lookup key to a `schema`
+         The lookup key of the field storing the magnitude of interest.
+         E.g., `magKey = allMatches.schema.find("base_PsfFlux_mag").key`
+         where `allMatches` is the result of lsst.afw.table.MultiMatch.finish()
+
+    Returns
+    -------
+    pipeBase.Struct
+       The RMS, inter-quartile range,
+       differences between pairs of observations, mean mag of each object.
+    """
+
+    magDiffs = groupView.aggregate(getRandomDiffRmsInMas, field=magKey)
+    magMean = groupView.aggregate(np.mean, field=magKey)
+    rmsPA1, iqrPA1 = computeWidths(magDiffs)
+    return pipeBase.Struct(rms=rmsPA1, iqr=iqrPA1, magDiffs=magDiffs, magMean=magMean)
 
 
 def calcPA2(groupView, magKey):
@@ -130,7 +173,8 @@ def calcPA2(groupView, magKey):
     Returns
     -------
     pipeBase.Struct
-       Contains PA2, the millimags of varaition at the
+        name -- str: 'PA2'.  Name of Key Performance Metric stored in this struct.
+       Contains the results of calculating PA2, the millimags of variation at the
        `design`, `minimum`, and `stretch` fraction of outliers
        The specified fractions are also avialable as `PF1`.
 
@@ -160,11 +204,12 @@ def calcPA2(groupView, magKey):
     >>> allMatches
     >>> psfMagKey = allMatches.schema.find("base_PsfFlux_mag").key
     >>> pa2 = calcPA2(allMatches, psfMagKey)
-    >>> print("minimum: PF1=%2d%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 15 mmag)" %
+    >>> print("LSST SRD Key Performance Metric %s" % pa2.name)
+    >>> print("minimum: PF1=%2d%% of magDiffs more than PA2 = %4.2f mmag (target is PA2 < 15 mmag)" %
     ...       (pa2.PF1['minimum'], pa2.minimum))
-    >>> print("design:  PF1=%2d%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 15 mmag)" %
+    >>> print("design:  PF1=%2d%% of magDiffs more than PA2 = %4.2f mmag (target is PA2 < 15 mmag)" %
     ...       (pa2.PF1['design'], pa2.design))
-    >>> print("stretch: PF1=%2d%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 10 mmag)" %
+    >>> print("stretch: PF1=%2d%% of magDiffs more than PA2 = %4.2f mmag (target is PA2 < 10 mmag)" %
     ...       (pa2.PF1['stretch'], pa2.stretch))
 
 
@@ -177,11 +222,11 @@ def calcPA2(groupView, magKey):
       following LPM-17 as of 2011-07-06, available at http://ls.st/LPM-17.
     """
 
-    diffs = groupView.aggregate(getRandomDiffRmsInMas, field=magKey)
+    magDiffs = groupView.aggregate(getRandomDiffRmsInMas, field=magKey)
     PF1 = {'minimum': 20, 'design': 10, 'stretch': 5}
     PF1_percentiles = 100 - np.asarray([PF1['minimum'], PF1['design'], PF1['stretch']])
-    minPA2, designPA2, stretchPA2 = np.percentile(np.abs(diffs), PF1_percentiles)
-    return pipeBase.Struct(design=designPA2, minimum=minPA2, stretch=stretchPA2, PF1=PF1)
+    minPA2, designPA2, stretchPA2 = np.percentile(np.abs(magDiffs), PF1_percentiles)
+    return pipeBase.Struct(name='PA2', design=designPA2, minimum=minPA2, stretch=stretchPA2, PF1=PF1)
 
 
 def getRandomDiffRmsInMas(array):
@@ -201,7 +246,7 @@ def getRandomDiffRmsInMas(array):
     -----
     The LSST SRD recommends computing repeatability from a histogram of
     magnitude differences for the same star measured on two visits
-    (using a median over the diffs to reject outliers).
+    (using a median over the magDiffs to reject outliers).
     Because we have N>=2 measurements for each star, we select a random
     pair of visits for each star.  We divide each difference by sqrt(2)
     to obtain RMS about the (unknown) mean magnitude,
@@ -454,13 +499,15 @@ def calcAMx(groupView, D=5, width=2, magRange=None,
         calcRmsDistances(groupView, annulus, magRange=magRange)
 
     if not list(rmsDistances):
-        raise ValidateErrorNoStars('No stars found that are %.1f--%.1f arcmin apart.' % (annulus[0], annulus[1]))
+        raise ValidateErrorNoStars('No stars found that are %.1f--%.1f arcmin apart.' % 
+                                   (annulus[0], annulus[1]))
 
     rmsDistMas = radiansToMilliarcsec(rmsDistances)
     AMx = np.median(rmsDistMas)
     fractionOver = np.mean(np.asarray(rmsDistMas) > AMx_spec+ADx_spec)
 
     return pipeBase.Struct(
+        name='AM%d' % x,
         AMx=AMx,
         rmsDistMas=rmsDistMas,
         fractionOver=fractionOver,

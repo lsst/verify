@@ -24,37 +24,20 @@ from __future__ import print_function, division
 
 import numpy as np
 
-from .calcSrd import calcPA1, calcPA2
+from .srdSpec import srdSpec
 
-
-def printPA1(brightMatches, psfMagKey, numRandomShuffles=50):
+def printPA1(PA1):
+    """Print the calculated PA1 from the LSST SRD.  
     """
-    Notes
-    -----
-    We calculate differences for 50 different random realizations
-    of the measurement pairs, to provide some estimate of the uncertainty
-    on our RMS estimates due to the random shuffling.
-    This estimate could be stated and calculated from a more formally
-    derived motivation but in practice 50 should be sufficient.
-    """
-    pa1_samples = [calcPA1(brightMatches, psfMagKey)
-                   for n in range(numRandomShuffles)]
-    rmsPA1 = np.array([pa1.rms for pa1 in pa1_samples])
-    iqrPA1 = np.array([pa1.iqr for pa1 in pa1_samples])
-    print("PA1(RMS) = %4.2f+-%4.2f mmag" % (rmsPA1.mean(), rmsPA1.std()))
-    print("PA1(IQR) = %4.2f+-%4.2f mmag" % (iqrPA1.mean(), iqrPA1.std()))
+    print("PA1(RMS) = %4.2f+-%4.2f mmag" % (PA1.rms, PA1.rmsStd))
+    print("PA1(IQR) = %4.2f+-%4.2f mmag" % (PA1.iqr, PA1.iqrStd))
 
 
-def printPA2(brightMatches, magKey):
-    """Calculate and print the calculated PA2 from the LSST SRD from a groupView."""
-
-    pa2 = calcPA2(brightMatches, magKey)
-    print("minimum: PF1=%2d%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 15 mmag)" %
-          (pa2.PF1['minimum'], pa2.minimum))
-    print("design:  PF1=%2d%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 15 mmag)" %
-          (pa2.PF1['design'], pa2.design))
-    print("stretch: PF1=%2d%% of diffs more than PA2 = %4.2f mmag (target is PA2 < 10 mmag)" %
-          (pa2.PF1['stretch'], pa2.stretch))
+def printPA2(pa2):
+    """Print the calculated PA2 from the LSST SRD."""
+    for level in ('minimum', 'design', 'stretch'):
+        print("%-7s: PF1=%2d%% of diffs more than PA2 = %4.2f mmag (target is < %2.0f mmag)" %
+              (level, pa2.PF1[level], pa2.getDict()[level], srdSpec.PA2[level]))
 
 
 def printAMx(AMx):
