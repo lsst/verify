@@ -33,9 +33,7 @@ from numpy.testing import assert_allclose
 
 import lsst.utils.tests as utilsTests
 
-from lsst.validate.drp.base import ValidateError
 from lsst.validate.drp import util
-from lsst.validate.drp.plot import plotAMx
 
 
 class CoordTestCase(unittest.TestCase):

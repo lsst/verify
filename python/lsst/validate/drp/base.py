@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # LSST Data Management System
 # Copyright 2008-2016 AURA/LSST.
 #
@@ -27,6 +25,12 @@ class ValidateError(Exception):
     """Base classes for exceptions in validate_drp."""
     pass
 
+
 class ValidateErrorNoStars(ValidateError):
-    """Base classes for exceptions in validate_drp."""
+    """To be returned by tests that find no stars satisfying a set of criteria.
+
+    Some example cases that might return such an error:
+    1. There are no stars between 19-21 arcmin apart.
+    2. There are no stars in the given magnitude range.
+    """
     pass

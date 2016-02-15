@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # LSST Data Management System
 # Copyright 2008-2016 AURA/LSST.
 #
@@ -24,8 +22,6 @@ from __future__ import print_function, division
 
 import lsst.pipe.base as pipeBase
 
-from .base import ValidateError
-
 srdSpec = pipeBase.Struct(
     levels=("design", "minimum", "stretch"),
     PA2={"design": 15, "minimum": 15, "stretch": 10}, pa2Units='mmag',
@@ -47,8 +43,8 @@ srdSpec = pipeBase.Struct(
 def getAstrometricSpec(x=None, level='design'):
     """Return SRD specification for given astrometric test.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     x : int
         One of [1,2,3].
     level : str
@@ -61,7 +57,7 @@ def getAstrometricSpec(x=None, level='design'):
 
     Raises:
     -------
-    ValidateError if `x` isn't in `getAstrometricSpec`
+    ValueError if `x` isn't in `getAstrometricSpec`
     """
 
     if x == 1:
@@ -77,6 +73,6 @@ def getAstrometricSpec(x=None, level='design'):
         AFx = srdSpec.AF3[level]
         ADx = srdSpec.AD3[level]
     else:
-        raise ValidateError("Unknown astrometric test specification: %s" % str(x))
+        raise ValueError("Unknown astrometric test specification: %s" % str(x))
 
     return AMx, AFx, ADx

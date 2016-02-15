@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # LSST Data Management System
 # Copyright 2008-2016 AURA/LSST.
 #
@@ -25,11 +23,12 @@ from __future__ import print_function, division, absolute_import
 import json
 import numpy as np
 
-def saveKpmToJson(KpmStruct, filename):
-    """Save Kpm `lsst.pipe.base.Struct` to JSON file.
 
-    Inputs
-    ------
+def saveKpmToJson(KpmStruct, filename):
+    """Save KPM `lsst.pipe.base.Struct` to JSON file.
+
+    Parameters
+    ----------
     KpmStruct : lsst.pipe.base.Struct
         Information to serialize in JSON.
     filename : str
@@ -39,7 +38,7 @@ def saveKpmToJson(KpmStruct, filename):
     --------
     >>> foo = {'a': b}
     >>> outfile = 'tmp.json'
-    >>> saveKpmToJson(bar, outfile)
+    >>> saveKpmToJson(foo, outfile)
 
     Notes
     -----

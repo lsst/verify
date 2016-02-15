@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # LSST Data Management System
 # Copyright 2008-2016 AURA/LSST.
 #
@@ -32,8 +30,8 @@ from .util import averageRaDecFromCat
 def isExtended(source, extendedKey, extendedThreshold=1.0):
     """Is the source extended attribute above the threshold.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     cat : collection with a .get method
         for `extendedKey`
     extendedKey
@@ -49,8 +47,8 @@ def magNormDiff(cat):
     """Calculate the normalized mag/mag_err difference from the mean for a
     set of observations of an objection.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     cat : collection with a .get method
          for flux, flux+"-"
 
@@ -70,8 +68,8 @@ def magNormDiff(cat):
 def positionRms(cat):
     """Calculate the RMS for RA, Dec for a set of observations an object.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     cat -- collection with a .get method
          for 'coord_ra', 'coord_dec' that returns radians.
 
@@ -98,8 +96,8 @@ def checkAstrometry(mag, mmagrms, dist, match,
                     medianRef=100, matchRef=500):
     """Print out the astrometric scatter for all stars, and for good stars.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     mag : list or numpy.array
         Average magnitudes of each star
     mmagrms ; list or numpy.array
@@ -150,8 +148,8 @@ def checkPhotometry(mag, mmagrms, dist, match,
                     medianRef=100, matchRef=500):
     """Print out the astrometric scatter for all stars, and for good stars.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     mag : list or numpy.array
         Average magnitudes of each star
     mmagrms ; list or numpy.array

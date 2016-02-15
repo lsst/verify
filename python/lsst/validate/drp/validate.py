@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # LSST Data Management System
 # Copyright 2008-2016 AURA/LSST.
 #
@@ -44,8 +42,8 @@ def loadAndMatchData(repo, visitDataIds,
                      matchRadius=afwGeom.Angle(1, afwGeom.arcseconds)):
     """Load data from specific visit.  Match with reference.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     repo : string
         The repository.  This is generally the directory on disk
         that contains the repository and mapper.
@@ -104,11 +102,11 @@ def loadAndMatchData(repo, visitDataIds,
         srcVis.extend(tmpCat, False)
         mmatch.add(catalog=tmpCat, dataId=vId)
 
-    # Complete the match, returning a catalog that includes 
+    # Complete the match, returning a catalog that includes
     # all matched sources with object IDs that can be used to group them.
     matchCat = mmatch.finish()
 
-    # Create a mapping object that allows the matches to be manipulated 
+    # Create a mapping object that allows the matches to be manipulated
     # as a mapping of object ID to catalog of sources.
     allMatches = GroupView.build(matchCat)
 
@@ -118,8 +116,8 @@ def loadAndMatchData(repo, visitDataIds,
 def analyzeData(allMatches, good_mag_limit=19.5):
     """Calculate summary statistics for each star.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     allMatches : afw.table.GroupView
         GroupView object with matches.
     good_mag_limit : float, optional
@@ -190,8 +188,14 @@ def run(repo, visitDataIds, good_mag_limit=21.0,
         outputPrefix=None):
     """Main executable.
 
-    Inputs
-    ------
+    Plot files and JSON files are generated in the local directory
+        prefixed with the repository name (where '_' replace path separators),
+    unless overriden by specifying `outputPrefix`.
+    E.g., Analyzing a repository "CFHT/output"
+        will result in filenames that start with "CFHT_output_".
+
+    Parameters
+    ----------
     repo : string
         The repository.  This is generally the directory on disk
         that contains the repository and mapper.
@@ -215,12 +219,6 @@ def run(repo, visitDataIds, good_mag_limit=21.0,
     outputPrefix : str
         Specify the beginning filename for output files.
 
-    Outputs
-    -------
-    Names of plot files or JSON file are generated based on repository name,
-    unless overriden by specifying `plotBase`.
-    E.g., Analyzing a repository "CFHT/output"
-        will result in filenames that start with "CFHT_output_".
     """
 
     if outputPrefix is None:
@@ -245,9 +243,9 @@ def run(repo, visitDataIds, good_mag_limit=21.0,
                     medianRef=medianPhotoscatterRef, matchRef=matchRef)
     if makePlot:
         plotAstrometry(magavg, mmagerr, mmagrms, dist, match,
-                       good_mag_limit=good_mag_limit, plotBase=outputPrefix)
+                       good_mag_limit=good_mag_limit, outputPrefix=outputPrefix)
         plotPhotometry(magavg, mmagerr, mmagrms, dist, match,
-                       good_mag_limit=good_mag_limit, plotBase=outputPrefix)
+                       good_mag_limit=good_mag_limit, outputPrefix=outputPrefix)
 
     magKey = allMatches.schema.find("base_PsfFlux_mag").key
 
@@ -263,10 +261,10 @@ def run(repo, visitDataIds, good_mag_limit=21.0,
                 printAMx(metric)
 
     if makePlot:
-        plotPA1(PA1, plotBase=outputPrefix)
+        plotPA1(PA1, outputPrefix=outputPrefix)
         for metric in (AM1, AM2, AM3):
             if metric:
-                plotAMx(metric, plotBase=outputPrefix)
+                plotAMx(metric, outputPrefix=outputPrefix)
 
     if makeJson:
         for metric in (AM1, AM2, AM3, PA1, PA2):

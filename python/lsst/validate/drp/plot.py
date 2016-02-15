@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # LSST Data Management System
 # Copyright 2008-2016 AURA/LSST.
 #
@@ -51,11 +49,13 @@ def plotOutlinedLines(ax, x1, x2, x1_color=color['all'], x2_color=color['bright'
 
 
 def plotAstrometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
-                   plotBase=""):
+                   outputPrefix=""):
     """Plot angular distance between matched sources from different exposures.
 
-    Inputs
-    ------
+    Creates a file containing the plot with a filename beginning with `outputPrefix`.
+
+    Parameters
+    ----------
     mag : list or numpy.array
         Average Magnitude
     mmagerr : list or numpy.array
@@ -66,6 +66,12 @@ def plotAstrometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
         Separation from reference [mas]
     match : int
         Number of stars matched.
+    good_mag_limit : float, optional
+        Minimum average brightness (in magnitudes) for a star to be considered.
+    outputPrefix : str, optional
+        Prefix to use for filename of plot file.  Will also be used in plot titles.
+        E.g., outputPrefix='Cfht_output_r_' will result in a file named
+           'Cfht_output_r_check_astrometry.png'
     """
 
     bright, = np.where(np.asarray(mag) < good_mag_limit)
@@ -100,8 +106,8 @@ def plotAstrometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
     ax[1].legend(loc='upper left')
     plotOutlinedLines(ax[1], dist_median, bright_dist_median)
 
-    plt.suptitle("Astrometry Check : %s" % plotBase.rstrip('_'), fontsize=30)
-    plotPath = plotBase+"check_astrometry.png"
+    plt.suptitle("Astrometry Check : %s" % outputPrefix.rstrip('_'), fontsize=30)
+    plotPath = outputPrefix+"check_astrometry.png"
     plt.savefig(plotPath, format="png")
 
 
@@ -144,11 +150,11 @@ def plotMagerrFit(*args, **kwargs):
 
 
 def plotPhotometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
-                   plotBase=""):
+                   outputPrefix=""):
     """Plot photometric RMS for matched sources.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     mag : list or numpy.array
         Average Magnitude
     mmagerr : list or numpy.array
@@ -159,6 +165,10 @@ def plotPhotometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
         Separation from reference [mas]
     match : int
         Number of stars matched.
+    outputPrefix : str, optional
+        Prefix to use for filename of plot file.  Will also be used in plot titles.
+        E.g., outputPrefix='Cfht_output_r_' will result in a file named
+           'Cfht_output_r_check_photometry.png'
     """
 
     bright, = np.where(np.asarray(mag) < good_mag_limit)
@@ -220,13 +230,28 @@ def plotPhotometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
     plotMagerrFit(mag[w], mmagerr[w], mmagerr[w], ax=ax[1][1])
     ax[1][1].legend(loc='upper left')
 
-    plt.suptitle("Photometry Check : %s" % plotBase.rstrip('_'), fontsize=30)
-    plotPath = plotBase+"check_photometry.png"
+    plt.suptitle("Photometry Check : %s" % outputPrefix.rstrip('_'), fontsize=30)
+    plotPath = outputPrefix+"check_photometry.png"
     plt.savefig(plotPath, format="png")
 
 
-def plotPA1(pa1, plotBase=""):
-    """Plot the results of calculating the LSST SRC requirement PA1."""
+def plotPA1(pa1, outputPrefix=""):
+    """Plot the results of calculating the LSST SRC requirement PA1.
+
+    Creates a file containing the plot with a filename beginning with `outputPrefix`.
+
+    Parameters
+    ----------
+    pa1 : pipeBase.Struct
+        Must contain:
+        rms, iqr, magMean, magDiffs
+        rmsUnits, iqrUnits, magDiffsUnits
+    outputPrefix : str, optional
+        Prefix to use for filename of plot file.  Will also be used in plot titles.
+        E.g., outputPrefix='Cfht_output_r_' will result in a file named
+           'Cfht_output_r_AM1_D_5_arcmin_17.0-21.5.png'
+        for an AMx.name=='AM1' and AMx.magRange==[17, 21.5]
+    """
     diffRange = (-100, +100)
 
     fig = plt.figure(figsize=(18, 12))
@@ -259,8 +284,8 @@ def plotPA1(pa1, plotBase=""):
     for label in ax2.get_yticklabels():
         label.set_visible(False)
 
-    plt.suptitle("PA1: %s" % plotBase.rstrip('_'))
-    plotPath = "%s%s" % (plotBase, "PA1.png")
+    plt.suptitle("PA1: %s" % outputPrefix.rstrip('_'))
+    plotPath = "%s%s" % (outputPrefix, "PA1.png")
     plt.savefig(plotPath, format="png")
 
 
@@ -273,19 +298,22 @@ def plotAM2(*args, **kwargs):
 def plotAM3(*args, **kwargs):
     return plotAMx(*args, x=3, **kwargs)
 
-def plotAMx(AMx, plotBase=""):
+def plotAMx(AMx, outputPrefix=""):
     """Plot a histogram of the RMS in relative distance between pairs of stars.
 
-    Inputs
-    ------
+    Creates a file containing the plot with a filename beginning with `outputPrefix`.
+
+    Parameters
+    ----------
     AMx : pipeBase.Struct
         Must contain:
         AMx, rmsDistMas, fractionOver, annulus, magRange, x, level,
         AMx_spec, AFx_spec, ADx_spec
-
-    Outputs
-    -------
-    Plot file prefixed with plotBase.
+    outputPrefix : str, optional
+        Prefix to use for filename of plot file.  Will also be used in plot titles.
+        E.g., outputPrefix='Cfht_output_r_' will result in a file named
+           'Cfht_output_r_AM1_D_5_arcmin_17.0-21.5.png'
+        for an AMx.name=='AM1' and AMx.magRange==[17, 21.5]
     """
 
     percentOver = 100*AMx.fractionOver
@@ -315,7 +343,7 @@ def plotAMx(AMx, plotBase=""):
 
     ax1.legend(loc='upper right', fontsize=16)
 
-    figName = plotBase+'%s_D_%d_%s_%.1f-%.1f.png' % \
+    figName = outputPrefix+'%s_D_%d_%s_%.1f-%.1f.png' % \
               (AMx.name, int(sum(AMx.annulus)/2), AMx.DUnits.upper(), AMx.magRange[0], AMx.magRange[1])
 
     plt.savefig(figName, dpi=300)

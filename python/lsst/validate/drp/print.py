@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # LSST Data Management System
 # Copyright 2008-2016 AURA/LSST.
 #
@@ -25,8 +23,7 @@ from __future__ import print_function, division
 from .srdSpec import srdSpec
 
 def printPA1(PA1):
-    """Print the calculated PA1 from the LSST SRD.  
-    """
+    """Print the calculated PA1 from the LSST SRD."""
     print("PA1(RMS) = %4.2f+-%4.2f %s" % (PA1.rms, PA1.rmsStd, PA1.rmsUnits))
     print("PA1(IQR) = %4.2f+-%4.2f %s" % (PA1.iqr, PA1.iqrStd, PA1.iqrUnits))
 
@@ -35,15 +32,15 @@ def printPA2(pa2):
     """Print the calculated PA2 from the LSST SRD."""
     for level in ('minimum', 'design', 'stretch'):
         print("%-7s: PF1=%2d%s of diffs more than PA2 = %4.2f %s (target is < %2.0f %s)" %
-              (level, pa2.PF1[level], pa2.pf1Units, pa2.getDict()[level], pa2.pa2Units, 
+              (level, pa2.PF1[level], pa2.pf1Units, pa2.getDict()[level], pa2.pa2Units,
                srdSpec.PA2[level], srdSpec.pa2Units))
 
 
 def printAMx(AMx):
     """Print the Astrometric performance.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     AMx : pipeBase.Struct
         Must contain:
         AMx, fractionOver, annulus, magRange, x, level,
@@ -56,7 +53,7 @@ def printAMx(AMx):
     print("%s goals" % AMx.level.upper())
     print("For stars from %.2f < mag < %.2f" % (AMx.magRange[0], AMx.magRange[1]))
     print("from D = [%.2f, %.2f] %s, %s=%.2f %s (target is < %.0f %s)." %
-          (AMx.annulus[0], AMx.annulus[1], AMx.annulusUnits, 
+          (AMx.annulus[0], AMx.annulus[1], AMx.annulusUnits,
            AMx.name, AMx.AMx, AMx.amxUnits, AMx.AMx_spec, AMx.amxUnits))
     print("  %.2f%% of sample deviates by >%.0f %s (target is < %.0f%%)" %
           (percentOver, AMx.ADx_spec+AMx.AMx_spec, AMx.adxUnits, AMx.AFx_spec))
