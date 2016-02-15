@@ -91,7 +91,7 @@ def loadAndMatchData(repo, visitDataIds,
         calib = afwImage.Calib(butler.get("calexp_md", vId, immediate=True))
         calib.setThrowOnNegativeFlux(False)
         oldSrc = butler.get('src', vId, immediate=True)
-        print(len(oldSrc), "sources in ccd: ", vId[ccdKeyName])
+        print(len(oldSrc), "sources in ccd %s  visit %s" % (vId[ccdKeyName], vId["visit"]))
 
         # create temporary catalog
         tmpCat = SourceCatalog(SourceCatalog(newSchema).table)
