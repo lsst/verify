@@ -3,7 +3,7 @@
 PRODUCT_DIR=${VALIDATE_DRP_DIR}
 
 CAMERA=CfhtQuick
-CONFIG_FILE="${PRODUCT_DIR}"/config/anetAstrometryConfig.py
+CONFIG_FILE="${PRODUCT_DIR}"/config/cfhtConfig.py
 MAPPER=lsst.obs.cfht.MegacamMapper
 
 "${PRODUCT_DIR}"/examples/runExample.sh $CAMERA $MAPPER \
