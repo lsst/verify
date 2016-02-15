@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # LSST Data Management System
 # Copyright 2008-2016 AURA/LSST.
 #
@@ -31,19 +29,21 @@ from lsst.afw.table import MultiMatch, SimpleRecord, GroupView
 import lsst.daf.persistence as dafPersist
 import lsst.pipe.base as pipeBase
 
-from .calcSrd import calcAM1, calcAM2
+from .base import ValidateErrorNoStars
+from .calcSrd import calcAM1, calcAM2, calcAM3, calcPA1, calcPA2
 from .check import checkAstrometry, checkPhotometry, positionRms
-from .print import printPA1, printPA2, printAM1, printAM2
-from .plot import plotAstrometry, plotPhotometry, plotPA1, plotAM1, plotAM2
-from .util import getCcdKeyName, repoNameToPrefix, loadDataIdsAndParameters, constructDataIds, loadRunList, constructRunList 
+from .plot import plotAstrometry, plotPhotometry, plotPA1, plotAMx
+from .print import printPA1, printPA2, printAMx
+from .util import getCcdKeyName, repoNameToPrefix, calcOrNone
+from .io import saveKpmToJson
 
 
 def loadAndMatchData(repo, visitDataIds,
                      matchRadius=afwGeom.Angle(1, afwGeom.arcseconds)):
     """Load data from specific visit.  Match with reference.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     repo : string
         The repository.  This is generally the directory on disk
         that contains the repository and mapper.
@@ -102,10 +102,12 @@ def loadAndMatchData(repo, visitDataIds,
         srcVis.extend(tmpCat, False)
         mmatch.add(catalog=tmpCat, dataId=vId)
 
-    # Complete the match, returning a catalog that includes all matched sources with object IDs that can be used to group them.
+    # Complete the match, returning a catalog that includes
+    # all matched sources with object IDs that can be used to group them.
     matchCat = mmatch.finish()
 
-    # Create a mapping object that allows the matches to be manipulated as a mapping of object ID to catalog of sources.
+    # Create a mapping object that allows the matches to be manipulated
+    # as a mapping of object ID to catalog of sources.
     allMatches = GroupView.build(matchCat)
 
     return allMatches
@@ -114,8 +116,8 @@ def loadAndMatchData(repo, visitDataIds,
 def analyzeData(allMatches, good_mag_limit=19.5):
     """Calculate summary statistics for each star.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     allMatches : afw.table.GroupView
         GroupView object with matches.
     good_mag_limit : float, optional
@@ -181,11 +183,19 @@ def analyzeData(allMatches, good_mag_limit=19.5):
 
 ####
 def run(repo, visitDataIds, good_mag_limit=21.0,
-        medianAstromscatterRef=25, medianPhotoscatterRef=25, matchRef=500):
+        medianAstromscatterRef=25, medianPhotoscatterRef=25, matchRef=500,
+        makePrint=True, makePlot=True, makeJson=True,
+        outputPrefix=None):
     """Main executable.
 
-    Inputs
-    ------
+    Plot files and JSON files are generated in the local directory
+        prefixed with the repository name (where '_' replace path separators),
+    unless overriden by specifying `outputPrefix`.
+    E.g., Analyzing a repository "CFHT/output"
+        will result in filenames that start with "CFHT_output_".
+
+    Parameters
+    ----------
     repo : string
         The repository.  This is generally the directory on disk
         that contains the repository and mapper.
@@ -200,9 +210,19 @@ def run(repo, visitDataIds, good_mag_limit=21.0,
         Expected photometric RMS [mmag] across visits.
     matchRef : int, optional
         Expectation of the number of stars that should be matched across visits.
+    makePrint : bool, optional
+        Print calculated quantities (to stdout).
+    makePlot : bool, optional
+        Create plots for metrics.  Saved to current working directory.
+    makeJson : bool, optional
+        Create JSON output file for metrics.  Saved to current working directory.
+    outputPrefix : str
+        Specify the beginning filename for output files.
+
     """
 
-    plotbase = repoNameToPrefix(repo)
+    if outputPrefix is None:
+        outputPrefix = repoNameToPrefix(repo)
 
     allMatches = loadAndMatchData(repo, visitDataIds)
     struct, safeMatches = analyzeData(allMatches, good_mag_limit)
@@ -221,18 +241,33 @@ def run(repo, visitDataIds, good_mag_limit=21.0,
     checkPhotometry(magavg, mmagrms, dist, match,
                     good_mag_limit=good_mag_limit,
                     medianRef=medianPhotoscatterRef, matchRef=matchRef)
-    plotAstrometry(magavg, mmagerr, mmagrms, dist, match, good_mag_limit=good_mag_limit, plotbase=plotbase)
-    plotPhotometry(magavg, mmagerr, mmagrms, dist, match, good_mag_limit=good_mag_limit, plotbase=plotbase)
+    if makePlot:
+        plotAstrometry(magavg, mmagerr, mmagrms, dist, match,
+                       good_mag_limit=good_mag_limit, outputPrefix=outputPrefix)
+        plotPhotometry(magavg, mmagerr, mmagrms, dist, match,
+                       good_mag_limit=good_mag_limit, outputPrefix=outputPrefix)
 
     magKey = allMatches.schema.find("base_PsfFlux_mag").key
-    printPA1(safeMatches, magKey)
-    plotPA1(safeMatches, magKey, plotbase=plotbase)
-    printPA2(safeMatches, magKey)
 
-    args = calcAM1(safeMatches)
-    printAM1(*args)
-    plotAM1(*args)
+    AM1, AM2, AM3 = [calcOrNone(func, safeMatches, ValidateErrorNoStars)
+                     for func in (calcAM1, calcAM2, calcAM3)]
+    PA1, PA2 = [func(safeMatches, magKey) for func in (calcPA1, calcPA2)]
 
-    args = calcAM2(safeMatches)
-    printAM2(*args)
-    plotAM2(*args)
+    if makePrint:
+        printPA1(PA1)
+        printPA2(PA2)
+        for metric in (AM1, AM2, AM3):
+            if metric:
+                printAMx(metric)
+
+    if makePlot:
+        plotPA1(PA1, outputPrefix=outputPrefix)
+        for metric in (AM1, AM2, AM3):
+            if metric:
+                plotAMx(metric, outputPrefix=outputPrefix)
+
+    if makeJson:
+        for metric in (AM1, AM2, AM3, PA1, PA2):
+            if metric:
+                outfile = outputPrefix + "%s.json" % metric.name
+                saveKpmToJson(metric, outfile)

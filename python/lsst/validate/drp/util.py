@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # LSST Data Management System
 # Copyright 2008-2016 AURA/LSST.
 #
@@ -32,8 +30,8 @@ import lsst.afw.coord as afwCoord
 def averageRaDec(ra, dec):
     """Calculate average RA, Dec from input lists using spherical geometry.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     ra : list of float
         RA in [radians]
     dec : list of float
@@ -70,8 +68,8 @@ def averageDecFromCat(cat):
 def getCcdKeyName(dataid):
     """Return the key in a dataId that's referring to the CCD or moral equivalent.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     dataid : dict
         A dictionary that will be searched for a key that matches
         an entry in the hardcoded list of possible names for the CCD field.
@@ -114,8 +112,8 @@ def repoNameToPrefix(repo):
 def loadDataIdsAndParameters(configFile):
     """Load data IDs, magnitude range, and expected metrics from a yaml file.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     configFile : str
         YAML file that stores visit, filter, ccd,
         good_mag_limit, medianAstromscatterRef, medianPhotoscatterRef, matchRef
@@ -143,8 +141,8 @@ def loadDataIdsAndParameters(configFile):
 def constructDataIds(filter, visits, ccds, ccdKeyName='ccd'):
     """Returns a list of dataIds consisting of every combination of visit & ccd for each filter.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     filter : str
     visits : list of int
     ccds : list of int
@@ -180,8 +178,8 @@ def constructDataIds(filter, visits, ccds, ccdKeyName='ccd'):
 def loadRunList(configFile):
     """Load run list from a YAML file.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     configFile : str
         YAML file that stores visit, filter, ccd,
 
@@ -219,8 +217,8 @@ def loadRunList(configFile):
 def constructRunList(filter, visits, ccds, ccdKeyName='ccd'):
     """Construct a comprehensive runList for processCcd.py.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     filter : str
     visits : list of int
     ccds : list of int
@@ -250,3 +248,14 @@ def constructRunList(filter, visits, ccds, ccdKeyName='ccd'):
                for v in visits]
 
     return runList
+
+
+def calcOrNone(func, x, ErrorClass):
+    """Calculate the `func` and return result.  If it raises ErrorClass, return None."""
+    try:
+        out = func(x)
+    except ErrorClass as e:
+        print(e)
+        out = None
+
+    return out

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # LSST Data Management System
 # Copyright 2008-2016 AURA/LSST.
 #
@@ -24,31 +22,29 @@ from __future__ import print_function, division
 
 import lsst.pipe.base as pipeBase
 
-from .base import ValidateError
-
 srdSpec = pipeBase.Struct(
     levels=("design", "minimum", "stretch"),
-    PA2={"design": 15, "minimum": 15, "stretch": 10},  # mmag
-    D1=5,  # arcmin
-    AM1={"design": 10, "minimum": 20, "stretch": 5},  # mas
-    AF1={"design": 10, "minimum": 20, "stretch": 5},  # %
-    AD1={"design": 20, "minimum": 40, "stretch": 10},  # mas
-    D2=20,
-    AM2={"design": 10, "minimum": 20, "stretch": 5},  # mas
-    AF2={"design": 10, "minimum": 20, "stretch": 5},  # %
-    AD2={"design": 20, "minimum": 40, "stretch": 10},  # mas
-    D3=200,
-    AM3={"design": 15, "minimum": 30, "stretch": 10},  # mas
-    AF3={"design": 10, "minimum": 20, "stretch": 5},  # %
-    AD3={"design": 30, "minimum": 50, "stretch": 20},  # mas
+    PA2={"design": 15, "minimum": 15, "stretch": 10}, pa2Units='mmag',
+    D1=5, d1Units='arcmin',
+    AM1={"design": 10, "minimum": 20, "stretch": 5}, am1Units='mas',
+    AF1={"design": 10, "minimum": 20, "stretch": 5}, af1Units='%',
+    AD1={"design": 20, "minimum": 40, "stretch": 10}, ad1Units='mas',
+    D2=20, d2Units='arcmin',
+    AM2={"design": 10, "minimum": 20, "stretch": 5}, am2Units='mas',
+    AF2={"design": 10, "minimum": 20, "stretch": 5}, af2Units='%',
+    AD2={"design": 20, "minimum": 40, "stretch": 10}, ad2Units='mas',
+    D3=200, d3Units='arcmin',
+    AM3={"design": 15, "minimum": 30, "stretch": 10}, am3Units='mas',
+    AF3={"design": 10, "minimum": 20, "stretch": 5}, af3Units='%',
+    AD3={"design": 30, "minimum": 50, "stretch": 20}, ad3Units='mas',
 )
 
 
 def getAstrometricSpec(x=None, level='design'):
     """Return SRD specification for given astrometric test.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     x : int
         One of [1,2,3].
     level : str
@@ -61,7 +57,7 @@ def getAstrometricSpec(x=None, level='design'):
 
     Raises:
     -------
-    ValidateError if `x` isn't in `getAstrometricSpec`
+    ValueError if `x` isn't in `getAstrometricSpec`
     """
 
     if x == 1:
@@ -77,6 +73,6 @@ def getAstrometricSpec(x=None, level='design'):
         AFx = srdSpec.AF3[level]
         ADx = srdSpec.AD3[level]
     else:
-        raise ValidateError("Unknown astrometric test specification: %s" % str(x))
+        raise ValueError("Unknown astrometric test specification: %s" % str(x))
 
     return AMx, AFx, ADx

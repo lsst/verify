@@ -26,38 +26,25 @@ from __future__ import print_function
 
 import os
 import sys
-
+import tempfile
 import unittest
 
-import lsst.utils
+import numpy as np
+
 import lsst.utils.tests as utilsTests
 
-from lsst.validate.drp import util 
+import lsst.pipe.base as pipeBase
+from lsst.validate.drp.io import saveKpmToJson
 
 
-class LoadDataTestCase(unittest.TestCase):
-    """Testing loading of configuration files and repo."""
+class JsonTestCase(unittest.TestCase):
+    """Testing basic coordinate calculations."""
 
-    def setUp(self):
-        validateDrpDir = lsst.utils.getPackageDir('validate_drp')
-        testDataDir = os.path.join(validateDrpDir, 'tests')
-        self.configFile = os.path.join(testDataDir, 'runCfht.yaml')
-
-    def tearDown(self):
-        pass
-
-    def testLoadingOfConfigFile(self):
-        dataIds, good_mag_limit, \
-            medianAstromscatterRef, medianPhotoscatterRef, matchRef = \
-                util.loadDataIdsAndParameters(self.configFile)
-        self.assertAlmostEqual(good_mag_limit, 21.0)
-        self.assertAlmostEqual(medianAstromscatterRef, 25)
-        self.assertAlmostEqual(medianPhotoscatterRef, 25)
-        self.assertAlmostEqual(matchRef, 5000)
-        # Tests of the dict entries require constructing and comparing sets
-        self.assertEqual(set(['r']), set([d['filter'] for d in dataIds]))
-        self.assertEqual(set([849375, 850587]),
-                         set([d['visit'] for d in dataIds]))
+    def testSaveJson(self):
+        ps = pipeBase.Struct(foo=2, bar=[10, 20], hard=np.array([5,10]))
+        _, tmpFilepath = tempfile.mkstemp(suffix='.json')
+        saveKpmToJson(ps, tmpFilepath)
+        os.unlink(tmpFilepath)
 
 
 def suite():
@@ -66,7 +53,7 @@ def suite():
     utilsTests.init()
 
     suites = []
-    suites += unittest.makeSuite(LoadDataTestCase)
+    suites += unittest.makeSuite(JsonTestCase)
     return unittest.TestSuite(suites)
 
 
