@@ -63,6 +63,17 @@ The last line of the output will give the median astrometric scatter (in milliar
 ------
 There are also "Quick" versions to run one CCD for quick debugging and verification that things are running properly: `examples/runCfhtQuickTest.sh` and `examples/runDecamQuickTest.sh`.
 
+------
+Multiple filters can be processed by specifying a filter name for each visit.  See `examples/DecamCosmos.yaml` for an example.  In brief:
+```
+# Visit - filter are matched pairs.
+visits: [176837, 176839, 176840, 176841, 176842, 176843, 176844, 176845, 176846,
+         177341, 177342, 177343, 177344, 177345, 177346,]
+filter: ['z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z',
+         'r', 'r', 'r', 'r', 'r', 'r', ]
+# ccd list is iterated through for each visit-filter pair
+ccdnum: [10, 11, 12, 13, 14, 15, 16, 17, 18]
+```
 
 ------
 While `examples/runCfhtTest.sh` and `examples/runDecamTest.sh` respectively do all of the processing and validation analysis, below are some examples of running the processing/measurement steps individually.  While these examples are from  the CFHT validation example, analogous commands would work for DECam.

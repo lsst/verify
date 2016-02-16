@@ -44,12 +44,6 @@ if __name__ == "__main__":
         Summary of key metrics
     *.png
         Plots of key metrics.  Generated in current working directory.
-
-    Notes
-    -----
-    Currently can only work on one filter at a time.
-      -- There is no logic to organize things by filter in the analysis,
-      -- There is no syntax for matching visits with filters in the YAML file.
     """
     if len(sys.argv) < 2:
         print(helpMessage)
