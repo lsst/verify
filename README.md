@@ -107,7 +107,7 @@ Once these basic steps are completed, then you can run any of the following:
 * To process all CCDs with the old ANetAstrometryTask and 6 threads:
     ```
     processCcd.py CFHT/input @examples/runCfht.list --configfile config/anetAstrometryConfig.py --clobber-config -j 6 --output CFHT/output
-    validateDrp.py CFHT/output examples/runCfht.yaml
+    validateDrp.py CFHT/output --configFile examples/runCfht.yaml
     ```
 
 * To process one CCD with the new AstrometryTask:
@@ -122,7 +122,7 @@ Once these basic steps are completed, then you can run any of the following:
 
 * Run the validation test
     ```
-    validateDrp.py CFHT/output examples/runCfht.yaml
+    validateDrp.py CFHT/output --configFile examples/runCfht.yaml
     ```
 
 Note that the example validation test selects several of the CCDs and will fail if you just pass it a repository with 1 visit or just 1 CCD.
