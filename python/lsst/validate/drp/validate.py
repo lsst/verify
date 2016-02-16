@@ -37,19 +37,6 @@ from .print import printPA1, printPA2, printAMx
 from .util import getCcdKeyName, repoNameToPrefix, calcOrNone
 from .io import saveKpmToJson
 
-from lsst.obs.cfht import MegacamMapper
-
-mapper = MegacamMapper(root=".") # Annoying that we have to do this
-def objIdToCcdId(objId):
-    objId = np.array(objId, dtype='int64')
-    nBitsId = mapper.bypass_ccdExposureId_bits(None, None, None, None)
-    obj = np.bitwise_and(objId, nBitsId - 1)
-    objId >>= nBitsId
-
-    visit = objId // 36
-    ccd = objId % 36
-
-    return visit, ccd, obj
 
 def loadAndMatchData(repo, visitDataIds,
                      matchRadius=afwGeom.Angle(1, afwGeom.arcseconds)):
@@ -190,31 +177,6 @@ def analyzeData(allMatches, good_mag_limit=19.5):
     # positionRms knows how to query a group so we give it the whole thing
     #   by going with the default `field=None`.
     dist = goodMatches.aggregate(positionRms)
-
-    def badBrightFilter(cat):
-        return positionRms(cat) > 150 and np.mean(cat[psfMagKey]) < 21
-    brightFar = goodMatches.where(badBrightFilter)
-    print("Found %s bad, bright matches" % (len(brightFar,)))
-    print("visit0 ccd0 x0 y0 mag0  visit1 ccd1 x1 y1 mag1  sep")
-    for cat in brightFar.groups:
-        src0 = cat[0]
-        objId0 = src0.getId()
-        x0 = src0.get("base_SdssCentroid_x")
-        y0 = src0.get("base_SdssCentroid_y")
-        mag0 = src0.get("base_PsfFlux_mag")
-        visit0, ccd0, obj0 = objIdToCcdId(objId0)
-
-        src1 = cat[1]
-        objId1 = src1.getId()
-        x1 = src1.get("base_SdssCentroid_x")
-        y1 = src1.get("base_SdssCentroid_y")
-        mag1 = src1.get("base_PsfFlux_mag")
-        visit1, ccd1, obj1 = objIdToCcdId(objId1)
-
-        sep = positionRms(cat)
-
-        print("%s %s %0.2f %0.2f %0.2f   %s %s %0.2f %0.2f %0.2f   %0.2f" % (
-            visit0, ccd0, x0, y0, mag0,  visit1, ccd1, x1, y1, mag1,  sep))
 
     return pipeBase.Struct(
         mag = goodPsfMag,
