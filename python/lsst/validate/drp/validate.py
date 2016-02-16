@@ -37,6 +37,19 @@ from .print import printPA1, printPA2, printAMx
 from .util import getCcdKeyName, repoNameToPrefix, calcOrNone
 from .io import saveKpmToJson
 
+from lsst.obs.cfht import MegacamMapper
+
+mapper = MegacamMapper(root=".") # Annoying that we have to do this
+def objIdToCcdId(objId):
+    objId = np.array(objId, dtype='int64')
+    nBitsId = mapper.bypass_ccdExposureId_bits(None, None, None, None)
+    obj = np.bitwise_and(objId, nBitsId - 1)
+    objId >>= nBitsId
+
+    visit = objId // 36
+    ccd = objId % 36
+
+    return visit, ccd, obj
 
 def loadAndMatchData(repo, visitDataIds,
                      matchRadius=afwGeom.Angle(1, afwGeom.arcseconds)):
@@ -91,7 +104,7 @@ def loadAndMatchData(repo, visitDataIds,
         calib = afwImage.Calib(butler.get("calexp_md", vId, immediate=True))
         calib.setThrowOnNegativeFlux(False)
         oldSrc = butler.get('src', vId, immediate=True)
-        print(len(oldSrc), "sources in ccd: ", vId[ccdKeyName])
+        print(len(oldSrc), "sources in ccd %s  visit %s" % (vId[ccdKeyName], vId["visit"]))
 
         # create temporary catalog
         tmpCat = SourceCatalog(SourceCatalog(newSchema).table)
@@ -125,8 +138,16 @@ def analyzeData(allMatches, good_mag_limit=19.5):
 
     Returns
     -------
-    pipeBase.Struct
-        Containing mag, magerr, magrms, dist, and number of matches.
+    pipeBase.Struct containing:
+    - mag: mean PSF magnitude for good matches
+    - magerr: median of PSF magnitude for good matches
+    - magrms: standard deviation of PSF magnitude for good matches
+    - dist: RMS RA/Dec separation, in milliarcsecond
+    - goodMatches: all good matches, as an afw.table.GroupView;
+        good matches contain sources that have a finite (non-nan) PSF magnitude
+        and do not have flags set for bad, cosmic ray, edge or saturated
+    - safeMatches: safe matches, as an afw.table.GroupView;
+        safe matches are good matches that are sufficiently bright and sufficiently compact
     """
 
     # Filter down to matches with at least 2 sources and good flags
@@ -170,15 +191,39 @@ def analyzeData(allMatches, good_mag_limit=19.5):
     #   by going with the default `field=None`.
     dist = goodMatches.aggregate(positionRms)
 
-    info_struct = pipeBase.Struct(
-        mag=goodPsfMag,
-        magerr=goodPsfMagErr,
-        magrms=goodPsfMagRms,
-        dist=dist,
-        match=len(dist)
-    )
+    def badBrightFilter(cat):
+        return positionRms(cat) > 150 and np.mean(cat[psfMagKey]) < 21
+    brightFar = goodMatches.where(badBrightFilter)
+    print("Found %s bad, bright matches" % (len(brightFar,)))
+    print("visit0 ccd0 x0 y0 mag0  visit1 ccd1 x1 y1 mag1  sep")
+    for cat in brightFar.groups:
+        src0 = cat[0]
+        objId0 = src0.getId()
+        x0 = src0.get("base_SdssCentroid_x")
+        y0 = src0.get("base_SdssCentroid_y")
+        mag0 = src0.get("base_PsfFlux_mag")
+        visit0, ccd0, obj0 = objIdToCcdId(objId0)
 
-    return info_struct, safeMatches
+        src1 = cat[1]
+        objId1 = src1.getId()
+        x1 = src1.get("base_SdssCentroid_x")
+        y1 = src1.get("base_SdssCentroid_y")
+        mag1 = src1.get("base_PsfFlux_mag")
+        visit1, ccd1, obj1 = objIdToCcdId(objId1)
+
+        sep = positionRms(cat)
+
+        print("%s %s %0.2f %0.2f %0.2f   %s %s %0.2f %0.2f %0.2f   %0.2f" % (
+            visit0, ccd0, x0, y0, mag0,  visit1, ccd1, x1, y1, mag1,  sep))
+
+    return pipeBase.Struct(
+        mag = goodPsfMag,
+        magerr = goodPsfMagErr,
+        magrms = goodPsfMagRms,
+        dist = dist,
+        goodMatches = goodMatches,
+        safeMatches = safeMatches,
+    )
 
 
 ####
@@ -225,12 +270,13 @@ def run(repo, visitDataIds, good_mag_limit=21.0,
         outputPrefix = repoNameToPrefix(repo)
 
     allMatches = loadAndMatchData(repo, visitDataIds)
-    struct, safeMatches = analyzeData(allMatches, good_mag_limit)
+    struct = analyzeData(allMatches, good_mag_limit)
     magavg = struct.mag
     magerr = struct.magerr
     magrms = struct.magrms
     dist = struct.dist
-    match = struct.match
+    match = len(struct.goodMatches)
+    safeMatches = struct.safeMatches
 
     mmagerr = 1000*magerr
     mmagrms = 1000*magrms

@@ -2,7 +2,7 @@ CFHT/
 DECam/
 CFHT
 DECam
-test.log
+*.log
 *.json
 *.png
 *.pkl
@@ -23,3 +23,5 @@ doc/*.inc
 doc/doxygen.conf
 tests/.tests
 version.py
+bin/*.py
+examples/*.list
