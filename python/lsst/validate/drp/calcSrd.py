@@ -125,6 +125,7 @@ def calcPA1(matches, magKey, numRandomShuffles=50, verbose=False):
     iqrPA1 = np.array([pa1.iqr for pa1 in pa1Samples])
 
     return pipeBase.Struct(name='PA1',
+                           PA1=np.mean(iqrPA1), pa1Units='mmag',
                            rms=np.mean(rmsPA1), iqr=np.mean(iqrPA1),
                            rmsStd=np.std(rmsPA1), iqrStd=np.std(iqrPA1),
                            rmsUnits='mmag', iqrUnits='mmag',
@@ -234,6 +235,7 @@ def calcPA2(groupView, magKey, verbose=False):
     PF1_percentiles = 100 - np.asarray([PF1['minimum'], PF1['design'], PF1['stretch']])
     minPA2, designPA2, stretchPA2 = np.percentile(np.abs(magDiffs), PF1_percentiles)
     return pipeBase.Struct(name='PA2', pa2Units='mmag', pf1Units='%',
+                           PA2=designPA2,
                            design=designPA2, minimum=minPA2, stretch=stretchPA2,
                            PF1=PF1)
 

@@ -66,24 +66,18 @@ if __name__ == "__main__":
 
     kwargs = {}
     if args.configFile:
-        dataIds, brightSnr, medianAstromscatterRef, medianPhotoscatterRef, matchRef = \
-            util.loadDataIdsAndParameters(args.configFile)
-        kwargs = {
-            'brightSnr': brightSnr, 
-            'medianAstromscatterRef': medianAstromscatterRef, 
-            'medianPhotoscatterRef': medianPhotoscatterRef, 
-            'matchRef': matchRef,
-            }
+        pbStruct = util.loadDataIdsAndParameters(args.configFile)
+        kwargs = pbStruct.getDict()
 
     kwargs['verbose'] = args.verbose
     kwargs['makePlot'] = args.makePlot
 
-    if not args.configFile or not dataIds:
-        dataIds = util.discoverDataIds(args.repo)
+    if not args.configFile or not pbStruct.dataIds:
+        kwargs['dataIds'] = util.discoverDataIds(args.repo)
         if args.verbose:
-            print("VISITDATAIDS: ", dataIds)
+            print("VISITDATAIDS: ", kwargs['dataIds'])
 
-    kwargs['dataIds'] = dataIds
+    kwargs['verbose'] = args.verbose
 
     validate.run(args.repo, **kwargs)
 
@@ -96,7 +90,7 @@ if __name__ == "__main__":
                     kwargs['dataIds'], 
                     args.configFile,
                     verbose=args.verbose
-                )
+                 )
         if passed:
             print("PASSED.  ALL MEASURED KEY PERFROMANCE METRICS PASSED.")
         else:

@@ -36,11 +36,11 @@ from .calcSrd import calcAM1, calcAM2, calcAM3, calcPA1, calcPA2
 from .check import checkAstrometry, checkPhotometry, positionRms
 from .plot import plotAstrometry, plotPhotometry, plotPA1, plotAMx
 from .print import printPA1, printPA2, printAMx
-from .util import getCcdKeyName, repoNameToPrefix, calcOrNone
-from .io import saveKpmToJson
+from .util import getCcdKeyName, repoNameToPrefix, calcOrNone, loadParameters
+from .io import saveKpmToJson, loadKpmFromJson
 
 
-def loadAndMatchData(repo, visitDataIds,
+def loadAndMatchData(repo, dataIds,
                      matchRadius=afwGeom.Angle(1, afwGeom.arcseconds),
                      verbose=False):
     """Load data from specific visit.  Match with reference.
@@ -50,7 +50,7 @@ def loadAndMatchData(repo, visitDataIds,
     repo : string
         The repository.  This is generally the directory on disk
         that contains the repository and mapper.
-    visitDataIds : list of dict
+    dataIds : list of dict
         List of `butler` data IDs of Image catalogs to compare to reference.
         The `calexp` cpixel image is needed for the photometric calibration.
     matchRadius :  afwGeom.Angle().
@@ -72,9 +72,9 @@ def loadAndMatchData(repo, visitDataIds,
     # 2016-02-08 MWV:
     # I feel like I could be doing something more efficient with
     # something along the lines of the following:
-    #    dataRefs = [dafPersist.ButlerDataRef(butler, vId) for vId in visitDataIds]
+    #    dataRefs = [dafPersist.ButlerDataRef(butler, vId) for vId in dataIds]
 
-    ccdKeyName = getCcdKeyName(visitDataIds[0])
+    ccdKeyName = getCcdKeyName(dataIds[0])
 
     schema = butler.get(dataset + "_schema", immediate=True).schema
     mapper = SchemaMapper(schema)
@@ -93,7 +93,7 @@ def loadAndMatchData(repo, visitDataIds,
     # create the new extented source catalog
     srcVis = SourceCatalog(newSchema)
 
-    for vId in visitDataIds:
+    for vId in dataIds:
         try:
             calexpMetadata = butler.get("calexp_md", vId, immediate=True)
         except FitsError as fe:
@@ -230,7 +230,7 @@ def analyzeData(allMatches, safeSnr=50.0, verbose=False):
 
 
 ####
-def run(repo, visitDataIds, outputPrefix=None, **kwargs):
+def run(repo, dataIds, outputPrefix=None, **kwargs):
     """Main executable.
 
     Runs multiple filters, if necessary, through repeated calls to `runOneFilter`.
@@ -239,7 +239,7 @@ def run(repo, visitDataIds, outputPrefix=None, **kwargs):
     repo : string
         The repository.  This is generally the directory on disk
         that contains the repository and mapper.
-    visitDataIds : list of dict
+    dataIds : list of dict
         List of `butler` data IDs of Image catalogs to compare to reference.
         The `calexp` cpixel image is needed for the photometric calibration.
     outputPrefix : str, optional
@@ -256,7 +256,7 @@ def run(repo, visitDataIds, outputPrefix=None, **kwargs):
         there will be annoyance and sadness as those spaces will appear in the filenames.
     """
 
-    allFilters = set([d['filter'] for d in visitDataIds])
+    allFilters = set([d['filter'] for d in dataIds])
 
     if outputPrefix is None:
         outputPrefix = repoNameToPrefix(repo)
@@ -264,7 +264,7 @@ def run(repo, visitDataIds, outputPrefix=None, **kwargs):
     for filt in allFilters:
         # Do this here so that each outputPrefix will have a different name for each filter.
         thisOutputPrefix = "%s_%s_" % (outputPrefix.rstrip('_'), filt)
-        theseVisitDataIds = [v for v in visitDataIds if v['filter'] == filt]
+        theseVisitDataIds = [v for v in dataIds if v['filter'] == filt]
         runOneFilter(repo, theseVisitDataIds, outputPrefix=thisOutputPrefix, **kwargs)
 
 
@@ -273,6 +273,7 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
         makePrint=True, makePlot=True, makeJson=True,
         outputPrefix=None,
         verbose=False,
+        **kwargs
         ):
     """Main executable for the case where there is just one filter.
 
@@ -287,7 +288,7 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
     repo : string
         The repository.  This is generally the directory on disk
         that contains the repository and mapper.
-    visitDataIds : list of dict
+    dataIds : list of dict
         List of `butler` data IDs of Image catalogs to compare to reference.
         The `calexp` cpixel image is needed for the photometric calibration.
     brightSnr : float, optional
@@ -316,6 +317,7 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
 
     allMatches = loadAndMatchData(repo, visitDataIds, verbose=verbose)
     struct = analyzeData(allMatches, brightSnr, verbose=verbose)
+
     magavg = struct.mag
     magerr = struct.magerr
     magrms = struct.magrms
@@ -362,3 +364,87 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
             if metric:
                 outfile = outputPrefix + "%s.json" % metric.name
                 saveKpmToJson(metric, outfile)
+
+def didThisRepoPass(repo, dataIds, configFile, **kwargs):
+    """Convenience function for calling didIPass using the standard conventions for
+    output filenames.
+
+    Parameters
+    ----------
+    repo : str
+        Path name of repository
+    dataIds : list
+        Data Ids that were analyzed
+    configFile : str
+        Path name of configuration file with requirements specified
+
+    See Also
+    --------
+    didIPass : The key function that does the work.
+    """
+    outputPrefix = repoNameToPrefix(repo)
+    filters = set(d['filter'] for d in dataIds)
+    requirements = loadParameters(configFile)
+
+    return didIPass(outputPrefix, filters, requirements, **kwargs)
+
+
+def didIPass(outputPrefix, filters, requirements, verbose=False):
+    """Score the metrics for PA1, PA2, AM1, [AM2, ] [AM3, ].  Return False if any failed.
+    
+    Parameters 
+    ----------
+    outputPrefix : str
+        The starting name for the output JSON files with the results
+    filters : list, str, or None
+        The filters in the analysis.  Output JSON files will be searched as
+            "%s%s" % (outputPrefix, filters[i]) 
+        If `None`, then JSON files will be searched for as just
+            "%s" % outputPrefix.
+    requirements : pipeBase.Struct
+        The requirements on each of the Key Performance Metrics
+
+    We check against these configured standards instead of the srdSpec because
+    1. Different data sets may not lend themselves to satisfying the SRD.
+    2. The pipeline continues to improve.  
+       Specifying a set of standards and updating that allows for a natural tightening of requirements.
+    """
+    if isinstance(filters, str):
+        filters = list(filters)
+
+    requirementsDict = requirements.getDict()
+    for f in filters:
+        if f:
+            thisPrefix = "%s%s_" % (outputPrefix, f)
+        else:
+            thisPrefix = outputPrefix
+        # get json files
+        for metricName, lookupName in \
+            zip(("PA1", "PA2", "AM1", "AM2", "AM3"),
+                ("PA1", "PA2", "AMx", "AMx", "AMx")):
+            jsonFile = "%s%s.%s" % (thisPrefix, metricName, 'json')
+
+            metricUnits = lookupName.lower()+'Units'
+            try:
+                metricResults = loadKpmFromJson(jsonFile).getDict()
+            except IOError as ie:
+                print("No results available for %s" % metricName)
+                continue
+
+            standardToMeet = 'required%s' % metricName
+            if verbose:
+                print("Measured {name:}: {value:} {units:};  Required {spec:} {units:}.".format(
+                      name=metricResults['name'],
+                      value=metricResults[lookupName], 
+                      units=metricResults[metricUnits],
+                      spec=requirementsDict[standardToMeet])
+                      )
+                    
+
+    # Check values against configured standards
+    ### Note that there's no filter-dependence for the requirements
+#    for 
+    
+    # Print output of each
+    # Return false (1) if any failed.
+    return False
