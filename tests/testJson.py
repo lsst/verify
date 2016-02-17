@@ -26,7 +26,6 @@ from __future__ import print_function
 
 import json
 import os
-import sys
 import tempfile
 import unittest
 
@@ -35,20 +34,32 @@ import numpy as np
 import lsst.utils.tests as utilsTests
 
 import lsst.pipe.base as pipeBase
-from lsst.validate.drp.io import saveKpmToJson
+from lsst.validate.drp.io import saveKpmToJson, loadKpmFromJson
 
 
 class JsonTestCase(unittest.TestCase):
     """Testing basic coordinate calculations."""
 
     def testSaveJson(self):
-        ps = pipeBase.Struct(foo=2, bar=[10, 20], hard=np.array([5,10]))
+        ps = pipeBase.Struct(foo=2, bar=[10, 20], hard=np.array([5, 10]))
         _, tmpFilepath = tempfile.mkstemp(suffix='.json')
         saveKpmToJson(ps, tmpFilepath)
         self.assertTrue(os.path.exists(tmpFilepath))
-    
+
+        # Here we get a dict back.
         readBackData = json.load(open(tmpFilepath))
         self.assertEqual(readBackData['foo'], 2)
+
+        os.unlink(tmpFilepath)
+
+    def testLoadJson(self):
+        ps = pipeBase.Struct(foo=2, bar=[10, 20], hard=np.array([5, 10]))
+        _, tmpFilepath = tempfile.mkstemp(suffix='.json')
+        saveKpmToJson(ps, tmpFilepath)
+
+        # Here we get a pipeBase.Struct back.
+        readBackData = loadKpmFromJson(tmpFilepath)
+        self.assertEqual(readBackData.foo, 2)
 
         os.unlink(tmpFilepath)
 

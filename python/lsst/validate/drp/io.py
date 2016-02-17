@@ -22,6 +22,7 @@ from __future__ import print_function, division, absolute_import
 
 import json
 import numpy as np
+import lsst.pipe.base as pipeBase
 
 
 def saveKpmToJson(KpmStruct, filename):
@@ -36,7 +37,8 @@ def saveKpmToJson(KpmStruct, filename):
 
     Examples
     --------
-    >>> foo = {'a': b}
+    >>> import lsst.pipe.base as pipeBase
+    >>> foo = pipeBase.Struct(a=2)
     >>> outfile = 'tmp.json'
     >>> saveKpmToJson(foo, outfile)
 
@@ -55,3 +57,37 @@ def saveKpmToJson(KpmStruct, filename):
         # Structure the output with sort_keys, and indent
         # to make comparisons of output results easy on a line-by-line basis.
         json.dump(data, outfile, sort_keys=True, indent=4)
+
+
+def loadKpmFromJson(filename):
+    """Load KPM `lsst.pipe.base.Struct` from JSON file.
+
+    Parameters
+    ----------
+    filename : str
+        Input filename.
+
+    Returns
+    -------
+    KpmStruct : lsst.pipe.base.Struct
+        Reconstructed information from file reconstructed
+
+    Examples
+    --------
+    >>> import lsst.pipe.base as pipeBase
+    >>> foo = pipeBase.Struct(a=2)
+    >>> outfile = 'tmp.json'
+    >>> saveKpmToJson(foo, outfile)
+    >>> bar = loadKpmFromJson(outfile)
+    >>> print(bar.a)
+    2
+
+    Notes
+    -----
+    Rewrites `numpy.ndarray` as a list`
+    """
+
+    with open(filename, 'r') as infile:
+        data = json.load(infile)
+
+    return pipeBase.Struct(**data)
