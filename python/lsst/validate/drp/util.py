@@ -160,8 +160,11 @@ def loadDataIdsAndParameters(configFile):
     data = yaml.load(stream)
 
     ccdKeyName = getCcdKeyName(data)
-    visitDataIds = constructDataIds(data['filter'], data['visits'],
-                                    data[ccdKeyName], ccdKeyName)
+    try:
+        visitDataIds = constructDataIds(data['filter'], data['visits'],
+                                        data[ccdKeyName], ccdKeyName)
+    except KeyError as ke:
+        visitDataIds = []
 
     return (visitDataIds,
             data['good_mag_limit'],
@@ -282,10 +285,10 @@ def constructRunList(filter, visits, ccds, ccdKeyName='ccd'):
     return runList
 
 
-def calcOrNone(func, x, ErrorClass):
+def calcOrNone(func, x, ErrorClass, **kwargs):
     """Calculate the `func` and return result.  If it raises ErrorClass, return None."""
     try:
-        out = func(x)
+        out = func(x, **kwargs)
     except ErrorClass as e:
         print(e)
         out = None

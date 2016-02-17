@@ -42,6 +42,7 @@ class LoadDataTestCase(unittest.TestCase):
         validateDrpDir = lsst.utils.getPackageDir('validate_drp')
         testDataDir = os.path.join(validateDrpDir, 'tests')
         self.configFile = os.path.join(testDataDir, 'runCfht.yaml')
+        self.configFileNoDataIds = os.path.join(testDataDir, 'runCfhtParametersOnly.yaml')
 
     def tearDown(self):
         pass
@@ -64,6 +65,12 @@ class LoadDataTestCase(unittest.TestCase):
         self.assertEqual(set([849375, 850587]),
                          set([d['visit'] for d in dataIds]))
 
+    def testLoadingEmptyDataIds(self):
+        dataIds, good_mag_limit, \
+            medianAstromscatterRef, medianPhotoscatterRef, matchRef = \
+                util.loadDataIdsAndParameters(self.configFileNoDataIds)
+        # Tests of the dict entries require constructing and comparing sets
+        self.assertFalse(dataIds)
 
 def suite():
     """Returns a suite containing all the test cases in this module."""

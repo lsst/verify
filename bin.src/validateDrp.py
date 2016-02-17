@@ -46,6 +46,8 @@ if __name__ == "__main__":
                         help='path to a repository containing the output of processCcd')
     parser.add_argument('--configFile', '-c', type=str, default=None,
                         help='YAML configuration file validation parameters and dataIds.')
+    parser.add_argument('--verbose', '-v', default=False, action='store_true',
+                        help='Display additional information about the analysis.')
     
     args = parser.parse_args()
 
@@ -53,8 +55,9 @@ if __name__ == "__main__":
         print("Could not find repo %r" % (args.repo,))
         sys.exit(1)
 
+    kwargs = {}
     if args.configFile:
-        visitDataIds, good_mag_limit, medianAstromscatterRef, medianPhotoscatterRef, matchRef = \
+        dataIds, good_mag_limit, medianAstromscatterRef, medianPhotoscatterRef, matchRef = \
             util.loadDataIdsAndParameters(args.configFile)
         kwargs = {
             'good_mag_limit': good_mag_limit, 
@@ -62,9 +65,11 @@ if __name__ == "__main__":
             'medianPhotoscatterRef': medianPhotoscatterRef, 
             'matchRef': matchRef,
             }
-    else:
-        visitDataIds = util.discoverDataIds(args.repo)
-        print("VISITDATAIDS: ", visitDataIds)
-        kwargs = {}
 
-    validate.run(args.repo, visitDataIds, **kwargs)
+    if not args.configFile or not dataIds:
+        dataIds = util.discoverDataIds(args.repo)
+        if args.verbose:
+            print("VISITDATAIDS: ", dataIds)
+
+    kwargs['verbose'] = args.verbose
+    validate.run(args.repo, dataIds, **kwargs)
