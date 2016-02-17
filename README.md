@@ -40,6 +40,7 @@ $VALIDATE_DRP_DIR/examples/runCfhtTest.sh
 This will create a repository in your current working directory called CFHT.
 
 The last line of the output will give the median astrometric scatter (in milliarcseconds) for stars with mag < 21.
+
 ------
 To setup for a run with DECam:
 ```
