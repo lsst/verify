@@ -24,8 +24,10 @@ import numpy as np
 
 import lsst.afw.geom as afwGeom
 import lsst.afw.image as afwImage
+import lsst.afw.image.utils as afwImageUtils
 from lsst.afw.table import SourceCatalog, SchemaMapper, Field
 from lsst.afw.table import MultiMatch, SimpleRecord, GroupView
+from lsst.afw.fits.fitsLib import FitsError
 import lsst.daf.persistence as dafPersist
 import lsst.pipe.base as pipeBase
 
@@ -91,17 +93,40 @@ def loadAndMatchData(repo, visitDataIds,
     srcVis = SourceCatalog(newSchema)
 
     for vId in visitDataIds:
-        calib = afwImage.Calib(butler.get("calexp_md", vId, immediate=True))
-        calib.setThrowOnNegativeFlux(False)
+        try:
+            calexpMetadata = butler.get("calexp_md", vId, immediate=True)
+        except FitsError as fe:
+            print(fe)
+            print("Could not open calibrated image file for ", vId)
+            print("Skipping %s " % repr(vId))
+            continue
+        except TypeError as te:
+            # DECam images that haven't been properly reformatted
+            # can trigger a TypeError because of a residual FITS header 
+            # LTV2 which is a float instead of the expected integer. 
+            # This generates an error of the form:
+            #
+            # lsst::pex::exceptions::TypeError: 'LTV2 has mismatched type'  
+            #
+            # See, e.g., DM-2957 for details.
+            print(te)
+            print("Calibration image header information malformed.")
+            print("Skipping %s " % repr(vId))
+            continue
+
+        calib = afwImage.Calib(calexpMetadata)
+
         oldSrc = butler.get('src', vId, immediate=True)
         print(len(oldSrc), "sources in ccd %s  visit %s" % (vId[ccdKeyName], vId["visit"]))
 
         # create temporary catalog
         tmpCat = SourceCatalog(SourceCatalog(newSchema).table)
         tmpCat.extend(oldSrc, mapper=mapper)
-        (tmpCat['base_PsfFlux_mag'][:], tmpCat['base_PsfFlux_magerr'][:]) = \
-         calib.getMagnitude(tmpCat['base_PsfFlux_flux'],
-                            tmpCat['base_PsfFlux_fluxSigma'])
+        with afwImageUtils.CalibNoThrow():
+            (tmpCat['base_PsfFlux_mag'][:], tmpCat['base_PsfFlux_magerr'][:]) = \
+             calib.getMagnitude(tmpCat['base_PsfFlux_flux'],
+                                tmpCat['base_PsfFlux_fluxSigma'])
+
         srcVis.extend(tmpCat, False)
         mmatch.add(catalog=tmpCat, dataId=vId)
 
