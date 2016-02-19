@@ -109,6 +109,7 @@ def plotAstrometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
     plt.suptitle("Astrometry Check : %s" % outputPrefix.rstrip('_'), fontsize=30)
     plotPath = outputPrefix+"check_astrometry.png"
     plt.savefig(plotPath, format="png")
+    plt.close(fig)
 
 
 def expModel(x, a, b, norm):
@@ -233,6 +234,7 @@ def plotPhotometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
     plt.suptitle("Photometry Check : %s" % outputPrefix.rstrip('_'), fontsize=30)
     plotPath = outputPrefix+"check_photometry.png"
     plt.savefig(plotPath, format="png")
+    plt.close(fig)
 
 
 def plotPA1(pa1, outputPrefix=""):
@@ -287,6 +289,7 @@ def plotPA1(pa1, outputPrefix=""):
     plt.suptitle("PA1: %s" % outputPrefix.rstrip('_'))
     plotPath = "%s%s" % (outputPrefix, "PA1.png")
     plt.savefig(plotPath, format="png")
+    plt.close(fig)
 
 
 def plotAM1(*args, **kwargs):
@@ -347,3 +350,4 @@ def plotAMx(AMx, outputPrefix=""):
               (AMx.name, int(sum(AMx.annulus)/2), AMx.DUnits.upper(), AMx.magRange[0], AMx.magRange[1])
 
     plt.savefig(figName, dpi=300)
+    plt.close(fig)
