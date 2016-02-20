@@ -1,6 +1,21 @@
 Validate an LSST DM processCcd.py output repository
 against a set of LSST Science Requirements Document Key Performance Metrics.
 
+```
+setup validate_drp
+validateDrp.py CFHT/output
+```
+
+will produces output, plots, JSON files analyzing the processed data in `CFHT/output`.  Metrics will be separately calculated for each filter represented in the repository.  Replace `CFHT/output` with your favorite processed data repository and you will get reasonable output.
+
+One can run `validateDrp.py` in any of the following modes:
+1. use no configuration file (as above)
+2. pass a configuration file with just validation parameters (good_mag_limit, number of expected matches, ...) but no dataId specifications
+3. pass a configuration file that specifies validation parameters and the dataIds to process.  See examples below for use with a `--configFile`
+
+Caveat:  Will likely not successfully run on more than 500 catalogs per band due to memory limits and inefficiencies in the current matching approach.
+
+------
 This package also includes examples that run processCcd task on some 
 CFHT data and DECam data
 and validate the astrometric and photometric repeatability of the results.
