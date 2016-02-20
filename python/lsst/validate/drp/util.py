@@ -138,12 +138,13 @@ def loadDataIdsAndParameters(configFile):
            )
 
 
-def constructDataIds(filter, visits, ccds, ccdKeyName='ccd'):
+def constructDataIds(filters, visits, ccds, ccdKeyName='ccd'):
     """Returns a list of dataIds consisting of every combination of visit & ccd for each filter.
 
     Parameters
     ----------
-    filter : str
+    filters : str or list
+        If str, will be interpreted as one filter to be applied to all visits.
     visits : list of int
     ccds : list of int
     ccdKeyName : str, optional
@@ -161,15 +162,13 @@ def constructDataIds(filter, visits, ccds, ccdKeyName='ccd'):
     >>> dataIds = constructDataIds('r', [100, 200], [10, 11, 12])
     >>> print(dataIds)
     [{'filter': 'r', 'visit': 100, 'ccd': 10}, {'filter': 'r', 'visit': 100, 'ccd': 11}, {'filter': 'r', 'visit': 100, 'ccd': 12}, {'filter': 'r', 'visit': 200, 'ccd': 10}, {'filter': 'r', 'visit': 200, 'ccd': 11}, {'filter': 'r', 'visit': 200, 'ccd': 12}]
-
-    Note
-    -----
-    Currently assumes `filter` is a scalar string, e.g., 'g' or 'r-1692 CFHT'.
-    This isn't fundamentally necessary, but one would need to define logic
-    such that filter="ugriz" and filter="r-1692 CFHT" are each processed correctly.
     """
-    visitDataIds = [{'visit': v, 'filter': filter, ccdKeyName: c}
-                    for v in visits
+    if isinstance(filters, str):
+        filters = [filters for _ in visits]
+
+    assert len(filters) == len(visits)
+    visitDataIds = [{'filter': f, 'visit': v, ccdKeyName: c}
+                    for (f, v) in zip(filters, visits)
                     for c in ccds]
 
     return visitDataIds
@@ -219,7 +218,7 @@ def constructRunList(filter, visits, ccds, ccdKeyName='ccd'):
 
     Parameters
     ----------
-    filter : str
+    filter : str or list
     visits : list of int
     ccds : list of int
 
@@ -242,7 +241,7 @@ def constructRunList(filter, visits, ccds, ccdKeyName='ccd'):
     The LSST parsing convention is to use '^' as list separators
         for arguments to `--id`.  While surprising, this convention
         allows for CCD names to include ','.  E.g., 'R1,2'.
-    Currently ignores `filter`
+    Currently ignores `filter` because `visit` should be unique w.r.t filter.
     """
     runList = ["--id visit=%d %s=%s" % (v, ccdKeyName, "^".join([str(c) for c in ccds]))
                for v in visits]

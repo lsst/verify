@@ -189,11 +189,49 @@ def analyzeData(allMatches, good_mag_limit=19.5):
 
 
 ####
-def run(repo, visitDataIds, good_mag_limit=21.0,
+def run(repo, visitDataIds, outputPrefix=None, **kwargs):
+    """Main executable.
+
+    Runs multiple filters, if necessary, through repeated calls to `runOneFilter`.
+    Inputs
+    ------
+    repo : string
+        The repository.  This is generally the directory on disk
+        that contains the repository and mapper.
+    visitDataIds : list of dict
+        List of `butler` data IDs of Image catalogs to compare to reference.
+        The `calexp` cpixel image is needed for the photometric calibration.
+    outputPrefix : str, optional
+        Specify the beginning filename for output files.
+        The name of each filter will be appended to outputPrefix.
+
+    Outputs
+    -------
+    Names of plot files or JSON file are generated based on repository name,
+    unless overriden by specifying `ouputPrefix`.
+    E.g., Analyzing a repository "CFHT/output"
+        will result in filenames that start with "CFHT_output_".
+    The filter name is added to this prefix.  If the filter name has spaces,
+        there will be annoyance and sadness as those spaces will appear in the filenames.
+    """
+
+    allFilters = set([d['filter'] for d in visitDataIds])
+
+    if outputPrefix is None:
+        outputPrefix = repoNameToPrefix(repo)
+
+    for filt in allFilters:
+        # Do this here so that each outputPrefix will have a different name for each filter.
+        thisOutputPrefix = "%s_%s_" % (outputPrefix.rstrip('_'), filt)
+        theseVisitDataIds = [v for v in visitDataIds if v['filter'] == filt]
+        runOneFilter(repo, theseVisitDataIds, outputPrefix=thisOutputPrefix, **kwargs)
+
+
+def runOneFilter(repo, visitDataIds, good_mag_limit=21.0,
         medianAstromscatterRef=25, medianPhotoscatterRef=25, matchRef=500,
         makePrint=True, makePlot=True, makeJson=True,
         outputPrefix=None):
-    """Main executable.
+    """Main executable for the case where there is just one filter.
 
     Plot files and JSON files are generated in the local directory
         prefixed with the repository name (where '_' replace path separators),
@@ -223,7 +261,7 @@ def run(repo, visitDataIds, good_mag_limit=21.0,
         Create plots for metrics.  Saved to current working directory.
     makeJson : bool, optional
         Create JSON output file for metrics.  Saved to current working directory.
-    outputPrefix : str
+    outputPrefix : str, optional
         Specify the beginning filename for output files.
 
     """

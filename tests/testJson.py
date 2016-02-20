@@ -24,6 +24,7 @@
 
 from __future__ import print_function
 
+import json
 import os
 import sys
 import tempfile
@@ -44,6 +45,11 @@ class JsonTestCase(unittest.TestCase):
         ps = pipeBase.Struct(foo=2, bar=[10, 20], hard=np.array([5,10]))
         _, tmpFilepath = tempfile.mkstemp(suffix='.json')
         saveKpmToJson(ps, tmpFilepath)
+        self.assertTrue(os.path.exists(tmpFilepath))
+    
+        readBackData = json.load(open(tmpFilepath))
+        self.assertEqual(readBackData['foo'], 2)
+
         os.unlink(tmpFilepath)
 
 
@@ -61,7 +67,6 @@ def run(shouldExit=False):
     """Run the tests"""
     utilsTests.run(suite(), shouldExit)
 
+
 if __name__ == "__main__":
-    if "--display" in sys.argv:
-        display = True
     run(True)

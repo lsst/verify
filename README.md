@@ -1,4 +1,7 @@
-A set of utilities to run the processCcd task on some 
+Validate an LSST DM processCcd.py output repository
+against a set of LSST Science Requirements Document Key Performance Metrics.
+
+This package also includes examples that run processCcd task on some 
 CFHT data and DECam data
 and validate the astrometric and photometric repeatability of the results.
 
@@ -40,6 +43,7 @@ $VALIDATE_DRP_DIR/examples/runCfhtTest.sh
 This will create a repository in your current working directory called CFHT.
 
 The last line of the output will give the median astrometric scatter (in milliarcseconds) for stars with mag < 21.
+
 ------
 To setup for a run with DECam:
 ```
@@ -62,6 +66,17 @@ The last line of the output will give the median astrometric scatter (in milliar
 ------
 There are also "Quick" versions to run one CCD for quick debugging and verification that things are running properly: `examples/runCfhtQuickTest.sh` and `examples/runDecamQuickTest.sh`.
 
+------
+Multiple filters can be processed by specifying a filter name for each visit.  See `examples/DecamCosmos.yaml` for an example.  In brief:
+```
+# Visit - filter are matched pairs.
+visits: [176837, 176839, 176840, 176841, 176842, 176843, 176844, 176845, 176846,
+         177341, 177342, 177343, 177344, 177345, 177346,]
+filter: ['z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z',
+         'r', 'r', 'r', 'r', 'r', 'r', ]
+# ccd list is iterated through for each visit-filter pair
+ccdnum: [10, 11, 12, 13, 14, 15, 16, 17, 18]
+```
 
 ------
 While `examples/runCfhtTest.sh` and `examples/runDecamTest.sh` respectively do all of the processing and validation analysis, below are some examples of running the processing/measurement steps individually.  While these examples are from  the CFHT validation example, analogous commands would work for DECam.
@@ -114,21 +129,21 @@ Note that the example validation test selects several of the CCDs and will fail 
 
 Files of Interest:
 ------------------
+* `bin.src/validateDrp.py`  : Analyze output data produced by processCcd.py
+* `config/cfhtConfig.py`  : empty config overrides for Cfht.  Edit to easily include config parameters in the examples.
+* `config/decamConfig.py` : empty config overrides for Decam.  Edit to easily include config parameters in the examples.
 * `examples/runCfhtTest.sh`  : CFHT Run initialization, ingest, measurement, and astrometry validation.
 * `examples/runDecamTest.sh` : DECam Run initialization, ingest, measurement, and astrometry validation.
-* `examples/runCfht.list`    : CRHT list of vistits / ccd to be processed by processCcd
-* `examples/runDecam.list`   : DECam list of vistits / ccd to be processed by processCcd
-* `examples/runCfht.yaml`   : CFHT YAML file with visits, ccd, paramaters for validateDrp.
-* `examples/runDecam.yaml`   : DECam YAML file with visits, ccd, paramaters for validateDrp.
-* `examples/runDecamCosmos.yaml`   : DECam COSMOS YAML file with visits, ccd, paramaters for validateDrp.
-* `config/newAstrometryConfig.py`  : configuration for running processCcd with the new AstrometryTask
-* `config/anetAstrometryConfig.py` : configuration for running processCcd ANetAstrometryTask
-* `bin.src/validateDrp.py`   : Analyze output data produced by processCcd.py
-* `python/lsst/validate/drp/srdSpec.py` : class to contain the SRD specifications
-* `python/lsst/validate/drp/calcSrd.py` : calculate metrics defined by the LSST SRC.
-* `python/lsst/validate/drp/plot.py` : plotting routines
-* `python/lsst/validate/drp/check.py` : coordination and calculation routines.
-* `python/lsst/validate/drp/print.py` : printing routines
+* `examples/runExample.sh`  : General example runner.
+* `examples/Cfht.yaml`   : CFHT YAML file with visits, ccd, paramaters for validateDrp.
+* `examples/Decam.yaml`   : DECam YAML file with visits, ccd, paramaters for validateDrp.
+* `examples/DecamCosmos.yaml`   : DECam COSMOS YAML file with visits, ccd, paramaters for validateDrp.
 * `python/lsst/validate/drp/base.py` : base routines for the module
+* `python/lsst/validate/drp/calcSrd.py` : calculate metrics defined by the LSST SRC.
+* `python/lsst/validate/drp/check.py` : coordination and calculation routines.
+* `python/lsst/validate/drp/io.py` : JSON input and output routines.
+* `python/lsst/validate/drp/plot.py` : plotting routines
+* `python/lsst/validate/drp/print.py` : printing routines
+* `python/lsst/validate/drp/srdSpec.py` : pipeBase Struct with SRD specifications.  Access routine helper.
 * `python/lsst/validate/drp/util.py` : utility routines
 * `README.md` : THIS FILE.  Guide and examples.

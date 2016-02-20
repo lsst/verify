@@ -46,7 +46,7 @@ class LoadDataTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def testLoadingOfConfigFile(self):
+    def testLoadingOfConfigFileParameters(self):
         dataIds, good_mag_limit, \
             medianAstromscatterRef, medianPhotoscatterRef, matchRef = \
                 util.loadDataIdsAndParameters(self.configFile)
@@ -54,6 +54,11 @@ class LoadDataTestCase(unittest.TestCase):
         self.assertAlmostEqual(medianAstromscatterRef, 25)
         self.assertAlmostEqual(medianPhotoscatterRef, 25)
         self.assertAlmostEqual(matchRef, 5000)
+
+    def testLoadingOfConfigFileDataIds(self):
+        dataIds, good_mag_limit, \
+            medianAstromscatterRef, medianPhotoscatterRef, matchRef = \
+                util.loadDataIdsAndParameters(self.configFile)
         # Tests of the dict entries require constructing and comparing sets
         self.assertEqual(set(['r']), set([d['filter'] for d in dataIds]))
         self.assertEqual(set([849375, 850587]),
