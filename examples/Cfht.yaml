@@ -8,8 +8,11 @@ matchRef: 5000  # Number of stars expected to match.  Update if you change the c
 requiredPA1: 25  # [mmag]
 requiredPA2: 35  # [mmag]
 requiredAM1: 12 # [mas]
+requiredAF1: 10 # [percent]
 requiredAM2: 12 # [mas]
+requiredAF2: 10 # [percent]
 requiredAM3: null # We don't expect this test to include any stars separated by 200 arcmin.
+requiredAF3: null # [percent]
 visits: [849375, 850587]
 filter: 'r'
 ccd: [12, 13, 14, 21, 22, 23]

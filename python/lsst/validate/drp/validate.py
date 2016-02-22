@@ -229,6 +229,136 @@ def analyzeData(allMatches, safeSnr=50.0, verbose=False):
     )
 
 
+def didThisRepoPass(repo, dataIds, configFile, **kwargs):
+    """Convenience function for calling didIPass using the standard conventions for output filenames.
+
+    Parameters
+    ----------
+    repo : str
+        Path name of repository
+    dataIds : list
+        Data Ids that were analyzed
+    configFile : str
+        Path name of configuration file with requirements specified
+
+    See Also
+    --------
+    didIPass : The key function that does the work.
+    """
+    outputPrefix = repoNameToPrefix(repo)
+    filters = set(d['filter'] for d in dataIds)
+    requirements = loadParameters(configFile)
+
+    return didIPass(outputPrefix, filters, requirements, **kwargs)
+
+
+def didIPass(*args, **kwargs):
+    """Did this set pass."""
+
+    passedScores = scoreMetrics(*args, **kwargs)
+
+    didAllPass = True
+    for (metric, filter), passed in passedScores.items():
+        if not passed:
+            print("Failed metric, filter: %s, %s" % (metric, filter))
+            didAllPass = False
+
+    return didAllPass
+
+
+def scoreMetrics(outputPrefix, filters, requirements, verbose=False):
+    """Score Key Performance metrics.  Returns dict((metric, filter), Pass/Fail)
+
+    Parameters
+    ----------
+    outputPrefix : str
+        The starting name for the output JSON files with the results
+    filters : list, str, or None
+        The filters in the analysis.  Output JSON files will be searched as
+            "%s%s" % (outputPrefix, filters[i])
+        If `None`, then JSON files will be searched for as just
+            "%s" % outputPrefix.
+    requirements : pipeBase.Struct
+        The requirements on each of the Key Performance Metrics
+        Skips measurements for any metric without an entry in `requirements`.
+
+    Returns
+    -------
+    dict of (str, str) -> bool
+        A dictionary of results.  (metricName, filter) : True/False
+
+
+    We provide the ability to check against configured standards
+    instead of just the srdSpec because
+    1. Different data sets may not lend themselves to satisfying the SRD.
+    2. The pipeline continues to improve.
+       Specifying a set of standards and updating that allows for a natural tightening of requirements.
+
+    Note that there is no filter-dependence for the requirements.
+    """
+    if isinstance(filters, str):
+        filters = list(filters)
+
+    fileSnippet = dict(zip(
+            ("PA1", "PA2", "AM1", "AF1", "AM2", "AF2", "AM3", "AF3"),
+            ("PA1", "PA2", "AM1", "AM1", "AM2", "AM2", "AM3", "AM3")
+          )
+        )
+    lookupKeyName = dict(zip(
+            ("PA1", "PA2", "AM1", "AF1", "AM2", "AF2", "AM3", "AF3"),
+            ("PA1", "PA2", "AMx", "AFx", "AMx", "AFx", "AMx", "AFx")
+          )
+        )
+
+    print("{:16s}   {:13s} {:20s}".format("Measured", "Required", "Passes"))
+    requirementsDict = requirements.getDict()
+
+    passed = {}
+    for f in filters:
+        if f:
+            thisPrefix = "%s%s_" % (outputPrefix, f)
+        else:
+            thisPrefix = outputPrefix
+        # get json files
+        # Multiple metrics are sometimes stored in a file.
+        # The names in those files may be generic ("AMx" instead of "AM1")
+        # so we have three different, almost identical tuples here.
+        for metricName in ("PA1", "PA2", "AM1", "AF1", "AM2", "AF2", "AM3", "AF3"):
+            jsonFile = "%s%s.%s" % (thisPrefix, fileSnippet[metricName], 'json')
+
+            metricNameKey = lookupKeyName[metricName]
+
+            metricUnitsKey = metricNameKey.lower()+'Units'
+
+            try:
+                metricResults = loadKpmFromJson(jsonFile).getDict()
+            except IOError as ie:
+                print("No results available for %s" % metricName)
+                continue
+
+            standardToMeet = 'required%s' % metricName
+
+            if standardToMeet not in requirementsDict:
+                if verbose:
+                    print("No requirement specified for %s.  Skipping." % metricName)
+                continue
+
+            # Check values against configured standards
+            passed[(metricName, f)] = metricResults[metricNameKey] <= requirementsDict[standardToMeet]
+
+            if verbose:
+                print("{name:4s}: {value:5.2f} {units:4s} < {spec:5.2f} {units:4s} == {result}".format(
+                          name=metricName,
+                          value=metricResults[metricNameKey],
+                          units=metricResults[metricUnitsKey],
+                          spec=requirementsDict[standardToMeet],
+                          result=passed[(metricName, f)],
+                          )
+                      )
+
+    return passed
+
+
 ####
 def run(repo, dataIds, outputPrefix=None, **kwargs):
     """Main executable.
@@ -347,6 +477,8 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
     PA1, PA2 = [func(safeMatches, magKey, verbose=verbose) for func in (calcPA1, calcPA2)]
 
     if makePrint:
+        print("========================================")
+        print("Detailed comparison against SRD requirements.")
         printPA1(PA1)
         printPA2(PA2)
         for metric in (AM1, AM2, AM3):
@@ -364,87 +496,3 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
             if metric:
                 outfile = outputPrefix + "%s.json" % metric.name
                 saveKpmToJson(metric, outfile)
-
-def didThisRepoPass(repo, dataIds, configFile, **kwargs):
-    """Convenience function for calling didIPass using the standard conventions for
-    output filenames.
-
-    Parameters
-    ----------
-    repo : str
-        Path name of repository
-    dataIds : list
-        Data Ids that were analyzed
-    configFile : str
-        Path name of configuration file with requirements specified
-
-    See Also
-    --------
-    didIPass : The key function that does the work.
-    """
-    outputPrefix = repoNameToPrefix(repo)
-    filters = set(d['filter'] for d in dataIds)
-    requirements = loadParameters(configFile)
-
-    return didIPass(outputPrefix, filters, requirements, **kwargs)
-
-
-def didIPass(outputPrefix, filters, requirements, verbose=False):
-    """Score the metrics for PA1, PA2, AM1, [AM2, ] [AM3, ].  Return False if any failed.
-    
-    Parameters 
-    ----------
-    outputPrefix : str
-        The starting name for the output JSON files with the results
-    filters : list, str, or None
-        The filters in the analysis.  Output JSON files will be searched as
-            "%s%s" % (outputPrefix, filters[i]) 
-        If `None`, then JSON files will be searched for as just
-            "%s" % outputPrefix.
-    requirements : pipeBase.Struct
-        The requirements on each of the Key Performance Metrics
-
-    We check against these configured standards instead of the srdSpec because
-    1. Different data sets may not lend themselves to satisfying the SRD.
-    2. The pipeline continues to improve.  
-       Specifying a set of standards and updating that allows for a natural tightening of requirements.
-    """
-    if isinstance(filters, str):
-        filters = list(filters)
-
-    requirementsDict = requirements.getDict()
-    for f in filters:
-        if f:
-            thisPrefix = "%s%s_" % (outputPrefix, f)
-        else:
-            thisPrefix = outputPrefix
-        # get json files
-        for metricName, lookupName in \
-            zip(("PA1", "PA2", "AM1", "AM2", "AM3"),
-                ("PA1", "PA2", "AMx", "AMx", "AMx")):
-            jsonFile = "%s%s.%s" % (thisPrefix, metricName, 'json')
-
-            metricUnits = lookupName.lower()+'Units'
-            try:
-                metricResults = loadKpmFromJson(jsonFile).getDict()
-            except IOError as ie:
-                print("No results available for %s" % metricName)
-                continue
-
-            standardToMeet = 'required%s' % metricName
-            if verbose:
-                print("Measured {name:}: {value:} {units:};  Required {spec:} {units:}.".format(
-                      name=metricResults['name'],
-                      value=metricResults[lookupName], 
-                      units=metricResults[metricUnits],
-                      spec=requirementsDict[standardToMeet])
-                      )
-                    
-
-    # Check values against configured standards
-    ### Note that there's no filter-dependence for the requirements
-#    for 
-    
-    # Print output of each
-    # Return false (1) if any failed.
-    return False

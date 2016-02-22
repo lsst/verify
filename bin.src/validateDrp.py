@@ -45,7 +45,7 @@ if __name__ == "__main__":
     replaced with underscores.  E.g., "Cfht/output" -> "Cfht_output_"
     """
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument('repo', type=str, 
+    parser.add_argument('repo', type=str,
                         help='path to a repository containing the output of processCcd')
     parser.add_argument('--configFile', '-c', type=str, default=None,
                         help='YAML configuration file validation parameters and dataIds.')

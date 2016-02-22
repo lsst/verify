@@ -49,11 +49,10 @@ def printAMx(AMx):
 
     percentOver = 100*AMx.fractionOver
 
-    print("Median of distribution of RMS of distance of stellar pairs.")
-    print("%s goals" % AMx.level.upper())
-    print("For stars from %.2f < mag < %.2f" % (AMx.magRange[0], AMx.magRange[1]))
-    print("from D = [%.2f, %.2f] %s, %s=%.2f %s (target is < %.0f %s)." %
-          (AMx.annulus[0], AMx.annulus[1], AMx.annulusUnits,
-           AMx.name, AMx.AMx, AMx.amxUnits, AMx.AMx_spec, AMx.amxUnits))
+    print("Median RMS of distances between pairs of stars.")
+    print("  %s goals" % AMx.level.upper())
+    print("  For stars from %.2f < mag < %.2f and D = [%.2f, %.2f] %s" % (AMx.magRange[0], AMx.magRange[1], AMx.annulus[0], AMx.annulus[1], AMx.annulusUnits))
+    print("%s=%.2f %s (target is < %.0f %s)." % \
+           (AMx.name, AMx.AMx, AMx.amxUnits, AMx.AMx_spec, AMx.amxUnits))
     print("  %.2f%% of sample deviates by >%.0f %s (target is < %.0f%%)" %
           (percentOver, AMx.ADx_spec+AMx.AMx_spec, AMx.adxUnits, AMx.AFx_spec))

@@ -518,6 +518,7 @@ def calcAMx(groupView, D=5, width=2, magRange=None,
     rmsDistMas = radiansToMilliarcsec(rmsDistances)
     AMx = np.median(rmsDistMas)
     fractionOver = np.mean(np.asarray(rmsDistMas) > AMx_spec+ADx_spec)
+    percentOver = 100*fractionOver
 
     return pipeBase.Struct(
         name='AM%d' % x,
@@ -526,6 +527,7 @@ def calcAMx(groupView, D=5, width=2, magRange=None,
         rmsDistMas=rmsDistMas,
         rmsUnits='mas',
         fractionOver=fractionOver,
+        AFx=percentOver,
         D=D,
         DUnits='arcmin',
         annulus=annulus,
