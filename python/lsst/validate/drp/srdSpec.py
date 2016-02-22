@@ -24,6 +24,8 @@ import lsst.pipe.base as pipeBase
 
 srdSpec = pipeBase.Struct(
     levels=("design", "minimum", "stretch"),
+    PA1={"design":  5, "minimum":  8, "stretch":  3}, pa1Units='mmag',
+    PF1={"design": 10, "minimum": 20, "stretch":  5}, pf1Units='%',
     PA2={"design": 15, "minimum": 15, "stretch": 10}, pa2Units='mmag',
     D1=5, d1Units='arcmin',
     AM1={"design": 10, "minimum": 20, "stretch": 5}, am1Units='mas',
