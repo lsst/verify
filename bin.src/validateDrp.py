@@ -51,7 +51,13 @@ if __name__ == "__main__":
                         help='YAML configuration file validation parameters and dataIds.')
     parser.add_argument('--verbose', '-v', default=False, action='store_true',
                         help='Display additional information about the analysis.')
-    
+    parser.add_argument('--plot', dest='makePlot', default=True,
+                        action='store_true',
+                        help='Make plots of performance.')
+    parser.add_argument('--noplot', dest='makePlot',
+                        action='store_false',
+                        help='Skip making plots of performance.')
+
     args = parser.parse_args()
 
     if not os.path.isdir(args.repo):
@@ -69,10 +75,29 @@ if __name__ == "__main__":
             'matchRef': matchRef,
             }
 
+    kwargs['verbose'] = args.verbose
+    kwargs['makePlot'] = args.makePlot
+
     if not args.configFile or not dataIds:
         dataIds = util.discoverDataIds(args.repo)
         if args.verbose:
             print("VISITDATAIDS: ", dataIds)
 
-    kwargs['verbose'] = args.verbose
-    validate.run(args.repo, dataIds, **kwargs)
+    kwargs['dataIds'] = dataIds
+
+    validate.run(args.repo, **kwargs)
+
+    # Only check against expectations if we were passed information about those expectations
+    if args.configFile:
+        print("========================================")
+        print("Comparison against current requirements.")
+        passed = validate.didThisRepoPass(
+                    args.repo, 
+                    kwargs['dataIds'], 
+                    args.configFile,
+                    verbose=args.verbose
+                )
+        if passed:
+            print("PASSED.  ALL MEASURED KEY PERFROMANCE METRICS PASSED.")
+        else:
+            print("FAILED.  NOT ALL KEY PERFORMANCE METRICS PASSED.")
