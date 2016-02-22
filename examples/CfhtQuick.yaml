@@ -4,15 +4,8 @@
 brightSnr: 100  # Only consider stars with higher S/N than this limit
 medianAstromscatterRef: 25  # expected astrometric variability [mas]
 medianPhotoscatterRef: 25  # expected photometric variability [mmag]
-matchRef: 700  # Number of stars expected to match.  Update if you change the ccd list below
-requiredPA1: 25  # [mmag]
-requiredPA2: 35  # [mmag]
-requiredAM1: 12 # [mas]
-requiredAF1: 10 # [percent]
-requiredAM2: 12 # [mas]
-requiredAF2: 10 # [percent]
-requiredAM3: null # We don't expect this test to include any stars separated by 200 arcmin.
-requiredAF3: null # [percent]
+requirements: {PA1: 25, PA2: 35, AM1: 12, AF1: 10, AM2: 12, AF2: 10, AM3: null, AF3: null}
+requirementsUnits: {PA1: 'mmag', PA2: 'mmag', AM1: 'mas', AF1: '%', AM2: 'mas', AF2: '%', AM3: 'mas', AF3: '%'}
 visits: [849375, 850587]
 filter: 'r'
 ccd: [12]

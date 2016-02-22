@@ -239,7 +239,19 @@ def didThisRepoPass(repo, dataIds, configFile, **kwargs):
     dataIds : list
         Data Ids that were analyzed
     configFile : str
-        Path name of configuration file with requirements specified
+        Configuration file with requirements specified as a dict.  E.g.,
+
+        requirements: {PA1: 25, PA2: 35}
+
+    Returns
+    -------
+    bool
+        Did all of the measured and requiremd metrics pass.
+
+    Raises
+    ------
+    AttributeError
+        If the configuration file does not contain a `requirements` dict.
 
     See Also
     --------
@@ -247,14 +259,23 @@ def didThisRepoPass(repo, dataIds, configFile, **kwargs):
     """
     outputPrefix = repoNameToPrefix(repo)
     filters = set(d['filter'] for d in dataIds)
-    requirements = loadParameters(configFile)
+    try:
+        requirements = loadParameters(configFile).requirements
+    except AttributeError as ae:
+        print("Configuration file %s does not contain a `requirements` dict." % configFile)
+        raise(ae)
 
     return didIPass(outputPrefix, filters, requirements, **kwargs)
 
 
 def didIPass(*args, **kwargs):
-    """Did this set pass."""
+    """Did this set pass.
 
+    Returns
+    -------
+    bool
+        Did all of the measured and requiremd metrics pass.
+    """
     passedScores = scoreMetrics(*args, **kwargs)
 
     didAllPass = True
@@ -268,17 +289,17 @@ def didIPass(*args, **kwargs):
 
 def scoreMetrics(outputPrefix, filters, requirements, verbose=False):
     """Score Key Performance metrics.  Returns dict((metric, filter), Pass/Fail)
-
-    Parameters
+    
+    Parameters 
     ----------
     outputPrefix : str
         The starting name for the output JSON files with the results
     filters : list, str, or None
         The filters in the analysis.  Output JSON files will be searched as
-            "%s%s" % (outputPrefix, filters[i])
+            "%s%s" % (outputPrefix, filters[i]) 
         If `None`, then JSON files will be searched for as just
             "%s" % outputPrefix.
-    requirements : pipeBase.Struct
+    requirements : dict
         The requirements on each of the Key Performance Metrics
         Skips measurements for any metric without an entry in `requirements`.
 
@@ -288,10 +309,10 @@ def scoreMetrics(outputPrefix, filters, requirements, verbose=False):
         A dictionary of results.  (metricName, filter) : True/False
 
 
-    We provide the ability to check against configured standards
+    We provide the ability to check against configured standards 
     instead of just the srdSpec because
     1. Different data sets may not lend themselves to satisfying the SRD.
-    2. The pipeline continues to improve.
+    2. The pipeline continues to improve.  
        Specifying a set of standards and updating that allows for a natural tightening of requirements.
 
     Note that there is no filter-dependence for the requirements.
@@ -311,7 +332,6 @@ def scoreMetrics(outputPrefix, filters, requirements, verbose=False):
         )
 
     print("{:16s}   {:13s} {:20s}".format("Measured", "Required", "Passes"))
-    requirementsDict = requirements.getDict()
 
     passed = {}
     for f in filters:
@@ -336,26 +356,24 @@ def scoreMetrics(outputPrefix, filters, requirements, verbose=False):
                 print("No results available for %s" % metricName)
                 continue
 
-            standardToMeet = 'required%s' % metricName
-
-            if standardToMeet not in requirementsDict:
+            if metricName not in requirements:
                 if verbose:
                     print("No requirement specified for %s.  Skipping." % metricName)
                 continue
 
             # Check values against configured standards
-            passed[(metricName, f)] = metricResults[metricNameKey] <= requirementsDict[standardToMeet]
-
+            passed[(metricName, f)] = metricResults[metricNameKey] <= requirements[metricName]
+            
             if verbose:
                 print("{name:4s}: {value:5.2f} {units:4s} < {spec:5.2f} {units:4s} == {result}".format(
                           name=metricName,
-                          value=metricResults[metricNameKey],
+                          value=metricResults[metricNameKey], 
                           units=metricResults[metricUnitsKey],
-                          spec=requirementsDict[standardToMeet],
+                          spec=requirements[metricName],
                           result=passed[(metricName, f)],
                           )
                       )
-
+                    
     return passed
 
 
