@@ -29,11 +29,18 @@ def printPA1(PA1):
 
 
 def printPA2(pa2):
-    """Print the calculated PA2 from the LSST SRD."""
+    """Print the calculated PA2 and PF1 from the LSST SRD."""
+    print('--')
     for level in ('minimum', 'design', 'stretch'):
         print("%-7s: PF1=%2d%s of diffs more than PA2 = %4.2f %s (target is < %2.0f %s)" %
-              (level, pa2.PF1[level], pa2.pf1Units, pa2.getDict()[level], pa2.pa2Units,
+              (level, pa2.PF1_spec[level], pa2.pf1Units, pa2.PA2_measured[level], pa2.pa2Units,
                srdSpec.PA2[level], srdSpec.pa2Units))
+
+    print('--')
+    for level in ('minimum', 'design', 'stretch'):
+        print("%-7s: PF1=%2d%s of diffs more than PA2 = %4.2f %s (target is < %2.0f %s)" %
+              (level, pa2.PF1_measured[level], pa2.pf1Units, pa2.PA2_spec[level], pa2.pa2Units,
+               srdSpec.PF1[level], srdSpec.pf1Units))
 
 
 def printAMx(AMx):
