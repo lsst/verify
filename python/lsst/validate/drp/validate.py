@@ -36,6 +36,7 @@ from .calcSrd import calcAM1, calcAM2, calcAM3, calcPA1, calcPA2
 from .check import checkAstrometry, checkPhotometry, positionRms
 from .plot import plotAstrometry, plotPhotometry, plotPA1, plotAMx
 from .print import printPA1, printPA2, printAMx
+from .srdSpec import srdSpec
 from .util import getCcdKeyName, repoNameToPrefix, calcOrNone, loadParameters
 from .io import saveKpmToJson, loadKpmFromJson
 
@@ -279,7 +280,7 @@ def didIPass(*args, **kwargs):
     passedScores = scoreMetrics(*args, **kwargs)
 
     didAllPass = True
-    for (metric, filter), passed in passedScores.items():
+    for (metric, filter), passed in passedScores.iteritems():
         if not passed:
             print("Failed metric, filter: %s, %s" % (metric, filter))
             didAllPass = False
@@ -289,14 +290,14 @@ def didIPass(*args, **kwargs):
 
 def scoreMetrics(outputPrefix, filters, requirements, verbose=False):
     """Score Key Performance metrics.  Returns dict((metric, filter), Pass/Fail)
-    
-    Parameters 
+
+    Parameters
     ----------
     outputPrefix : str
         The starting name for the output JSON files with the results
     filters : list, str, or None
         The filters in the analysis.  Output JSON files will be searched as
-            "%s%s" % (outputPrefix, filters[i]) 
+            "%s%s" % (outputPrefix, filters[i])
         If `None`, then JSON files will be searched for as just
             "%s" % outputPrefix.
     requirements : dict
@@ -309,10 +310,10 @@ def scoreMetrics(outputPrefix, filters, requirements, verbose=False):
         A dictionary of results.  (metricName, filter) : True/False
 
 
-    We provide the ability to check against configured standards 
+    We provide the ability to check against configured standards
     instead of just the srdSpec because
     1. Different data sets may not lend themselves to satisfying the SRD.
-    2. The pipeline continues to improve.  
+    2. The pipeline continues to improve.
        Specifying a set of standards and updating that allows for a natural tightening of requirements.
 
     Note that there is no filter-dependence for the requirements.
@@ -321,15 +322,17 @@ def scoreMetrics(outputPrefix, filters, requirements, verbose=False):
         filters = list(filters)
 
     fileSnippet = dict(zip(
-            ("PA1", "PA2", "AM1", "AF1", "AM2", "AF2", "AM3", "AF3"),
-            ("PA1", "PA2", "AM1", "AM1", "AM2", "AM2", "AM3", "AM3")
+            ("PA1", "PF1", "PA2", "AM1", "AF1", "AM2", "AF2", "AM3", "AF3"),
+            ("PA1", "PA2", "PA2", "AM1", "AM1", "AM2", "AM2", "AM3", "AM3")
           )
         )
     lookupKeyName = dict(zip(
-            ("PA1", "PA2", "AM1", "AF1", "AM2", "AF2", "AM3", "AF3"),
-            ("PA1", "PA2", "AMx", "AFx", "AMx", "AFx", "AMx", "AFx")
+            ("PA1", "PF1", "PA2", "AM1", "AF1", "AM2", "AF2", "AM3", "AF3"),
+            ("PA1", "PF1", "PA2", "AMx", "AFx", "AMx", "AFx", "AMx", "AFx")
           )
         )
+    metricsToConsider = ("PA1", "PF1", "PA2", 
+                         "AM1", "AF1", "AM2", "AF2", "AM3", "AF3")
 
     print("{:16s}   {:13s} {:20s}".format("Measured", "Required", "Passes"))
 
@@ -343,7 +346,7 @@ def scoreMetrics(outputPrefix, filters, requirements, verbose=False):
         # Multiple metrics are sometimes stored in a file.
         # The names in those files may be generic ("AMx" instead of "AM1")
         # so we have three different, almost identical tuples here.
-        for metricName in ("PA1", "PA2", "AM1", "AF1", "AM2", "AF2", "AM3", "AF3"):
+        for metricName in metricsToConsider:
             jsonFile = "%s%s.%s" % (thisPrefix, fileSnippet[metricName], 'json')
 
             metricNameKey = lookupKeyName[metricName]
@@ -363,25 +366,27 @@ def scoreMetrics(outputPrefix, filters, requirements, verbose=False):
 
             # Check values against configured standards
             passed[(metricName, f)] = metricResults[metricNameKey] <= requirements[metricName]
-            
+
             if verbose:
                 print("{name:4s}: {value:5.2f} {units:4s} < {spec:5.2f} {units:4s} == {result}".format(
                           name=metricName,
-                          value=metricResults[metricNameKey], 
+                          value=metricResults[metricNameKey],
                           units=metricResults[metricUnitsKey],
                           spec=requirements[metricName],
                           result=passed[(metricName, f)],
                           )
                       )
-                    
+
     return passed
 
 
 ####
-def run(repo, dataIds, outputPrefix=None, **kwargs):
+def run(repo, dataIds, outputPrefix=None, level="design", verbose=False, **kwargs):
     """Main executable.
 
     Runs multiple filters, if necessary, through repeated calls to `runOneFilter`.
+    Assesses results against SRD specs at specified `level`.
+
     Inputs
     ------
     repo : string
@@ -393,6 +398,10 @@ def run(repo, dataIds, outputPrefix=None, **kwargs):
     outputPrefix : str, optional
         Specify the beginning filename for output files.
         The name of each filter will be appended to outputPrefix.
+    level : str
+        The level of the specification to check: "design", "minimum", "stretch"
+    verbose : bool
+        Provide detailed output.
 
     Outputs
     -------
@@ -413,7 +422,18 @@ def run(repo, dataIds, outputPrefix=None, **kwargs):
         # Do this here so that each outputPrefix will have a different name for each filter.
         thisOutputPrefix = "%s_%s_" % (outputPrefix.rstrip('_'), filt)
         theseVisitDataIds = [v for v in dataIds if v['filter'] == filt]
-        runOneFilter(repo, theseVisitDataIds, outputPrefix=thisOutputPrefix, **kwargs)
+        runOneFilter(repo, theseVisitDataIds, outputPrefix=thisOutputPrefix, verbose=verbose, **kwargs)
+
+    print("==============================")
+    print("Comparison against *LSST SRD*.")
+    SRDrequirements = {}
+    for k, v in srdSpec.getDict().iteritems():
+        if isinstance(v, dict):
+            SRDrequirements[k] = v[level]
+        else:
+            SRDrequirements[k] = v
+
+    scoreMetrics(outputPrefix, allFilters, SRDrequirements, verbose=verbose)
 
 
 def runOneFilter(repo, visitDataIds, brightSnr=100,
