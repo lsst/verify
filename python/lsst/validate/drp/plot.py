@@ -48,7 +48,7 @@ def plotOutlinedLines(ax, x1, x2, x1_color=color['all'], x2_color=color['bright'
     ax.axhline(x2, color=x2_color, linewidth=3)
 
 
-def plotAstrometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
+def plotAstrometry(snr, mmagrms, dist, match, brightSnr=100,
                    outputPrefix=""):
     """Plot angular distance between matched sources from different exposures.
 
@@ -56,25 +56,22 @@ def plotAstrometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
 
     Parameters
     ----------
-    mag : list or numpy.array
-        Average Magnitude
-    mmagerr : list or numpy.array
-        Average Magnitude uncertainty [millimag]
+    snr : list or numpy.array
+        Median SNR of PSF flux
     mmagrms ; list or numpy.array
         Magnitude RMS across visits [millimag]
     dist : list or numpy.array
         Separation from reference [mas]
     match : int
         Number of stars matched.
-    good_mag_limit : float, optional
-        Minimum average brightness (in magnitudes) for a star to be considered.
+    brightSnr : float, optional
+        Minimum SNR for a star to be considered "bright".
     outputPrefix : str, optional
         Prefix to use for filename of plot file.  Will also be used in plot titles.
         E.g., outputPrefix='Cfht_output_r_' will result in a file named
            'Cfht_output_r_check_astrometry.png'
     """
-
-    bright, = np.where(np.asarray(mag) < good_mag_limit)
+    bright, = np.where(np.asarray(snr) > brightSnr)
 
     dist_median = np.median(dist)
     bright_dist_median = np.median(np.asarray(dist)[bright])
@@ -85,7 +82,7 @@ def plotAstrometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
                histtype='stepfilled', orientation='horizontal')
     ax[0].hist(np.asarray(dist)[bright], bins=100, color=color['bright'],
                histtype='stepfilled', orientation='horizontal',
-               label='mag < %.1f' % good_mag_limit)
+               label='SNR > %.1f' % brightSnr)
 
     ax[0].set_ylim([0., 500.])
     ax[0].set_ylabel("Distance [mas]")
@@ -94,13 +91,13 @@ def plotAstrometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
                     x=0.55, y=0.88)
     plotOutlinedLines(ax[0], dist_median, bright_dist_median)
 
-    ax[1].scatter(mag, dist, s=10, color=color['all'], label='All')
-    ax[1].scatter(np.asarray(mag)[bright], np.asarray(dist)[bright], s=10,
+    ax[1].scatter(snr, dist, s=10, color=color['all'], label='All')
+    ax[1].scatter(np.asarray(snr)[bright], np.asarray(dist)[bright], s=10,
                   color=color['bright'],
-                  label='mag < %.1f' % good_mag_limit)
-    ax[1].set_xlabel("Magnitude")
+                  label='SNR > %.1f' % brightSnr)
+    ax[1].set_xlabel("SNR")
+    ax[1].set_xscale("log")
     ax[1].set_ylabel("Distance [mas]")
-    ax[1].set_xlim([17, 24])
     ax[1].set_ylim([0., 500.])
     ax[1].set_title("# of matches : %d, %d" % (len(bright), match))
     ax[1].legend(loc='upper left')
@@ -150,12 +147,14 @@ def plotMagerrFit(*args, **kwargs):
     plotExpFit(*args, **kwargs)
 
 
-def plotPhotometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
+def plotPhotometry(snr, mag, mmagerr, mmagrms, dist, match, brightSnr=100,
                    outputPrefix=""):
     """Plot photometric RMS for matched sources.
 
     Parameters
     ----------
+    snr : list or numpy.array
+        Median SNR of PSF flux
     mag : list or numpy.array
         Average Magnitude
     mmagerr : list or numpy.array
@@ -166,13 +165,15 @@ def plotPhotometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
         Separation from reference [mas]
     match : int
         Number of stars matched.
+    brightSnr : float, optional
+        Minimum SNR for a star to be considered "bright".
     outputPrefix : str, optional
         Prefix to use for filename of plot file.  Will also be used in plot titles.
         E.g., outputPrefix='Cfht_output_r_' will result in a file named
            'Cfht_output_r_check_photometry.png'
     """
 
-    bright, = np.where(np.asarray(mag) < good_mag_limit)
+    bright, = np.where(np.asarray(snr) > brightSnr)
 
     mmagrms_median = np.median(mmagrms)
     bright_mmagrms_median = np.median(np.asarray(mmagrms)[bright])
@@ -181,7 +182,7 @@ def plotPhotometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
     ax[0][0].hist(mmagrms, bins=100, range=(0, 500), color=color['all'], label='All',
                   histtype='stepfilled', orientation='horizontal')
     ax[0][0].hist(np.asarray(mmagrms)[bright], bins=100, range=(0, 500), color=color['bright'],
-                  label='mag < %.1f' % good_mag_limit,
+                  label='SNR > %.1f' % brightSnr,
                   histtype='stepfilled', orientation='horizontal')
     ax[0][0].set_ylim([0, 500])
     ax[0][0].set_ylabel("RMS [mmag]")
@@ -193,7 +194,7 @@ def plotPhotometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
     ax[0][1].scatter(mag, mmagrms, s=10, color=color['all'], label='All')
     ax[0][1].scatter(np.asarray(mag)[bright], np.asarray(mmagrms)[bright],
                      s=10, color=color['bright'],
-                     label='mag < %.1f' % good_mag_limit)
+                     label='SNR > %.1f' % brightSnr)
 
     ax[0][1].set_xlabel("Magnitude")
     ax[0][1].set_ylabel("RMS [mmag]")
@@ -206,7 +207,7 @@ def plotPhotometry(mag, mmagerr, mmagrms, dist, match, good_mag_limit=19.5,
     ax[1][0].scatter(mmagrms, mmagerr, s=10, color=color['all'], label='All')
     ax[1][0].scatter(np.asarray(mmagrms)[bright], np.asarray(mmagerr)[bright],
                      s=10, color=color['bright'],
-                     label='mag < %.1f' % good_mag_limit)
+                     label='SNR > %.1f' % brightSnr)
     ax[1][0].set_xscale('log')
     ax[1][0].set_yscale('log')
     ax[1][0].plot([0, 1000], [0, 1000],
