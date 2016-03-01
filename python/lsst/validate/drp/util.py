@@ -132,11 +132,12 @@ def discoverDataIds(repo, **kwargs):
     butler = dafPersist.Butler(repo)
     thisSubset = butler.subset(datasetType='src', **kwargs)
     # This totally works, but would be better to do this as a TaskRunner?
-    dataIds = [dr.dataId for dr in thisSubset 
+    dataIds = [dr.dataId for dr in thisSubset
                if dr.datasetExists(datasetType='src') and dr.datasetExists(datasetType='calexp')]
     # Make sure we have the filter information
     for dId in dataIds:
-        filterForThisDataId = butler.queryMetadata(datasetType='src', key=None, format=['filter'], dataId=dId)[0]
+        response = butler.queryMetadata(datasetType='src', key=None, format=['filter'], dataId=dId)
+        filterForThisDataId = response[0]
         dId['filter'] = filterForThisDataId
 
     return dataIds

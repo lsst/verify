@@ -102,11 +102,11 @@ def loadAndMatchData(repo, visitDataIds,
             continue
         except TypeError as te:
             # DECam images that haven't been properly reformatted
-            # can trigger a TypeError because of a residual FITS header 
-            # LTV2 which is a float instead of the expected integer. 
+            # can trigger a TypeError because of a residual FITS header
+            # LTV2 which is a float instead of the expected integer.
             # This generates an error of the form:
             #
-            # lsst::pex::exceptions::TypeError: 'LTV2 has mismatched type'  
+            # lsst::pex::exceptions::TypeError: 'LTV2 has mismatched type'
             #
             # See, e.g., DM-2957 for details.
             print(te)
