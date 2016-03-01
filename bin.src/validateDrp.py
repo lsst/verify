@@ -36,10 +36,13 @@ if __name__ == "__main__":
     Produces results to:
     STDOUT
         Summary of key metrics
-    *.png
+    REPONAME*.png
         Plots of key metrics.  Generated in current working directory.
-    *.json
+    REPONAME*.json
         JSON serialization of each KPM.
+
+    where REPONAME is based on the repository name but with path separators 
+    replaced with underscores.  E.g., "Cfht/output" -> "Cfht_output_"
     """
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('repo', type=str, 
