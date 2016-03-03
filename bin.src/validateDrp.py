@@ -22,6 +22,7 @@
 
 from __future__ import print_function
 
+import argparse
 import os.path
 import sys
 
@@ -29,37 +30,49 @@ from lsst.validate.drp import validate, util
 
 
 if __name__ == "__main__":
-    helpMessage = """Usage: validateDrp.py repo configFile
+    description="""
+    Calculate and plot validation Key Project Metrics from the LSST SRD.
 
-    Arguments
-    ---------
-    `repo` : str
-        path to a repository containing the output of processCcd
-    `configFile` : str
-        YAML configuration file declaring the parameters for this run.
-
-    Output
-    ------
+    Produces results to:
     STDOUT
         Summary of key metrics
-    *.png
+    REPONAME*.png
         Plots of key metrics.  Generated in current working directory.
+    REPONAME*.json
+        JSON serialization of each KPM.
+
+    where REPONAME is based on the repository name but with path separators 
+    replaced with underscores.  E.g., "Cfht/output" -> "Cfht_output_"
     """
-    if len(sys.argv) < 2:
-        print(helpMessage)
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('repo', type=str, 
+                        help='path to a repository containing the output of processCcd')
+    parser.add_argument('--configFile', '-c', type=str, default=None,
+                        help='YAML configuration file validation parameters and dataIds.')
+    parser.add_argument('--verbose', '-v', default=False, action='store_true',
+                        help='Display additional information about the analysis.')
+    
+    args = parser.parse_args()
+
+    if not os.path.isdir(args.repo):
+        print("Could not find repo %r" % (args.repo,))
         sys.exit(1)
 
-    repo = sys.argv[1]
-    if not os.path.isdir(repo):
-        print("Could not find repo %r" % (repo,))
-        sys.exit(1)
+    kwargs = {}
+    if args.configFile:
+        dataIds, good_mag_limit, medianAstromscatterRef, medianPhotoscatterRef, matchRef = \
+            util.loadDataIdsAndParameters(args.configFile)
+        kwargs = {
+            'good_mag_limit': good_mag_limit, 
+            'medianAstromscatterRef': medianAstromscatterRef, 
+            'medianPhotoscatterRef': medianPhotoscatterRef, 
+            'matchRef': matchRef,
+            }
 
-    configFile = sys.argv[2]
+    if not args.configFile or not dataIds:
+        dataIds = util.discoverDataIds(args.repo)
+        if args.verbose:
+            print("VISITDATAIDS: ", dataIds)
 
-    visitDataIds, good_mag_limit, medianAstromscatterRef, medianPhotoscatterRef, matchRef = \
-        util.loadDataIdsAndParameters(configFile)
-    validate.run(repo, visitDataIds,
-                 good_mag_limit=good_mag_limit, 
-                 medianAstromscatterRef=medianAstromscatterRef, 
-                 medianPhotoscatterRef=medianPhotoscatterRef, 
-                 matchRef=matchRef)
+    kwargs['verbose'] = args.verbose
+    validate.run(args.repo, dataIds, **kwargs)

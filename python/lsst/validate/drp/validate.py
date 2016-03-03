@@ -24,8 +24,10 @@ import numpy as np
 
 import lsst.afw.geom as afwGeom
 import lsst.afw.image as afwImage
+import lsst.afw.image.utils as afwImageUtils
 from lsst.afw.table import SourceCatalog, SchemaMapper, Field
 from lsst.afw.table import MultiMatch, SimpleRecord, GroupView
+from lsst.afw.fits.fitsLib import FitsError
 import lsst.daf.persistence as dafPersist
 import lsst.pipe.base as pipeBase
 
@@ -39,7 +41,8 @@ from .io import saveKpmToJson
 
 
 def loadAndMatchData(repo, visitDataIds,
-                     matchRadius=afwGeom.Angle(1, afwGeom.arcseconds)):
+                     matchRadius=afwGeom.Angle(1, afwGeom.arcseconds),
+                     verbose=False):
     """Load data from specific visit.  Match with reference.
 
     Parameters
@@ -52,6 +55,8 @@ def loadAndMatchData(repo, visitDataIds,
         The `calexp` cpixel image is needed for the photometric calibration.
     matchRadius :  afwGeom.Angle().
         Radius for matching.
+    verbose : bool, optional
+        Output additional information on the analysis steps.
 
     Returns
     -------
@@ -88,17 +93,40 @@ def loadAndMatchData(repo, visitDataIds,
     srcVis = SourceCatalog(newSchema)
 
     for vId in visitDataIds:
-        calib = afwImage.Calib(butler.get("calexp_md", vId, immediate=True))
-        calib.setThrowOnNegativeFlux(False)
+        try:
+            calexpMetadata = butler.get("calexp_md", vId, immediate=True)
+        except FitsError as fe:
+            print(fe)
+            print("Could not open calibrated image file for ", vId)
+            print("Skipping %s " % repr(vId))
+            continue
+        except TypeError as te:
+            # DECam images that haven't been properly reformatted
+            # can trigger a TypeError because of a residual FITS header
+            # LTV2 which is a float instead of the expected integer.
+            # This generates an error of the form:
+            #
+            # lsst::pex::exceptions::TypeError: 'LTV2 has mismatched type'
+            #
+            # See, e.g., DM-2957 for details.
+            print(te)
+            print("Calibration image header information malformed.")
+            print("Skipping %s " % repr(vId))
+            continue
+
+        calib = afwImage.Calib(calexpMetadata)
+
         oldSrc = butler.get('src', vId, immediate=True)
         print(len(oldSrc), "sources in ccd %s  visit %s" % (vId[ccdKeyName], vId["visit"]))
 
         # create temporary catalog
         tmpCat = SourceCatalog(SourceCatalog(newSchema).table)
         tmpCat.extend(oldSrc, mapper=mapper)
-        (tmpCat['base_PsfFlux_mag'][:], tmpCat['base_PsfFlux_magerr'][:]) = \
-         calib.getMagnitude(tmpCat['base_PsfFlux_flux'],
-                            tmpCat['base_PsfFlux_fluxSigma'])
+        with afwImageUtils.CalibNoThrow():
+            (tmpCat['base_PsfFlux_mag'][:], tmpCat['base_PsfFlux_magerr'][:]) = \
+             calib.getMagnitude(tmpCat['base_PsfFlux_flux'],
+                                tmpCat['base_PsfFlux_fluxSigma'])
+
         srcVis.extend(tmpCat, False)
         mmatch.add(catalog=tmpCat, dataId=vId)
 
@@ -113,7 +141,7 @@ def loadAndMatchData(repo, visitDataIds,
     return allMatches
 
 
-def analyzeData(allMatches, good_mag_limit=19.5):
+def analyzeData(allMatches, good_mag_limit=19.5, verbose=False):
     """Calculate summary statistics for each star.
 
     Parameters
@@ -122,6 +150,8 @@ def analyzeData(allMatches, good_mag_limit=19.5):
         GroupView object with matches.
     good_mag_limit : float, optional
         Minimum average brightness (in magnitudes) for a star to be considered.
+    verbose : bool, optional
+        Output additional information on the analysis steps.
 
     Returns
     -------
@@ -230,7 +260,9 @@ def run(repo, visitDataIds, outputPrefix=None, **kwargs):
 def runOneFilter(repo, visitDataIds, good_mag_limit=21.0,
         medianAstromscatterRef=25, medianPhotoscatterRef=25, matchRef=500,
         makePrint=True, makePlot=True, makeJson=True,
-        outputPrefix=None):
+        outputPrefix=None,
+        verbose=False,
+        ):
     """Main executable for the case where there is just one filter.
 
     Plot files and JSON files are generated in the local directory
@@ -263,14 +295,16 @@ def runOneFilter(repo, visitDataIds, good_mag_limit=21.0,
         Create JSON output file for metrics.  Saved to current working directory.
     outputPrefix : str, optional
         Specify the beginning filename for output files.
+    verbose : bool, optional
+        Output additional information on the analysis steps.
 
     """
 
     if outputPrefix is None:
         outputPrefix = repoNameToPrefix(repo)
 
-    allMatches = loadAndMatchData(repo, visitDataIds)
-    struct = analyzeData(allMatches, good_mag_limit)
+    allMatches = loadAndMatchData(repo, visitDataIds, verbose=verbose)
+    struct = analyzeData(allMatches, good_mag_limit, verbose=verbose)
     magavg = struct.mag
     magerr = struct.magerr
     magrms = struct.magrms
@@ -295,9 +329,9 @@ def runOneFilter(repo, visitDataIds, good_mag_limit=21.0,
 
     magKey = allMatches.schema.find("base_PsfFlux_mag").key
 
-    AM1, AM2, AM3 = [calcOrNone(func, safeMatches, ValidateErrorNoStars)
+    AM1, AM2, AM3 = [calcOrNone(func, safeMatches, ValidateErrorNoStars, verbose=verbose)
                      for func in (calcAM1, calcAM2, calcAM3)]
-    PA1, PA2 = [func(safeMatches, magKey) for func in (calcPA1, calcPA2)]
+    PA1, PA2 = [func(safeMatches, magKey, verbose=verbose) for func in (calcPA1, calcPA2)]
 
     if makePrint:
         printPA1(PA1)

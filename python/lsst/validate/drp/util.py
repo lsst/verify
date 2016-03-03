@@ -25,6 +25,7 @@ import yaml
 
 import lsst.afw.geom as afwGeom
 import lsst.afw.coord as afwCoord
+import lsst.daf.persistence as dafPersist
 
 
 def averageRaDec(ra, dec):
@@ -109,6 +110,39 @@ def repoNameToPrefix(repo):
     return repo.lstrip('\.').strip(os.sep).replace(os.sep, "_") + "_"
 
 
+def discoverDataIds(repo, **kwargs):
+    """Retrieve a list of all dataIds in a repo.
+
+    Parameters
+    ----------
+    repo : str
+        Path of a repository with 'src' entries.
+
+    Returns
+    -------
+    list
+        dataIds in the butler that exist.
+
+    Notes
+    -----
+    May consider making this an iterator if large N becomes important.
+    However, will likely need to know things like, "all unique filters"
+    of a data set anyway, so would need to go through chain at least once.
+    """
+    butler = dafPersist.Butler(repo)
+    thisSubset = butler.subset(datasetType='src', **kwargs)
+    # This totally works, but would be better to do this as a TaskRunner?
+    dataIds = [dr.dataId for dr in thisSubset
+               if dr.datasetExists(datasetType='src') and dr.datasetExists(datasetType='calexp')]
+    # Make sure we have the filter information
+    for dId in dataIds:
+        response = butler.queryMetadata(datasetType='src', key=None, format=['filter'], dataId=dId)
+        filterForThisDataId = response[0]
+        dId['filter'] = filterForThisDataId
+
+    return dataIds
+
+
 def loadDataIdsAndParameters(configFile):
     """Load data IDs, magnitude range, and expected metrics from a yaml file.
 
@@ -127,8 +161,11 @@ def loadDataIdsAndParameters(configFile):
     data = yaml.load(stream)
 
     ccdKeyName = getCcdKeyName(data)
-    visitDataIds = constructDataIds(data['filter'], data['visits'],
-                                    data[ccdKeyName], ccdKeyName)
+    try:
+        visitDataIds = constructDataIds(data['filter'], data['visits'],
+                                        data[ccdKeyName], ccdKeyName)
+    except KeyError as ke:
+        visitDataIds = []
 
     return (visitDataIds,
             data['good_mag_limit'],
@@ -249,10 +286,10 @@ def constructRunList(filter, visits, ccds, ccdKeyName='ccd'):
     return runList
 
 
-def calcOrNone(func, x, ErrorClass):
+def calcOrNone(func, x, ErrorClass, **kwargs):
     """Calculate the `func` and return result.  If it raises ErrorClass, return None."""
     try:
-        out = func(x)
+        out = func(x, **kwargs)
     except ErrorClass as e:
         print(e)
         out = None

@@ -32,7 +32,7 @@ from .util import averageRaFromCat, averageDecFromCat
 from .srdSpec import srdSpec, getAstrometricSpec
 
 
-def calcPA1(matches, magKey, numRandomShuffles=50):
+def calcPA1(matches, magKey, numRandomShuffles=50, verbose=False):
     """Calculate the photometric repeatability of measurements across a set of observations.
 
     Parameters
@@ -45,6 +45,8 @@ def calcPA1(matches, magKey, numRandomShuffles=50):
          where `allMatches` is the result of lsst.afw.table.MultiMatch.finish()
     numRandomShuffles : int
         Number of times to draw random pairs from the different observations.
+    verbose : bool, optional
+        Output additional information on the analysis steps.
 
     Returns
     -------
@@ -158,7 +160,7 @@ def doCalcPA1(groupView, magKey):
                            magDiffsUnits='mmag', magMeanUnits='mag')
 
 
-def calcPA2(groupView, magKey):
+def calcPA2(groupView, magKey, verbose=False):
     """Calculate the fraction of outliers from PA1.
 
     Calculate the fraction of outliers from the median RMS characterizaing
@@ -172,6 +174,8 @@ def calcPA2(groupView, magKey):
          The lookup key of the field storing the magnitude of interest.
          E.g., `magKey = allMatches.schema.find("base_PsfFlux_mag").key`
          where `allMatches` is a the result of lsst.afw.table.MultiMatch.finish()
+    verbose : bool, optional
+        Output additional information on the analysis steps.
 
     Returns
     -------
@@ -427,7 +431,9 @@ def calcAM3(*args, **kwargs):
     return calcAMx(*args, x=3, D=srdSpec.D3, width=2, **kwargs)
 
 def calcAMx(groupView, D=5, width=2, magRange=None,
-            x=None, level="design"):
+            x=None, level="design", 
+            verbose=False,
+           ):
     """Calculate the SRD definition of astrometric performance
 
     Parameters
@@ -501,7 +507,7 @@ def calcAMx(groupView, D=5, width=2, magRange=None,
     annulus = D + (width/2)*np.array([-1, +1])
 
     rmsDistances, annulus, magRange = \
-        calcRmsDistances(groupView, annulus, magRange=magRange)
+        calcRmsDistances(groupView, annulus, magRange=magRange, verbose=verbose)
 
     if not list(rmsDistances):
         raise ValidateErrorNoStars('No stars found that are %.1f--%.1f arcmin apart.' %
@@ -534,7 +540,7 @@ def calcAMx(groupView, D=5, width=2, magRange=None,
         )
 
 
-def calcRmsDistances(groupView, annulus, magRange=None):
+def calcRmsDistances(groupView, annulus, magRange=None, verbose=False):
     """Calculate the RMS distance of a set of matched objects over visits.
 
     Parameters
@@ -548,6 +554,8 @@ def calcRmsDistances(groupView, annulus, magRange=None):
     magRange : 2-element list or tuple of float, optional
         Magnitude range from which to select objects.
         Default of `None` will result in all objects being considered.
+    verbose : bool, optional
+        Output additional information on the analysis steps.
 
     Returns
     -------
@@ -599,7 +607,8 @@ def calcRmsDistances(groupView, annulus, magRange=None):
             distances = matchVisitComputeDistance(visit[obj1], ra[obj1], dec[obj1],
                                                   visit[obj2], ra[obj2], dec[obj2])
             if not distances:
-                print("No matching visits found for objs: %d and %d" % (obj1, obj2))
+                if verbose:
+                    print("No matching visits found for objs: %d and %d" % (obj1, obj2))
                 continue
 
             finiteEntries, = np.where(np.isfinite(distances))
