@@ -4,6 +4,7 @@ setupRequired(afw)
 setupRequired(pipe_base)
 setupRequired(pyyaml)
 
+setupOptional(pipe_tasks)
 setupOptional(obs_cfht)
 setupOptional(obs_decam)
 setupOptional(validation_data_cfht)
