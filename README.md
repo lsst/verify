@@ -43,6 +43,7 @@ rebuild -u obs_decam obs_cfht validation_data_decam validation_data_cfht validat
 ------
 To setup for a run with CFHT:
 ```
+setup pipe_tasks
 setup obs_cfht 
 setup validation_data_cfht
 setup validate_drp
@@ -62,6 +63,7 @@ The last line of the output will give the median astrometric scatter (in milliar
 ------
 To setup for a run with DECam:
 ```
+setup pipe_tasks
 setup obs_decam
 setup validation_data_decam
 setup validate_drp
