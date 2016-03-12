@@ -8,4 +8,4 @@ MAPPER=lsst.obs.decam.DecamMapper
 
 "${PRODUCT_DIR}"/examples/runExample.sh $CAMERA $MAPPER \
     ${VALIDATION_DATA_DECAM_DIR}/instcal "${CONFIG_FILE}" \
-    ingestImagesDecam.py processCcdDecam.py
+    ingestImagesDecam.py processCcd.py
