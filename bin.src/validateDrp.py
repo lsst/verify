@@ -60,10 +60,10 @@ if __name__ == "__main__":
 
     kwargs = {}
     if args.configFile:
-        dataIds, good_mag_limit, medianAstromscatterRef, medianPhotoscatterRef, matchRef = \
+        dataIds, brightSnr, medianAstromscatterRef, medianPhotoscatterRef, matchRef = \
             util.loadDataIdsAndParameters(args.configFile)
         kwargs = {
-            'good_mag_limit': good_mag_limit, 
+            'brightSnr': brightSnr, 
             'medianAstromscatterRef': medianAstromscatterRef, 
             'medianPhotoscatterRef': medianPhotoscatterRef, 
             'matchRef': matchRef,

@@ -262,7 +262,7 @@ def run(repo, visitDataIds, outputPrefix=None, **kwargs):
         runOneFilter(repo, theseVisitDataIds, outputPrefix=thisOutputPrefix, **kwargs)
 
 
-def runOneFilter(repo, visitDataIds, brightSnr=100, good_mag_limit=19.5,
+def runOneFilter(repo, visitDataIds, brightSnr=100,
         medianAstromscatterRef=25, medianPhotoscatterRef=25, matchRef=500,
         makePrint=True, makePlot=True, makeJson=True,
         outputPrefix=None,
