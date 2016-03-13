@@ -4,7 +4,7 @@
 brightSnr: 100  # Only consider stars with higher S/N than this limit
 medianAstromscatterRef: 25  # expected astrometric variability [mas]
 medianPhotoscatterRef: 25  # expected photometric variability [mmag]
-matchRef: 5000  # Number of stars expected to match.  Update if you change the ccd list below
+matchRef: 700  # Number of stars expected to match.  Update if you change the ccd list below
 visits: [849375, 850587]
 filter: 'r'
 ccd: [12]
