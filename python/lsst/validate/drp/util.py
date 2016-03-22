@@ -136,7 +136,7 @@ def discoverDataIds(repo, **kwargs):
                if dr.datasetExists(datasetType='src') and dr.datasetExists(datasetType='calexp')]
     # Make sure we have the filter information
     for dId in dataIds:
-        response = butler.queryMetadata(datasetType='src', key=None, format=['filter'], dataId=dId)
+        response = butler.queryMetadata(datasetType='src', format=['filter'], dataId=dId)
         filterForThisDataId = response[0]
         dId['filter'] = filterForThisDataId
 
