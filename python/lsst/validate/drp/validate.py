@@ -164,8 +164,11 @@ def analyzeData(allMatches, safeSnr=50.0, verbose=False):
     - snr: median PSF flux SNR for good matches
     - dist: RMS RA/Dec separation, in milliarcsecond
     - goodMatches: all good matches, as an afw.table.GroupView;
-        good matches contain sources that have a finite (non-nan) PSF magnitude
-        and do not have flags set for bad, cosmic ray, edge or saturated
+        good matches contain only objects whose detections all have
+          * a PSF Flux measurement with S/N > 1
+          * a finite (non-nan) PSF magnitude
+            - This separate check is largely to reject failed zeropoints. 
+          * and do not have flags set for bad, cosmic ray, edge or saturated
     - safeMatches: safe matches, as an afw.table.GroupView;
         safe matches are good matches that are sufficiently bright and sufficiently compact
     """
@@ -180,6 +183,7 @@ def analyzeData(allMatches, safeSnr=50.0, verbose=False):
     psfMagErrKey = allMatches.schema.find("base_PsfFlux_magerr").key
     extendedKey = allMatches.schema.find("base_ClassificationExtendedness_value").key
 
+    goodSnr = 3
     def goodFilter(cat):
         if len(cat) < nMatchesRequired:
             return False
@@ -188,7 +192,9 @@ def analyzeData(allMatches, safeSnr=50.0, verbose=False):
                 return False
         if not np.isfinite(cat.get(psfMagKey)).all():
             return False
-        return True
+        psfSnr = np.median(cat.get(psfSnrKey))
+        # Note that this also implicitly checks for psfSnr being non-nan.
+        return psfSnr >= goodSnr
 
     goodMatches = allMatches.where(goodFilter)
 
