@@ -79,6 +79,7 @@ def loadAndMatchData(repo, visitDataIds,
     schema = butler.get(dataset + "_schema", immediate=True).schema
     mapper = SchemaMapper(schema)
     mapper.addMinimalSchema(schema)
+    mapper.addOutputField(Field[float]('base_PsfFlux_snr', "PSF flux SNR"))
     mapper.addOutputField(Field[float]('base_PsfFlux_mag', "PSF magnitude"))
     mapper.addOutputField(Field[float]('base_PsfFlux_magerr', "PSF magnitude uncertainty"))
     newSchema = mapper.getOutputSchema()
@@ -122,6 +123,7 @@ def loadAndMatchData(repo, visitDataIds,
         # create temporary catalog
         tmpCat = SourceCatalog(SourceCatalog(newSchema).table)
         tmpCat.extend(oldSrc, mapper=mapper)
+        tmpCat['base_PsfFlux_snr'][:] = tmpCat['base_PsfFlux_flux'] / tmpCat['base_PsfFlux_fluxSigma']
         with afwImageUtils.CalibNoThrow():
             (tmpCat['base_PsfFlux_mag'][:], tmpCat['base_PsfFlux_magerr'][:]) = \
              calib.getMagnitude(tmpCat['base_PsfFlux_flux'],
@@ -141,15 +143,15 @@ def loadAndMatchData(repo, visitDataIds,
     return allMatches
 
 
-def analyzeData(allMatches, good_mag_limit=19.5, verbose=False):
+def analyzeData(allMatches, safeSnr=50.0, verbose=False):
     """Calculate summary statistics for each star.
 
     Parameters
     ----------
     allMatches : afw.table.GroupView
         GroupView object with matches.
-    good_mag_limit : float, optional
-        Minimum average brightness (in magnitudes) for a star to be considered.
+    safeSnr : float, optional
+        Minimum median SNR for a match to be considered "safe".
     verbose : bool, optional
         Output additional information on the analysis steps.
 
@@ -159,10 +161,14 @@ def analyzeData(allMatches, good_mag_limit=19.5, verbose=False):
     - mag: mean PSF magnitude for good matches
     - magerr: median of PSF magnitude for good matches
     - magrms: standard deviation of PSF magnitude for good matches
+    - snr: median PSF flux SNR for good matches
     - dist: RMS RA/Dec separation, in milliarcsecond
     - goodMatches: all good matches, as an afw.table.GroupView;
-        good matches contain sources that have a finite (non-nan) PSF magnitude
-        and do not have flags set for bad, cosmic ray, edge or saturated
+        good matches contain only objects whose detections all have
+          * a PSF Flux measurement with S/N > 1
+          * a finite (non-nan) PSF magnitude
+            - This separate check is largely to reject failed zeropoints. 
+          * and do not have flags set for bad, cosmic ray, edge or saturated
     - safeMatches: safe matches, as an afw.table.GroupView;
         safe matches are good matches that are sufficiently bright and sufficiently compact
     """
@@ -172,10 +178,12 @@ def analyzeData(allMatches, good_mag_limit=19.5, verbose=False):
                 for flag in ("saturated", "cr", "bad", "edge")]
     nMatchesRequired = 2
 
+    psfSnrKey = allMatches.schema.find("base_PsfFlux_snr").key
     psfMagKey = allMatches.schema.find("base_PsfFlux_mag").key
     psfMagErrKey = allMatches.schema.find("base_PsfFlux_magerr").key
     extendedKey = allMatches.schema.find("base_ClassificationExtendedness_value").key
 
+    goodSnr = 3
     def goodFilter(cat):
         if len(cat) < nMatchesRequired:
             return False
@@ -184,23 +192,25 @@ def analyzeData(allMatches, good_mag_limit=19.5, verbose=False):
                 return False
         if not np.isfinite(cat.get(psfMagKey)).all():
             return False
-        return True
+        psfSnr = np.median(cat.get(psfSnrKey))
+        # Note that this also implicitly checks for psfSnr being non-nan.
+        return psfSnr >= goodSnr
 
     goodMatches = allMatches.where(goodFilter)
 
-    # Filter further to a limited range in magnitude and extendedness
+    # Filter further to a limited range in S/N and extendedness
     # to select bright stars.
-    safeMaxMag = good_mag_limit
     safeMaxExtended = 1.0
 
     def safeFilter(cat):
-        psfMag = np.mean(cat.get(psfMagKey))
+        psfSnr = np.median(cat.get(psfSnrKey))
         extended = np.max(cat.get(extendedKey))
-        return psfMag <= safeMaxMag and extended < safeMaxExtended
+        return psfSnr >= safeSnr and extended < safeMaxExtended
 
     safeMatches = goodMatches.where(safeFilter)
 
     # Pass field=psfMagKey so np.mean just gets that as its input
+    goodPsfSnr = goodMatches.aggregate(np.median, field=psfSnrKey)  # SNR
     goodPsfMag = goodMatches.aggregate(np.mean, field=psfMagKey)  # mag
     goodPsfMagRms = goodMatches.aggregate(np.std, field=psfMagKey)  # mag
     goodPsfMagErr = goodMatches.aggregate(np.median, field=psfMagErrKey)
@@ -212,6 +222,7 @@ def analyzeData(allMatches, good_mag_limit=19.5, verbose=False):
         mag = goodPsfMag,
         magerr = goodPsfMagErr,
         magrms = goodPsfMagRms,
+        snr = goodPsfSnr,
         dist = dist,
         goodMatches = goodMatches,
         safeMatches = safeMatches,
@@ -257,7 +268,7 @@ def run(repo, visitDataIds, outputPrefix=None, **kwargs):
         runOneFilter(repo, theseVisitDataIds, outputPrefix=thisOutputPrefix, **kwargs)
 
 
-def runOneFilter(repo, visitDataIds, good_mag_limit=21.0,
+def runOneFilter(repo, visitDataIds, brightSnr=100,
         medianAstromscatterRef=25, medianPhotoscatterRef=25, matchRef=500,
         makePrint=True, makePlot=True, makeJson=True,
         outputPrefix=None,
@@ -279,8 +290,8 @@ def runOneFilter(repo, visitDataIds, good_mag_limit=21.0,
     visitDataIds : list of dict
         List of `butler` data IDs of Image catalogs to compare to reference.
         The `calexp` cpixel image is needed for the photometric calibration.
-    good_mag_limit : float, optional
-        Minimum average brightness (in magnitudes) for a star to be considered.
+    brightSnr : float, optional
+        Minimum SNR for a star to be considered bright
     medianAstromscatterRef : float, optional
         Expected astrometric RMS [mas] across visits.
     medianPhotoscatterRef : float, optional
@@ -304,7 +315,7 @@ def runOneFilter(repo, visitDataIds, good_mag_limit=21.0,
         outputPrefix = repoNameToPrefix(repo)
 
     allMatches = loadAndMatchData(repo, visitDataIds, verbose=verbose)
-    struct = analyzeData(allMatches, good_mag_limit, verbose=verbose)
+    struct = analyzeData(allMatches, brightSnr, verbose=verbose)
     magavg = struct.mag
     magerr = struct.magerr
     magrms = struct.magrms
@@ -315,17 +326,17 @@ def runOneFilter(repo, visitDataIds, good_mag_limit=21.0,
     mmagerr = 1000*magerr
     mmagrms = 1000*magrms
 
-    checkAstrometry(magavg, mmagrms, dist, match,
-                    good_mag_limit=good_mag_limit,
+    checkAstrometry(struct.snr, dist, match,
+                    brightSnr=brightSnr,
                     medianRef=medianAstromscatterRef, matchRef=matchRef)
-    checkPhotometry(magavg, mmagrms, dist, match,
-                    good_mag_limit=good_mag_limit,
+    checkPhotometry(struct.snr, magavg, mmagrms, dist, match,
+                    brightSnr=brightSnr,
                     medianRef=medianPhotoscatterRef, matchRef=matchRef)
     if makePlot:
-        plotAstrometry(magavg, mmagerr, mmagrms, dist, match,
-                       good_mag_limit=good_mag_limit, outputPrefix=outputPrefix)
-        plotPhotometry(magavg, mmagerr, mmagrms, dist, match,
-                       good_mag_limit=good_mag_limit, outputPrefix=outputPrefix)
+        plotAstrometry(dist, magavg, struct.snr,
+                       brightSnr=brightSnr, outputPrefix=outputPrefix)
+        plotPhotometry(magavg, struct.snr, mmagerr, mmagrms,
+                       brightSnr=brightSnr, outputPrefix=outputPrefix)
 
     magKey = allMatches.schema.find("base_PsfFlux_mag").key
 

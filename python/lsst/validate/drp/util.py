@@ -150,12 +150,12 @@ def loadDataIdsAndParameters(configFile):
     ----------
     configFile : str
         YAML file that stores visit, filter, ccd,
-        good_mag_limit, medianAstromscatterRef, medianPhotoscatterRef, matchRef
+        brightSnr, medianAstromscatterRef, medianPhotoscatterRef, matchRef
 
     Returns
     -------
     dict, float, float, float
-        dataIds, good_mag_limit, medianRef, matchRef
+        dataIds, brightSnr, medianRef, matchRef
     """
     stream = open(configFile, mode='r')
     data = yaml.load(stream)
@@ -168,7 +168,7 @@ def loadDataIdsAndParameters(configFile):
         visitDataIds = []
 
     return (visitDataIds,
-            data['good_mag_limit'],
+            data['brightSnr'],
             data['medianAstromscatterRef'],
             data['medianPhotoscatterRef'],
             data['matchRef'],

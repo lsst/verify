@@ -91,23 +91,21 @@ def positionRms(cat):
     return pos_rms
 
 
-def checkAstrometry(mag, mmagrms, dist, match,
-                    good_mag_limit=19.5,
+def checkAstrometry(snr, dist, match,
+                    brightSnr=100,
                     medianRef=100, matchRef=500):
     """Print out the astrometric scatter for all stars, and for good stars.
 
     Parameters
     ----------
-    mag : list or numpy.array
-        Average magnitudes of each star
-    mmagrms ; list or numpy.array
-        Magnitude RMS of the multiple observation of each star.
+    snr : list or numpy.array
+        Average PSF flux SNR of each star
     dist : list or numpy.array
         Distances between successive measurements of one star
     match : int
         Number of stars matched.
 
-    good_mag_limit : float, optional
+    brightSnr : float, optional
         Minimum average brightness (in magnitudes) for a star to be considered.
     medianRef : float, optional
         Median reference astrometric scatter in milliarcseconds.
@@ -129,10 +127,10 @@ def checkAstrometry(mag, mmagrms, dist, match,
     print("Median value of the astrometric scatter - all magnitudes: %.3f %s" %
           (np.median(dist), "mas"))
 
-    bright = np.where(np.asarray(mag) < good_mag_limit)
+    bright = np.where(np.asarray(snr) > brightSnr)
     astromScatter = np.median(np.asarray(dist)[bright])
-    print("Astrometric scatter (median) - mag < %.1f : %.1f %s" %
-          (good_mag_limit, astromScatter, "mas"))
+    print("Astrometric scatter (median) - snr > %.1f : %.1f %s" %
+          (brightSnr, astromScatter, "mas"))
 
     if astromScatter > medianRef:
         print("Median astrometric scatter %.1f %s is larger than reference : %.1f %s " %
@@ -143,13 +141,15 @@ def checkAstrometry(mag, mmagrms, dist, match,
     return astromScatter
 
 
-def checkPhotometry(mag, mmagrms, dist, match,
-                    good_mag_limit=19.5,
+def checkPhotometry(snr, mag, mmagrms, dist, match,
+                    brightSnr=100,
                     medianRef=100, matchRef=500):
     """Print out the astrometric scatter for all stars, and for good stars.
 
     Parameters
     ----------
+    snr : list or numpy.array
+        Median SNR of PSF flux
     mag : list or numpy.array
         Average magnitudes of each star
     mmagrms ; list or numpy.array
@@ -158,9 +158,8 @@ def checkPhotometry(mag, mmagrms, dist, match,
         Distances between successive measurements of one star
     match : int
         Number of stars matched.
-
-    good_mag_limit : float, optional
-        Minimum average brightness (in magnitudes) for a star to be considered.
+    brightSnr : float, optional
+        Minimum SNR for a star to be considered "bright".
     medianRef : float, optional
         Median reference astrometric scatter in millimagnitudes
     matchRef : int, optional
@@ -181,10 +180,10 @@ def checkPhotometry(mag, mmagrms, dist, match,
     print("Median value of the photometric scatter - all magnitudes: %.3f %s" %
           (np.median(mmagrms), "mmag"))
 
-    bright = np.where(np.asarray(mag) < good_mag_limit)
+    bright = np.where(np.asarray(snr) > brightSnr)
     photoScatter = np.median(np.asarray(mmagrms)[bright])
-    print("Photometric scatter (median) - mag < %.1f : %.1f %s" %
-          (good_mag_limit, photoScatter, "mmag"))
+    print("Photometric scatter (median) - SNR > %.1f : %.1f %s" %
+          (brightSnr, photoScatter, "mmag"))
 
     if photoScatter > medianRef:
         print("Median photometric scatter %.3f %s is larger than reference : %.3f %s "

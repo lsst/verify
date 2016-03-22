@@ -10,7 +10,7 @@ will produces output, plots, JSON files analyzing the processed data in `CFHT/ou
 
 One can run `validateDrp.py` in any of the following modes:
 1. use no configuration file (as above)
-2. pass a configuration file with just validation parameters (good_mag_limit, number of expected matches, ...) but no dataId specifications
+2. pass a configuration file with just validation parameters (brightSnr, number of expected matches, ...) but no dataId specifications
 3. pass a configuration file that specifies validation parameters and the dataIds to process.  See examples below for use with a `--configFile`
 
 Caveat:  Will likely not successfully run on more than 500 catalogs per band due to memory limits and inefficiencies in the current matching approach.

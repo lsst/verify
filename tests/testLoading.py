@@ -48,16 +48,16 @@ class LoadDataTestCase(unittest.TestCase):
         pass
 
     def testLoadingOfConfigFileParameters(self):
-        dataIds, good_mag_limit, \
+        dataIds, brightSnr, \
             medianAstromscatterRef, medianPhotoscatterRef, matchRef = \
                 util.loadDataIdsAndParameters(self.configFile)
-        self.assertAlmostEqual(good_mag_limit, 21.0)
+        self.assertAlmostEqual(brightSnr, 100)
         self.assertAlmostEqual(medianAstromscatterRef, 25)
         self.assertAlmostEqual(medianPhotoscatterRef, 25)
         self.assertAlmostEqual(matchRef, 5000)
 
     def testLoadingOfConfigFileDataIds(self):
-        dataIds, good_mag_limit, \
+        dataIds, brightSnr, \
             medianAstromscatterRef, medianPhotoscatterRef, matchRef = \
                 util.loadDataIdsAndParameters(self.configFile)
         # Tests of the dict entries require constructing and comparing sets
@@ -66,7 +66,7 @@ class LoadDataTestCase(unittest.TestCase):
                          set([d['visit'] for d in dataIds]))
 
     def testLoadingEmptyDataIds(self):
-        dataIds, good_mag_limit, \
+        dataIds, brightSnr, \
             medianAstromscatterRef, medianPhotoscatterRef, matchRef = \
                 util.loadDataIdsAndParameters(self.configFileNoDataIds)
         # Tests of the dict entries require constructing and comparing sets
