@@ -58,9 +58,11 @@ def averageRaDec(ra, dec):
 def averageRaDecFromCat(cat):
     return averageRaDec(cat.get('coord_ra'), cat.get('coord_dec'))
 
+
 def averageRaFromCat(cat):
     meanRa, meanDec = averageRaDecFromCat(cat)
     return meanRa
+
 
 def averageDecFromCat(cat):
     meanRa, meanDec = averageRaDecFromCat(cat)
@@ -178,7 +180,7 @@ def loadDataIdsAndParameters(configFile):
     Returns
     -------
     pipeBase.Struct
-        with attributes of 
+        with attributes of
         dataIds - dict
         and configuration parameters
     """
@@ -187,8 +189,8 @@ def loadDataIdsAndParameters(configFile):
     ccdKeyName = getCcdKeyName(parameters)
     try:
         dataIds = constructDataIds(parameters['filter'], parameters['visits'],
-                                        parameters[ccdKeyName], ccdKeyName)
-    except KeyError as ke:
+                                   parameters[ccdKeyName], ccdKeyName)
+    except KeyError:
         dataIds = []
 
     return pipeBase.Struct(dataIds=dataIds, **parameters)
@@ -224,8 +226,8 @@ def constructDataIds(filters, visits, ccds, ccdKeyName='ccd'):
 
     assert len(filters) == len(visits)
     dataIds = [{'filter': f, 'visit': v, ccdKeyName: c}
-                    for (f, v) in zip(filters, visits)
-                    for c in ccds]
+               for (f, v) in zip(filters, visits)
+               for c in ccds]
 
     return dataIds
 

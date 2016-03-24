@@ -30,7 +30,7 @@ from lsst.validate.drp import validate, util
 
 
 if __name__ == "__main__":
-    description="""
+    description = """
     Calculate and plot validation Key Project Metrics from the LSST SRD.
 
     Produces results to:
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     REPONAME*.json
         JSON serialization of each KPM.
 
-    where REPONAME is based on the repository name but with path separators 
+    where REPONAME is based on the repository name but with path separators
     replaced with underscores.  E.g., "Cfht/output" -> "Cfht_output_"
     """
     parser = argparse.ArgumentParser(description=description)
@@ -85,13 +85,12 @@ if __name__ == "__main__":
     if args.configFile and kwargs['requirements']:
         print("==========================================")
         print("Comparison against *current* requirements.")
-        passed = validate.didThisRepoPass(
-                    args.repo, 
-                    kwargs['dataIds'], 
-                    args.configFile,
-                    verbose=args.verbose
-                 )
+        passed = validate.didThisRepoPass(args.repo,
+                                          kwargs['dataIds'],
+                                          args.configFile,
+                                          verbose=args.verbose)
+
         if passed:
-            print("PASSED.  ALL MEASURED KEY PERFROMANCE METRICS PASSED CURRENT REQUIREMENTS.")
+            print("PASSED.  ALL MEASURED KEY PERFORMANCE METRICS PASSED CURRENT REQUIREMENTS.")
         else:
             print("FAILED.  NOT ALL KEY PERFORMANCE METRICS PASSED.")

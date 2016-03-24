@@ -127,8 +127,8 @@ def loadAndMatchData(repo, dataIds,
         tmpCat['base_PsfFlux_snr'][:] = tmpCat['base_PsfFlux_flux'] / tmpCat['base_PsfFlux_fluxSigma']
         with afwImageUtils.CalibNoThrow():
             (tmpCat['base_PsfFlux_mag'][:], tmpCat['base_PsfFlux_magerr'][:]) = \
-             calib.getMagnitude(tmpCat['base_PsfFlux_flux'],
-                                tmpCat['base_PsfFlux_fluxSigma'])
+                calib.getMagnitude(tmpCat['base_PsfFlux_flux'],
+                                   tmpCat['base_PsfFlux_fluxSigma'])
 
         srcVis.extend(tmpCat, False)
         mmatch.add(catalog=tmpCat, dataId=vId)
@@ -168,7 +168,7 @@ def analyzeData(allMatches, safeSnr=50.0, verbose=False):
         good matches contain only objects whose detections all have
           * a PSF Flux measurement with S/N > 1
           * a finite (non-nan) PSF magnitude
-            - This separate check is largely to reject failed zeropoints. 
+            - This separate check is largely to reject failed zeropoints.
           * and do not have flags set for bad, cosmic ray, edge or saturated
     - safeMatches: safe matches, as an afw.table.GroupView;
         safe matches are good matches that are sufficiently bright and sufficiently compact
@@ -184,8 +184,7 @@ def analyzeData(allMatches, safeSnr=50.0, verbose=False):
     psfMagErrKey = allMatches.schema.find("base_PsfFlux_magerr").key
     extendedKey = allMatches.schema.find("base_ClassificationExtendedness_value").key
 
-    goodSnr = 3
-    def goodFilter(cat):
+    def goodFilter(cat, goodSnr=3):
         if len(cat) < nMatchesRequired:
             return False
         for flagKey in flagKeys:
@@ -321,17 +320,19 @@ def scoreMetrics(outputPrefix, filters, requirements, verbose=False):
     if isinstance(filters, str):
         filters = list(filters)
 
-    fileSnippet = dict(zip(
+    fileSnippet = dict(
+        zip(
             ("PA1", "PF1", "PA2", "AM1", "AF1", "AM2", "AF2", "AM3", "AF3"),
             ("PA1", "PA2", "PA2", "AM1", "AM1", "AM2", "AM2", "AM3", "AM3")
-          )
         )
-    lookupKeyName = dict(zip(
+    )
+    lookupKeyName = dict(
+        zip(
             ("PA1", "PF1", "PA2", "AM1", "AF1", "AM2", "AF2", "AM3", "AF3"),
             ("PA1", "PF1", "PA2", "AMx", "AFx", "AMx", "AFx", "AMx", "AFx")
-          )
         )
-    metricsToConsider = ("PA1", "PF1", "PA2", 
+    )
+    metricsToConsider = ("PA1", "PF1", "PA2",
                          "AM1", "AF1", "AM2", "AF2", "AM3", "AF3")
 
     print("{:16s}   {:13s} {:20s}".format("Measured", "Required", "Passes"))
@@ -355,7 +356,7 @@ def scoreMetrics(outputPrefix, filters, requirements, verbose=False):
 
             try:
                 metricResults = loadKpmFromJson(jsonFile).getDict()
-            except IOError as ie:
+            except IOError:
                 print("No results available for %s" % metricName)
                 continue
 
@@ -368,14 +369,15 @@ def scoreMetrics(outputPrefix, filters, requirements, verbose=False):
             passed[(metricName, f)] = metricResults[metricNameKey] <= requirements[metricName]
 
             if verbose:
-                print("{name:4s}: {value:5.2f} {units:4s} < {spec:5.2f} {units:4s} == {result}".format(
-                          name=metricName,
-                          value=metricResults[metricNameKey],
-                          units=metricResults[metricUnitsKey],
-                          spec=requirements[metricName],
-                          result=passed[(metricName, f)],
-                          )
-                      )
+                kpmInfoToPrint = {
+                    "name": metricName,
+                    "value": metricResults[metricNameKey],
+                    "units": metricResults[metricUnitsKey],
+                    "spec": requirements[metricName],
+                    "result": passed[(metricName, f)],
+                }
+                kpmInfoFormat = "{name:4s}: {value:5.2f} {units:4s} < {spec:5.2f} {units:4s} == {result}"
+                print(kpmInfoFormat.format(**kpmInfoToPrint))
 
     return passed
 
@@ -437,12 +439,11 @@ def run(repo, dataIds, outputPrefix=None, level="design", verbose=False, **kwarg
 
 
 def runOneFilter(repo, visitDataIds, brightSnr=100,
-        medianAstromscatterRef=25, medianPhotoscatterRef=25, matchRef=500,
-        makePrint=True, makePlot=True, makeJson=True,
-        outputPrefix=None,
-        verbose=False,
-        **kwargs
-        ):
+                 medianAstromscatterRef=25, medianPhotoscatterRef=25, matchRef=500,
+                 makePrint=True, makePlot=True, makeJson=True,
+                 outputPrefix=None,
+                 verbose=False,
+                 **kwargs):
     """Main executable for the case where there is just one filter.
 
     Plot files and JSON files are generated in the local directory

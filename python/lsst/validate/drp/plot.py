@@ -228,9 +228,9 @@ def plotPhotometry(mag, snr, mmagerr, mmagrms, brightSnr=100,
                   linestyle='--', color='black', linewidth=2)
     ax[1][0].set_xlabel("RMS of Quoted Magnitude [mmag]")
     ax[1][0].set_ylabel("Median Quoted Magnitude Err [mmag]")
-    brightSnrInMmag = 2.5*np.log10(1 + (1/brightSnr)) * 1000  
-    
-    ax[1][0].axhline(brightSnrInMmag, color='red', linewidth=4, linestyle='dashed', 
+    brightSnrInMmag = 2.5*np.log10(1 + (1/brightSnr)) * 1000
+
+    ax[1][0].axhline(brightSnrInMmag, color='red', linewidth=4, linestyle='dashed',
                      label=r'SNR > %.0f = $\sigma_{\rm mmag} < $ %0.1f' % (brightSnr, brightSnrInMmag))
     ax[1][0].set_xlim([1, 500])
     ax[1][0].set_ylim([1, 500])
@@ -246,21 +246,20 @@ def plotPhotometry(mag, snr, mmagerr, mmagrms, brightSnr=100,
     ax[1][1].set_ylabel("Median Quoted Magnitude Err [mmag]")
     ax[1][1].set_xlim([17, 24])
     ax[1][1].set_ylim([1, 500])
-    ax[1][1].axhline(brightSnrInMmag, color='red', linewidth=4, linestyle='dashed', 
+    ax[1][1].axhline(brightSnrInMmag, color='red', linewidth=4, linestyle='dashed',
                      label=r'$\sigma_{\rm mmag} < $ %0.1f' % (brightSnrInMmag))
 
     ax2 = ax[1][1].twinx()
-    ax2.scatter(mag, snr, 
-                color=color['all'], facecolor='none', 
+    ax2.scatter(mag, snr,
+                color=color['all'], facecolor='none',
                 marker='.', label=None)
-    ax2.scatter(np.asarray(mag)[bright], np.asarray(snr)[bright], 
+    ax2.scatter(np.asarray(mag)[bright], np.asarray(snr)[bright],
                 color=color['bright'], facecolor='none',
-                marker='.', label=None,
-               )
+                marker='.', label=None)
     ax2.set_ylim(bottom=0)
     ax2.set_ylabel("SNR")
-    ax2.axhline(brightSnr, color='red', linewidth=2, linestyle='dashed', 
-                     label=r'SNR > %.0f' % (brightSnr))
+    ax2.axhline(brightSnr, color='red', linewidth=2, linestyle='dashed',
+                label=r'SNR > %.0f' % (brightSnr))
 
     w, = np.where(mmagerr < 200)
     plotMagerrFit(mag[w], mmagerr[w], mmagerr[w], ax=ax[1][1])
@@ -330,11 +329,14 @@ def plotPA1(pa1, outputPrefix=""):
 def plotAM1(*args, **kwargs):
     return plotAMx(*args, x=1, **kwargs)
 
+
 def plotAM2(*args, **kwargs):
     return plotAMx(*args, x=2, **kwargs)
 
+
 def plotAM3(*args, **kwargs):
     return plotAMx(*args, x=3, **kwargs)
+
 
 def plotAMx(AMx, outputPrefix=""):
     """Plot a histogram of the RMS in relative distance between pairs of stars.
@@ -366,12 +368,14 @@ def plotAMx(AMx, outputPrefix=""):
              histtype='stepfilled',
              label='D: %.1f-%.1f %s\nMag Bin: %.1f-%.1f' %
                    (AMx.annulus[0], AMx.annulus[1], AMx.annulusUnits, AMx.magRange[0], AMx.magRange[1]))
-    ax1.axvline(AMx.AMx, 0, 1, linewidth=2,  color='black',
+    ax1.axvline(AMx.AMx, 0, 1, linewidth=2, color='black',
                 label='median RMS of relative\nseparation: %.2f %s' % (AMx.AMx, AMx.amxUnits))
     ax1.axvline(AMx.AMx_spec, 0, 1, linewidth=2, color='red',
                 label='%s: %.0f %s' % (AMx.name, AMx.AMx_spec, AMx.amxUnits))
     ax1.axvline(AMx.AMx_spec+AMx.ADx_spec, 0, 1, linewidth=2, color='green',
-                label='AM{x:d}+AD{x:d}: {AMxADx:.0f} {amxUnits:s}\nAF{x:d}: {AFx_spec:.2f}{afxUnits:s} > AM{x:d}+AD{x:d} = {percentOver:.2f}%'.format(**AMxAsDict))
+                label='AM{x:d}+AD{x:d}: {AMxADx:.0f} {amxUnits:s}\n' +
+                      'AF{x:d}: {AFx_spec:.2f}{afxUnits:s} > AM{x:d}+AD{x:d} = ' +
+                      '{percentOver:.2f}%'.format(**AMxAsDict))
 
     ax1.set_title('The %d stars separated by D = [%.2f, %.2f] %s' %
                   (len(AMx.rmsDistMas), AMx.annulus[0], AMx.annulus[1], AMx.annulusUnits))
@@ -382,7 +386,7 @@ def plotAMx(AMx, outputPrefix=""):
     ax1.legend(loc='upper right', fontsize=16)
 
     figName = outputPrefix+'%s_D_%d_%s_%.1f-%.1f.png' % \
-              (AMx.name, int(sum(AMx.annulus)/2), AMx.DUnits.upper(), AMx.magRange[0], AMx.magRange[1])
+        (AMx.name, int(sum(AMx.annulus)/2), AMx.DUnits.upper(), AMx.magRange[0], AMx.magRange[1])
 
     plt.savefig(figName, dpi=300)
     plt.close(fig)

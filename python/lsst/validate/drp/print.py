@@ -22,6 +22,7 @@ from __future__ import print_function, division
 
 from .srdSpec import srdSpec
 
+
 def printPA1(PA1):
     """Print the calculated PA1 from the LSST SRD."""
     print("PA1(RMS) = %4.2f+-%4.2f %s" % (PA1.rms, PA1.rmsStd, PA1.rmsUnits))
@@ -58,8 +59,9 @@ def printAMx(AMx):
 
     print("Median RMS of distances between pairs of stars.")
     print("  %s goals" % AMx.level.upper())
-    print("  For stars from %.2f < mag < %.2f and D = [%.2f, %.2f] %s" % (AMx.magRange[0], AMx.magRange[1], AMx.annulus[0], AMx.annulus[1], AMx.annulusUnits))
-    print("%s=%.2f %s (target is < %.0f %s)." % \
-           (AMx.name, AMx.AMx, AMx.amxUnits, AMx.AMx_spec, AMx.amxUnits))
+    print("  For stars from %.2f < mag < %.2f and D = [%.2f, %.2f] %s" %
+          (AMx.magRange[0], AMx.magRange[1], AMx.annulus[0], AMx.annulus[1], AMx.annulusUnits))
+    print("%s=%.2f %s (target is < %.0f %s)." %
+          (AMx.name, AMx.AMx, AMx.amxUnits, AMx.AMx_spec, AMx.amxUnits))
     print("  %.2f%% of sample deviates by >%.0f %s (target is < %.0f%%)" %
           (percentOver, AMx.ADx_spec+AMx.AMx_spec, AMx.adxUnits, AMx.AFx_spec))

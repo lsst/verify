@@ -124,7 +124,7 @@ def calcPA1(matches, magKey, numRandomShuffles=50, verbose=False):
     rmsPA1 = np.array([pa1.rms for pa1 in pa1Samples])
     iqrPA1 = np.array([pa1.iqr for pa1 in pa1Samples])
 
-    PA1=np.mean(iqrPA1)
+    PA1 = np.mean(iqrPA1)
     return pipeBase.Struct(name='PA1',
                            PA1=PA1, pa1Units='mmag',
                            rms=np.mean(rmsPA1), iqr=np.mean(iqrPA1),
@@ -242,7 +242,7 @@ def calcPA2(groupView, magKey, defaultLevel='design', verbose=False):
     PA2_measured = dict(zip(srdSpec.levels,
                             np.percentile(np.abs(magDiffs), PF1_percentiles)))
 
-    PF1_measured = {l: 100*np.mean(np.asarray(magDiffs) > srdSpec.PA2[l]) 
+    PF1_measured = {l: 100*np.mean(np.asarray(magDiffs) > srdSpec.PA2[l])
                     for l in srdSpec.levels}
 
     return pipeBase.Struct(name='PA2', pa2Units='mmag', pf1Units='%',
@@ -422,6 +422,7 @@ def matchVisitComputeDistance(visit_obj1, ra_obj1, dec_obj1,
 def arcminToRadians(arcmin):
     return np.deg2rad(arcmin/60)
 
+
 def radiansToMilliarcsec(rad):
     return np.rad2deg(rad)*3600*1000
 
@@ -432,11 +433,13 @@ def calcAM1(*args, **kwargs):
     See `calcAMx` for more details."""
     return calcAMx(*args, x=1, D=srdSpec.D1, width=2, **kwargs)
 
+
 def calcAM2(*args, **kwargs):
     """Calculate the SRD definition of astrometric performance for AM2
 
     See `calcAMx` for more details."""
     return calcAMx(*args, x=2, D=srdSpec.D2, width=2, **kwargs)
+
 
 def calcAM3(*args, **kwargs):
     """Calculate the SRD definition of astrometric performance for AM3
@@ -444,10 +447,10 @@ def calcAM3(*args, **kwargs):
     See `calcAMx` for more details."""
     return calcAMx(*args, x=3, D=srdSpec.D3, width=2, **kwargs)
 
+
 def calcAMx(groupView, D=5, width=2, magRange=None,
-            x=None, level="design", 
-            verbose=False,
-           ):
+            x=None, level="design",
+            verbose=False):
     """Calculate the SRD definition of astrometric performance
 
     Parameters
@@ -553,7 +556,7 @@ def calcAMx(groupView, D=5, width=2, magRange=None,
         ADx_spec=ADx_spec,
         afxUnits='%',
         adxUnits='mas',
-        )
+    )
 
 
 def calcRmsDistances(groupView, annulus, magRange=None, verbose=False):
