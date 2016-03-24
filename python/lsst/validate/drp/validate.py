@@ -335,7 +335,8 @@ def scoreMetrics(outputPrefix, filters, requirements, verbose=False):
     metricsToConsider = ("PA1", "PF1", "PA2",
                          "AM1", "AF1", "AM2", "AF2", "AM3", "AF3")
 
-    print("{:16s}   {:13s} {:20s}".format("Measured", "Required", "Passes"))
+    if verbose:
+        print("{:16s}   {:13s} {:20s}".format("Measured", "Required", "Passes"))
 
     passed = {}
     for f in filters:
@@ -426,8 +427,10 @@ def run(repo, dataIds, outputPrefix=None, level="design", verbose=False, **kwarg
         theseVisitDataIds = [v for v in dataIds if v['filter'] == filt]
         runOneFilter(repo, theseVisitDataIds, outputPrefix=thisOutputPrefix, verbose=verbose, **kwargs)
 
-    print("==============================")
-    print("Comparison against *LSST SRD*.")
+    if verbose:
+        print("==============================")
+        print("Comparison against *LSST SRD*.")
+
     SRDrequirements = {}
     for k, v in srdSpec.getDict().iteritems():
         if isinstance(v, dict):

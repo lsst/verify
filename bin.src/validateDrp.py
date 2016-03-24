@@ -83,8 +83,9 @@ if __name__ == "__main__":
 
     # Only check against expectations if we were passed information about those expectations
     if args.configFile and kwargs['requirements']:
-        print("==========================================")
-        print("Comparison against *current* requirements.")
+        if args.verbose:
+            print("==========================================")
+            print("Comparison against *current* requirements.")
         passed = validate.didThisRepoPass(args.repo,
                                           kwargs['dataIds'],
                                           args.configFile,
