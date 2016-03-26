@@ -83,13 +83,14 @@ if __name__ == "__main__":
 
     # Only check against expectations if we were passed information about those expectations
     if args.configFile and kwargs['requirements']:
-        if args.verbose:
+        kpm_verbose = True
+        if kpm_verbose:
             print("==========================================")
             print("Comparison against *current* requirements.")
         passed = validate.didThisRepoPass(args.repo,
                                           kwargs['dataIds'],
                                           args.configFile,
-                                          verbose=args.verbose)
+                                          verbose=kpm_verbose)
 
         if passed:
             print("PASSED.  ALL MEASURED KEY PERFORMANCE METRICS PASSED CURRENT REQUIREMENTS.")
