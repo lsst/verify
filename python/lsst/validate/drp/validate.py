@@ -36,7 +36,7 @@ from .calcSrd import calcAM1, calcAM2, calcAM3, calcPA1, calcPA2
 from .check import checkAstrometry, checkPhotometry, positionRms
 from .plot import plotAstrometry, plotPhotometry, plotPA1, plotAMx
 from .print import printPA1, printPA2, printAMx
-from .srdSpec import srdSpec
+from .srdSpec import srdSpec, loadSrdRequirements
 from .util import getCcdKeyName, repoNameToPrefix, calcOrNone, loadParameters
 from .io import saveKpmToJson, loadKpmFromJson
 
@@ -241,12 +241,12 @@ def didThisRepoPass(repo, dataIds, configFile, **kwargs):
     configFile : str
         Configuration file with requirements specified as a dict.  E.g.,
 
-        requirements: {PA1: 25, PA2: 35}
+        requirements: {'PA1': 25, 'PA2': 35}
 
     Returns
     -------
     bool
-        Did all of the measured and requiremd metrics pass.
+        Did all of the measured and required metrics pass.
 
     Raises
     ------
@@ -264,6 +264,33 @@ def didThisRepoPass(repo, dataIds, configFile, **kwargs):
     except AttributeError as ae:
         print("Configuration file %s does not contain a `requirements` dict." % configFile)
         raise(ae)
+
+    return didIPass(outputPrefix, filters, requirements, **kwargs)
+
+
+def didThisRepoPassSrd(repo, dataIds, level='design', **kwargs):
+    """Convenience function for calling didIPass using the LSST SRD requiremenst.
+
+    Parameters
+    ----------
+    repo : str
+        Path name of repository
+    dataIds : list
+        Data Ids that were analyzed
+
+    Returns
+    -------
+    bool
+        Did all of the measured and required metrics pass.
+
+    See Also
+    --------
+    didIPass : The key function that does the work.
+    """
+    outputPrefix = repoNameToPrefix(repo)
+    filters = set(d['filter'] for d in dataIds)
+
+    requirements = loadSrdRequirements(srdSpec, level=level)
 
     return didIPass(outputPrefix, filters, requirements, **kwargs)
 

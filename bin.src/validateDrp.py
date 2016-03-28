@@ -84,15 +84,23 @@ if __name__ == "__main__":
     # Only check against expectations if we were passed information about those expectations
     if args.configFile and kwargs['requirements']:
         kpm_verbose = True
+        level = 'design'
         if kpm_verbose:
-            print("==========================================")
-            print("Comparison against *current* requirements.")
-        passed = validate.didThisRepoPass(args.repo,
-                                          kwargs['dataIds'],
-                                          args.configFile,
-                                          verbose=kpm_verbose)
+            print("=======================================================")
+            print("Comparison against *LSST SRD* '%s' requirements." % level)
+        passedSrd = validate.didThisRepoPassSrd(args.repo,
+                                                kwargs['dataIds'],
+                                                verbose=kpm_verbose)
 
-        if passed:
+        if kpm_verbose:
+            print("=======================================================")
+            print("Comparison against *current development* requirements.")
+        passedCurrent = validate.didThisRepoPass(args.repo,
+                                                 kwargs['dataIds'],
+                                                 args.configFile,
+                                                 verbose=kpm_verbose)
+
+        if passedCurrent:
             print("PASSED.  ALL MEASURED KEY PERFORMANCE METRICS PASSED CURRENT REQUIREMENTS.")
         else:
             print("FAILED.  NOT ALL KEY PERFORMANCE METRICS PASSED.")
