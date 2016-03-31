@@ -116,7 +116,11 @@ def plotAstrometry(dist, mag, snr, brightSnr=100,
     ax[1].set_xscale("log")
     ax[1].set_ylim([0., 500.])
     ax[1].set_title("# of matches : %d, %d" % (len(bright), numMatched))
-    ax[1].legend(loc='upper left')
+
+    w, = np.where(dist < 200)
+    plotAstromErrModelFit(snr[w], dist[w], ax=ax[1])
+
+    ax[1].legend(loc='upper right')
     ax[1].axvline(brightSnr, color='red', linewidth=4, linestyle='dashed')
     plotOutlinedLinesHorizontal(ax[1], dist_median, bright_dist_median)
 
@@ -140,7 +144,7 @@ def plotExpFit(x, y, y_err, deg=2, ax=None, verbose=False):
 
     if ax is None:
         ax = plt.figure()
-        xlim = [10, 30]
+        xlim = [1, 1e4]
     else:
         xlim = ax.get_xlim()
 
@@ -160,14 +164,71 @@ def plotExpFit(x, y, y_err, deg=2, ax=None, verbose=False):
     return fit_params
 
 
-def plotAstromErrModelFit():
+def astromErrModel(snr, C, theta=1):
+    """Calculate expected astrometric uncertainty based on SNR.
+
+    mas = C*theta/SNR
+
+    Parameters
+    ----------
+    snr : list or numpy.array
+        S/N of photometric measurements
+    C : float
+        Scaling factor
+    theta : float or numpy.array, optional
+        Seeing [arcsec]
+    verbose : bool, optional
+        Produce extra output to STDOUT
+
+    Returns
+    -------
+    np.array
+        Expected astrometric uncertainty.
+        Units are those of theta.
+    """
+    return C*theta/snr
+
+
+def plotAstromErrModelFit(snr, dist, ax=None, verbose=True):
     """Fit and plot model of photometric error from LSST Overview paper
     http://arxiv.org/abs/0805.2366v4
 
     Astrometric Errors
     error = C * theta / SNR
+
+    Parameters
+    ----------
+    snr : list or numpy.array
+        S/N of photometric measurements
+    dist : list or numpy.array
+        Separation from reference [mas]
+
+    Returns
+    -------
+    float
+        C*theta
     """
-    pass
+    if ax is None:
+        ax = plt.figure()
+        xlim = [10, 30]
+    else:
+        xlim = ax.get_xlim()
+
+    popt, pcov = curve_fit(astromErrModel, snr, dist, p0=[1])
+    fit_params = popt
+    x_model = np.logspace(np.log10(xlim[0]), np.log10(xlim[1]), num=100)
+    fit_model_mas_err = astromErrModel(x_model, *fit_params)
+    C_theta = fit_params[0]
+    label = r'$C\theta$ = %.4g [mas]' % C_theta
+
+    if verbose:
+        print(fit_params)
+        print(label)
+
+    ax.plot(x_model, fit_model_mas_err, color='red',
+            label=label)
+
+    return fit_params
 
 
 def photErrModel(mag, sigmaSys, gamma, m5):
@@ -204,7 +265,7 @@ def photErrModel(mag, sigmaSys, gamma, m5):
     return np.sqrt(sigmaSq)
 
 
-def plotPhotErrModelFit(mag, mmag_err, ax=None, verbose=True):
+def plotPhotErrModelFit(mag, mmag_err, color='red', ax=None, verbose=True):
     """Fit and plot model of photometric error from LSST Overview paper
 
     Parameters
@@ -237,14 +298,16 @@ def plotPhotErrModelFit(mag, mmag_err, ax=None, verbose=True):
     fit_model_mag_err = photErrModel(x_model, *fit_params)
     fit_model_mmag_err = 1000*fit_model_mag_err
     sigmaSysMmag, gamma, m5Mag = fit_params[:]
-    label = r'$\sigma_{\rm sys\ mmag}$=%5.2f, $\gamma=$%6.4f, $m_5=$%6.3f mag' % \
-        (1000*sigmaSysMmag, gamma, m5Mag) 
+    labelFormatStr = r'$\sigma_{\rm sys} {\rm [mmag]}$, $\gamma$, $m_5 {\rm [mag]}$=' + '\n' + \
+                     r'%5.2f, %6.4f, %6.3f' 
+    label = labelFormatStr % (1000*sigmaSysMmag, gamma, m5Mag)
 
     if verbose:
         print(fit_params)
         print(label)
 
-    ax.plot(x_model, fit_model_mmag_err, color='red',
+    ax.plot(x_model, fit_model_mmag_err, 
+            color=color, linewidth=2,
             label=label)
 
     return fit_params
@@ -465,10 +528,11 @@ def plotAMx(AMx, outputPrefix=""):
                 label='median RMS of relative\nseparation: %.2f %s' % (AMx.AMx, AMx.amxUnits))
     ax1.axvline(AMx.AMx_spec, 0, 1, linewidth=2, color='red',
                 label='%s: %.0f %s' % (AMx.name, AMx.AMx_spec, AMx.amxUnits))
+    formatStr = 'AM{x:d}+AD{x:d}: {AMxADx:.0f} {amxUnits:s}\n' + \
+                'AF{x:d}: {AFx_spec:.2f}{afxUnits:s} > AM{x:d}+AD{x:d} = ' + \
+                '{percentOver:.2f}%'
     ax1.axvline(AMx.AMx_spec+AMx.ADx_spec, 0, 1, linewidth=2, color='green',
-                label='AM{x:d}+AD{x:d}: {AMxADx:.0f} {amxUnits:s}\n' +
-                      'AF{x:d}: {AFx_spec:.2f}{afxUnits:s} > AM{x:d}+AD{x:d} = ' +
-                      '{percentOver:.2f}%'.format(**AMxAsDict))
+                label=formatStr.format(**AMxAsDict))
 
     ax1.set_title('The %d stars separated by D = [%.2f, %.2f] %s' %
                   (len(AMx.rmsDistMas), AMx.annulus[0], AMx.annulus[1], AMx.annulusUnits))
