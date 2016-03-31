@@ -21,9 +21,12 @@
 from __future__ import print_function, division
 
 import lsst.pipe.base as pipeBase
+from .base import ValidateErrorUnknownSpecificationLevel
 
 srdSpec = pipeBase.Struct(
     levels=("design", "minimum", "stretch"),
+    PA1={"design": 5, "minimum": 8, "stretch": 3}, pa1Units='mmag',
+    PF1={"design": 10, "minimum": 20, "stretch": 5}, pf1Units='%',
     PA2={"design": 15, "minimum": 15, "stretch": 10}, pa2Units='mmag',
     D1=5, d1Units='arcmin',
     AM1={"design": 10, "minimum": 20, "stretch": 5}, am1Units='mas',
@@ -76,3 +79,34 @@ def getAstrometricSpec(x=None, level='design'):
         raise ValueError("Unknown astrometric test specification: %s" % str(x))
 
     return AMx, AFx, ADx
+
+
+def loadSrdRequirements(srdSpec, level='design'):
+    """Return the SRD requirements for the specified level as a dict.
+
+    Parameters
+    ----------
+    level : str
+        One of ["design", "minimum", "stretch"]
+
+    Returns
+    -------
+    dict
+        Requirements from SRD for designated `level`
+    """
+
+    knownLevels = srdSpec.levels
+    if level not in knownLevels:
+        raise ValidateErrorUnknownSpecificationLevel("'%s' is not an SRD Specifications Level" % level)
+
+    requirements = {}
+    for k, v in srdSpec.getDict().iteritems():
+        # If the entry has a dict then extract the value from the dict and store
+        # e.g., {'design': 5, 'minimum': 8, 'stretch': 3}
+        if isinstance(v, dict):
+            requirements[k] = v[level]
+        # Otherwise we take the given value (e.g., 'ad1Units': 'mas')
+        else:
+            requirements[k] = v
+
+    return requirements

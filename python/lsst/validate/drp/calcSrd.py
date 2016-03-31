@@ -124,7 +124,9 @@ def calcPA1(matches, magKey, numRandomShuffles=50, verbose=False):
     rmsPA1 = np.array([pa1.rms for pa1 in pa1Samples])
     iqrPA1 = np.array([pa1.iqr for pa1 in pa1Samples])
 
+    PA1 = np.mean(iqrPA1)
     return pipeBase.Struct(name='PA1',
+                           PA1=PA1, pa1Units='mmag',
                            rms=np.mean(rmsPA1), iqr=np.mean(iqrPA1),
                            rmsStd=np.std(rmsPA1), iqrStd=np.std(iqrPA1),
                            rmsUnits='mmag', iqrUnits='mmag',
@@ -160,7 +162,7 @@ def doCalcPA1(groupView, magKey):
                            magDiffsUnits='mmag', magMeanUnits='mag')
 
 
-def calcPA2(groupView, magKey, verbose=False):
+def calcPA2(groupView, magKey, defaultLevel='design', verbose=False):
     """Calculate the fraction of outliers from PA1.
 
     Calculate the fraction of outliers from the median RMS characterizaing
@@ -174,6 +176,10 @@ def calcPA2(groupView, magKey, verbose=False):
          The lookup key of the field storing the magnitude of interest.
          E.g., `magKey = allMatches.schema.find("base_PsfFlux_mag").key`
          where `allMatches` is a the result of lsst.afw.table.MultiMatch.finish()
+    defaultLevel : str
+        One of ('design', 'minimum', 'stretch')
+        While performance against all levels i computed
+        the summary 'PA2', and 'PF1' numbers are presented for `defaultLevel`.
     verbose : bool, optional
         Output additional information on the analysis steps.
 
@@ -213,11 +219,11 @@ def calcPA2(groupView, magKey, verbose=False):
     >>> pa2 = calcPA2(allMatches, psfMagKey)
     >>> print("LSST SRD Key Performance Metric %s" % pa2.name)
     >>> print("minimum: PF1=%2d%% of magDiffs more than PA2 = %4.2f mmag (target is PA2 < 15 mmag)" %
-    ...       (pa2.PF1['minimum'], pa2.minimum))
+    ...       (pa2.PF1['minimum'], pa2.PA2_measured['minimum']))
     >>> print("design:  PF1=%2d%% of magDiffs more than PA2 = %4.2f mmag (target is PA2 < 15 mmag)" %
-    ...       (pa2.PF1['design'], pa2.design))
+    ...       (pa2.PF1['design'], pa2.PA2_measured['design']))
     >>> print("stretch: PF1=%2d%% of magDiffs more than PA2 = %4.2f mmag (target is PA2 < 10 mmag)" %
-    ...       (pa2.PF1['stretch'], pa2.stretch))
+    ...       (pa2.PF1['stretch'], pa2.PA2_measured['stretch']))
 
 
     Notes
@@ -229,13 +235,21 @@ def calcPA2(groupView, magKey, verbose=False):
       following LPM-17 as of 2011-07-06, available at http://ls.st/LPM-17.
     """
 
+    PA2_spec = srdSpec.PA2
+
     magDiffs = groupView.aggregate(getRandomDiffRmsInMas, field=magKey)
-    PF1 = {'minimum': 20, 'design': 10, 'stretch': 5}
-    PF1_percentiles = 100 - np.asarray([PF1['minimum'], PF1['design'], PF1['stretch']])
-    minPA2, designPA2, stretchPA2 = np.percentile(np.abs(magDiffs), PF1_percentiles)
+    PF1_percentiles = 100 - np.asarray([srdSpec.PF1[l] for l in srdSpec.levels])
+    PA2_measured = dict(zip(srdSpec.levels,
+                            np.percentile(np.abs(magDiffs), PF1_percentiles)))
+
+    PF1_measured = {l: 100*np.mean(np.asarray(magDiffs) > srdSpec.PA2[l])
+                    for l in srdSpec.levels}
+
     return pipeBase.Struct(name='PA2', pa2Units='mmag', pf1Units='%',
-                           design=designPA2, minimum=minPA2, stretch=stretchPA2,
-                           PF1=PF1)
+                           PA2=PA2_measured['design'], PF1=PF1_measured['design'],
+                           PA2_measured=PA2_measured,
+                           PF1_measured=PF1_measured,
+                           PF1_spec=srdSpec.PF1, PA2_spec=PA2_spec)
 
 
 def getRandomDiffRmsInMas(array):
@@ -408,6 +422,7 @@ def matchVisitComputeDistance(visit_obj1, ra_obj1, dec_obj1,
 def arcminToRadians(arcmin):
     return np.deg2rad(arcmin/60)
 
+
 def radiansToMilliarcsec(rad):
     return np.rad2deg(rad)*3600*1000
 
@@ -418,11 +433,13 @@ def calcAM1(*args, **kwargs):
     See `calcAMx` for more details."""
     return calcAMx(*args, x=1, D=srdSpec.D1, width=2, **kwargs)
 
+
 def calcAM2(*args, **kwargs):
     """Calculate the SRD definition of astrometric performance for AM2
 
     See `calcAMx` for more details."""
     return calcAMx(*args, x=2, D=srdSpec.D2, width=2, **kwargs)
+
 
 def calcAM3(*args, **kwargs):
     """Calculate the SRD definition of astrometric performance for AM3
@@ -430,10 +447,10 @@ def calcAM3(*args, **kwargs):
     See `calcAMx` for more details."""
     return calcAMx(*args, x=3, D=srdSpec.D3, width=2, **kwargs)
 
+
 def calcAMx(groupView, D=5, width=2, magRange=None,
-            x=None, level="design", 
-            verbose=False,
-           ):
+            x=None, level="design",
+            verbose=False):
     """Calculate the SRD definition of astrometric performance
 
     Parameters
@@ -516,6 +533,7 @@ def calcAMx(groupView, D=5, width=2, magRange=None,
     rmsDistMas = radiansToMilliarcsec(rmsDistances)
     AMx = np.median(rmsDistMas)
     fractionOver = np.mean(np.asarray(rmsDistMas) > AMx_spec+ADx_spec)
+    percentOver = 100*fractionOver
 
     return pipeBase.Struct(
         name='AM%d' % x,
@@ -524,6 +542,7 @@ def calcAMx(groupView, D=5, width=2, magRange=None,
         rmsDistMas=rmsDistMas,
         rmsUnits='mas',
         fractionOver=fractionOver,
+        AFx=percentOver,
         D=D,
         DUnits='arcmin',
         annulus=annulus,
@@ -537,7 +556,7 @@ def calcAMx(groupView, D=5, width=2, magRange=None,
         ADx_spec=ADx_spec,
         afxUnits='%',
         adxUnits='mas',
-        )
+    )
 
 
 def calcRmsDistances(groupView, annulus, magRange=None, verbose=False):

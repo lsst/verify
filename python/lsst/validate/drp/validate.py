@@ -36,11 +36,12 @@ from .calcSrd import calcAM1, calcAM2, calcAM3, calcPA1, calcPA2
 from .check import checkAstrometry, checkPhotometry, positionRms
 from .plot import plotAstrometry, plotPhotometry, plotPA1, plotAMx
 from .print import printPA1, printPA2, printAMx
-from .util import getCcdKeyName, repoNameToPrefix, calcOrNone
-from .io import saveKpmToJson
+from .srdSpec import srdSpec, loadSrdRequirements
+from .util import getCcdKeyName, repoNameToPrefix, calcOrNone, loadParameters
+from .io import saveKpmToJson, loadKpmFromJson
 
 
-def loadAndMatchData(repo, visitDataIds,
+def loadAndMatchData(repo, dataIds,
                      matchRadius=afwGeom.Angle(1, afwGeom.arcseconds),
                      verbose=False):
     """Load data from specific visit.  Match with reference.
@@ -50,7 +51,7 @@ def loadAndMatchData(repo, visitDataIds,
     repo : string
         The repository.  This is generally the directory on disk
         that contains the repository and mapper.
-    visitDataIds : list of dict
+    dataIds : list of dict
         List of `butler` data IDs of Image catalogs to compare to reference.
         The `calexp` cpixel image is needed for the photometric calibration.
     matchRadius :  afwGeom.Angle().
@@ -72,9 +73,9 @@ def loadAndMatchData(repo, visitDataIds,
     # 2016-02-08 MWV:
     # I feel like I could be doing something more efficient with
     # something along the lines of the following:
-    #    dataRefs = [dafPersist.ButlerDataRef(butler, vId) for vId in visitDataIds]
+    #    dataRefs = [dafPersist.ButlerDataRef(butler, vId) for vId in dataIds]
 
-    ccdKeyName = getCcdKeyName(visitDataIds[0])
+    ccdKeyName = getCcdKeyName(dataIds[0])
 
     schema = butler.get(dataset + "_schema", immediate=True).schema
     mapper = SchemaMapper(schema)
@@ -93,7 +94,7 @@ def loadAndMatchData(repo, visitDataIds,
     # create the new extented source catalog
     srcVis = SourceCatalog(newSchema)
 
-    for vId in visitDataIds:
+    for vId in dataIds:
         try:
             calexpMetadata = butler.get("calexp_md", vId, immediate=True)
         except FitsError as fe:
@@ -126,8 +127,8 @@ def loadAndMatchData(repo, visitDataIds,
         tmpCat['base_PsfFlux_snr'][:] = tmpCat['base_PsfFlux_flux'] / tmpCat['base_PsfFlux_fluxSigma']
         with afwImageUtils.CalibNoThrow():
             (tmpCat['base_PsfFlux_mag'][:], tmpCat['base_PsfFlux_magerr'][:]) = \
-             calib.getMagnitude(tmpCat['base_PsfFlux_flux'],
-                                tmpCat['base_PsfFlux_fluxSigma'])
+                calib.getMagnitude(tmpCat['base_PsfFlux_flux'],
+                                   tmpCat['base_PsfFlux_fluxSigma'])
 
         srcVis.extend(tmpCat, False)
         mmatch.add(catalog=tmpCat, dataId=vId)
@@ -167,7 +168,7 @@ def analyzeData(allMatches, safeSnr=50.0, verbose=False):
         good matches contain only objects whose detections all have
           * a PSF Flux measurement with S/N > 1
           * a finite (non-nan) PSF magnitude
-            - This separate check is largely to reject failed zeropoints. 
+            - This separate check is largely to reject failed zeropoints.
           * and do not have flags set for bad, cosmic ray, edge or saturated
     - safeMatches: safe matches, as an afw.table.GroupView;
         safe matches are good matches that are sufficiently bright and sufficiently compact
@@ -183,8 +184,7 @@ def analyzeData(allMatches, safeSnr=50.0, verbose=False):
     psfMagErrKey = allMatches.schema.find("base_PsfFlux_magerr").key
     extendedKey = allMatches.schema.find("base_ClassificationExtendedness_value").key
 
-    goodSnr = 3
-    def goodFilter(cat):
+    def goodFilter(cat, goodSnr=3):
         if len(cat) < nMatchesRequired:
             return False
         for flagKey in flagKeys:
@@ -229,22 +229,209 @@ def analyzeData(allMatches, safeSnr=50.0, verbose=False):
     )
 
 
+def didThisRepoPass(repo, dataIds, configFile, **kwargs):
+    """Convenience function for calling didIPass using the standard conventions for output filenames.
+
+    Parameters
+    ----------
+    repo : str
+        Path name of repository
+    dataIds : list
+        Data Ids that were analyzed
+    configFile : str
+        Configuration file with requirements specified as a dict.  E.g.,
+
+        requirements: {'PA1': 25, 'PA2': 35}
+
+    Returns
+    -------
+    bool
+        Did all of the measured and required metrics pass.
+
+    Raises
+    ------
+    AttributeError
+        If the configuration file does not contain a `requirements` dict.
+
+    See Also
+    --------
+    didIPass : The key function that does the work.
+    """
+    outputPrefix = repoNameToPrefix(repo)
+    filters = set(d['filter'] for d in dataIds)
+    try:
+        requirements = loadParameters(configFile).requirements
+    except AttributeError as ae:
+        print("Configuration file %s does not contain a `requirements` dict." % configFile)
+        raise(ae)
+
+    return didIPass(outputPrefix, filters, requirements, **kwargs)
+
+
+def didThisRepoPassSrd(repo, dataIds, level='design', **kwargs):
+    """Convenience function for calling didIPass using the LSST SRD requirements.
+
+    Parameters
+    ----------
+    repo : str
+        Path name of repository
+    dataIds : list
+        Data Ids that were analyzed
+
+    Returns
+    -------
+    bool
+        Did all of the measured and required metrics pass.
+
+    See Also
+    --------
+    didIPass : The key function that does the work.
+    """
+    outputPrefix = repoNameToPrefix(repo)
+    filters = set(d['filter'] for d in dataIds)
+
+    requirements = loadSrdRequirements(srdSpec, level=level)
+
+    return didIPass(outputPrefix, filters, requirements, **kwargs)
+
+
+def didIPass(*args, **kwargs):
+    """Did this set pass.
+
+    Returns
+    -------
+    bool
+        Did all of the measured and requiremd metrics pass.
+    """
+    passedScores = scoreMetrics(*args, **kwargs)
+
+    didAllPass = True
+    for (metric, filter), passed in passedScores.iteritems():
+        if not passed:
+            print("Failed metric, filter: %s, %s" % (metric, filter))
+            didAllPass = False
+
+    return didAllPass
+
+
+def scoreMetrics(outputPrefix, filters, requirements, verbose=False):
+    """Score Key Performance metrics.  Returns dict((metric, filter), Pass/Fail)
+
+    Parameters
+    ----------
+    outputPrefix : str
+        The starting name for the output JSON files with the results
+    filters : list, str, or None
+        The filters in the analysis.  Output JSON files will be searched as
+            "%s%s" % (outputPrefix, filters[i])
+        If `None`, then JSON files will be searched for as just
+            "%s" % outputPrefix.
+    requirements : dict
+        The requirements on each of the Key Performance Metrics
+        Skips measurements for any metric without an entry in `requirements`.
+
+    Returns
+    -------
+    dict of (str, str) -> bool
+        A dictionary of results.  (metricName, filter) : True/False
+
+
+    We provide the ability to check against configured standards
+    instead of just the srdSpec because
+    1. Different data sets may not lend themselves to satisfying the SRD.
+    2. The pipeline continues to improve.
+       Specifying a set of standards and updating that allows for a natural tightening of requirements.
+
+    Note that there is no filter-dependence for the requirements.
+    """
+    if isinstance(filters, str):
+        filters = list(filters)
+
+    fileSnippet = dict(
+        zip(
+            ("PA1", "PF1", "PA2", "AM1", "AF1", "AM2", "AF2", "AM3", "AF3"),
+            ("PA1", "PA2", "PA2", "AM1", "AM1", "AM2", "AM2", "AM3", "AM3")
+        )
+    )
+    lookupKeyName = dict(
+        zip(
+            ("PA1", "PF1", "PA2", "AM1", "AF1", "AM2", "AF2", "AM3", "AF3"),
+            ("PA1", "PF1", "PA2", "AMx", "AFx", "AMx", "AFx", "AMx", "AFx")
+        )
+    )
+    metricsToConsider = ("PA1", "PF1", "PA2",
+                         "AM1", "AF1", "AM2", "AF2", "AM3", "AF3")
+
+    if verbose:
+        print("{:16s}   {:13s} {:20s}".format("Measured", "Required", "Passes"))
+
+    passed = {}
+    for f in filters:
+        if f:
+            thisPrefix = "%s%s_" % (outputPrefix, f)
+        else:
+            thisPrefix = outputPrefix
+        # get json files
+        # Multiple metrics are sometimes stored in a file.
+        # The names in those files may be generic ("AMx" instead of "AM1")
+        # so we have three different, almost identical tuples here.
+        for metricName in metricsToConsider:
+            jsonFile = "%s%s.%s" % (thisPrefix, fileSnippet[metricName], 'json')
+
+            metricNameKey = lookupKeyName[metricName]
+
+            metricUnitsKey = metricNameKey.lower()+'Units'
+
+            try:
+                metricResults = loadKpmFromJson(jsonFile).getDict()
+            except IOError:
+                print("No results available for %s" % metricName)
+                continue
+
+            if metricName not in requirements:
+                if verbose:
+                    print("No requirement specified for %s.  Skipping." % metricName)
+                continue
+
+            # Check values against configured standards
+            passed[(metricName, f)] = metricResults[metricNameKey] <= requirements[metricName]
+
+            if verbose:
+                kpmInfoToPrint = {
+                    "name": metricName,
+                    "value": metricResults[metricNameKey],
+                    "units": metricResults[metricUnitsKey],
+                    "spec": requirements[metricName],
+                    "result": passed[(metricName, f)],
+                }
+                kpmInfoFormat = "{name:4s}: {value:5.2f} {units:4s} < {spec:5.2f} {units:4s} == {result}"
+                print(kpmInfoFormat.format(**kpmInfoToPrint))
+
+    return passed
+
+
 ####
-def run(repo, visitDataIds, outputPrefix=None, **kwargs):
+def run(repo, dataIds, outputPrefix=None, level="design", verbose=False, **kwargs):
     """Main executable.
 
     Runs multiple filters, if necessary, through repeated calls to `runOneFilter`.
+    Assesses results against SRD specs at specified `level`.
+
     Inputs
     ------
     repo : string
         The repository.  This is generally the directory on disk
         that contains the repository and mapper.
-    visitDataIds : list of dict
+    dataIds : list of dict
         List of `butler` data IDs of Image catalogs to compare to reference.
         The `calexp` cpixel image is needed for the photometric calibration.
     outputPrefix : str, optional
         Specify the beginning filename for output files.
         The name of each filter will be appended to outputPrefix.
+    level : str
+        The level of the specification to check: "design", "minimum", "stretch"
+    verbose : bool
+        Provide detailed output.
 
     Outputs
     -------
@@ -256,7 +443,7 @@ def run(repo, visitDataIds, outputPrefix=None, **kwargs):
         there will be annoyance and sadness as those spaces will appear in the filenames.
     """
 
-    allFilters = set([d['filter'] for d in visitDataIds])
+    allFilters = set([d['filter'] for d in dataIds])
 
     if outputPrefix is None:
         outputPrefix = repoNameToPrefix(repo)
@@ -264,16 +451,29 @@ def run(repo, visitDataIds, outputPrefix=None, **kwargs):
     for filt in allFilters:
         # Do this here so that each outputPrefix will have a different name for each filter.
         thisOutputPrefix = "%s_%s_" % (outputPrefix.rstrip('_'), filt)
-        theseVisitDataIds = [v for v in visitDataIds if v['filter'] == filt]
-        runOneFilter(repo, theseVisitDataIds, outputPrefix=thisOutputPrefix, **kwargs)
+        theseVisitDataIds = [v for v in dataIds if v['filter'] == filt]
+        runOneFilter(repo, theseVisitDataIds, outputPrefix=thisOutputPrefix, verbose=verbose, **kwargs)
+
+    if verbose:
+        print("==============================")
+        print("Comparison against *LSST SRD*.")
+
+    SRDrequirements = {}
+    for k, v in srdSpec.getDict().iteritems():
+        if isinstance(v, dict):
+            SRDrequirements[k] = v[level]
+        else:
+            SRDrequirements[k] = v
+
+    scoreMetrics(outputPrefix, allFilters, SRDrequirements, verbose=verbose)
 
 
 def runOneFilter(repo, visitDataIds, brightSnr=100,
-        medianAstromscatterRef=25, medianPhotoscatterRef=25, matchRef=500,
-        makePrint=True, makePlot=True, makeJson=True,
-        outputPrefix=None,
-        verbose=False,
-        ):
+                 medianAstromscatterRef=25, medianPhotoscatterRef=25, matchRef=500,
+                 makePrint=True, makePlot=True, makeJson=True,
+                 outputPrefix=None,
+                 verbose=False,
+                 **kwargs):
     """Main executable for the case where there is just one filter.
 
     Plot files and JSON files are generated in the local directory
@@ -287,7 +487,7 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
     repo : string
         The repository.  This is generally the directory on disk
         that contains the repository and mapper.
-    visitDataIds : list of dict
+    dataIds : list of dict
         List of `butler` data IDs of Image catalogs to compare to reference.
         The `calexp` cpixel image is needed for the photometric calibration.
     brightSnr : float, optional
@@ -316,6 +516,7 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
 
     allMatches = loadAndMatchData(repo, visitDataIds, verbose=verbose)
     struct = analyzeData(allMatches, brightSnr, verbose=verbose)
+
     magavg = struct.mag
     magerr = struct.magerr
     magrms = struct.magrms
@@ -345,10 +546,14 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
     PA1, PA2 = [func(safeMatches, magKey, verbose=verbose) for func in (calcPA1, calcPA2)]
 
     if makePrint:
+        print("=============================================")
+        print("Detailed comparison against SRD requirements.")
+        print("The LSST SRD is at:  http://ls.st/LPM-17")
         printPA1(PA1)
         printPA2(PA2)
         for metric in (AM1, AM2, AM3):
             if metric:
+                print("--")
                 printAMx(metric)
 
     if makePlot:

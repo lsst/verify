@@ -48,29 +48,23 @@ class LoadDataTestCase(unittest.TestCase):
         pass
 
     def testLoadingOfConfigFileParameters(self):
-        dataIds, brightSnr, \
-            medianAstromscatterRef, medianPhotoscatterRef, matchRef = \
-                util.loadDataIdsAndParameters(self.configFile)
-        self.assertAlmostEqual(brightSnr, 100)
-        self.assertAlmostEqual(medianAstromscatterRef, 25)
-        self.assertAlmostEqual(medianPhotoscatterRef, 25)
-        self.assertAlmostEqual(matchRef, 5000)
+        pbStruct = util.loadDataIdsAndParameters(self.configFile)
+        self.assertAlmostEqual(pbStruct.brightSnr, 100)
+        self.assertAlmostEqual(pbStruct.medianAstromscatterRef, 25)
+        self.assertAlmostEqual(pbStruct.medianPhotoscatterRef, 25)
+        self.assertAlmostEqual(pbStruct.matchRef, 5000)
 
     def testLoadingOfConfigFileDataIds(self):
-        dataIds, brightSnr, \
-            medianAstromscatterRef, medianPhotoscatterRef, matchRef = \
-                util.loadDataIdsAndParameters(self.configFile)
+        pbStruct = util.loadDataIdsAndParameters(self.configFile)
         # Tests of the dict entries require constructing and comparing sets
-        self.assertEqual(set(['r']), set([d['filter'] for d in dataIds]))
+        self.assertEqual(set(['r']), set([d['filter'] for d in pbStruct.dataIds]))
         self.assertEqual(set([849375, 850587]),
-                         set([d['visit'] for d in dataIds]))
+                         set([d['visit'] for d in pbStruct.dataIds]))
 
     def testLoadingEmptyDataIds(self):
-        dataIds, brightSnr, \
-            medianAstromscatterRef, medianPhotoscatterRef, matchRef = \
-                util.loadDataIdsAndParameters(self.configFileNoDataIds)
+        pbStruct = util.loadDataIdsAndParameters(self.configFileNoDataIds)
         # Tests of the dict entries require constructing and comparing sets
-        self.assertFalse(dataIds)
+        self.assertFalse(pbStruct.dataIds)
 
 def suite():
     """Returns a suite containing all the test cases in this module."""

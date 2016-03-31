@@ -26,6 +26,7 @@ import yaml
 import lsst.afw.geom as afwGeom
 import lsst.afw.coord as afwCoord
 import lsst.daf.persistence as dafPersist
+import lsst.pipe.base as pipeBase
 
 
 def averageRaDec(ra, dec):
@@ -57,9 +58,11 @@ def averageRaDec(ra, dec):
 def averageRaDecFromCat(cat):
     return averageRaDec(cat.get('coord_ra'), cat.get('coord_dec'))
 
+
 def averageRaFromCat(cat):
     meanRa, meanDec = averageRaDecFromCat(cat)
     return meanRa
+
 
 def averageDecFromCat(cat):
     meanRa, meanDec = averageRaDecFromCat(cat)
@@ -143,6 +146,27 @@ def discoverDataIds(repo, **kwargs):
     return dataIds
 
 
+def loadParameters(configFile):
+    """Load configuration parameters from a yaml file.
+
+    Parameters
+    ----------
+    configFile : str
+        YAML file that stores visit, filter, ccd,
+        good_mag_limit, medianAstromscatterRef, medianPhotoscatterRef, matchRef
+        and other parameters
+
+    Returns
+    -------
+    pipeBase.Struct
+        with configuration parameters
+    """
+    with open(configFile, mode='r') as stream:
+        data = yaml.load(stream)
+
+    return pipeBase.Struct(**data)
+
+
 def loadDataIdsAndParameters(configFile):
     """Load data IDs, magnitude range, and expected metrics from a yaml file.
 
@@ -150,29 +174,29 @@ def loadDataIdsAndParameters(configFile):
     ----------
     configFile : str
         YAML file that stores visit, filter, ccd,
+        and additional configuration parameters such as
         brightSnr, medianAstromscatterRef, medianPhotoscatterRef, matchRef
 
     Returns
     -------
-    dict, float, float, float
-        dataIds, brightSnr, medianRef, matchRef
+    pipeBase.Struct
+        with attributes of
+        dataIds - dict
+        and configuration parameters
     """
-    stream = open(configFile, mode='r')
-    data = yaml.load(stream)
+    parameters = loadParameters(configFile).getDict()
 
-    ccdKeyName = getCcdKeyName(data)
+    ccdKeyName = getCcdKeyName(parameters)
     try:
-        visitDataIds = constructDataIds(data['filter'], data['visits'],
-                                        data[ccdKeyName], ccdKeyName)
-    except KeyError as ke:
-        visitDataIds = []
+        dataIds = constructDataIds(parameters['filter'], parameters['visits'],
+                                   parameters[ccdKeyName], ccdKeyName)
+    except KeyError:
+        # If the above parameters are not in the `parameters` dict, 
+        # presumably because they were not in the configFile
+        # then we return no dataIds.
+        dataIds = []
 
-    return (visitDataIds,
-            data['brightSnr'],
-            data['medianAstromscatterRef'],
-            data['medianPhotoscatterRef'],
-            data['matchRef'],
-           )
+    return pipeBase.Struct(dataIds=dataIds, **parameters)
 
 
 def constructDataIds(filters, visits, ccds, ccdKeyName='ccd'):
@@ -204,11 +228,11 @@ def constructDataIds(filters, visits, ccds, ccdKeyName='ccd'):
         filters = [filters for _ in visits]
 
     assert len(filters) == len(visits)
-    visitDataIds = [{'filter': f, 'visit': v, ccdKeyName: c}
-                    for (f, v) in zip(filters, visits)
-                    for c in ccds]
+    dataIds = [{'filter': f, 'visit': v, ccdKeyName: c}
+               for (f, v) in zip(filters, visits)
+               for c in ccds]
 
-    return visitDataIds
+    return dataIds
 
 
 def loadRunList(configFile):

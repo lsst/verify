@@ -22,6 +22,7 @@ from __future__ import print_function, division
 
 from .srdSpec import srdSpec
 
+
 def printPA1(PA1):
     """Print the calculated PA1 from the LSST SRD."""
     print("PA1(RMS) = %4.2f+-%4.2f %s" % (PA1.rms, PA1.rmsStd, PA1.rmsUnits))
@@ -29,11 +30,18 @@ def printPA1(PA1):
 
 
 def printPA2(pa2):
-    """Print the calculated PA2 from the LSST SRD."""
+    """Print the calculated PA2 and PF1 from the LSST SRD."""
+    print('--')
     for level in ('minimum', 'design', 'stretch'):
         print("%-7s: PF1=%2d%s of diffs more than PA2 = %4.2f %s (target is < %2.0f %s)" %
-              (level, pa2.PF1[level], pa2.pf1Units, pa2.getDict()[level], pa2.pa2Units,
+              (level, pa2.PF1_spec[level], pa2.pf1Units, pa2.PA2_measured[level], pa2.pa2Units,
                srdSpec.PA2[level], srdSpec.pa2Units))
+
+    print('--')
+    for level in ('minimum', 'design', 'stretch'):
+        print("%-7s: PF1=%2d%s of diffs more than PA2 = %4.2f %s (target is < %2.0f %s)" %
+              (level, pa2.PF1_measured[level], pa2.pf1Units, pa2.PA2_spec[level], pa2.pa2Units,
+               srdSpec.PF1[level], srdSpec.pf1Units))
 
 
 def printAMx(AMx):
@@ -49,11 +57,11 @@ def printAMx(AMx):
 
     percentOver = 100*AMx.fractionOver
 
-    print("Median of distribution of RMS of distance of stellar pairs.")
-    print("%s goals" % AMx.level.upper())
-    print("For stars from %.2f < mag < %.2f" % (AMx.magRange[0], AMx.magRange[1]))
-    print("from D = [%.2f, %.2f] %s, %s=%.2f %s (target is < %.0f %s)." %
-          (AMx.annulus[0], AMx.annulus[1], AMx.annulusUnits,
-           AMx.name, AMx.AMx, AMx.amxUnits, AMx.AMx_spec, AMx.amxUnits))
+    print("Median RMS of distances between pairs of stars.")
+    print("  %s goals" % AMx.level.upper())
+    print("  For stars from %.2f < mag < %.2f and D = [%.2f, %.2f] %s" %
+          (AMx.magRange[0], AMx.magRange[1], AMx.annulus[0], AMx.annulus[1], AMx.annulusUnits))
+    print("%s=%.2f %s (target is < %.0f %s)." %
+          (AMx.name, AMx.AMx, AMx.amxUnits, AMx.AMx_spec, AMx.amxUnits))
     print("  %.2f%% of sample deviates by >%.0f %s (target is < %.0f%%)" %
           (percentOver, AMx.ADx_spec+AMx.AMx_spec, AMx.adxUnits, AMx.AFx_spec))
