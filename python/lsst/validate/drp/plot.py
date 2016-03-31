@@ -160,11 +160,72 @@ def plotExpFit(x, y, y_err, deg=2, ax=None, verbose=False):
     return fit_params
 
 
+def plotAstromErrModelFit():
+    """Fit and plot model of photometric error from LSST Overview paper
+    http://arxiv.org/abs/0805.2366v4
+
+    Astrometric Errors
+    error = C * theta / SNR
+    """
+    pass
+
+
+def photErrModel(mag, sigmaSys, gamma, m5):
+    """Fit model of photometric error from LSST Overview paper
+    http://arxiv.org/abs/0805.2366v4
+
+    Photometric errors described by
+    Eq. 4
+    sigma_1^2 = sigma_sys^2 + sigma_rand^2
+
+    Eq. 5
+    sigma_(rand) = (0.04 - gamma) * x + gamma * x^2 [mag^2]
+    where x = 10**(0.4*(m-m_5))
+    """
+    x = 10**(0.4*(mag - m5))
+    sigmaRandSq = (0.04 - gamma) * x + gamma * x**2
+    sigmaSq = sigmaSys**2 + sigmaRandSq
+    return np.sqrt(sigmaSq)
+
+
+def plotPhotErrModelFit(mag, mmag_err, ax=None, verbose=True):
+    """Fit and plot model of photometric error from LSST Overview paper
+
+    """
+
+    if ax is None:
+        ax = plt.figure()
+        xlim = [10, 30]
+    else:
+        xlim = ax.get_xlim()
+
+    mag_err = mmag_err / 1000
+    popt, pcov = curve_fit(photErrModel, mag, mag_err, p0=[0.01, 0.039, 24.35])
+    fit_params = popt
+    x_model = np.linspace(*xlim, num=100)
+    fit_model_mag_err = photErrModel(x_model, *fit_params)
+    fit_model_mmag_err = 1000*fit_model_mag_err
+    sigmaSysMmag, gamma, m5Mag = fit_params[:]
+    label = r'$\sigma_{\rm sys\ mmag}$=%5.2f, $\gamma=$%6.4f, $m_5=$%6.3f mag' % \
+        (1000*sigmaSysMmag, gamma, m5Mag) 
+    tuple(fit_params)
+
+    if verbose:
+        print(fit_params)
+        print(label)
+
+    ax.plot(x_model, fit_model_mmag_err, color='red',
+            label=label)
+
+    return fit_params
+
+
 def plotMagerrFit(*args, **kwargs):
     plotExpFit(*args, **kwargs)
 
 
 def plotPhotometry(mag, snr, mmagerr, mmagrms, brightSnr=100,
+                   filterName='Magnitude',
                    outputPrefix=""):
     """Plot photometric RMS for matched sources.
 
@@ -180,6 +241,8 @@ def plotPhotometry(mag, snr, mmagerr, mmagrms, brightSnr=100,
         Magnitude RMS across visits [millimag]
     brightSnr : float, optional
         Minimum SNR for a star to be considered "bright".
+    filterName : str, optional
+        Name of the observed filter to use on axis labels.
     outputPrefix : str, optional
         Prefix to use for filename of plot file.  Will also be used in plot titles.
         E.g., outputPrefix='Cfht_output_r_' will result in a file named
@@ -210,7 +273,7 @@ def plotPhotometry(mag, snr, mmagerr, mmagrms, brightSnr=100,
                      s=10, color=color['bright'],
                      label='SNR > %.0f' % brightSnr)
 
-    ax[0][1].set_xlabel("Magnitude")
+    ax[0][1].set_xlabel("%s [mag]" % filterName)
     ax[0][1].set_ylabel("RMS [mmag]")
     ax[0][1].set_xlim([17, 24])
     ax[0][1].set_ylim([0, 500])
@@ -226,8 +289,8 @@ def plotPhotometry(mag, snr, mmagerr, mmagrms, brightSnr=100,
     ax[1][0].set_yscale('log')
     ax[1][0].plot([0, 1000], [0, 1000],
                   linestyle='--', color='black', linewidth=2)
-    ax[1][0].set_xlabel("RMS of Quoted Magnitude [mmag]")
-    ax[1][0].set_ylabel("Median Quoted Magnitude Err [mmag]")
+    ax[1][0].set_xlabel("RMS [mmag]")
+    ax[1][0].set_ylabel("Median Reported Magnitude Err [mmag]")
     brightSnrInMmag = 2.5*np.log10(1 + (1/brightSnr)) * 1000
 
     ax[1][0].axhline(brightSnrInMmag, color='red', linewidth=4, linestyle='dashed',
@@ -242,8 +305,8 @@ def plotPhotometry(mag, snr, mmagerr, mmagrms, brightSnr=100,
                      s=10, color=color['bright'],
                      label=None,
                      )
-    ax[1][1].set_xlabel("Magnitude [mag]")
-    ax[1][1].set_ylabel("Median Quoted Magnitude Err [mmag]")
+    ax[1][1].set_xlabel("%s [mag]" % filterName)
+    ax[1][1].set_ylabel("Median Reported Magnitude Err [mmag]")
     ax[1][1].set_xlim([17, 24])
     ax[1][1].set_ylim([1, 500])
     ax[1][1].axhline(brightSnrInMmag, color='red', linewidth=4, linestyle='dashed',
@@ -262,7 +325,7 @@ def plotPhotometry(mag, snr, mmagerr, mmagrms, brightSnr=100,
                 label=r'SNR > %.0f' % (brightSnr))
 
     w, = np.where(mmagerr < 200)
-    plotMagerrFit(mag[w], mmagerr[w], mmagerr[w], ax=ax[1][1])
+    plotPhotErrModelFit(mag[w], mmagerr[w], ax=ax[1][1])
     ax[1][1].legend(loc='upper left')
 
     plt.suptitle("Photometry Check : %s" % outputPrefix.rstrip('_'), fontsize=30)

@@ -514,6 +514,7 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
     if outputPrefix is None:
         outputPrefix = repoNameToPrefix(repo)
 
+    filterName = set([dId['filter'] for dId in visitDataIds]).pop()
     allMatches = loadAndMatchData(repo, visitDataIds, verbose=verbose)
     struct = analyzeData(allMatches, brightSnr, verbose=verbose)
 
@@ -537,7 +538,7 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
         plotAstrometry(dist, magavg, struct.snr,
                        brightSnr=brightSnr, outputPrefix=outputPrefix)
         plotPhotometry(magavg, struct.snr, mmagerr, mmagrms,
-                       brightSnr=brightSnr, outputPrefix=outputPrefix)
+                       brightSnr=brightSnr, filterName=filterName, outputPrefix=outputPrefix)
 
     magKey = allMatches.schema.find("base_PsfFlux_mag").key
 
