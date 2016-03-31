@@ -32,6 +32,7 @@ from lsst.validate.drp import validate, util
 if __name__ == "__main__":
     description = """
     Calculate and plot validation Key Project Metrics from the LSST SRD.
+    http://ls.st/LPM-17
 
     Produces results to:
     STDOUT
@@ -57,6 +58,8 @@ if __name__ == "__main__":
     parser.add_argument('--noplot', dest='makePlot',
                         action='store_false',
                         help='Skip making plots of performance.')
+    parser.add_argument('--level', type=str, default='design',
+                        help='Level of SRD requirement to meet: "minimum", "design", "stretch"')
 
     args = parser.parse_args()
 
@@ -78,6 +81,7 @@ if __name__ == "__main__":
             print("VISITDATAIDS: ", kwargs['dataIds'])
 
     kwargs['verbose'] = args.verbose
+    kwargs['level'] = args.level
 
     validate.run(args.repo, **kwargs)
 
@@ -90,6 +94,7 @@ if __name__ == "__main__":
             print("Comparison against *LSST SRD* '%s' requirements." % level)
         passedSrd = validate.didThisRepoPassSrd(args.repo,
                                                 kwargs['dataIds'],
+                                                level=kwargs['level'],
                                                 verbose=kpm_verbose)
 
         if kpm_verbose:

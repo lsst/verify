@@ -60,6 +60,8 @@ class JsonTestCase(unittest.TestCase):
         # Here we get a pipeBase.Struct back.
         readBackData = loadKpmFromJson(tmpFilepath)
         self.assertEqual(readBackData.foo, 2)
+        self.assertEqual(readBackData.bar, [10, 20])
+        np.testing.assert_array_equal(readBackData.hard, np.array([5, 10]))
 
         os.unlink(tmpFilepath)
 

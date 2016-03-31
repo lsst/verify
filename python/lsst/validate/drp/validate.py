@@ -269,7 +269,7 @@ def didThisRepoPass(repo, dataIds, configFile, **kwargs):
 
 
 def didThisRepoPassSrd(repo, dataIds, level='design', **kwargs):
-    """Convenience function for calling didIPass using the LSST SRD requiremenst.
+    """Convenience function for calling didIPass using the LSST SRD requirements.
 
     Parameters
     ----------
@@ -546,12 +546,14 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
     PA1, PA2 = [func(safeMatches, magKey, verbose=verbose) for func in (calcPA1, calcPA2)]
 
     if makePrint:
-        print("========================================")
+        print("=============================================")
         print("Detailed comparison against SRD requirements.")
+        print("The LSST SRD is at:  http://ls.st/LPM-17")
         printPA1(PA1)
         printPA2(PA2)
         for metric in (AM1, AM2, AM3):
             if metric:
+                print("--")
                 printAMx(metric)
 
     if makePlot:
