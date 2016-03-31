@@ -181,6 +181,22 @@ def photErrModel(mag, sigmaSys, gamma, m5):
     Eq. 5
     sigma_(rand) = (0.04 - gamma) * x + gamma * x^2 [mag^2]
     where x = 10**(0.4*(m-m_5))
+
+    Parameters
+    ----------
+    mag : list or numpy.array
+        Magnitude
+    sigmaSq : float
+        Limiting systematics floor [mag]
+    gamma : float
+        proxy for sky brightness and readout noise
+    m5 : float
+        5-sigma depth [mag]
+
+    Returns
+    -------
+    numpy.array
+        Result of noise estimation function
     """
     x = 10**(0.4*(mag - m5))
     sigmaRandSq = (0.04 - gamma) * x + gamma * x**2
@@ -191,6 +207,21 @@ def photErrModel(mag, sigmaSys, gamma, m5):
 def plotPhotErrModelFit(mag, mmag_err, ax=None, verbose=True):
     """Fit and plot model of photometric error from LSST Overview paper
 
+    Parameters
+    ----------
+    mag : list or numpy.array
+        Magnitude
+    mag_err : list or numpy.array
+        Magnitude uncertainty or variation in *mmag*.
+    ax : matplotlib.Axis, optional
+        The Axis object to plot to.
+    verbose : bool, optional
+        Produce extra output to STDOUT
+
+    Returns
+    -------
+    float, float, float
+        sigmaSys, gamma, m5 fit parameters.
     """
 
     if ax is None:
@@ -208,7 +239,6 @@ def plotPhotErrModelFit(mag, mmag_err, ax=None, verbose=True):
     sigmaSysMmag, gamma, m5Mag = fit_params[:]
     label = r'$\sigma_{\rm sys\ mmag}$=%5.2f, $\gamma=$%6.4f, $m_5=$%6.3f mag' % \
         (1000*sigmaSysMmag, gamma, m5Mag) 
-    tuple(fit_params)
 
     if verbose:
         print(fit_params)
