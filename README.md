@@ -106,6 +106,7 @@ While `examples/runCfhtTest.sh` and `examples/runDecamTest.sh` respectively do a
 2. Ingest the files into the repository
     ```
     mkdir -p CFHT/input
+    echo lsst.obs.cfht.MegacamMapper > CFHT/input/_mapper
     ingestImages.py CFHT/input "${VALIDATION_DATA_CFHT_DIR}"/raw/*.fz --mode link
     ```
 
