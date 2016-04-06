@@ -164,7 +164,7 @@ def plotExpFit(x, y, y_err, deg=2, ax=None, verbose=False):
     return fit_params
 
 
-def astromErrModel(snr, C, theta=1):
+def astromErrModel(snr, theta=1, sigma_sys=0.01, C=1):
     """Calculate expected astrometric uncertainty based on SNR.
 
     mas = C*theta/SNR
@@ -173,23 +173,24 @@ def astromErrModel(snr, C, theta=1):
     ----------
     snr : list or numpy.array
         S/N of photometric measurements
+    theta : float or numpy.array, optional
+        Seeing [mas]
+    sigma_sys : float
+        Systematic error floor [mas]
     C : float
         Scaling factor
-    theta : float or numpy.array, optional
-        Seeing [arcsec]
     verbose : bool, optional
         Produce extra output to STDOUT
 
     Returns
     -------
     np.array
-        Expected astrometric uncertainty.
-        Units are those of theta.
+        Expected astrometric uncertainty. [mas]
     """
-    return C*theta/snr
+    return C*theta/snr + sigma_sys
 
 
-def plotAstromErrModelFit(snr, dist, ax=None, verbose=True):
+def plotAstromErrModelFit(snr, dist, color='red', ax=None, verbose=True):
     """Fit and plot model of photometric error from LSST Overview paper
     http://arxiv.org/abs/0805.2366v4
 
@@ -214,19 +215,23 @@ def plotAstromErrModelFit(snr, dist, ax=None, verbose=True):
     else:
         xlim = ax.get_xlim()
 
-    popt, pcov = curve_fit(astromErrModel, snr, dist, p0=[1])
+    popt, pcov = curve_fit(astromErrModel, snr, dist, p0=[1, 0.01])
     fit_params = popt
     x_model = np.logspace(np.log10(xlim[0]), np.log10(xlim[1]), num=100)
     fit_model_mas_err = astromErrModel(x_model, *fit_params)
-    C_theta = fit_params[0]
-    label = r'$C\theta$ = %.4g [mas]' % C_theta
+    C_theta, sigma_sys = fit_params
+    label = r'$C\theta$, $\sigma_{\rm sys}$ =' + '\n' + \
+            '%.4g, %.4g [mas]' % (C_theta, sigma_sys)
 
     if verbose:
         print(fit_params)
         print(label)
 
-    ax.plot(x_model, fit_model_mas_err, color='red',
+    ax.plot(x_model, fit_model_mas_err,
+            color=color, linewidth=2,
             label=label)
+    # Set the x limits back to their original values.
+    ax.set_xlim(xlim)
 
     return fit_params
 
@@ -299,7 +304,7 @@ def plotPhotErrModelFit(mag, mmag_err, color='red', ax=None, verbose=True):
     fit_model_mmag_err = 1000*fit_model_mag_err
     sigmaSysMmag, gamma, m5Mag = fit_params[:]
     labelFormatStr = r'$\sigma_{\rm sys} {\rm [mmag]}$, $\gamma$, $m_5 {\rm [mag]}$=' + '\n' + \
-                     r'%5.2f, %6.4f, %6.3f' 
+                     r'%6.4f, %6.4f, %6.3f' 
     label = labelFormatStr % (1000*sigmaSysMmag, gamma, m5Mag)
 
     if verbose:
