@@ -66,7 +66,7 @@ def plotOutlinedLines(ax_plot, x1, x2, x1_color=color['all'], x2_color=color['br
     ax_plot(x2, color=x2_color, linewidth=3)
 
 
-def plotAstrometry(dist, mag, snr, brightSnr=100,
+def plotAstrometry(dist, mag, snr, fit_params=None, brightSnr=100,
                    outputPrefix=""):
     """Plot angular distance between matched sources from different exposures.
 
@@ -80,6 +80,8 @@ def plotAstrometry(dist, mag, snr, brightSnr=100,
         Mean magnitude of PSF flux
     snr : list or numpy.array
         Median SNR of PSF flux
+    fit_params : list or numpy.array
+        Fit parameters to display
     brightSnr : float, optional
         Minimum SNR for a star to be considered "bright".
     outputPrefix : str, optional
@@ -138,8 +140,22 @@ def magerrModel(x, a, b):
     return expModel(x, a, b, norm=5)
 
 
-def plotExpFit(x, y, y_err, deg=2, ax=None, verbose=False):
-    """Fit and plot an exponential quadratic to x, y, y_err.
+def fitExp(x, y, y_err, deg=2):
+    """Fit an exponential quadratic to x, y, y_err.
+    """
+    fit_params, fit_param_covariance = \
+        curve_fit(expModel, x, y, p0=[1, 0.02, 5], sigma=y_err)
+
+    return fit_params
+
+def plotExpFit(x, y, y_err, fit_params=None, deg=2, ax=None, verbose=False):
+    """Plot an exponential quadratic fit to x, y, y_err.
+
+    Parameters
+    ----------
+    fit_params : list or numpy.array
+        Fit parameters to display
+        If None, then will be fit.
     """
 
     if ax is None:
@@ -148,8 +164,9 @@ def plotExpFit(x, y, y_err, deg=2, ax=None, verbose=False):
     else:
         xlim = ax.get_xlim()
 
-    popt, pcov = curve_fit(expModel, x, y, p0=[1, 0.02, 5], sigma=y_err)
-    fit_params = popt
+    if fit_params is None:
+        fit_params = fitExp(x, y, y_err, deg=2)
+
     x_model = np.linspace(*xlim, num=100)
     fit_model = expModel(x_model, *fit_params)
     label = '%.4g exp(mag/%.4g) + %.4g' % \
@@ -160,8 +177,6 @@ def plotExpFit(x, y, y_err, deg=2, ax=None, verbose=False):
 
     ax.plot(x_model, fit_model, color='red',
             label=label)
-
-    return fit_params
 
 
 def astromErrModel(snr, theta=1, sigma_sys=0.01, C=1):
@@ -190,8 +205,16 @@ def astromErrModel(snr, theta=1, sigma_sys=0.01, C=1):
     return C*theta/snr + sigma_sys
 
 
-def plotAstromErrModelFit(snr, dist, color='red', ax=None, verbose=True):
-    """Fit and plot model of photometric error from LSST Overview paper
+def fitAstromErrModel(snr, dist):
+    fit_params, fit_param_covariance = \
+        curve_fit(astromErrModel, snr, dist, p0=[1, 0.01])
+
+    return fit_params
+
+
+def plotAstromErrModelFit(snr, dist, fit_params=None, 
+                          color='red', ax=None, verbose=True):
+    """Plot model of photometric error from LSST Overview paper
     http://arxiv.org/abs/0805.2366v4
 
     Astrometric Errors
@@ -215,8 +238,9 @@ def plotAstromErrModelFit(snr, dist, color='red', ax=None, verbose=True):
     else:
         xlim = ax.get_xlim()
 
-    popt, pcov = curve_fit(astromErrModel, snr, dist, p0=[1, 0.01])
-    fit_params = popt
+    if fit_params is None:
+        fit_params = fitAstromErrModel(snr, dist)
+
     x_model = np.logspace(np.log10(xlim[0]), np.log10(xlim[1]), num=100)
     fit_model_mas_err = astromErrModel(x_model, *fit_params)
     C_theta, sigma_sys = fit_params
@@ -232,8 +256,6 @@ def plotAstromErrModelFit(snr, dist, color='red', ax=None, verbose=True):
             label=label)
     # Set the x limits back to their original values.
     ax.set_xlim(xlim)
-
-    return fit_params
 
 
 def photErrModel(mag, sigmaSys, gamma, m5):
@@ -269,25 +291,43 @@ def photErrModel(mag, sigmaSys, gamma, m5):
     sigmaSq = sigmaSys**2 + sigmaRandSq
     return np.sqrt(sigmaSq)
 
-
-def plotPhotErrModelFit(mag, mmag_err, color='red', ax=None, verbose=True):
-    """Fit and plot model of photometric error from LSST Overview paper
+def fitPhotErrModel(mag, mmag_err):
+    """Fit model of photometric error from LSST Overview paper
 
     Parameters
     ----------
     mag : list or numpy.array
         Magnitude
-    mag_err : list or numpy.array
+    mmag_err : list or numpy.array
         Magnitude uncertainty or variation in *mmag*.
-    ax : matplotlib.Axis, optional
-        The Axis object to plot to.
-    verbose : bool, optional
-        Produce extra output to STDOUT
 
     Returns
     -------
     float, float, float
         sigmaSys, gamma, m5 fit parameters.
+    """
+    mag_err = mmag_err / 1000
+    fit_params, fit_param_covariance = \
+        curve_fit(photErrModel, mag, mag_err, p0=[0.01, 0.039, 24.35])
+
+    return fit_params
+
+
+def plotPhotErrModelFit(mag, mmag_err, fit_params=None, color='red', ax=None, verbose=True):
+    """plot model of photometric error from LSST Overview paper
+
+    Parameters
+    ----------
+    mag : list or numpy.array
+        Magnitude
+    mmag_err : list or numpy.array
+        Magnitude uncertainty or variation in *mmag*.
+    fit_params : list or numpy.array
+        Fit parameters to display
+    ax : matplotlib.Axis, optional
+        The Axis object to plot to.
+    verbose : bool, optional
+        Produce extra output to STDOUT
     """
 
     if ax is None:
@@ -296,9 +336,9 @@ def plotPhotErrModelFit(mag, mmag_err, color='red', ax=None, verbose=True):
     else:
         xlim = ax.get_xlim()
 
-    mag_err = mmag_err / 1000
-    popt, pcov = curve_fit(photErrModel, mag, mag_err, p0=[0.01, 0.039, 24.35])
-    fit_params = popt
+    if fit_params is None:
+        fit_params = fitPhotErrModel(mag, mmag_err)
+
     x_model = np.linspace(*xlim, num=100)
     fit_model_mag_err = photErrModel(x_model, *fit_params)
     fit_model_mmag_err = 1000*fit_model_mag_err
