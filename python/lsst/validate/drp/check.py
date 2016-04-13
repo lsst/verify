@@ -21,6 +21,7 @@
 from __future__ import print_function, division
 
 import numpy as np
+from scipy.optimize import curve_fit
 
 import lsst.afw.geom as afwGeom
 
@@ -63,6 +64,44 @@ def magNormDiff(cat):
     normDiff = (mag - mag_avg) / magerr
 
     return normDiff
+
+
+def fitExp(x, y, y_err, deg=2):
+    """Fit an exponential quadratic to x, y, y_err.
+    """
+    fit_params, fit_param_covariance = \
+        curve_fit(expModel, x, y, p0=[1, 0.02, 5], sigma=y_err)
+
+    return fit_params
+
+
+def fitAstromErrModel(snr, dist):
+    fit_params, fit_param_covariance = \
+        curve_fit(astromErrModel, snr, dist, p0=[1, 0.01])
+
+    return fit_params
+
+
+def fitPhotErrModel(mag, mmag_err):
+    """Fit model of photometric error from LSST Overview paper
+
+    Parameters
+    ----------
+    mag : list or numpy.array
+        Magnitude
+    mmag_err : list or numpy.array
+        Magnitude uncertainty or variation in *mmag*.
+
+    Returns
+    -------
+    float, float, float
+        sigmaSys, gamma, m5 fit parameters.
+    """
+    mag_err = mmag_err / 1000
+    fit_params, fit_param_covariance = \
+        curve_fit(photErrModel, mag, mag_err, p0=[0.01, 0.039, 24.35])
+
+    return fit_params
 
 
 def positionRms(cat):
@@ -132,16 +171,18 @@ def checkAstrometry(snr, dist, match,
     print("Astrometric scatter (median) - snr > %.1f : %.1f %s" %
           (brightSnr, astromScatter, "mas"))
 
+    fit_params = fitAstromErrModel(snr[bright], dist[bright])
+
     if astromScatter > medianRef:
         print("Median astrometric scatter %.1f %s is larger than reference : %.1f %s " %
               (astromScatter, "mas", medianRef, "mas"))
     if match < matchRef:
         print("Number of matched sources %d is too small (shoud be > %d)" % (match, matchRef))
 
-    return astromScatter
+    return astromScatter, fit_params
 
 
-def checkPhotometry(snr, mag, mmagrms, dist, match,
+def checkPhotometry(snr, mag, mmagErr, mmagrms, dist, match,
                     brightSnr=100,
                     medianRef=100, matchRef=500):
     """Print out the astrometric scatter for all stars, and for good stars.
@@ -151,9 +192,11 @@ def checkPhotometry(snr, mag, mmagrms, dist, match,
     snr : list or numpy.array
         Median SNR of PSF flux
     mag : list or numpy.array
-        Average magnitudes of each star
+        Average magnitudes of each star.  [mag]
+    mmagErr : list or numpy.array
+        Uncertainties in magnitudes of each star.  [mmag]
     mmagrms ; list or numpy.array
-        Magnitude RMS of the multiple observation of each star.
+        Magnitude RMS of the multiple observation of each star. [mmag]
     dist : list or numpy.array
         Distances between successive measurements of one star
     match : int
@@ -185,6 +228,8 @@ def checkPhotometry(snr, mag, mmagrms, dist, match,
     print("Photometric scatter (median) - SNR > %.1f : %.1f %s" %
           (brightSnr, photoScatter, "mmag"))
 
+    fit_params = fitPhotErrModel(mag[bright], mmagErr[bright])
+
     if photoScatter > medianRef:
         print("Median photometric scatter %.3f %s is larger than reference : %.3f %s "
               % (photoScatter, "mmag", medianRef, "mag"))
@@ -192,4 +237,64 @@ def checkPhotometry(snr, mag, mmagrms, dist, match,
         print("Number of matched sources %d is too small (shoud be > %d)"
               % (match, matchRef))
 
-    return photoScatter
+    return photoScatter, fit_params
+
+
+def astromErrModel(snr, theta=1, sigma_sys=0.01, C=1):
+    """Calculate expected astrometric uncertainty based on SNR.
+
+    mas = C*theta/SNR
+
+    Parameters
+    ----------
+    snr : list or numpy.array
+        S/N of photometric measurements
+    theta : float or numpy.array, optional
+        Seeing [mas]
+    sigma_sys : float
+        Systematic error floor [mas]
+    C : float
+        Scaling factor
+    verbose : bool, optional
+        Produce extra output to STDOUT
+
+    Returns
+    -------
+    np.array
+        Expected astrometric uncertainty. [mas]
+    """
+    return C*theta/snr + sigma_sys
+
+
+def photErrModel(mag, sigmaSys, gamma, m5):
+    """Fit model of photometric error from LSST Overview paper
+    http://arxiv.org/abs/0805.2366v4
+
+    Photometric errors described by
+    Eq. 4
+    sigma_1^2 = sigma_sys^2 + sigma_rand^2
+
+    Eq. 5
+    sigma_(rand) = (0.04 - gamma) * x + gamma * x^2 [mag^2]
+    where x = 10**(0.4*(m-m_5))
+
+    Parameters
+    ----------
+    mag : list or numpy.array
+        Magnitude
+    sigmaSq : float
+        Limiting systematics floor [mag]
+    gamma : float
+        proxy for sky brightness and readout noise
+    m5 : float
+        5-sigma depth [mag]
+
+    Returns
+    -------
+    numpy.array
+        Result of noise estimation function
+    """
+    x = 10**(0.4*(mag - m5))
+    sigmaRandSq = (0.04 - gamma) * x + gamma * x**2
+    sigmaSq = sigmaSys**2 + sigmaRandSq
+    return np.sqrt(sigmaSq)

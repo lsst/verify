@@ -23,7 +23,7 @@ from __future__ import print_function, division
 import matplotlib.pylab as plt
 import numpy as np
 import scipy.stats
-from scipy.optimize import curve_fit
+from .check import fitExp, fitAstromErrModel, fitPhotErrModel, astromErrModel, photErrModel
 
 # Plotting defaults
 plt.rcParams['axes.linewidth'] = 2
@@ -120,7 +120,7 @@ def plotAstrometry(dist, mag, snr, fit_params=None, brightSnr=100,
     ax[1].set_title("# of matches : %d, %d" % (len(bright), numMatched))
 
     w, = np.where(dist < 200)
-    plotAstromErrModelFit(snr[w], dist[w], ax=ax[1])
+    plotAstromErrModelFit(snr[w], dist[w], fit_params=fit_params, ax=ax[1])
 
     ax[1].legend(loc='upper right')
     ax[1].axvline(brightSnr, color='red', linewidth=4, linestyle='dashed')
@@ -139,14 +139,6 @@ def expModel(x, a, b, norm):
 def magerrModel(x, a, b):
     return expModel(x, a, b, norm=5)
 
-
-def fitExp(x, y, y_err, deg=2):
-    """Fit an exponential quadratic to x, y, y_err.
-    """
-    fit_params, fit_param_covariance = \
-        curve_fit(expModel, x, y, p0=[1, 0.02, 5], sigma=y_err)
-
-    return fit_params
 
 def plotExpFit(x, y, y_err, fit_params=None, deg=2, ax=None, verbose=False):
     """Plot an exponential quadratic fit to x, y, y_err.
@@ -177,39 +169,6 @@ def plotExpFit(x, y, y_err, fit_params=None, deg=2, ax=None, verbose=False):
 
     ax.plot(x_model, fit_model, color='red',
             label=label)
-
-
-def astromErrModel(snr, theta=1, sigma_sys=0.01, C=1):
-    """Calculate expected astrometric uncertainty based on SNR.
-
-    mas = C*theta/SNR
-
-    Parameters
-    ----------
-    snr : list or numpy.array
-        S/N of photometric measurements
-    theta : float or numpy.array, optional
-        Seeing [mas]
-    sigma_sys : float
-        Systematic error floor [mas]
-    C : float
-        Scaling factor
-    verbose : bool, optional
-        Produce extra output to STDOUT
-
-    Returns
-    -------
-    np.array
-        Expected astrometric uncertainty. [mas]
-    """
-    return C*theta/snr + sigma_sys
-
-
-def fitAstromErrModel(snr, dist):
-    fit_params, fit_param_covariance = \
-        curve_fit(astromErrModel, snr, dist, p0=[1, 0.01])
-
-    return fit_params
 
 
 def plotAstromErrModelFit(snr, dist, fit_params=None, 
@@ -256,61 +215,6 @@ def plotAstromErrModelFit(snr, dist, fit_params=None,
             label=label)
     # Set the x limits back to their original values.
     ax.set_xlim(xlim)
-
-
-def photErrModel(mag, sigmaSys, gamma, m5):
-    """Fit model of photometric error from LSST Overview paper
-    http://arxiv.org/abs/0805.2366v4
-
-    Photometric errors described by
-    Eq. 4
-    sigma_1^2 = sigma_sys^2 + sigma_rand^2
-
-    Eq. 5
-    sigma_(rand) = (0.04 - gamma) * x + gamma * x^2 [mag^2]
-    where x = 10**(0.4*(m-m_5))
-
-    Parameters
-    ----------
-    mag : list or numpy.array
-        Magnitude
-    sigmaSq : float
-        Limiting systematics floor [mag]
-    gamma : float
-        proxy for sky brightness and readout noise
-    m5 : float
-        5-sigma depth [mag]
-
-    Returns
-    -------
-    numpy.array
-        Result of noise estimation function
-    """
-    x = 10**(0.4*(mag - m5))
-    sigmaRandSq = (0.04 - gamma) * x + gamma * x**2
-    sigmaSq = sigmaSys**2 + sigmaRandSq
-    return np.sqrt(sigmaSq)
-
-def fitPhotErrModel(mag, mmag_err):
-    """Fit model of photometric error from LSST Overview paper
-
-    Parameters
-    ----------
-    mag : list or numpy.array
-        Magnitude
-    mmag_err : list or numpy.array
-        Magnitude uncertainty or variation in *mmag*.
-
-    Returns
-    -------
-    float, float, float
-        sigmaSys, gamma, m5 fit parameters.
-    """
-    mag_err = mmag_err / 1000
-    fit_params, fit_param_covariance = \
-        curve_fit(photErrModel, mag, mag_err, p0=[0.01, 0.039, 24.35])
-
-    return fit_params
 
 
 def plotPhotErrModelFit(mag, mmag_err, fit_params=None, color='red', ax=None, verbose=True):
@@ -363,6 +267,7 @@ def plotMagerrFit(*args, **kwargs):
 
 
 def plotPhotometry(mag, snr, mmagerr, mmagrms, brightSnr=100,
+                   fit_params=None,
                    filterName='Magnitude',
                    outputPrefix=""):
     """Plot photometric RMS for matched sources.
@@ -377,6 +282,8 @@ def plotPhotometry(mag, snr, mmagerr, mmagrms, brightSnr=100,
         Average Magnitude uncertainty [millimag]
     mmagrms ; list or numpy.array
         Magnitude RMS across visits [millimag]
+    fit_params : list or numpy.array
+        Fit parameters for photometry error model
     brightSnr : float, optional
         Minimum SNR for a star to be considered "bright".
     filterName : str, optional
@@ -463,7 +370,7 @@ def plotPhotometry(mag, snr, mmagerr, mmagrms, brightSnr=100,
                 label=r'SNR > %.0f' % (brightSnr))
 
     w, = np.where(mmagerr < 200)
-    plotPhotErrModelFit(mag[w], mmagerr[w], ax=ax[1][1])
+    plotPhotErrModelFit(mag[w], mmagerr[w], fit_params=fit_params, ax=ax[1][1])
     ax[1][1].legend(loc='upper left')
 
     plt.suptitle("Photometry Check : %s" % outputPrefix.rstrip('_'), fontsize=30)
