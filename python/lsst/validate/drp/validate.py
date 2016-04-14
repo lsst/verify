@@ -538,10 +538,10 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
                         medianRef=medianPhotoscatterRef, matchRef=matchRef)
     if makePlot:
         plotAstrometry(dist, magavg, struct.snr,
-                       fit_params=astromStruct.astromFitParams,
+                       fit_params=astromStruct.astromErrFitParams,
                        brightSnr=brightSnr, outputPrefix=outputPrefix)
         plotPhotometry(magavg, struct.snr, mmagerr, mmagrms,
-                       fit_params=photStruct.photFitParams,
+                       fit_params=photStruct.photErrFitParams,
                        brightSnr=brightSnr, filterName=filterName, outputPrefix=outputPrefix)
 
     magKey = allMatches.schema.find("base_PsfFlux_mag").key
@@ -568,9 +568,8 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
                 plotAMx(metric, outputPrefix=outputPrefix)
 
     if makeJson:
-        for name, struct in zip(("check_astrometry", "check_photometry"),
-                                (astromStruct, photStruct)):
-            outfile = outputPrefix + "%s.json" % name
+        for struct in (astromStruct, photStruct):
+            outfile = outputPrefix + "%s.json" % struct.name
             saveKpmToJson(struct, outfile)
 
         for metric in (AM1, AM2, AM3, PA1, PA2):

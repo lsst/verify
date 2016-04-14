@@ -155,8 +155,10 @@ def checkAstrometry(snr, dist, match,
     Returns
     -------
     pipeBase.Struct
+        name -- str: "checkAstrometry"
         astromScatter -- float: The astrometric scatter (RMS, milliarcsec) for all good stars.
-        astromFitParams -- list or numpy.array of float:  Fit parameters.
+        astromErrModel -- str: Description of astrometric error model
+        astromErrFitParams -- list or numpy.array of float:  Fit parameters.
 
     Notes
     -----
@@ -181,8 +183,10 @@ def checkAstrometry(snr, dist, match,
     if match < matchRef:
         print("Number of matched sources %d is too small (shoud be > %d)" % (match, matchRef))
 
-    return pipeBase.Struct(astromScatter=astromScatter, 
-                           astromFitParams=fit_params)
+    return pipeBase.Struct(name="checkAstrometry",
+                           astromRmsScatter=astromScatter, 
+                           astromErrModel=astromErrModel.__doc__,
+                           astromErrFitParams=fit_params)
 
 
 def checkPhotometry(snr, mag, mmagErr, mmagrms, dist, match,
@@ -214,6 +218,7 @@ def checkPhotometry(snr, mag, mmagErr, mmagrms, dist, match,
     Returns
     -------
     pipeBase.Struct
+        name -- str: "checkPhotometry"
         photScatter -- float: The photometric scatter (RMS, mmag) for all good star stars.
         photFitParams -- list or numpy.array of float:  Fit parameters.
 
@@ -241,8 +246,10 @@ def checkPhotometry(snr, mag, mmagErr, mmagrms, dist, match,
         print("Number of matched sources %d is too small (shoud be > %d)"
               % (match, matchRef))
 
-    return pipeBase.Struct(photScatter=photScatter, 
-                           photFitParams=fit_params)
+    return pipeBase.Struct(name="checkPhotometry",
+                           photRmsScatter=photScatter, 
+                           photErrModel=photErrModel.__doc__,
+                           photErrFitParams=fit_params)
 
 
 def astromErrModel(snr, theta=1, sigma_sys=0.01, C=1):
