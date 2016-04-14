@@ -528,20 +528,20 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
     mmagerr = 1000*magerr
     mmagrms = 1000*magrms
 
-    astromScatter, astromFitParams = \
+    astromStruct = \
         checkAstrometry(struct.snr, dist, match,
                         brightSnr=brightSnr,
                         medianRef=medianAstromscatterRef, matchRef=matchRef)
-    photScatter, photFitParams = \
+    photStruct = \
         checkPhotometry(struct.snr, magavg, mmagerr, mmagrms, dist, match,
                         brightSnr=brightSnr,
                         medianRef=medianPhotoscatterRef, matchRef=matchRef)
     if makePlot:
         plotAstrometry(dist, magavg, struct.snr,
-                       fit_params=astromFitParams,
+                       fit_params=astromStruct.astromFitParams,
                        brightSnr=brightSnr, outputPrefix=outputPrefix)
         plotPhotometry(magavg, struct.snr, mmagerr, mmagrms,
-                       fit_params=photFitParams,
+                       fit_params=photStruct.photFitParams,
                        brightSnr=brightSnr, filterName=filterName, outputPrefix=outputPrefix)
 
     magKey = allMatches.schema.find("base_PsfFlux_mag").key

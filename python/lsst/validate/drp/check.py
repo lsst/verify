@@ -24,6 +24,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 import lsst.afw.geom as afwGeom
+import lsst.pipe.base as pipeBase
 
 from .util import averageRaDecFromCat
 
@@ -153,8 +154,9 @@ def checkAstrometry(snr, dist, match,
 
     Returns
     -------
-    float
-        The astrometric scatter (RMS, milliarcsec) for all good stars.
+    pipeBase.Struct
+        astromScatter -- float: The astrometric scatter (RMS, milliarcsec) for all good stars.
+        astromFitParams -- list or numpy.array of float:  Fit parameters.
 
     Notes
     -----
@@ -179,7 +181,8 @@ def checkAstrometry(snr, dist, match,
     if match < matchRef:
         print("Number of matched sources %d is too small (shoud be > %d)" % (match, matchRef))
 
-    return astromScatter, fit_params
+    return pipeBase.Struct(astromScatter=astromScatter, 
+                           astromFitParams=fit_params)
 
 
 def checkPhotometry(snr, mag, mmagErr, mmagrms, dist, match,
@@ -210,8 +213,9 @@ def checkPhotometry(snr, mag, mmagErr, mmagrms, dist, match,
 
     Returns
     -------
-    float
-        The photometry scatter (RMS, millimag) for all good stars.
+    pipeBase.Struct
+        photScatter -- float: The photometric scatter (RMS, mmag) for all good star stars.
+        photFitParams -- list or numpy.array of float:  Fit parameters.
 
     Notes
     -----
@@ -224,20 +228,21 @@ def checkPhotometry(snr, mag, mmagErr, mmagrms, dist, match,
           (np.median(mmagrms), "mmag"))
 
     bright = np.where(np.asarray(snr) > brightSnr)
-    photoScatter = np.median(np.asarray(mmagrms)[bright])
+    photScatter = np.median(np.asarray(mmagrms)[bright])
     print("Photometric scatter (median) - SNR > %.1f : %.1f %s" %
-          (brightSnr, photoScatter, "mmag"))
+          (brightSnr, photScatter, "mmag"))
 
     fit_params = fitPhotErrModel(mag[bright], mmagErr[bright])
 
-    if photoScatter > medianRef:
+    if photScatter > medianRef:
         print("Median photometric scatter %.3f %s is larger than reference : %.3f %s "
-              % (photoScatter, "mmag", medianRef, "mag"))
+              % (photScatter, "mmag", medianRef, "mag"))
     if match < matchRef:
         print("Number of matched sources %d is too small (shoud be > %d)"
               % (match, matchRef))
 
-    return photoScatter, fit_params
+    return pipeBase.Struct(photScatter=photScatter, 
+                           photFitParams=fit_params)
 
 
 def astromErrModel(snr, theta=1, sigma_sys=0.01, C=1):
