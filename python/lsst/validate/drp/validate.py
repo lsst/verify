@@ -568,6 +568,11 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
                 plotAMx(metric, outputPrefix=outputPrefix)
 
     if makeJson:
+        for name, struct in zip(("check_astrometry", "check_photometry"),
+                                (astromStruct, photStruct)):
+            outfile = outputPrefix + "%s.json" % name
+            saveKpmToJson(struct, outfile)
+
         for metric in (AM1, AM2, AM3, PA1, PA2):
             if metric:
                 outfile = outputPrefix + "%s.json" % metric.name
