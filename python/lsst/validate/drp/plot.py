@@ -201,10 +201,9 @@ def plotAstromErrModelFit(snr, dist, fit_params=None,
         fit_params = fitAstromErrModel(snr, dist)
 
     x_model = np.logspace(np.log10(xlim[0]), np.log10(xlim[1]), num=100)
-    fit_model_mas_err = astromErrModel(x_model, *fit_params)
-    C_theta, sigma_sys = fit_params
-    label = r'$C\theta$, $\sigma_{\rm sys}$ =' + '\n' + \
-            '%.4g, %.4g [mas]' % (C_theta, sigma_sys)
+    fit_model_mas_err = astromErrModel(x_model, **fit_params)
+    label = r'$C, \theta, \sigma_{\rm sys}$ =' + '\n' + \
+            '{C:.2g}, {theta:.4g}, {sigmaSys:.4g} [mas]'.format(**fit_params)
 
     if verbose:
         print(fit_params)
@@ -244,12 +243,13 @@ def plotPhotErrModelFit(mag, mmag_err, fit_params=None, color='red', ax=None, ve
         fit_params = fitPhotErrModel(mag, mmag_err)
 
     x_model = np.linspace(*xlim, num=100)
-    fit_model_mag_err = photErrModel(x_model, *fit_params)
+    fit_model_mag_err = photErrModel(x_model, **fit_params)
     fit_model_mmag_err = 1000*fit_model_mag_err
-    sigmaSysMmag, gamma, m5Mag = fit_params[:]
-    labelFormatStr = r'$\sigma_{\rm sys} {\rm [mmag]}$, $\gamma$, $m_5 {\rm [mag]}$=' + '\n' + \
-                     r'%6.4f, %6.4f, %6.3f' 
-    label = labelFormatStr % (1000*sigmaSysMmag, gamma, m5Mag)
+    labelFormatStr = r'$\sigma_{{\rm sys}} {{\rm [mmag]}}$, $\gamma$, $m_5 {{\rm [mag]}}$=' + '\n' + \
+                     r'{sigmaSysMmag:6.4f}, {gamma:6.4f}, {m5:6.3f}' 
+    print("FIT_PARAMS: ", fit_params)
+    label = labelFormatStr.format(sigmaSysMmag=1000*fit_params['sigmaSys'],
+                                  **fit_params)
 
     if verbose:
         print(fit_params)
