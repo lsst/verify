@@ -514,6 +514,7 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
     if outputPrefix is None:
         outputPrefix = repoNameToPrefix(repo)
 
+    filterName = set([dId['filter'] for dId in visitDataIds]).pop()
     allMatches = loadAndMatchData(repo, visitDataIds, verbose=verbose)
     struct = analyzeData(allMatches, brightSnr, verbose=verbose)
 
@@ -527,17 +528,21 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
     mmagerr = 1000*magerr
     mmagrms = 1000*magrms
 
-    checkAstrometry(struct.snr, dist, match,
-                    brightSnr=brightSnr,
-                    medianRef=medianAstromscatterRef, matchRef=matchRef)
-    checkPhotometry(struct.snr, magavg, mmagrms, dist, match,
-                    brightSnr=brightSnr,
-                    medianRef=medianPhotoscatterRef, matchRef=matchRef)
+    astromStruct = \
+        checkAstrometry(struct.snr, dist, match,
+                        brightSnr=brightSnr,
+                        medianRef=medianAstromscatterRef, matchRef=matchRef)
+    photStruct = \
+        checkPhotometry(struct.snr, magavg, mmagerr, mmagrms, dist, match,
+                        brightSnr=brightSnr,
+                        medianRef=medianPhotoscatterRef, matchRef=matchRef)
     if makePlot:
         plotAstrometry(dist, magavg, struct.snr,
+                       fit_params=astromStruct.params,
                        brightSnr=brightSnr, outputPrefix=outputPrefix)
         plotPhotometry(magavg, struct.snr, mmagerr, mmagrms,
-                       brightSnr=brightSnr, outputPrefix=outputPrefix)
+                       fit_params=photStruct.params,
+                       brightSnr=brightSnr, filterName=filterName, outputPrefix=outputPrefix)
 
     magKey = allMatches.schema.find("base_PsfFlux_mag").key
 
@@ -563,6 +568,10 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
                 plotAMx(metric, outputPrefix=outputPrefix)
 
     if makeJson:
+        for struct in (astromStruct, photStruct):
+            outfile = outputPrefix + "%s.json" % struct.name
+            saveKpmToJson(struct, outfile)
+
         for metric in (AM1, AM2, AM3, PA1, PA2):
             if metric:
                 outfile = outputPrefix + "%s.json" % metric.name

@@ -1,22 +1,24 @@
 Validate an LSST DM processCcd.py output repository
 against a set of LSST Science Requirements Document Key Performance Metrics.
+Also assess expected analytic models for photometric and astrometric performance following the LSST Overview paper.
 
 ```
 setup validate_drp
 validateDrp.py CFHT/output
 ```
 
-will produces output, plots, JSON files analyzing the processed data in `CFHT/output`.  Metrics will be separately calculated for each filter represented in the repository.  Replace `CFHT/output` with your favorite processed data repository and you will get reasonable output.
+will produce output, plots, JSON files analyzing the processed data in `CFHT/output`.  Metrics will be separately calculated for each filter represented in the repository.
+
+Replace `CFHT/output` with your favorite processed data repository and you will get reasonable output.
 
 One can run `validateDrp.py` in any of the following modes:
+
 1. use no configuration file (as above)
 2. pass a configuration file with just validation parameters (brightSnr, number of expected matches, ...) but no dataId specifications
 3. pass a configuration file that specifies validation parameters and the dataIds to process.  See examples below for use with a `--configFile`
 
-Caveat:  Will likely not successfully run on more than 500 catalogs per band due to memory limits and inefficiencies in the current matching approach.
-
 ------
-This package also includes examples that run processCcd task on some 
+This package also includes examples that run processCcd task on some
 CFHT data and DECam data
 and validate the astrometric and photometric repeatability of the results.
 
@@ -44,7 +46,7 @@ rebuild -u obs_decam obs_cfht validation_data_decam validation_data_cfht validat
 To setup for a run with CFHT:
 ```
 setup pipe_tasks
-setup obs_cfht 
+setup obs_cfht
 setup validation_data_cfht
 setup validate_drp
 ```
@@ -144,6 +146,14 @@ Once these basic steps are completed, then you can run any of the following:
     ```
 
 Note that the example validation test selects several of the CCDs and will fail if you just pass it a repository with 1 visit or just 1 CCD.
+
+Notes
+-----
+* Will likely not successfully run on more than 500 catalogs per band due to memory limits and inefficiencies in the current matching approach.
+* The astrometric and photometric error models are formally valid for individual images.  However, they are being applied here to the results from the set of images, which is implicitly looking at some sort of mean performance.
+E.g., the expected astrometric uncertainty is intimately related to the seeing of the image.  For collections of images where most have a similar seeing, these estimates are useful and reasonable.  However, if the data set analyzed consisted of a set of images distributed across a wide range of seeing values, then the fits here have less direct meaning.
+
+
 
 Files of Interest:
 ------------------

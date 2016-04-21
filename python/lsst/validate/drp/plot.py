@@ -23,7 +23,7 @@ from __future__ import print_function, division
 import matplotlib.pylab as plt
 import numpy as np
 import scipy.stats
-from scipy.optimize import curve_fit
+from .check import fitExp, fitAstromErrModel, fitPhotErrModel, expModel, astromErrModel, photErrModel
 
 # Plotting defaults
 plt.rcParams['axes.linewidth'] = 2
@@ -66,7 +66,7 @@ def plotOutlinedLines(ax_plot, x1, x2, x1_color=color['all'], x2_color=color['br
     ax_plot(x2, color=x2_color, linewidth=3)
 
 
-def plotAstrometry(dist, mag, snr, brightSnr=100,
+def plotAstrometry(dist, mag, snr, fit_params=None, brightSnr=100,
                    outputPrefix=""):
     """Plot angular distance between matched sources from different exposures.
 
@@ -80,6 +80,8 @@ def plotAstrometry(dist, mag, snr, brightSnr=100,
         Mean magnitude of PSF flux
     snr : list or numpy.array
         Median SNR of PSF flux
+    fit_params : list or numpy.array
+        Fit parameters to display
     brightSnr : float, optional
         Minimum SNR for a star to be considered "bright".
     outputPrefix : str, optional
@@ -116,7 +118,11 @@ def plotAstrometry(dist, mag, snr, brightSnr=100,
     ax[1].set_xscale("log")
     ax[1].set_ylim([0., 500.])
     ax[1].set_title("# of matches : %d, %d" % (len(bright), numMatched))
-    ax[1].legend(loc='upper left')
+
+    w, = np.where(dist < 200)
+    plotAstromErrModelFit(snr[w], dist[w], fit_params=fit_params, ax=ax[1])
+
+    ax[1].legend(loc='upper right')
     ax[1].axvline(brightSnr, color='red', linewidth=4, linestyle='dashed')
     plotOutlinedLinesHorizontal(ax[1], dist_median, bright_dist_median)
 
@@ -126,26 +132,25 @@ def plotAstrometry(dist, mag, snr, brightSnr=100,
     plt.close(fig)
 
 
-def expModel(x, a, b, norm):
-    return a * np.exp(x/norm) + b
+def plotExpFit(x, y, y_err, fit_params=None, deg=2, ax=None, verbose=False):
+    """Plot an exponential quadratic fit to x, y, y_err.
 
-
-def magerrModel(x, a, b):
-    return expModel(x, a, b, norm=5)
-
-
-def plotExpFit(x, y, y_err, deg=2, ax=None, verbose=False):
-    """Fit and plot an exponential quadratic to x, y, y_err.
+    Parameters
+    ----------
+    fit_params : list or numpy.array
+        Fit parameters to display
+        If None, then will be fit.
     """
 
     if ax is None:
         ax = plt.figure()
-        xlim = [10, 30]
+        xlim = [1, 1e4]
     else:
         xlim = ax.get_xlim()
 
-    popt, pcov = curve_fit(expModel, x, y, p0=[1, 0.02, 5], sigma=y_err)
-    fit_params = popt
+    if fit_params is None:
+        fit_params = fitExp(x, y, y_err, deg=2)
+
     x_model = np.linspace(*xlim, num=100)
     fit_model = expModel(x_model, *fit_params)
     label = '%.4g exp(mag/%.4g) + %.4g' % \
@@ -157,6 +162,89 @@ def plotExpFit(x, y, y_err, deg=2, ax=None, verbose=False):
     ax.plot(x_model, fit_model, color='red',
             label=label)
 
+
+def plotAstromErrModelFit(snr, dist, fit_params=None,
+                          color='red', ax=None, verbose=True):
+    """Plot model of photometric error from LSST Overview paper
+    http://arxiv.org/abs/0805.2366v4
+
+    Astrometric Errors
+    error = C * theta / SNR
+
+    Parameters
+    ----------
+    snr : list or numpy.array
+        S/N of photometric measurements
+    dist : list or numpy.array
+        Separation from reference [mas]
+    """
+    if ax is None:
+        ax = plt.figure()
+        xlim = [10, 30]
+    else:
+        xlim = ax.get_xlim()
+
+    if fit_params is None:
+        fit_params = fitAstromErrModel(snr, dist)
+
+    x_model = np.logspace(np.log10(xlim[0]), np.log10(xlim[1]), num=100)
+    fit_model_mas_err = astromErrModel(x_model, **fit_params)
+    label = r'$C, \theta, \sigma_{\rm sys}$ =' + '\n' + \
+            '{C:.2g}, {theta:.4g}, {sigmaSys:.4g} [mas]'.format(**fit_params)
+
+    if verbose:
+        print(fit_params)
+        print(label)
+
+    ax.plot(x_model, fit_model_mas_err,
+            color=color, linewidth=2,
+            label=label)
+    # Set the x limits back to their original values.
+    ax.set_xlim(xlim)
+
+
+def plotPhotErrModelFit(mag, mmag_err, fit_params=None, color='red', ax=None, verbose=True):
+    """Plot model of photometric error from LSST Overview paper (Eq. 4 & 5)
+
+    Parameters
+    ----------
+    mag : list or numpy.array
+        Magnitude
+    mmag_err : list or numpy.array
+        Magnitude uncertainty or variation in *mmag*.
+    fit_params : list or numpy.array
+        Fit parameters to display
+    ax : matplotlib.Axis, optional
+        The Axis object to plot to.
+    verbose : bool, optional
+        Produce extra output to STDOUT
+    """
+
+    if ax is None:
+        ax = plt.figure()
+        xlim = [10, 30]
+    else:
+        xlim = ax.get_xlim()
+
+    if fit_params is None:
+        fit_params = fitPhotErrModel(mag, mmag_err)
+
+    x_model = np.linspace(*xlim, num=100)
+    fit_model_mag_err = photErrModel(x_model, **fit_params)
+    fit_model_mmag_err = 1000*fit_model_mag_err
+    labelFormatStr = r'$\sigma_{{\rm sys}} {{\rm [mmag]}}$, $\gamma$, $m_5 {{\rm [mag]}}$=' + '\n' + \
+                     r'{sigmaSysMmag:6.4f}, {gamma:6.4f}, {m5:6.3f}'
+    label = labelFormatStr.format(sigmaSysMmag=1000*fit_params['sigmaSys'],
+                                  **fit_params)
+
+    if verbose:
+        print(fit_params)
+        print(label)
+
+    ax.plot(x_model, fit_model_mmag_err,
+            color=color, linewidth=2,
+            label=label)
+
     return fit_params
 
 
@@ -165,6 +253,8 @@ def plotMagerrFit(*args, **kwargs):
 
 
 def plotPhotometry(mag, snr, mmagerr, mmagrms, brightSnr=100,
+                   fit_params=None,
+                   filterName='Magnitude',
                    outputPrefix=""):
     """Plot photometric RMS for matched sources.
 
@@ -178,8 +268,12 @@ def plotPhotometry(mag, snr, mmagerr, mmagrms, brightSnr=100,
         Average Magnitude uncertainty [millimag]
     mmagrms ; list or numpy.array
         Magnitude RMS across visits [millimag]
+    fit_params : list or numpy.array
+        Fit parameters for photometry error model
     brightSnr : float, optional
         Minimum SNR for a star to be considered "bright".
+    filterName : str, optional
+        Name of the observed filter to use on axis labels.
     outputPrefix : str, optional
         Prefix to use for filename of plot file.  Will also be used in plot titles.
         E.g., outputPrefix='Cfht_output_r_' will result in a file named
@@ -210,7 +304,7 @@ def plotPhotometry(mag, snr, mmagerr, mmagrms, brightSnr=100,
                      s=10, color=color['bright'],
                      label='SNR > %.0f' % brightSnr)
 
-    ax[0][1].set_xlabel("Magnitude")
+    ax[0][1].set_xlabel("%s [mag]" % filterName)
     ax[0][1].set_ylabel("RMS [mmag]")
     ax[0][1].set_xlim([17, 24])
     ax[0][1].set_ylim([0, 500])
@@ -226,8 +320,8 @@ def plotPhotometry(mag, snr, mmagerr, mmagrms, brightSnr=100,
     ax[1][0].set_yscale('log')
     ax[1][0].plot([0, 1000], [0, 1000],
                   linestyle='--', color='black', linewidth=2)
-    ax[1][0].set_xlabel("RMS of Quoted Magnitude [mmag]")
-    ax[1][0].set_ylabel("Median Quoted Magnitude Err [mmag]")
+    ax[1][0].set_xlabel("RMS [mmag]")
+    ax[1][0].set_ylabel("Median Reported Magnitude Err [mmag]")
     brightSnrInMmag = 2.5*np.log10(1 + (1/brightSnr)) * 1000
 
     ax[1][0].axhline(brightSnrInMmag, color='red', linewidth=4, linestyle='dashed',
@@ -242,8 +336,8 @@ def plotPhotometry(mag, snr, mmagerr, mmagrms, brightSnr=100,
                      s=10, color=color['bright'],
                      label=None,
                      )
-    ax[1][1].set_xlabel("Magnitude [mag]")
-    ax[1][1].set_ylabel("Median Quoted Magnitude Err [mmag]")
+    ax[1][1].set_xlabel("%s [mag]" % filterName)
+    ax[1][1].set_ylabel("Median Reported Magnitude Err [mmag]")
     ax[1][1].set_xlim([17, 24])
     ax[1][1].set_ylim([1, 500])
     ax[1][1].axhline(brightSnrInMmag, color='red', linewidth=4, linestyle='dashed',
@@ -262,7 +356,7 @@ def plotPhotometry(mag, snr, mmagerr, mmagrms, brightSnr=100,
                 label=r'SNR > %.0f' % (brightSnr))
 
     w, = np.where(mmagerr < 200)
-    plotMagerrFit(mag[w], mmagerr[w], mmagerr[w], ax=ax[1][1])
+    plotPhotErrModelFit(mag[w], mmagerr[w], fit_params=fit_params, ax=ax[1][1])
     ax[1][1].legend(loc='upper left')
 
     plt.suptitle("Photometry Check : %s" % outputPrefix.rstrip('_'), fontsize=30)
@@ -372,10 +466,11 @@ def plotAMx(AMx, outputPrefix=""):
                 label='median RMS of relative\nseparation: %.2f %s' % (AMx.AMx, AMx.amxUnits))
     ax1.axvline(AMx.AMx_spec, 0, 1, linewidth=2, color='red',
                 label='%s: %.0f %s' % (AMx.name, AMx.AMx_spec, AMx.amxUnits))
+    formatStr = 'AM{x:d}+AD{x:d}: {AMxADx:.0f} {amxUnits:s}\n' + \
+                'AF{x:d}: {AFx_spec:.2f}{afxUnits:s} > AM{x:d}+AD{x:d} = ' + \
+                '{percentOver:.2f}%'
     ax1.axvline(AMx.AMx_spec+AMx.ADx_spec, 0, 1, linewidth=2, color='green',
-                label='AM{x:d}+AD{x:d}: {AMxADx:.0f} {amxUnits:s}\n' +
-                      'AF{x:d}: {AFx_spec:.2f}{afxUnits:s} > AM{x:d}+AD{x:d} = ' +
-                      '{percentOver:.2f}%'.format(**AMxAsDict))
+                label=formatStr.format(**AMxAsDict))
 
     ax1.set_title('The %d stars separated by D = [%.2f, %.2f] %s' %
                   (len(AMx.rmsDistMas), AMx.annulus[0], AMx.annulus[1], AMx.annulusUnits))
