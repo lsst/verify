@@ -23,7 +23,7 @@ from __future__ import print_function, division
 import matplotlib.pylab as plt
 import numpy as np
 import scipy.stats
-from .check import fitExp, fitAstromErrModel, fitPhotErrModel, astromErrModel, photErrModel
+from .check import fitExp, fitAstromErrModel, fitPhotErrModel, expModel, astromErrModel, photErrModel
 
 # Plotting defaults
 plt.rcParams['axes.linewidth'] = 2
@@ -130,14 +130,6 @@ def plotAstrometry(dist, mag, snr, fit_params=None, brightSnr=100,
     plotPath = outputPrefix+"check_astrometry.png"
     plt.savefig(plotPath, format="png")
     plt.close(fig)
-
-
-def expModel(x, a, b, norm):
-    return a * np.exp(x/norm) + b
-
-
-def magerrModel(x, a, b):
-    return expModel(x, a, b, norm=5)
 
 
 def plotExpFit(x, y, y_err, fit_params=None, deg=2, ax=None, verbose=False):

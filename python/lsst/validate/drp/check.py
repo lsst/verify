@@ -67,6 +67,14 @@ def magNormDiff(cat):
     return normDiff
 
 
+def expModel(x, a, b, norm):
+    return a * np.exp(x/norm) + b
+
+
+def magerrModel(x, a, b):
+    return expModel(x, a, b, norm=5)
+
+
 def fitExp(x, y, y_err, deg=2):
     """Fit an exponential quadratic to x, y, y_err.
     """
