@@ -4,6 +4,9 @@ setupRequired(afw)
 setupRequired(pipe_base)
 setupRequired(pyyaml)
 
+setupRequired(scipy)
+setupRequired(matplotlib)
+
 setupOptional(pipe_tasks)
 setupOptional(obs_cfht)
 setupOptional(obs_decam)
