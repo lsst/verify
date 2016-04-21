@@ -86,11 +86,16 @@ def fitAstromErrModel(snr, dist):
     dist : list or numpy.array
         Scatter in measured positions [mas]
 
-def fitAstromErrModel(snr, dist):
+    Returns
+    -------
+    dict
+        The fit results for C, theta, sigmaSys along with their Units.
+    """
     fit_params, fit_param_covariance = \
         curve_fit(astromErrModel, snr, dist, p0=[1, 0.01])
 
-    params = {'C': 1, 'theta': fit_params[0], 'sigmaSys': fit_params[1]}
+    params = {'C': 1, 'theta': fit_params[0], 'sigmaSys': fit_params[1],
+              'cUnits': '', 'thetaUnits': 'mas', 'sigmaSysUnits': 'mas'}
     return params
 
 
@@ -106,14 +111,16 @@ def fitPhotErrModel(mag, mmag_err):
 
     Returns
     -------
-    float, float, float
-        sigmaSys, gamma, m5 fit parameters.
+    dict
+        The fit results for sigmaSys, gamma, and m5 along with their Units.
     """
     mag_err = mmag_err / 1000
     fit_params, fit_param_covariance = \
         curve_fit(photErrModel, mag, mag_err, p0=[0.01, 0.039, 24.35])
 
-    return dict(zip(('sigmaSys', 'gamma', 'm5'), fit_params))
+    params = {'sigmaSys': fit_params[0], 'gamma': fit_params[1], 'm5': fit_params[2],
+              'sigmaSysUnits': 'mmag', 'gammaUnits': '', 'm5Units': 'mag'}
+    return params
 
 
 def positionRms(cat):
