@@ -163,7 +163,7 @@ def plotExpFit(x, y, y_err, fit_params=None, deg=2, ax=None, verbose=False):
             label=label)
 
 
-def plotAstromErrModelFit(snr, dist, fit_params=None, 
+def plotAstromErrModelFit(snr, dist, fit_params=None,
                           color='red', ax=None, verbose=True):
     """Plot model of photometric error from LSST Overview paper
     http://arxiv.org/abs/0805.2366v4
@@ -177,11 +177,6 @@ def plotAstromErrModelFit(snr, dist, fit_params=None,
         S/N of photometric measurements
     dist : list or numpy.array
         Separation from reference [mas]
-
-    Returns
-    -------
-    float
-        C*theta
     """
     if ax is None:
         ax = plt.figure()
@@ -209,7 +204,7 @@ def plotAstromErrModelFit(snr, dist, fit_params=None,
 
 
 def plotPhotErrModelFit(mag, mmag_err, fit_params=None, color='red', ax=None, verbose=True):
-    """plot model of photometric error from LSST Overview paper
+    """Plot model of photometric error from LSST Overview paper (Eq. 4 & 5)
 
     Parameters
     ----------
@@ -238,8 +233,7 @@ def plotPhotErrModelFit(mag, mmag_err, fit_params=None, color='red', ax=None, ve
     fit_model_mag_err = photErrModel(x_model, **fit_params)
     fit_model_mmag_err = 1000*fit_model_mag_err
     labelFormatStr = r'$\sigma_{{\rm sys}} {{\rm [mmag]}}$, $\gamma$, $m_5 {{\rm [mag]}}$=' + '\n' + \
-                     r'{sigmaSysMmag:6.4f}, {gamma:6.4f}, {m5:6.3f}' 
-    print("FIT_PARAMS: ", fit_params)
+                     r'{sigmaSysMmag:6.4f}, {gamma:6.4f}, {m5:6.3f}'
     label = labelFormatStr.format(sigmaSysMmag=1000*fit_params['sigmaSys'],
                                   **fit_params)
 
@@ -247,7 +241,7 @@ def plotPhotErrModelFit(mag, mmag_err, fit_params=None, color='red', ax=None, ve
         print(fit_params)
         print(label)
 
-    ax.plot(x_model, fit_model_mmag_err, 
+    ax.plot(x_model, fit_model_mmag_err,
             color=color, linewidth=2,
             label=label)
 

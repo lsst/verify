@@ -191,7 +191,7 @@ def loadDataIdsAndParameters(configFile):
         dataIds = constructDataIds(parameters['filter'], parameters['visits'],
                                    parameters[ccdKeyName], ccdKeyName)
     except KeyError:
-        # If the above parameters are not in the `parameters` dict, 
+        # If the above parameters are not in the `parameters` dict,
         # presumably because they were not in the configFile
         # then we return no dataIds.
         dataIds = []

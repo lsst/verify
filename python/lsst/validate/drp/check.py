@@ -185,7 +185,7 @@ def checkAstrometry(snr, dist, match,
         model_name -- str: "astromErrModel"
         doc -- str: Description of astrometric error model
         params -- dict: Fit parameters as "name": value.
-        astromRmsScatter -- float: 
+        astromRmsScatter -- float:
            The astrometric scatter (RMS, milliarcsec) for all good stars.
 
     Notes
@@ -215,7 +215,7 @@ def checkAstrometry(snr, dist, match,
                            model_name="astromErrModel",
                            doc=astromErrModel.__doc__,
                            params=fit_params,
-                           astromRmsScatter=astromScatter) 
+                           astromRmsScatter=astromScatter)
 
 
 def checkPhotometry(snr, mag, mmagErr, mmagrms, dist, match,
@@ -251,7 +251,7 @@ def checkPhotometry(snr, mag, mmagErr, mmagrms, dist, match,
         model_name -- str:  "photErrModel"
         doc -- str: Description of photometric error model
         params -- dict: Fit parameters as "name": value.
-        photRmsScatter -- float: 
+        photRmsScatter -- float:
             The photometric scatter (RMS, mmag) for all good star stars.
 
     Notes
@@ -301,7 +301,7 @@ def astromErrModel(snr, theta=1000, sigmaSys=10, C=1, **kwargs):
     C : float
         Scaling factor
 
-    theta and sigmaSys must be given in the same units.  
+    theta and sigmaSys must be given in the same units.
     Typically choices might be any of arcsec, milli-arcsec, or radians
     The default values are reasonable astronominal values in milliarcsec.
     But the only thing that matters is that they're the same.
