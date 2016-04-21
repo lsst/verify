@@ -77,6 +77,16 @@ def fitExp(x, y, y_err, deg=2):
 
 
 def fitAstromErrModel(snr, dist):
+    """Fit model of astrometric error from LSST Overview paper
+
+    Parameters
+    ----------
+    snr : list or numpy.array
+        Signal-to-noise ratio of photometric observations
+    dist : list or numpy.array
+        Scatter in measured positions [mas]
+
+def fitAstromErrModel(snr, dist):
     fit_params, fit_param_covariance = \
         curve_fit(astromErrModel, snr, dist, p0=[1, 0.01])
 
@@ -206,7 +216,7 @@ def checkPhotometry(snr, mag, mmagErr, mmagrms, dist, match,
         Average magnitudes of each star.  [mag]
     mmagErr : list or numpy.array
         Uncertainties in magnitudes of each star.  [mmag]
-    mmagrms ; list or numpy.array
+    mmagrms : list or numpy.array
         Magnitude RMS of the multiple observation of each star. [mmag]
     dist : list or numpy.array
         Distances between successive measurements of one star
@@ -260,33 +270,37 @@ def checkPhotometry(snr, mag, mmagErr, mmagrms, dist, match,
                            photRmsScatter=photScatter)
 
 
-def astromErrModel(snr, theta=1, sigmaSys=0.01, C=1):
+def astromErrModel(snr, theta=1000, sigmaSys=10, C=1, **kwargs):
     """Calculate expected astrometric uncertainty based on SNR.
 
-    mas = C*theta/SNR
+    mas = C*theta/SNR + sigmaSys
 
     Parameters
     ----------
     snr : list or numpy.array
         S/N of photometric measurements
     theta : float or numpy.array, optional
-        Seeing [mas]
+        Seeing
     sigmaSys : float
-        Systematic error floor [mas]
+        Systematic error floor
     C : float
         Scaling factor
-    verbose : bool, optional
-        Produce extra output to STDOUT
+
+    theta and sigmaSys must be given in the same units.  
+    Typically choices might be any of arcsec, milli-arcsec, or radians
+    The default values are reasonable astronominal values in milliarcsec.
+    But the only thing that matters is that they're the same.
 
     Returns
     -------
     np.array
-        Expected astrometric uncertainty. [mas]
+        Expected astrometric uncertainty.
+        Units will be those of theta + sigmaSys.
     """
     return C*theta/snr + sigmaSys
 
 
-def photErrModel(mag, sigmaSys, gamma, m5):
+def photErrModel(mag, sigmaSys, gamma, m5, **kwargs):
     """Fit model of photometric error from LSST Overview paper
     http://arxiv.org/abs/0805.2366v4
 
@@ -295,7 +309,7 @@ def photErrModel(mag, sigmaSys, gamma, m5):
     sigma_1^2 = sigma_sys^2 + sigma_rand^2
 
     Eq. 5
-    sigma_(rand) = (0.04 - gamma) * x + gamma * x^2 [mag^2]
+    sigma_rand^2 = (0.04 - gamma) * x + gamma * x^2 [mag^2]
     where x = 10**(0.4*(m-m_5))
 
     Parameters
