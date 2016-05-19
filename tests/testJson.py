@@ -34,7 +34,8 @@ import numpy as np
 import lsst.utils.tests as utilsTests
 
 import lsst.pipe.base as pipeBase
-from lsst.validate.drp.io import saveKpmToJson, loadKpmFromJson
+from lsst.validate.drp.io import (saveKpmToJson, loadKpmFromJson,
+                                  DatumSerializer)
 
 
 class JsonTestCase(unittest.TestCase):
@@ -66,6 +67,20 @@ class JsonTestCase(unittest.TestCase):
         os.unlink(tmpFilepath)
 
 
+class DatumTestCase(unittest.TestCase):
+    """Test DatumSerializer."""
+
+    def testDatumSerialization(self):
+        datum = DatumSerializer(1., 'arcsec', 'RMS',
+                                'Star-to-star distance repeatability')
+        d = datum.json
+        self.assertEqual(d['value'], 1.)
+        self.assertEqual(d['units'], 'arcsec')
+        self.assertEqual(d['label'], 'RMS')
+        self.assertEqual(d['description'],
+                         'Star-to-star distance repeatability')
+
+
 def suite():
     """Returns a suite containing all the test cases in this module."""
 
@@ -73,6 +88,7 @@ def suite():
 
     suites = []
     suites += unittest.makeSuite(JsonTestCase)
+    suites += unittest.makeSuite(DatumTestCase)
     return unittest.TestSuite(suites)
 
 
