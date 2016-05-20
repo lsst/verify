@@ -20,6 +20,8 @@
 
 from __future__ import print_function, division, absolute_import
 
+import uuid
+import abc
 import json
 import numpy as np
 import astropy.units
@@ -56,8 +58,11 @@ class DatumSerializer(object):
     def json(self):
         """Datum as a `dict` compatible with overall Job JSON schema."""
         # Copy the dict so that the serializer is immutable
+        v = self.value
+        if isinstance(v, np.ndarray):
+            v = v.tolist()
         d = {
-            'value': self.value,
+            'value': v,
             'units': self.units,
             'label': self.label,
             'description': self.description
@@ -105,6 +110,288 @@ class DatumSerializer(object):
     def description(self, value):
         assert isinstance(value, basestring) or None
         self._doc['description'] = value
+
+
+class ParametersSerializerBase(object):
+    """Baseclass for a Parameters serializer.
+
+    Individual measurements should implement their own serializers to enforce
+    specific schemas.
+    """
+
+    __metaclass__ = abc.ABCMeta
+
+    def __init__(self, *args, **kwargs):
+        self._doc = {}
+
+    @property
+    def json(self):
+        d = ParametersSerializerBase.jsonify_dict(self._doc)
+        d['schema_id'] = self.schema_id
+        return d
+
+    @staticmethod
+    def jsonify_dict(d):
+        json_dict = {}
+        for k, v in d.iteritems():
+            if isinstance(v, DatumSerializer):
+                json_dict[k] = v.json
+            elif isinstance(v, dict):
+                json_dict[k] = ParametersSerializerBase.jsonify_dict(v)
+            else:
+                json_dict[k] = v
+        return json_dict
+
+    @abc.abstractproperty
+    def schema_id(self):
+        pass
+
+
+class BlobSerializerBase(object):
+    """Baseclass for a Blob serializer.
+
+    Blobs are designed to flexibly store processed artifacts from measurement
+    codes from which the scalar metric is derived. Blobs allow rich
+    visualization to give context to scalar measurements.
+
+    Multiple measurements can share the same blob. Blobs contain an :attr:`id`
+    attribute that allows multple measurement documents to refer to the same
+    blob.
+
+    Individual measurements should implement their own serializers to enforce
+    specific schemas.
+    """
+
+    __metaclass__ = abc.ABCMeta
+
+    def __init__(self, *args, **kwargs):
+        self._id = uuid.uuid4().hex
+        self._doc = {}
+
+    @property
+    def json(self):
+        """Measurement as a `dict` compatible with overall Job JSON schema."""
+        d = BlobSerializerBase.jsonify_dict(self._doc)
+        d['schema_id'] = self.schema_id
+        d['id'] = self.id
+        return d
+
+    @staticmethod
+    def jsonify_dict(d):
+        json_dict = {}
+        for k, v in d.iteritems():
+            if isinstance(v, DatumSerializer):
+                json_dict[k] = v.json
+            elif isinstance(v, dict):
+                json_dict[k] = BlobSerializerBase.jsonify_dict(v)
+            else:
+                json_dict[k] = v
+        return json_dict
+
+    @abc.abstractproperty
+    def schema_id(self):
+        pass
+
+    @property
+    def id(self):
+        """Unique blob identifier."""
+        return self._id
+
+
+class MetricSerializer(object):
+    """Serializer for a metric.
+
+    Note that information about success thresholds is maintained separately
+    from the metric definition.
+
+    Parameters
+    ----------
+    name : `str`
+        Metric name/identifier.
+    spec_level : `str`, optional
+        Level of a Metric Specification that this Metric corresponds to,
+        if applicable. For example, PF1 is dependent on the specification
+        level to determine PA2.
+    reference : `str`, optional
+        Document handle that defines this metric
+    description : `str`, optional
+        Long description of this metric.
+    """
+
+    def __init__(self, name, spec_level=None, reference=None, description=None):
+        self._doc = {}
+        self.name = name
+        self.spec_level = spec_level
+        self.reference = reference
+        self.description = description
+
+    @property
+    def json(self):
+        return dict(self._doc)
+
+    @property
+    def name(self):
+        """Metric name/identifier (`str`)."""
+        return self._doc['name']
+
+    @name.setter
+    def name(self, n):
+        assert isinstance(n, basestring)
+        self._doc['name'] = n
+
+    @property
+    def spec_level(self):
+        """Metric specification level (`str` or `None`)."""
+        return self._doc['spec_level']
+
+    @spec_level.setter
+    def spec_level(self, n):
+        assert isinstance(n, basestring) or n is None
+        self._doc['spec_level'] = n
+
+    @property
+    def reference(self):
+        """Document handle that defines this metric (`str`)."""
+        return self._doc['reference']
+
+    @reference.setter
+    def reference(self, n):
+        assert isinstance(n, basestring)
+        self._doc['reference'] = n
+
+    @property
+    def description(self):
+        """Long description of this metric (`str`)."""
+        return self._doc['description']
+
+    @description.setter
+    def description(self, n):
+        assert isinstance(n, basestring)
+        self._doc['description'] = n
+
+
+class MeasurementSerializer(object):
+    """Serializer for a measurement of a metric.
+
+    Parameters
+    ----------
+    metric : `MetricSerializer`
+        Serializer for metric definition.
+    value : `DatumSerializer`
+        Serializer for measured scalar metric value.
+    parameters : `ParametersSerializerBase`
+        Serializer with parameters for this measurement.
+    blob_id : `BlobSerializerBase`, optional
+        Identifier to reference a Blob with detailed metadata about this
+        scalar metric measurement.
+    """
+
+    def __init__(self, metric, value, parameters, blob_id=None):
+        self._doc = {}
+        self.metric = metric
+        self.value = value
+        self.parameters = parameters
+        self.blob_id = blob_id
+
+    @property
+    def json(self):
+        """Measurement as a `dict` compatible with overall Job JSON schema."""
+        d = {
+            'metric': self.metric.json,
+            'value': self.value.json,
+            'parameters': self.parameters.json,
+            'blob_id': self.blob_id
+        }
+        return d
+
+    @property
+    def metric(self):
+        """A `MetricSerializer` instance."""
+        return self._doc['metric']
+
+    @metric.setter
+    def metric(self, metric_doc):
+        assert isinstance(metric_doc, MetricSerializer)
+        self._doc['metric'] = metric_doc
+
+    @property
+    def value(self):
+        return self._doc['value']
+
+    @value.setter
+    def value(self, measured_value):
+        assert isinstance(measured_value, DatumSerializer)
+        self._doc['value'] = measured_value
+
+    @property
+    def parameters(self):
+        return self._doc['parameters']
+
+    @parameters.setter
+    def parameters(self, params):
+        assert isinstance(params, ParametersSerializerBase)
+        self._doc['parameters'] = params
+
+    @property
+    def blob_id(self):
+        return self._doc['blob_id']
+
+    @blob_id.setter
+    def blob_id(self, name):
+        assert isinstance(name, basestring)
+        self._doc['blob_id'] = name
+
+
+class JobSerializer(object):
+    """Serializer for validate_drp processing jobs.
+
+    Parameters
+    ----------
+    measurements : `list`
+        List of `MeasurementSerializerBase`-type instances.
+    blobs : `list`
+        List of `BlobSerializerBase`-type instances.
+    """
+
+    def __init__(self, measurements, blobs=None):
+        self._doc = {
+            'measurements': [],
+            'blobs': []
+        }
+
+        self.measurements = measurements
+        self.blobs = blobs
+
+    @property
+    def json(self):
+        """Measurement as a `dict` compatible with overall Job JSON schema."""
+        d = {
+            'measurements': [m.json for m in self.measurements],
+            'blobs': [b.json for b in self.blobs]
+        }
+        return d
+
+    @property
+    def measurements(self):
+        """`list` of Measurement serializers."""
+        return self._doc['measurements']
+
+    @measurements.setter
+    def measurements(self, meas_serializers):
+        for m in meas_serializers:
+            assert isinstance(m, MeasurementSerializer)
+            self._doc['measurements'].append(m)
+
+    @property
+    def blobs(self):
+        """`list` of Blob serializers."""
+        return self._doc['blobs']
+
+    @blobs.setter
+    def blobs(self, blob_serializers):
+        for m in blob_serializers:
+            assert isinstance(m, BlobSerializerBase)
+            self._doc['blobs'].append(m)
 
 
 def saveKpmToJson(KpmStruct, filename):
