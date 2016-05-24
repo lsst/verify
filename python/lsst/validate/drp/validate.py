@@ -452,7 +452,8 @@ def run(repo, dataIds, outputPrefix=None, level="design", verbose=False, **kwarg
         # Do this here so that each outputPrefix will have a different name for each filter.
         thisOutputPrefix = "%s_%s_" % (outputPrefix.rstrip('_'), filt)
         theseVisitDataIds = [v for v in dataIds if v['filter'] == filt]
-        runOneFilter(repo, theseVisitDataIds, outputPrefix=thisOutputPrefix, verbose=verbose, **kwargs)
+        runOneFilter(repo, theseVisitDataIds, outputPrefix=thisOutputPrefix, verbose=verbose, filterName=filt,
+                     **kwargs)
 
     if verbose:
         print("==============================")
@@ -471,7 +472,7 @@ def run(repo, dataIds, outputPrefix=None, level="design", verbose=False, **kwarg
 def runOneFilter(repo, visitDataIds, brightSnr=100,
                  medianAstromscatterRef=25, medianPhotoscatterRef=25, matchRef=500,
                  makePrint=True, makePlot=True, makeJson=True,
-                 outputPrefix=None,
+                 filterName=None, outputPrefix=None,
                  verbose=False,
                  **kwargs):
     """Main executable for the case where there is just one filter.
@@ -506,6 +507,8 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
         Create JSON output file for metrics.  Saved to current working directory.
     outputPrefix : str, optional
         Specify the beginning filename for output files.
+    filterName : str, optional
+        Name of the filter (bandpass).
     verbose : bool, optional
         Output additional information on the analysis steps.
 
