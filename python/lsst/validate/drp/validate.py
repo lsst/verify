@@ -38,7 +38,7 @@ from .plot import plotAstrometry, plotPhotometry, plotPA1, plotAMx
 from .print import printPA1, printPA2, printAMx
 from .srdSpec import srdSpec, loadSrdRequirements
 from .util import getCcdKeyName, repoNameToPrefix, calcOrNone, loadParameters
-from .io import saveKpmToJson, loadKpmFromJson
+from .io import saveKpmToJson, loadKpmFromJson, MultiVisitStarBlobSerializer
 
 
 def loadAndMatchData(repo, dataIds,
@@ -552,6 +552,10 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
     AM1, AM2, AM3 = [calcOrNone(func, safeMatches, ValidateErrorNoStars, verbose=verbose)
                      for func in (calcAM1, calcAM2, calcAM3)]
     PA1, PA2 = [func(safeMatches, magKey, verbose=verbose) for func in (calcPA1, calcPA2)]
+
+    blob = MultiVisitStarBlobSerializer.init_from_structs(
+        filterName, struct, astromStruct, photStruct)
+    print(blob.id)
 
     if makePrint:
         print("=============================================")
