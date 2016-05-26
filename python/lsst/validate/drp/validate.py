@@ -563,6 +563,84 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
 
     measurement_serializers = []
 
+    # Serialize AMx, AFx, ADx
+    for AMx in (AM1, AM2, AM3):
+        if AMx is None:
+            continue
+        x = AMx.x
+
+        AMx_serializer = MeasurementSerializer(
+            metric=calcSrd.AMxSerializer(x=x),
+            value=DatumSerializer(
+                value=AMx.AMx,
+                units='milliarcsecond',
+                label='AM{0:d}'.format(x),
+                description='Median RMS of the astrometric distance '
+                            'distribution for stellar pairs with separation '
+                            'of D arcmin (repeatability)'),
+            parameters=calcSrd.AMxParamSerializer(
+                D=DatumSerializer(
+                    value=AMx.D,
+                    units='arcmin',
+                    label='D',
+                    description='Fiducial distance between two objects to '
+                                'consider'),
+                annulus=DatumSerializer(
+                    value=AMx.annulus,
+                    units='arcmin',
+                    label='annulus',
+                    description='Annulus for selecting pairs of stars'),
+                mag_range=DatumSerializer(
+                    value=AMx.magRange,
+                    units='mag',
+                    label='mag range',
+                    description='(bright, faint) magnitude selection range')),
+            blob_id=blob.id)
+        measurement_serializers.append(AMx_serializer)
+
+        # So... only one spec level is computed???
+        AFx_serializer = MeasurementSerializer(
+            metric=calcSrd.AFxSerializer(x=x, level=AMx.level),
+            value=DatumSerializer(
+                value=AMx.AFx,
+                units='',
+                label='AF{0:d}'.format(x),
+                description='Fraction of pairs that deviate more than AD{0:d} '
+                            'from median AM{0:d} ({1})'.format(x, AMx.level)),
+            parameters=calcSrd.AFxParamSerializer(
+                ADx=DatumSerializer(
+                    value=AMx.ADx_spec,
+                    units='milliarcsecond',
+                    label='AD{0:d}'.format(x),
+                    description='Deviation from median RMS AM{0:d} '
+                                'containing AF{0:d} of sample'.format(x)),
+                AMx=DatumSerializer(
+                    value=AMx.AMx,
+                    units='milliarcsecond',
+                    label='AM{0:d}'.format(x),
+                    description='Median RMS of the astrometric distance '
+                                'distribution for stellar pairs with '
+                                'separation of D arcmin (repeatability)'),
+                D=DatumSerializer(
+                    value=AMx.D,
+                    units='arcmin',
+                    label='D',
+                    description='Fiducial distance between two objects to '
+                                'consider'),
+                annulus=DatumSerializer(
+                    value=AMx.annulus,
+                    units='arcmin',
+                    label='annulus',
+                    description='Annulus for selecting pairs of stars'),
+                mag_range=DatumSerializer(
+                    value=AMx.magRange,
+                    units='mag',
+                    label='mag range',
+                    description='(bright, faint) magnitude selection range')),
+            blob_id=blob.id)
+        measurement_serializers.append(AFx_serializer)
+
+    # Serialize PA1
     PA1_serializer = MeasurementSerializer(
         metric=calcSrd.PA1Serializer(),
         value=DatumSerializer(
@@ -576,7 +654,7 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
         blob_id=blob.id)
     json.dumps(PA1_serializer.json)
     measurement_serializers.append(PA1_serializer)
-    # FIXME need to include the rest of AM1's measurement struct in a blob
+    # FIXME need to include the rest of PA1's measurement struct in a blob
 
     # Serialize PA2 with each level of PF1
     for level in srdSpec.levels:

@@ -635,6 +635,69 @@ def calcAMx(groupView, D=5, width=2, magRange=None,
     )
 
 
+class AMxParamSerializer(ParametersSerializerBase):
+    """Serialize parameters used by AMx metric measurement."""
+
+    def __init__(self, D=None, annulus=None, mag_range=None):
+        ParametersSerializerBase.__init__(self)
+        assert isinstance(D, DatumSerializer)
+        assert isinstance(annulus, DatumSerializer)
+        assert isinstance(mag_range, DatumSerializer)
+        self._doc['D'] = D
+        self._doc['annulus'] = annulus
+        self._doc['mag_range'] = mag_range
+
+    @property
+    def schema_id(self):
+        return 'AMx-parameters-v1.0.0'
+
+
+class AMxSerializer(MetricSerializer):
+    """Serializer for AMx metric definition."""
+    def __init__(self, x):
+        MetricSerializer.__init__(
+            self,
+            name='AM{0:d}'.format(int(x)),
+            reference='LPM-17',
+            description='Median RMS of the astrometric distance distribution '
+                        'for stellar pairs with separation of D arcmin '
+                        '(repeatability)')
+
+
+class AFxParamSerializer(ParametersSerializerBase):
+    """Serialize parameters used by AFx metric measurement."""
+
+    def __init__(self, AMx=None, ADx=None,
+                 D=None, annulus=None, mag_range=None):
+        ParametersSerializerBase.__init__(self)
+        assert isinstance(AMx, DatumSerializer)
+        assert isinstance(ADx, DatumSerializer)
+        assert isinstance(D, DatumSerializer)
+        assert isinstance(annulus, DatumSerializer)
+        assert isinstance(mag_range, DatumSerializer)
+        self._doc['AMx'] = AMx
+        self._doc['ADx'] = ADx
+        self._doc['D'] = D
+        self._doc['annulus'] = annulus
+        self._doc['mag_range'] = mag_range
+
+    @property
+    def schema_id(self):
+        return 'AFx-parameters-v1.0.0'
+
+
+class AFxSerializer(MetricSerializer):
+    """Serializer for AFx metric definition."""
+    def __init__(self, x=None, level=None):
+        MetricSerializer.__init__(
+            self,
+            name='AF{0:d}'.format(int(x)),
+            spec_level=level,
+            reference='LPM-17',
+            description='Fraction of pairs that deviate by AD{0:d} '
+                        'from median AM{0:d} ({1})'.format(x, level))
+
+
 def calcRmsDistances(groupView, annulus, magRange=None, verbose=False):
     """Calculate the RMS distance of a set of matched objects over visits.
 
