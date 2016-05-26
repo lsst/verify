@@ -30,6 +30,7 @@ import lsst.pipe.base as pipeBase
 from .base import ValidateErrorNoStars
 from .util import averageRaFromCat, averageDecFromCat
 from .srdSpec import srdSpec, getAstrometricSpec
+from .io import ParametersSerializerBase, MetricSerializer, DatumSerializer
 
 
 def calcPA1(matches, magKey, numRandomShuffles=50, verbose=False):
@@ -162,6 +163,30 @@ def doCalcPA1(groupView, magKey):
                            magDiffsUnits='mmag', magMeanUnits='mag')
 
 
+class PA1ParamSerializer(ParametersSerializerBase):
+    """Serialize parameters used by PA1 metric measurement."""
+
+    def __init__(self, num_random_shuffles):
+        # FIXME note that num_random_shuffles is hidden as a default param
+        # of calcPA1. We need a better of exposing full provenance
+        ParametersSerializerBase.__init__(self)
+        self._doc['num_random_shuffles'] = num_random_shuffles
+
+    @property
+    def schema_id(self):
+        return 'PA1-parameters-v1.0.0'
+
+
+class PA1Serializer(MetricSerializer):
+    """Serializer for PA1 metric definition."""
+    def __init__(self):
+        MetricSerializer.__init__(
+            self,
+            name='PA1',
+            reference='LPM-17',
+            description='Median RMS of visit-to-visit relative photometry.')
+
+
 def calcPA2(groupView, magKey, defaultLevel='design', verbose=False):
     """Calculate the fraction of outliers from PA1.
 
@@ -250,6 +275,57 @@ def calcPA2(groupView, magKey, defaultLevel='design', verbose=False):
                            PA2_measured=PA2_measured,
                            PF1_measured=PF1_measured,
                            PF1_spec=srdSpec.PF1, PA2_spec=PA2_spec)
+
+
+class PA2ParamSerializer(ParametersSerializerBase):
+    """Serialize parameters used by PA1 metric measurement."""
+
+    def __init__(self, num_random_shuffles=None, PF1=None):
+        ParametersSerializerBase.__init__(self)
+        assert isinstance(num_random_shuffles, int)
+        assert isinstance(PF1, DatumSerializer)
+        self._doc['num_random_shuffles'] = num_random_shuffles
+        self._doc['PF1'] = PF1
+
+    @property
+    def schema_id(self):
+        return 'PA2-parameters-v1.0.0'
+
+
+class PA2Serializer(MetricSerializer):
+    """Serializer for PA2 metric definition."""
+    def __init__(self, spec_level):
+        MetricSerializer.__init__(
+            self,
+            name='PA2',
+            spec_level=spec_level,
+            reference='LPM-17',
+            description='Mags from mean relative photometric RMS that '
+                        'encompasses PF1 of measurements.')
+
+
+class PF1ParamSerializer(ParametersSerializerBase):
+    """Serialize parameters used by PA1 metric measurement."""
+
+    def __init__(self, PA2=None):
+        ParametersSerializerBase.__init__(self)
+        assert isinstance(PA2, DatumSerializer)
+        self._doc['PA2'] = PA2
+
+    @property
+    def schema_id(self):
+        return 'PF1-parameters-v1.0.0'
+
+
+class PF1Serializer(MetricSerializer):
+    """Serializer for PF1 metric definition."""
+    def __init__(self, spec_level):
+        MetricSerializer.__init__(
+            self,
+            name='PF1',
+            spec_level=spec_level,
+            reference='LPM-17',
+            description='Fraction of measurements more than PA2')
 
 
 def getRandomDiffRmsInMas(array):
