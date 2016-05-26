@@ -513,6 +513,12 @@ class MultiVisitStarBlobSerializer(BlobSerializerBase):
         return 'multi-visit-star-blob-v1.0.0'
 
 
+def persist_job(job, filepath):
+    with open(filepath, 'w') as outfile:
+        json_data = job.json
+        json.dump(json_data, outfile, sort_keys=True, indent=2)
+
+
 def saveKpmToJson(KpmStruct, filename):
     """Save KPM `lsst.pipe.base.Struct` to JSON file.
 

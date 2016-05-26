@@ -41,7 +41,8 @@ from .print import printPA1, printPA2, printAMx
 from .srdSpec import srdSpec, loadSrdRequirements
 from .util import getCcdKeyName, repoNameToPrefix, calcOrNone, loadParameters
 from .io import (saveKpmToJson, loadKpmFromJson, MultiVisitStarBlobSerializer,
-                 MeasurementSerializer, DatumSerializer)
+                 MeasurementSerializer, DatumSerializer, JobSerializer,
+                 persist_job)
 
 
 def loadAndMatchData(repo, dataIds,
@@ -620,6 +621,12 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
             blob_id=blob.id)
         json.dumps(PF1_serializer.json)
         measurement_serializers.append(PF1_serializer)
+
+    # Wrap measurements in a Job
+    job_serializer = JobSerializer(
+        measurements=measurement_serializers,
+        blobs=[blob])
+    persist_job(job_serializer, outputPrefix.rstrip('_') + '.json')
 
     if makePrint:
         print("=============================================")
