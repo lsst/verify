@@ -4,20 +4,38 @@ print_error() {
     >&2 echo "$@"
 }
 
-CAMERA=$1
-MAPPER=$2
-VALIDATION_DATA=$3
-CONFIG_FILE=$4
+INGEST=ingestImages.py
+PROCESSCCD=processCcd.py
 
-if [[ $# -gt 4 ]]
-then
-    INGEST=$5
-    PROCESSCCD=$6
-else
-    INGEST=ingestImages.py
-    PROCESSCCD=processCcd.py
-fi
+usage() {
+    print_error
+    print_error "Usage: $0 [-cmvfip] [-h] [-- <options to validateDrp.py>]"
+    print_error
+    print_error "Specifc options:"
+    print_error "   -c          camera"
+    print_error "   -m          mapper"
+    print_error "   -v          validation data"
+    print_error "   -f          config file"
+    print_error "   -i          ingest (${INGEST})"
+    print_error "   -p          processccd (${PROCESSCCD})"
+    print_error "   -h          show this message"
+    exit 1
+}
 
+# thank OSX for not including getopt
+while getopts "c:m:v:f:i:p:h" option; do
+    case "$option" in
+        c)  CAMERA="$OPTARG";;
+        m)  MAPPER="$OPTARG";;
+        v)  VALIDATION_DATA="$OPTARG";;
+        f)  CONFIG_FILE="$OPTARG";;
+        i)  INGEST="$OPTARG";;
+        p)  PROCESSCCD="$OPTARG";;
+        h)  usage;;
+        *)  usage;;
+    esac
+done
+shift $((OPTIND-1))
 
 PRODUCT_DIR=${VALIDATE_DRP_DIR}
 # OS X El Capitan SIP swallows DYLD_LIBRARY_PATH so export the duplicate in LSST_LIBRARY_PATH
@@ -69,7 +87,7 @@ ${PROCESSCCD} "${INPUT}" --output "${OUTPUT}" \
 
 # Run astrometry check on src
 echo "validating"
-validateDrp.py "${OUTPUT}" --configFile "${YAMLCONFIG}"
+validateDrp.py "${OUTPUT}" --configFile "${YAMLCONFIG}" "$@"
 
 if [ $? != 0 ]; then
    print_error "Validation failed"
