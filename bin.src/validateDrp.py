@@ -86,7 +86,7 @@ if __name__ == "__main__":
     validate.run(args.repo, **kwargs)
 
     # Only check against expectations if we were passed information about those expectations
-    if args.configFile and kwargs['requirements']:
+    if args.configFile and 'requirements' in kwargs:
         kpm_verbose = True
         level = 'design'
         if kpm_verbose:
