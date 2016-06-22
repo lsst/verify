@@ -27,6 +27,8 @@ import numpy as np
 import astropy.units
 import lsst.pipe.base as pipeBase
 
+from .base import BlobBase, MeasurementBase
+
 
 class DatumSerializer(object):
     """Serializer for an annotated data point.
@@ -379,7 +381,7 @@ class JobSerializer(object):
     @measurements.setter
     def measurements(self, meas_serializers):
         for m in meas_serializers:
-            assert isinstance(m, MeasurementSerializer)
+            assert isinstance(m, MeasurementBase)
             self._doc['measurements'].append(m)
 
     @property
@@ -390,7 +392,7 @@ class JobSerializer(object):
     @blobs.setter
     def blobs(self, blob_serializers):
         for m in blob_serializers:
-            assert isinstance(m, BlobSerializerBase)
+            assert isinstance(m, BlobBase)
             self._doc['blobs'].append(m)
 
 
