@@ -60,8 +60,7 @@ class CoordTestCase(unittest.TestCase):
 
     def testSimpleAverageCoord(self):
         meanRa, meanDec = util.averageRaDec(self.simpleRa, self.simpleDec)
-        assert_allclose([19.493625,  37.60447], np.rad2deg([meanRa, meanDec]))
-
+        assert_allclose([19.493625, 37.60447], np.rad2deg([meanRa, meanDec]))
 
 
 def suite():
@@ -77,6 +76,7 @@ def suite():
 def run(shouldExit=False):
     """Run the tests"""
     utilsTests.run(suite(), shouldExit)
+
 
 if __name__ == "__main__":
     if "--display" in sys.argv:
