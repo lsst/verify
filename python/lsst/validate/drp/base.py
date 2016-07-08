@@ -172,7 +172,7 @@ class Datum(JsonSerializationMixin):
         return astropy.units.Unit(self.units)
 
     @property
-    def astropy_quanitity(self):
+    def quantity(self):
         """Datum as an astropy Quantity."""
         return self.value * self.astropy_units
 
