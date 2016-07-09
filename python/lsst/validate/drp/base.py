@@ -444,9 +444,13 @@ class Metric(JsonSerializationMixin):
     @property
     def json(self):
         """Render metric as a JSON object (`dict`)."""
+        refDoc = {
+            'doc': self.referenceDoc,
+            'page': self.referencePage,
+            'url': self.referenceUrl}
         return JsonSerializationMixin.jsonify_dict({
             'name': self.name,
-            'reference': self.referenceDoc,
+            'reference': refDoc,
             'description': self.description,
             'specifications': self.specs})
 
