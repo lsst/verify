@@ -113,6 +113,16 @@ class MetricTestCase(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.assertEqual(m.getSpec('b', bandpass='z'))
 
+    def testCheckSpec(self):
+        """Test Metric.testSpec()."""
+        a = Specification('a', 0, 'mag')
+        b_r = Specification('b', 2, 'mag', bandpasses=['r'])
+        b_ug = Specification('b', 4, 'mag', bandpasses=['u', 'g'])
+        m = Metric('test', 'test', '<', specs=[a, b_r, b_ug])
+
+        self.assertFalse(m.checkSpec(3, 'b', bandpass='r'))
+        self.assertTrue(m.checkSpec(3, 'b', bandpass='g'))
+
     def testJson(self):
         """Simple test of the serialized JSON content of a metric."""
         name = 'T1'
