@@ -456,13 +456,32 @@ class Metric(JsonSerializationMixin):
 
 
 class Specification(JsonSerializationMixin):
-    """A specification level or threshold associated with a Metric."""
+    """A specification level or threshold associated with a Metric.
+
+    Parameters
+    ----------
+    name : str
+        Name of the specification level for a metric. LPM-17 uses `'design'`,
+        `'minimum'` and `'stretch'`.
+    value : float
+        The specification threshold level.
+    bandpasses : list, optional
+        A list of bandpass names, if the specification level is dependent
+        on the bandpass.
+    dependencies : dict
+        A dictionary of named :class:`Datum` values that must be known when
+        making a measurement against a dependency. Dependencies can be
+        accessed as attributes of the specification object.
+    """
     def __init__(self, name, value, units, bandpasses=None, dependencies=None):
         self.name = name
         self.value = value
         self.units = units
         self.bandpasses = bandpasses
-        self.dependencies = dependencies
+        if dependencies:
+            self.dependencies = dependencies
+        else:
+            self.dependencies = {}
 
     def __getattr__(self, key):
         """Access dependencies with keys as attributes."""
