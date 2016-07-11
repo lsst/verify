@@ -6,3 +6,4 @@ lsst.validate.drp — Science Requirements Monitoring
    :caption: Introduction to the Measurement API
 
    metric-dev
+   measurement-dev
