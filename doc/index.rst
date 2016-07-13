@@ -7,3 +7,4 @@ lsst.validate.drp — Science Requirements Monitoring
 
    metric-dev
    measurement-dev
+   blob-dev
