@@ -113,7 +113,7 @@ class AMxMeasurement(MeasurementBase):
 
     metric = None
     value = None
-    units = 'mmag'
+    units = 'milliarcsecond'
     label = 'AMx'
     schema = 'amx-1.0.0'
 
@@ -141,6 +141,9 @@ class AMxMeasurement(MeasurementBase):
         self.registerParameter('magRange', units='mag',
                                description='Stellar magnitude selection '
                                            'range.')
+
+        # Register measurement extras
+        self.registerExtra('rmsDistMas', label='RMS', units='milliarcsecond')
 
         self.bandpass = bandpass
         self.magRange = magRange
@@ -177,23 +180,5 @@ class AMxMeasurement(MeasurementBase):
             self.rmsDistMas = np.asarray(radiansToMilliarcsec(rmsDistances))
             self.value = np.median(self.rmsDistMas)
 
-            # Persist rmsDistMas as a new blob
-            rmsDistMasDatum = Datum(
-                value=self.rmsDistMas,
-                units='milliarcsecond',
-                label='RMS')
-            self.blob = AMxBlob(rmsDistMasDatum)
-            self.linkBlob(self.blob)
-
         if job:
             job.registerMeasurement(self)
-
-
-class AMxBlob(BlobBase):
-    """Blob container associated with AMx measurements."""
-
-    schema = 'amx-blob-v1.0.0'
-
-    def __init__(self, rmsDistMasDatum):
-        BlobBase.__init__(self)
-        self._doc['rms_dist_mas'] = rmsDistMasDatum

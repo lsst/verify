@@ -24,6 +24,8 @@
 from __future__ import print_function
 
 import unittest
+
+import numpy as np
 from numpy.testing import assert_almost_equal
 
 import lsst.utils.tests as utilsTests
@@ -52,8 +54,12 @@ class DemoMeasurement(MeasurementBase):
                                description='A float')
         self.registerParameter('datumParam', datum=testDatum)
 
+        self.registerExtra('mags', units='mag', description='Some magnitudes')
+
         self.strParam = 'hello world'
         self.floatParam = 22.
+
+        self.mags = np.array([1., 2., 3.])
 
         self.value = 5.
 
@@ -98,6 +104,13 @@ class MeasurementBaseTestCase(unittest.TestCase):
         self.assertEqual(self.meas.parameters['datumParam'].units, 'arcsecond')
         self.assertEqual(self.meas.parameters['datumParam'].label, 'datumParam')
 
+    def testExtra(self):
+        assert_almost_equal(self.meas.mags, np.array([1., 2., 3.]))
+        assert_almost_equal(self.meas.extras['mags'].value, np.array([1., 2., 3.]))
+        self.assertEqual(self.meas.extras['mags'].label, 'mags')
+        self.assertEqual(self.meas.extras['mags'].units, 'mag')
+        self.assertEqual(self.meas.extras['mags'].description, 'Some magnitudes')
+
     def testJson(self):
         j = self.meas.json
 
@@ -107,6 +120,12 @@ class MeasurementBaseTestCase(unittest.TestCase):
         self.assertEqual(j['parameters']['strParam']['label'], 'strParam')
         self.assertEqual(j['parameters']['strParam']['description'],
                          'A string')
+
+        assert_almost_equal(j['extras']['mags']['value'][0], self.meas.mags[0])
+        self.assertEqual(j['extras']['mags']['units'], 'mag')
+        self.assertEqual(j['extras']['mags']['label'], 'mags')
+        self.assertEqual(j['extras']['mags']['description'],
+                         'Some magnitudes')
 
 
 def suite():

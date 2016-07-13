@@ -24,7 +24,7 @@ import numpy as np
 
 import lsst.pipe.base as pipeBase
 
-from ..base import MeasurementBase, Metric, Datum, BlobBase
+from ..base import MeasurementBase, Metric
 from ..util import getRandomDiffRmsInMas, computeWidths
 
 
@@ -60,8 +60,6 @@ class PA1Measurement(MeasurementBase):
         Magnitude differences of stars between visits, for each random sample.
     magMean : ndarray
         Mean magnitude of stars seen across visits, for each random sample.
-    blob : PA1Blob
-        Blob with by-products from this measurement.
 
     Notes
     -----
@@ -116,6 +114,24 @@ class PA1Measurement(MeasurementBase):
                                units='', label='shuffles',
                                description='Number of random shuffles')
 
+        # register measurement extras
+        self.registerExtra(
+            'rms', units='mmag', label='RMS',
+            description='Photometric repeatability RMS of stellar pairs for '
+                        'each random sampling')
+        self.registerExtra(
+            'iqr', units='mmag', label='IQR',
+            description='Photometric repeatability IQR of stellar pairs for '
+                        'each random sample')
+        self.registerExtra(
+            'magDiff', units='mmag', label='Delta mag',
+            description='Photometric repeatability differences magnitudes for '
+                        'stellar pairs for each random sample')
+        self.registerExtra(
+            'magMean', units='mag', label='mag',
+            description='Mean magnitude of pairs of stellar sources matched '
+                        'across visits, for each random sample.')
+
         self.matchedDataset = matchedDataset
 
         # Add external blob so that links will be persisted with
@@ -131,35 +147,11 @@ class PA1Measurement(MeasurementBase):
                       for n in range(numRandomShuffles)]
 
         self.rms = np.array([pa1.rms for pa1 in pa1Samples])
-        rmsDatum = Datum(self.rms, units='mmag',
-                         label='RMS',
-                         description='Photometric repeatability RMS of '
-                                     'stellar pairs for each random sampling')
-
         self.iqr = np.array([pa1.iqr for pa1 in pa1Samples])
-        iqrDatum = Datum(self.iqr, units='mmag',
-                         label='IQR',
-                         description='Photometric repeatability IQR of '
-                                     'stellar pairs for each random sample')
-
         self.magDiff = np.array([pa1.magDiffs for pa1 in pa1Samples])
-        magDiffDatum = Datum(self.magDiff, units='mmag',
-                             label='Delta mag',
-                             description='Photometric repeatability '
-                                         'differences magnitudes for stellar '
-                                         'pairs for each random sample')
-
         self.magMean = np.array([pa1.magMean for pa1 in pa1Samples])
-        magMeanDatum = Datum(self.magMean, units='mag',
-                             label='mag',
-                             description='Mean magnitude of pairs of stellar '
-                                         'sources matched across visits, for '
-                                         'each random sample.')
 
         self.value = np.mean(self.iqr)
-
-        self.blob = PA1Blob(rmsDatum, iqrDatum, magDiffDatum, magMeanDatum)
-        self.linkBlob(self.blob)
 
         if job:
             job.registerMeasurement(self)
@@ -172,31 +164,3 @@ class PA1Measurement(MeasurementBase):
                                rmsUnits='mmag', iqrUnits='mmag',
                                magDiffs=magDiffs, magMean=magMean,
                                magDiffsUnits='mmag', magMeanUnits='mag')
-
-
-class PA1Blob(BlobBase):
-    """Blob container associated with PA1 measurements.
-
-    Parameters
-    ----------
-    rmsDatum : Datum
-        Datum with arrays of RMS measurements for each PA1 measurement sample.
-    iqrDatum : Datum
-        Datum with arrays of [25%, 75%] interquartile range measurements for
-        each PA1 measurement sample.
-    magDiffDatum : Datum
-        Datum with arrays of magnitude differences for each PA1 measurement
-        sample.
-    magMeanDatum : Datum
-        Datum with arrays of mean magnitudes for each PA1 measurement
-        sample.
-    """
-
-    schema = 'pa1-blob-v1.0.0'
-
-    def __init__(self, rmsDatum, iqrDatum, magDiffDatum, magMeanDatum):
-        BlobBase.__init__(self)
-        self._doc['rms'] = rmsDatum
-        self._doc['iqr'] = iqrDatum
-        self._doc['mag_diff'] = magDiffDatum
-        self._doc['mag_mean'] = magMeanDatum

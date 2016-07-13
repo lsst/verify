@@ -144,8 +144,6 @@ class AFxMeasurement(MeasurementBase):
 
         if amx.value:
             self.value = 100. * np.mean(amx.rmsDistMas > amx.value + self.ADx)
-
-            self.linkBlob(amx.blob)
         else:
             # FIXME previously would raise ValidateErrorNoStars
             self.value = None

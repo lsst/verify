@@ -549,11 +549,18 @@ class MeasurementBase(JsonSerializationMixin):
         Parameters are :class:`lsst.validate.drp.base.Datum` instances.
         Parameter values can also be accessed and updated as instance
         attributes named after the parameter.
+    extras : dict
+        A `dict` containing all measurement by-products (extras) that have
+        been registered for serialization. Extras are
+        :class:`lsst.validate.drp.base.Datum` instances. Values of extras can
+        also be accessed and updated as instance attributes named after
+        the extra.
     """
     __metaclass__ = abc.ABCMeta
 
     def __init__(self):
         self.parameters = {}
+        self.extras = {}
         self._linkedBlobs = []
         self._id = uuid.uuid4().hex
         self.specName = None
@@ -563,15 +570,21 @@ class MeasurementBase(JsonSerializationMixin):
         if key in self.parameters:
             # Requesting a serializable parameter
             return self.parameters[key].value
+        elif key in self.extras:
+            return self.extras[key].value
         else:
             raise AttributeError(
                 'Object {0} does not have attribute {1}'.format(str(self),
                                                                 key))
 
     def __setattr__(self, key, value):
-        if key != 'parameters' and key in self.parameters:
+        _bootstrap = ('parameters', 'extras')
+        if key not in _bootstrap and key in self.parameters:
             # Setting value of a serializable parameter
             self.parameters[key].value = value
+        elif key not in _bootstrap and key in self.extras:
+            # Setting value of a serializable measurement extra
+            self.extras[key].value = value
         else:
             super(MeasurementBase, self).__setattr__(key, value)
 
@@ -601,7 +614,7 @@ class MeasurementBase(JsonSerializationMixin):
         The value of a parameter can always be accessed through the object's
         attribute named `paramKey.`
 
-        Parameters are stored as :class:`Datum` objects, hich can be accessed
+        Parameters are stored as :class:`Datum` objects, which can be accessed
         through the `parameters` attribute `dict`.
 
         Parameters
@@ -610,23 +623,67 @@ class MeasurementBase(JsonSerializationMixin):
             Name of the parameter; used as the key in the `parameters`
             attribute of this object.
         value : obj or :class:`lsst.validate.drp.base.Datum`
-            Value of the parameter, either as a regular object, or already
-            represented as a :class:`~lsst.validate.drp.base.Datum`.
+            Value of the parameter.
         units : str, optional
-            The astropy-compatible unit string, used if `paramValue` is
-            not already a `Datum`. See
-            http://docs.astropy.org/en/stable/units/.
+            An astropy-compatible unit string.
+            See http://docs.astropy.org/en/stable/units/.
         label : str, optional
             Label suitable for plot axes (without units). By default the
             `paramKey` is used as the `label`. Setting this label argument
-            overrides both of these.
+            overrides this default.
         description : `str`, optional
-            Extended description; used if `paramValue` is not already a
-            `Datum`.
+            Extended description.
         datum : `Datum`, optional
-            If a `Datum` is provided, it's value, units and label will be
+            If a `Datum` is provided, its value, units and label will be
             used unless overriden by other arguments to `registerParameter`.
         """
+        self._register_managed_attribute(self.parameters, paramKey,
+                                         value=value, label=label, units=units,
+                                         description=description, datum=datum)
+
+    def registerExtra(self, extraKey, value=None, units=None, label=None,
+                      description=None, datum=None):
+        """Register a measurement extra---a by-product of a metric measurement.
+
+        The value of the extra can either be set at registration time
+        (see `value` argument), or later by setting the object's attribute
+        named `extraKey`.
+
+        The value of an extra can always be accessed through the object's
+        attribute named `exrtaKey.`
+
+        Extras are stored as :class:`Datum` objects, which can be accessed
+        through the `parameters` attribute `dict`.
+
+        Parameters
+        ----------
+        extraKey : str
+            Name of the extra; used as the key in the `extras`
+            attribute of this object.
+        value : obj or :class:`lsst.validate.drp.base.Datum`
+            Value of the extra, either as a regular object, or already
+            represented as a :class:`~lsst.validate.drp.base.Datum`.
+        units : str, optional
+            The astropy-compatible unit string.
+            See http://docs.astropy.org/en/stable/units/.
+        label : str, optional
+            Label suitable for plot axes (without units). By default the
+            `extraKey` is used as the `label`. Setting this label argument
+            overrides both of these.
+        description : `str`, optional
+            Extended description.
+        datum : `Datum`, optional
+            If a `Datum` is provided, its value, units, label and description
+            will be used unless overriden by other arguments to
+            `registerExtra`.
+        """
+        self._register_managed_attribute(self.extras, extraKey,
+                                         value=value, label=label, units=units,
+                                         description=description, datum=datum)
+
+    def _register_managed_attribute(self, attribute, key, value=None,
+                                    units=None, label=None, description=None,
+                                    datum=None):
         _value = None
         _units = None
         _label = None
@@ -654,9 +711,9 @@ class MeasurementBase(JsonSerializationMixin):
 
         # Use parameter name as label if necessary
         if _label is None:
-            _label = paramKey
+            _label = key
 
-        self.parameters[paramKey] = Datum(
+        attribute[key] = Datum(
             _value, units=_units, label=_label, description=_description)
 
     @abc.abstractproperty
@@ -716,6 +773,7 @@ class MeasurementBase(JsonSerializationMixin):
         object_doc = {'metric': self.metric,
                       'value': self.value,
                       'parameters': self.parameters,
+                      'extras': self.extras,
                       'blobs': blobIds,
                       'schema': self.schema,
                       'spec_name': self.specName,

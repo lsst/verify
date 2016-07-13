@@ -463,36 +463,36 @@ def plotPA1(pa1, outputPrefix=""):
 
     fig = plt.figure(figsize=(18, 12))
     ax1 = fig.add_subplot(1, 2, 1)
-    ax1.scatter(pa1.blob['mag_mean'].value[0],
-                pa1.blob['mag_diff'].value[0],
+    ax1.scatter(pa1.magMean[0],
+                pa1.magDiff[0],
                 s=10, color=color['bright'], linewidth=0)
     # index 0 because we show only the first sample from multiple trials
-    ax1.axhline(+pa1.blob['rms'].value[0], color=color['rms'], linewidth=3)
-    ax1.axhline(-pa1.blob['rms'].value[0], color=color['rms'], linewidth=3)
-    ax1.axhline(+pa1.blob['iqr'].value[0], color=color['iqr'], linewidth=3)
-    ax1.axhline(-pa1.blob['iqr'].value[0], color=color['iqr'], linewidth=3)
+    ax1.axhline(+pa1.rms[0], color=color['rms'], linewidth=3)
+    ax1.axhline(-pa1.rms[0], color=color['rms'], linewidth=3)
+    ax1.axhline(+pa1.iqr[0], color=color['iqr'], linewidth=3)
+    ax1.axhline(-pa1.iqr[0], color=color['iqr'], linewidth=3)
 
     ax2 = fig.add_subplot(1, 2, 2, sharey=ax1)
-    ax2.hist(pa1.blob['mag_diff'].value[0], bins=25, range=diffRange,
+    ax2.hist(pa1.magDiff[0], bins=25, range=diffRange,
              orientation='horizontal', histtype='stepfilled',
              normed=True, color=color['bright'])
     ax2.set_xlabel("relative # / bin")
 
     yv = np.linspace(diffRange[0], diffRange[1], 100)
-    ax2.plot(scipy.stats.norm.pdf(yv, scale=pa1.blob['rms'].value[0]), yv,
+    ax2.plot(scipy.stats.norm.pdf(yv, scale=pa1.rms[0]), yv,
              marker='', linestyle='-', linewidth=3, color=color['rms'],
-             label=r"PA1(RMS) = %4.2f %s" % (pa1.blob['rms'].value[0],
-                                             pa1.blob['rms'].latex_units))
-    ax2.plot(scipy.stats.norm.pdf(yv, scale=pa1.blob['iqr'].value[0]), yv,
+             label=r"PA1(RMS) = %4.2f %s" % (pa1.rms[0],
+                                             pa1.extras['rms'].latex_units))
+    ax2.plot(scipy.stats.norm.pdf(yv, scale=pa1.iqr[0]), yv,
              marker='', linestyle='-', linewidth=3, color=color['iqr'],
-             label=r"PA1(IQR) = %4.2f %s" % (pa1.blob['iqr'].value[0],
-                                             pa1.blob['iqr'].latex_units))
+             label=r"PA1(IQR) = %4.2f %s" % (pa1.iqr[0],
+                                             pa1.extras['iqr'].latex_units))
     ax2.set_ylim(*diffRange)
     ax2.legend()
     # ax1.set_ylabel(u"12-pixel aperture magnitude diff (mmag)")
     # ax1.set_xlabel(u"12-pixel aperture magnitude")
     ax1.set_xlabel("psf magnitude")
-    ax1.set_ylabel(r"psf magnitude diff (%s)" % pa1.blob['mag_diff'].latex_units)
+    ax1.set_ylabel(r"psf magnitude diff (%s)" % pa1.extras['magDiff'].latex_units)
     for label in ax2.get_yticklabels():
         label.set_visible(False)
 
@@ -543,14 +543,14 @@ def plotAMx(amx, afx, bandpass, amxSpecName='design', outputPrefix=""):
 
     histLabelTemplate = 'D: [{inner:.1f}-{outer:.1f}] {annulusUnits}\n'\
                         'Mag: [{magBright:.1f}-{magFaint:.1f}]'
-    ax1.hist(amx.blob['rms_dist_mas'].value, bins=25, range=(0.0, 100.0),
+    ax1.hist(amx.rmsDistMas, bins=25, range=(0.0, 100.0),
              histtype='stepfilled',
              label=histLabelTemplate.format(
-                 inner=amx.parameters['annulus'].value[0],
-                 outer=amx.parameters['annulus'].value[1],
+                 inner=amx.annulus[0],
+                 outer=amx.annulus[1],
                  annulusUnits=amx.parameters['annulus'].latex_units,
-                 magBright=amx.parameters['magRange'].value[0],
-                 magFaint=amx.parameters['magRange'].value[1]))
+                 magBright=amx.magRange[0],
+                 magFaint=amx.magRange[1]))
 
     if amx.checkSpec(amxSpecName):
         amxStatus = 'passed'
@@ -587,19 +587,19 @@ def plotAMx(amx, afx, bandpass, amxSpecName='design', outputPrefix=""):
         afxValue=afx.value,
         status=afxStatus)
 
-    ax1.axvline(amx.value + afx.parameters['ADx'].value,
+    ax1.axvline(amx.value + afx.ADx,
                 0, 1, linewidth=2, color='green',
                 label=afxLabel)
 
     title = '{metric} Astrometric Repeatability over {D:d} {units}'.format(
         metric=amx.label,
-        D=int(amx.parameters['D'].value),
+        D=int(amx.D),
         units=amx.parameters['D'].latex_units)
     ax1.set_title(title)
     ax1.set_xlim(0.0, 100.0)
     ax1.set_xlabel('{label} ({units})'.format(
-        label=amx.blob['rms_dist_mas'].label,
-        units=amx.blob['rms_dist_mas'].latex_units))
+        label=amx.extras['rmsDistMas'].label,
+        units=amx.extras['rmsDistMas'].latex_units))
     ax1.set_ylabel('# pairs / bin')
 
     ax1.legend(loc='upper right', fontsize=16)
@@ -607,10 +607,10 @@ def plotAMx(amx, afx, bandpass, amxSpecName='design', outputPrefix=""):
     plotPath = '{prefix}{metric}_D_{D:d}_{Dunits}_{magBright}_{magFaint}.{ext}'.format(
         prefix=outputPrefix,
         metric=amx.label,
-        D=int(amx.parameters['D'].value),
+        D=int(amx.D),
         Dunits=amx.parameters['D'].latex_units,
-        magBright=amx.parameters['magRange'].value[0],
-        magFaint=amx.parameters['magRange'].value[1],
+        magBright=amx.magRange[0],
+        magFaint=amx.magRange[1],
         ext='png')
 
     plt.savefig(plotPath, dpi=300)

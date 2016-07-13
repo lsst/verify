@@ -151,7 +151,6 @@ class ADxMeasurement(MeasurementBase):
             percentileAtAfx = np.percentile(amx.rmsDistMas, 100. - self.AFx)
             percentileAtAmx = np.percentile(amx.rmsDistMas, amx.value)
             self.value = percentileAtAfx - percentileAtAmx
-            self.linkBlob(amx.blob)
         else:
             # FIXME previously would raise ValidateErrorNoStars
             self.value = None
