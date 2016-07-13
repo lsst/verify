@@ -75,6 +75,10 @@ class PF1Measurement(MeasurementBase):
                                       yamlDoc=metricYamlDoc,
                                       yamlPath=metricYamlPath)
 
+        pa2spec = self.metric.getSpec(specName, bandpass=self.bandpass).\
+            PA2.getSpec(specName, bandpass=self.bandpass)
+        self.registerParameter('pa2', datum=pa2spec)
+
         self.matchedDataset = matchedDataset
 
         # Add external blob so that links will be persisted with
@@ -87,10 +91,8 @@ class PF1Measurement(MeasurementBase):
         # Use first random sample from original PA1 measurement
         magDiffs = pa1.magDiff[0, :]
 
-        pa2Val = self.metric.getSpec(specName, bandpass=self.bandpass).\
-            PA2.getSpec(specName, bandpass=self.bandpass).value
         # FIXME should this be np.abs(magDiffs) (see pa2)?
-        self.value = 100 * np.mean(np.asarray(magDiffs) > pa2Val)
+        self.value = 100 * np.mean(np.asarray(magDiffs) > self.pa2)
 
         if job:
             job.registerMeasurement(self)

@@ -75,8 +75,9 @@ class PA2Measurement(MeasurementBase):
                                       yamlDoc=metricYamlDoc,
                                       yamlPath=metricYamlPath)
 
-        # TODO register input parameters for serialization
-        # note that matchedDataset is treated as a blob, separately
+        pf1spec = self.metric.getSpec(specName, bandpass=self.bandpass).\
+            PF1.getSpec(specName, bandpass=self.bandpass)
+        self.registerParameter('pf1', datum=pf1spec)
 
         self.matchedDataset = matchedDataset
 
@@ -90,9 +91,7 @@ class PA2Measurement(MeasurementBase):
         # Use first random sample from original PA1 measurement
         magDiffs = pa1.magDiff[0, :]
 
-        pf1Val = self.metric.getSpec(specName, bandpass=self.bandpass).\
-            PF1.getSpec(specName, bandpass=self.bandpass).value
-        pf1Percentile = 100. - pf1Val
+        pf1Percentile = 100. - self.pf1
         self.value = np.percentile(np.abs(magDiffs), pf1Percentile)
 
         if job:

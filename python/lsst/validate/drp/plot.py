@@ -549,8 +549,8 @@ def plotAMx(amx, afx, bandpass, amxSpecName='design', outputPrefix=""):
                  inner=amx.parameters['annulus'].value[0],
                  outer=amx.parameters['annulus'].value[1],
                  annulusUnits=amx.parameters['annulus'].latex_units,
-                 magBright=amx.parameters['mag_range'].value[0],
-                 magFaint=amx.parameters['mag_range'].value[1]))
+                 magBright=amx.parameters['magRange'].value[0],
+                 magFaint=amx.parameters['magRange'].value[1]))
 
     if amx.checkSpec(amxSpecName):
         amxStatus = 'passed'
@@ -609,8 +609,8 @@ def plotAMx(amx, afx, bandpass, amxSpecName='design', outputPrefix=""):
         metric=amx.label,
         D=int(amx.parameters['D'].value),
         Dunits=amx.parameters['D'].latex_units,
-        magBright=amx.parameters['mag_range'].value[0],
-        magFaint=amx.parameters['mag_range'].value[1],
+        magBright=amx.parameters['magRange'].value[0],
+        magFaint=amx.parameters['magRange'].value[1],
         ext='png')
 
     plt.savefig(plotPath, dpi=300)

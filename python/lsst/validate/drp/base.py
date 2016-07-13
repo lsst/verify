@@ -475,8 +475,10 @@ class Specification(JsonSerializationMixin):
     """
     def __init__(self, name, value, units, bandpasses=None, dependencies=None):
         self.name = name
+        self.label = name
         self.value = value
         self.units = units
+        self.description = ''
         self.bandpasses = bandpasses
         if dependencies:
             self.dependencies = dependencies
@@ -493,7 +495,7 @@ class Specification(JsonSerializationMixin):
         :class:`lsst.validate.drp.base.Datum`.
         """
         return Datum(self.value, units=self.units, label=self.name,
-                     description=None)
+                     description=self.description)
 
     @property
     def latex_units(self):
@@ -545,17 +547,33 @@ class MeasurementBase(JsonSerializationMixin):
     parameters : dict
         A `dict` containing all input parameters used by this measurement.
         Parameters are :class:`lsst.validate.drp.base.Datum` instances.
-        Parameters can be *accessed* directly from this attribute, but should
-        be *set* with the :meth:`MeasurementBase.registerParameter` method.
+        Parameter values can also be accessed and updated as instance
+        attributes named after the parameter.
     """
     __metaclass__ = abc.ABCMeta
 
     def __init__(self):
+        self.parameters = {}
         self._linkedBlobs = []
         self._id = uuid.uuid4().hex
-        self.parameters = {}
         self.specName = None
         self.bandpass = None
+
+    def __getattr__(self, key):
+        if key in self.parameters:
+            # Requesting a serializable parameter
+            return self.parameters[key].value
+        else:
+            raise AttributeError(
+                'Object {0} does not have attribute {1}'.format(str(self),
+                                                                key))
+
+    def __setattr__(self, key, value):
+        if key != 'parameters' and key in self.parameters:
+            # Setting value of a serializable parameter
+            self.parameters[key].value = value
+        else:
+            super(MeasurementBase, self).__setattr__(key, value)
 
     def linkBlob(self, blob):
         """Add a blob so that it will be linked to this measurement in
@@ -572,20 +590,26 @@ class MeasurementBase(JsonSerializationMixin):
     def identifier(self):
         return self._id
 
-    def registerParameter(self, paramKey, paramValue, units=None, label=None,
-                          description=None):
-        """Register a measurement input parameter so that it can be persisted
-        with the measurement.
+    def registerParameter(self, paramKey, value=None, units=None, label=None,
+                          description=None, datum=None):
+        """Register a measurement input parameter attribute.
 
-        Parameters are stored as :class:`Datum` objects, and can be
-        accessed through the `parameters` attribute `dict`.
+        The value of the parameter can either be set at registration time
+        (see `value` argument), or later by setting the object's attribute
+        named `paramKey`.
+
+        The value of a parameter can always be accessed through the object's
+        attribute named `paramKey.`
+
+        Parameters are stored as :class:`Datum` objects, hich can be accessed
+        through the `parameters` attribute `dict`.
 
         Parameters
         ----------
         paramKey : str
             Name of the parameter; used as the key in the `parameters`
             attribute of this object.
-        paramValue : obj or :class:`lsst.validate.drp.base.Datum`
+        value : obj or :class:`lsst.validate.drp.base.Datum`
             Value of the parameter, either as a regular object, or already
             represented as a :class:`~lsst.validate.drp.base.Datum`.
         units : str, optional
@@ -593,17 +617,47 @@ class MeasurementBase(JsonSerializationMixin):
             not already a `Datum`. See
             http://docs.astropy.org/en/stable/units/.
         label : str, optional
-            Label suitable for plot axes (without units); used if
-            `paramValue` is not already a `Datum`.
+            Label suitable for plot axes (without units). By default the
+            `paramKey` is used as the `label`. Setting this label argument
+            overrides both of these.
         description : `str`, optional
             Extended description; used if `paramValue` is not already a
             `Datum`.
+        datum : `Datum`, optional
+            If a `Datum` is provided, it's value, units and label will be
+            used unless overriden by other arguments to `registerParameter`.
         """
-        if isinstance(paramValue, Datum):
-            self.parameters[paramKey] = paramValue
-        else:
-            self.parameters[paramKey] = Datum(
-                paramValue, units=units, label=label, description=description)
+        _value = None
+        _units = None
+        _label = None
+        _description = None
+
+        # default to values from Datum
+        if datum is not None:
+            _label = datum.label
+            _description = datum.description
+            _units = datum.units
+            _value = datum.value
+
+        # Apply overrides if arguments are supplied
+        if value is not None:
+            _value = value
+
+        if units is not None:
+            _units = units
+
+        if description is not None:
+            _description = description
+
+        if label is not None:
+            _label = label
+
+        # Use parameter name as label if necessary
+        if _label is None:
+            _label = paramKey
+
+        self.parameters[paramKey] = Datum(
+            _value, units=_units, label=_label, description=_description)
 
     @abc.abstractproperty
     def metric(self):

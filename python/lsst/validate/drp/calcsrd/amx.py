@@ -125,18 +125,26 @@ class AMxMeasurement(MeasurementBase):
         if x not in [1, 2, 3]:
             raise ValueError('AMx x should be 1, 2, or 3.')
         self.label = 'AM{0:d}'.format(x)
-        self.bandpass = bandpass
-        self.magRange = magRange
-        self.width = width
-
         self.metric = Metric.fromYaml(self.label,
                                       yamlDoc=metricYamlDoc,
                                       yamlPath=metricYamlPath)
+        DSpec = self.metric.getSpec('design', bandpass=self.bandpass).D
 
-        # register input parameters for serialization
-        # note that matchedDataset is treated as a blob, separately
-        self.registerParameter('width', width, units='arcsecond',
+        # Register measurement parameters for serialization
+        self.registerParameter('D', datum=DSpec)
+        self.registerParameter('width', units='arcsecond',
                                label='Width', description='Width of annulus')
+        self.registerParameter('annulus', units='arcsecond',
+                               label='annulus radii',
+                               description='Inner and outer radii of '
+                                           'selection annulus.')
+        self.registerParameter('magRange', units='mag',
+                               description='Stellar magnitude selection '
+                                           'range.')
+
+        self.bandpass = bandpass
+        self.magRange = magRange
+        self.width = width
 
         self.matchedDataset = matchedDataset
 
@@ -149,23 +157,11 @@ class AMxMeasurement(MeasurementBase):
 
         matches = matchedDataset.safeMatches
 
-        DSpec = self.metric.getSpec('design', bandpass=self.bandpass).D
-        D = DSpec.value
-        self.registerParameter('D', DSpec)
+        self.annulus = self.D + (self.width/2)*np.array([-1, +1])
 
-        annulus = D + (width/2)*np.array([-1, +1])
-
-        rmsDistances, annulus, magRange = \
-            calcRmsDistances(matches, annulus, magRange=magRange,
+        rmsDistances, self.annulus, self.magRange = \
+            calcRmsDistances(matches, self.annulus, magRange=self.magRange,
                              verbose=verbose)
-
-        self.registerParameter('annulus', annulus, units='arcsecond',
-                               label='annulus radii',
-                               description='Inner and outer radii of '
-                                           'selection annulus.')
-        self.registerParameter('mag_range', magRange, units='mag',
-                               description='Stellar magnitude selection '
-                                           'range.')
 
         if not list(rmsDistances):
             # raise ValidateErrorNoStars(
@@ -174,7 +170,7 @@ class AMxMeasurement(MeasurementBase):
             # FIXME should we still report that this measurement was
             # attempted instead of just crashing.
             print('No stars found that are %.1f--%.1f arcmin apart.' %
-                  (annulus[0], annulus[1]))
+                  (self.annulus[0], self.annulus[1]))
             self.rmsDistMas = None
             self.value = None
         else:

@@ -114,8 +114,8 @@ class AFxMeasurement(MeasurementBase):
         if x not in [1, 2, 3]:
             raise ValueError('AFx x should be 1, 2, or 3.')
         self.label = 'AF{0:d}'.format(x)
-        self.bandpass = bandpass
         self.specName = specName
+        self.bandpass = bandpass
 
         self.metric = Metric.fromYaml(self.label,
                                       yamlDoc=metricYamlDoc,
@@ -123,10 +123,10 @@ class AFxMeasurement(MeasurementBase):
 
         # register input parameters for serialization
         # note that matchedDataset is treated as a blob, separately
-        self.registerParameter('D', amx.parameters['D'])
-        self.registerParameter('annulus', amx.parameters['annulus'])
-        self.registerParameter('mag_range', amx.parameters['mag_range'])
-        self.registerParameter('AMx', amx.datum)
+        self.registerParameter('D', datum=amx.parameters['D'])
+        self.registerParameter('annulus', datum=amx.parameters['annulus'])
+        self.registerParameter('magRange', datum=amx.parameters['magRange'])
+        self.registerParameter('AMx', datum=amx.datum)
 
         self.matchedDataset = matchedDataset
 
@@ -140,11 +140,10 @@ class AFxMeasurement(MeasurementBase):
         adx = getattr(self.metric.getSpec(specName, bandpass=self.bandpass),
                       'AD{0:d}'.format(x))\
             .getSpec(specName, bandpass=self.bandpass)
-        adxSpec = adx.value
-        self.registerParameter('ADx', adx.datum)
+        self.registerParameter('ADx', datum=adx.datum)
 
         if amx.value:
-            self.value = 100. * np.mean(amx.rmsDistMas > amx.value + adxSpec)
+            self.value = 100. * np.mean(amx.rmsDistMas > amx.value + self.ADx)
 
             self.linkBlob(amx.blob)
         else:

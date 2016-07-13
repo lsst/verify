@@ -112,7 +112,7 @@ class PA1Measurement(MeasurementBase):
 
         # register input parameters for serialization
         # note that matchedDataset is treated as a blob, separately
-        self.registerParameter('num_random_shuffles', numRandomShuffles,
+        self.registerParameter('numRandomShuffles', value=numRandomShuffles,
                                units='', label='shuffles',
                                description='Number of random shuffles')
 
