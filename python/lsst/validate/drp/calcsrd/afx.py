@@ -104,7 +104,6 @@ class AFxMeasurement(MeasurementBase):
     value = None
     units = ''
     label = 'AFx'
-    schema = 'afx-1.0.0'
 
     def __init__(self, x, matchedDataset, amx, bandpass, specName,
                  verbose=False, job=None,

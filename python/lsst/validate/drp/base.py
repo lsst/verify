@@ -572,7 +572,6 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
     units
     label
     json
-    schema
     specName : str
         A `str` identifying the specification level (e.g., design, minimum
         stretch) that this measurement represents. `None` if this measurement
@@ -761,22 +760,16 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
         return Datum(self.value, units=self.units, label=self.label,
                      description=self.metric.description)
 
-    @abc.abstractproperty
-    def schema(self):
-        """A `str` identifying the schema of this measurement and parameters.
-        """
-        pass
-
     @property
     def json(self):
         """a `dict` that can be serialized as semantic SQuaSH json."""
         blobIds = list(set([b.identifier for b in self._linkedBlobs]))
         object_doc = {'metric': self.metric,
+                      'identifier': self.identifier,
                       'value': self.value,
                       'parameters': self.parameters,
                       'extras': self.extras,
                       'blobs': blobIds,
-                      'schema': self.schema,
                       'spec_name': self.specName,
                       'filter': self.bandpass}
         json_doc = JsonSerializationMixin.jsonify_dict(object_doc)
@@ -804,7 +797,9 @@ class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
         values of blobs can also be accessed as attributes of the BlobBase
         subclass. Keys in `datums` and attributes share the same names.
     identifier : str
-        Unique identifier for this blob.
+        Unique identifier for this blob instance
+    name : str
+        Name of the Blob class.
     """
 
     def __init__(self):
@@ -824,10 +819,10 @@ class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
         else:
             super(BlobBase, self).__setattr__(key, value)
 
-    @abc.abstractproperty
-    def schema(self):
-        """A `str` identify the schema of this blob."""
-        pass
+    @property
+    def name(self):
+        """Name of this blob (the BlobBase subclass's Python namespace)."""
+        return str(self.__class__)
 
     @property
     def identifier(self):
@@ -835,7 +830,10 @@ class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
 
     @property
     def json(self):
-        json_doc = JsonSerializationMixin.jsonify_dict(self.datums)
+        json_doc = JsonSerializationMixin.jsonify_dict({
+            'identifer': self.identifier,
+            'name': self.name,
+            'data': self.datums})
         return json_doc
 
     def registerDatum(self, name, value=None, units=None, label=None,

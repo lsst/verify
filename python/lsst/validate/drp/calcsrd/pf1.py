@@ -63,7 +63,6 @@ class PF1Measurement(MeasurementBase):
     value = None
     units = 'mmag'
     label = 'PF1'
-    schema = 'pf1-1.0.0'
 
     def __init__(self, matchedDataset, pa1, bandpass, specName, verbose=False,
                  linkedBlobs=None, job=None,

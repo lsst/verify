@@ -97,7 +97,6 @@ class PA1Measurement(MeasurementBase):
     value = None
     units = 'mmag'
     label = 'PA1'
-    schema = 'pa1-1.0.0'
 
     def __init__(self, matchedDataset, bandpass,
                  numRandomShuffles=50, verbose=False, job=None,

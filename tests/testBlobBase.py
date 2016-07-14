@@ -60,10 +60,10 @@ class BlobBaseTestCase(unittest.TestCase):
         print(dir(self.blob))
         j = self.blob.json
 
-        self.assertEqual(j['mag']['value'], 5)
-        self.assertEqual(j['mag']['units'], 'mag')
-        self.assertEqual(j['mag']['label'], 'mag')
-        self.assertEqual(j['mag']['description'], 'Magnitude as int')
+        self.assertEqual(j['data']['mag']['value'], 5)
+        self.assertEqual(j['data']['mag']['units'], 'mag')
+        self.assertEqual(j['data']['mag']['label'], 'mag')
+        self.assertEqual(j['data']['mag']['description'], 'Magnitude as int')
 
 
 def suite():

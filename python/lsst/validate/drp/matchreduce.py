@@ -145,10 +145,6 @@ class MatchedMultiVisitDataset(BlobBase):
         # These are the serialiable attributes of this class.
         self._reduceStars(self._matchedCatalog, safeSnr)
 
-    @property
-    def schema(self):
-        return 'multi-visit-star-blob-v1.0.0'
-
     def _loadAndMatchCatalogs(self, repo, dataIds, matchRadius):
         """Load data from specific visit. Match with reference.
 
@@ -406,10 +402,6 @@ class AnalyticPhotometryModel(BlobBase):
             medianRef=medianRef,
             matchRef=matchRef)
 
-    @property
-    def schema(self):
-        return 'multi-visit-photometry-model-v1.0.0'
-
     def _compute(self, snr, mag, mmagErr, mmagrms, dist, nMatch,
                  brightSnr=100,
                  medianRef=100, matchRef=500):
@@ -486,10 +478,6 @@ class AnalyticAstrometryModel(BlobBase):
             matchedMultiVisitDataset.dist,
             len(matchedMultiVisitDataset.goodMatches),
             brightSnr=brightSnr, medianRef=medianRef, matchRef=matchRef)
-
-    @property
-    def schema(self):
-        return 'multi-visit-photometry-model-v1.0.0'
 
     def _compute(self, snr, dist, nMatch,
                  brightSnr=100,

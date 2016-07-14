@@ -115,7 +115,6 @@ class AMxMeasurement(MeasurementBase):
     value = None
     units = 'milliarcsecond'
     label = 'AMx'
-    schema = 'amx-1.0.0'
 
     def __init__(self, x, matchedDataset, bandpass, width=2., magRange=None,
                  verbose=False, job=None,
