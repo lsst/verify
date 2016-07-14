@@ -255,10 +255,32 @@ class Metric(JsonSerializationMixin):
         The document handle that originally defined the metric (e.g. LPM-17)
     referenceUrl : str, optional
         The document's URL.
-    referencePath : str, optional
+    referencePage : str, optional
         Page where metric in defined in the reference document.
+
+    Attributes
+    ----------
+    name : str
+        Name of the metric
+    description : str
+        Short description of the metric.
+    referenceDoc : str
+        Name of the document that specifies this metric.
+    referenceUrl : str
+        URL of the document that specifies this metric.
+    referencePage : int
+        Page number in the document that specifies this metric.
+    dependencies : dict
+        A dictionary of named :class:`Datum` values that must be known when
+        making a measurement against metric. Dependencies can be
+        accessed as attributes of the specification object.
+    operator : function
+        Binary comparision operator that tests success of a measurement
+        fulfilling a specification of this metric. Measured value is on
+        left side of comparison and specification level is on right side.
     """
     def __init__(self, name, description, operatorStr, specs=None,
+                 dependencies=None,
                  referenceDoc=None, referenceUrl=None, referencePage=None):
         self.name = name
         self.description = description
@@ -273,6 +295,11 @@ class Metric(JsonSerializationMixin):
             self.specs = []
         else:
             self.specs = specs
+
+        if dependencies is None:
+            self.dependencies = {}
+        else:
+            self.dependencies = dependencies
 
     @classmethod
     def fromYaml(cls, metricName, yamlDoc=None, yamlPath=None,
@@ -304,13 +331,26 @@ class Metric(JsonSerializationMixin):
                 yamlDoc = yaml.load(f)
         metricDoc = yamlDoc[metricName]
 
+        metricDeps = {}
+        if 'dependencies' in metricDoc:
+            for metricDepItem in metricDoc['dependencies']:
+                name = metricDepItem.keys()[0]
+                metricDepItem = dict(metricDepItem[name])
+                v = metricDepItem['value']
+                units = metricDepItem['units']
+                d = Datum(v, units,
+                          label=metricDepItem.get('label', None),
+                          description=metricDepItem.get('description', None))
+                metricDeps[name] = d
+
         m = cls(
             metricName,
             description=metricDoc.get('description', None),
             operatorStr=metricDoc['operator'],
             referenceDoc=metricDoc['reference'].get('doc', None),
             referenceUrl=metricDoc['reference'].get('url', None),
-            referencePage=metricDoc['reference'].get('page', None))
+            referencePage=metricDoc['reference'].get('page', None),
+            dependencies=metricDeps)
 
         for specDoc in metricDoc['specs']:
             deps = None
@@ -344,6 +384,9 @@ class Metric(JsonSerializationMixin):
             m.specs.append(spec)
 
         return m
+
+    def __getattr__(self, key):
+        return self.dependencies[key]
 
     @property
     def reference(self):
@@ -490,7 +533,8 @@ class Metric(JsonSerializationMixin):
             'name': self.name,
             'reference': refDoc,
             'description': self.description,
-            'specifications': self.specs})
+            'specifications': self.specs,
+            'dependencies': self.dependencies})
 
 
 class Specification(JsonSerializationMixin):
@@ -508,7 +552,7 @@ class Specification(JsonSerializationMixin):
         on the bandpass.
     dependencies : dict
         A dictionary of named :class:`Datum` values that must be known when
-        making a measurement against a dependency. Dependencies can be
+        making a measurement against a specification level. Dependencies can be
         accessed as attributes of the specification object.
     """
     def __init__(self, name, value, units, bandpasses=None, dependencies=None):

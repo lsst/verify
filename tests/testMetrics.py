@@ -31,7 +31,7 @@ import yaml
 from lsst.utils import getPackageDir
 import lsst.utils.tests as utilsTests
 
-from lsst.validate.drp.base import Metric, Specification
+from lsst.validate.drp.base import Metric, Specification, Datum
 
 
 class MetricTestCase(unittest.TestCase):
@@ -131,10 +131,12 @@ class MetricTestCase(unittest.TestCase):
         referenceDoc = 'TEST-1'
         referencePage = 1
         referenceUrl = 'example.com'
+        deps = {'dep': Datum(5, 'mag')}
         m = Metric(name, description, operatorStr,
                    referenceDoc=referenceDoc,
                    referenceUrl=referenceUrl,
-                   referencePage=referencePage)
+                   referencePage=referencePage,
+                   dependencies=deps)
 
         j = m.json
         self.assertEqual(j['name'], name)
@@ -142,6 +144,8 @@ class MetricTestCase(unittest.TestCase):
         self.assertEqual(j['reference']['doc'], referenceDoc)
         self.assertEqual(j['reference']['page'], referencePage)
         self.assertEqual(j['reference']['url'], referenceUrl)
+        self.assertEqual(j['dependencies']['dep']['value'], 5)
+        self.assertEqual(j['dependencies']['dep']['units'], 'mag')
         self.assertIsInstance(j['specifications'], list)
 
 

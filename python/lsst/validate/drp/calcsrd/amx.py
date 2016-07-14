@@ -127,7 +127,7 @@ class AMxMeasurement(MeasurementBase):
         self.metric = Metric.fromYaml(self.label,
                                       yamlDoc=metricYamlDoc,
                                       yamlPath=metricYamlPath)
-        DSpec = self.metric.getSpec('design', bandpass=self.bandpass).D
+        DSpec = self.metric.D
 
         # Register measurement parameters for serialization
         self.registerParameter('D', datum=DSpec)

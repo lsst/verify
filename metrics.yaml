@@ -117,25 +117,21 @@ AM1:
     The maximum rms of the astrometric distance distribution for stellar pairs
     with separations of D=5 arcmin (repeatability) (milliarcsec).
   operator: "<="
+  dependencies:
+    - D: {value: 5.0, units: arcmin}
   specs:
     - level: design
       value: 10.0
       units: mmag
       filters: [r, i]
-      dependencies:
-        - D: {value: 5.0, units: arcmin}
     - level: minimum
       value: 20.0
       units: mmag
       filters: [r, i]
-      dependencies:
-        - D: {value: 5.0, units: arcmin}
     - level: stretch
       value: 5.0
       units: mmag
       filters: [r, i]
-      dependencies:
-        - D: {value: 5.0, units: arcmin}
 
 AM2:
   reference:
@@ -146,25 +142,21 @@ AM2:
     The maximum rms of the astrometric distance distribution for stellar pairs
     with separations of D=20 arcmin (repeatability) (milliarcsec).
   operator: "<="
+  dependencies:
+    - D: {value: 20.0, units: arcmin}
   specs:
     - level: design
       value: 10.0
       units: mmag
       filters: [r, i]
-      dependencies:
-        - D: {value: 20.0, units: arcmin}
     - level: minimum
       value: 20.0
       units: mmag
       filters: [r, i]
-      dependencies:
-        - D: {value: 20.0, units: arcmin}
     - level: stretch
       value: 5.0
       units: mmag
       filters: [r, i]
-      dependencies:
-        - D: {value: 20.0, units: arcmin}
 
 AM3:
   reference:
@@ -175,25 +167,21 @@ AM3:
     The maximum rms of the astrometric distance distribution for stellar pairs
     with separations of D=200. arcmin (repeatability) (milliarcsec).
   operator: "<="
+  dependencies:
+    - D: {value: 200.0, units: arcmin}
   specs:
     - level: design
       value: 15.0
       units: mmag
       filters: [r, i]
-      dependencies:
-        - D: {value: 200.0, units: arcmin}
     - level: minimum
       value: 30.0
       units: mmag
       filters: [r, i]
-      dependencies:
-        - D: {value: 200.0, units: arcmin}
     - level: stretch
       value: 10.0
       units: mmag
       filters: [r, i]
-      dependencies:
-        - D: {value: 200.0, units: arcmin}
 
 AF1:
   reference:
@@ -204,6 +192,8 @@ AF1:
     The maximum fraction of astrometric distances which deviate by more than
     ADx milliarcsec (see AMx) (%)
   operator: "<="
+  dependencies:
+    - D: {value: 5.0, units: arcmin}
   specs:
     - level: design
       value: 10.0
@@ -211,21 +201,18 @@ AF1:
       filters: [r, i]
       dependencies:
         - AD1
-        - D: {value: 5.0, units: arcmin}
     - level: minimum
       value: 20.0
       units: ''
       filters: [r, i]
       dependencies:
         - AD1
-        - D: {value: 5.0, units: arcmin}
     - level: stretch
       value: 5.0
       units: ''
       filters: [r, i]
       dependencies:
         - AD1
-        - D: {value: 5.0, units: arcmin}
 
 AF2:
   reference:
@@ -236,6 +223,8 @@ AF2:
     The maximum fraction of astrometric distances which deviate by more than
     ADx milliarcsec (see AMx) (%)
   operator: "<="
+  dependencies:
+    - D: {value: 20.0, units: arcmin}
   specs:
     - level: design
       value: 10.0
@@ -243,21 +232,18 @@ AF2:
       filters: [r, i]
       dependencies:
         - AD2
-        - D: {value: 20.0, units: arcmin}
     - level: minimum
       value: 20.0
       units: ''
       filters: [r, i]
       dependencies:
         - AD2
-        - D: {value: 20.0, units: arcmin}
     - level: stretch
       value: 5.0
       units: ''
       filters: [r, i]
       dependencies:
         - AD2
-        - D: {value: 20.0, units: arcmin}
 
 AF3:
   reference:
@@ -268,6 +254,8 @@ AF3:
     The maximum fraction of astrometric distances which deviate by more than
     ADx milliarcsec (see AMx) (%)
   operator: "<="
+  dependencies:
+    - D: {value: 200.0, units: arcmin}
   specs:
     - level: design
       value: 10.0
@@ -275,21 +263,18 @@ AF3:
       filters: [r, i]
       dependencies:
         - AD3
-        - D: {value: 200.0, units: arcmin}
     - level: minimum
       value: 20.0
       units: ''
       filters: [r, i]
       dependencies:
         - AD3
-        - D: {value: 200.0, units: arcmin}
     - level: stretch
       value: 5.0
       units: ''
       filters: [r, i]
       dependencies:
         - AD3
-        - D: {value: 200.0, units: arcmin}
 
 AD1:
   reference:
@@ -300,6 +285,8 @@ AD1:
     No more than AFx of the astrometric distances will deviate by more than
     this from the median (see AMx, AFx) (milliarcsec).
   operator: "<="
+  dependencies:
+    - D: {value: 5.0, units: arcmin}
   specs:
     - level: design
       value: 20.0
@@ -307,21 +294,18 @@ AD1:
       filters: [r, i]
       dependencies:
         - AF1
-        - D: {value: 5.0, units: arcmin}
     - level: minimum
       value: 40.0
       units: milliarcsecond
       filters: [r, i]
       dependencies:
         - AF1
-        - D: {value: 5.0, units: arcmin}
     - level: stretch
       value: 10.0
       units: milliarcsecond
       filters: [r, i]
       dependencies:
         - AF1
-        - D: {value: 5.0, units: arcmin}
 
 AD2:
   reference:
@@ -332,6 +316,8 @@ AD2:
     No more than AFx of the astrometric distances will deviate by more than
     this from the median (see AMx, AFx) (milliarcsec).
   operator: "<="
+  dependencies:
+    - D: {value: 20.0, units: arcmin}
   specs:
     - level: design
       value: 20.0
@@ -339,21 +325,18 @@ AD2:
       filters: [r, i]
       dependencies:
         - AF2
-        - D: {value: 20.0, units: arcmin}
     - level: minimum
       value: 40.0
       units: milliarcsecond
       filters: [r, i]
       dependencies:
         - AF2
-        - D: {value: 20.0, units: arcmin}
     - level: stretch
       value: 10.0
       units: milliarcsecond
       filters: [r, i]
       dependencies:
         - AF2
-        - D: {value: 20.0, units: arcmin}
 
 AD3:
   reference:
@@ -364,6 +347,8 @@ AD3:
     No more than AFx of the astrometric distances will deviate by more than
     this from the median (see AMx, AFx) (milliarcsec).
   operator: "<="
+  dependencies:
+    - D: {value: 200.0, units: arcmin}
   specs:
     - level: design
       value: 30.0
@@ -371,18 +356,15 @@ AD3:
       filters: [r, i]
       dependencies:
         - AF3
-        - D: {value: 200.0, units: arcmin}
     - level: minimum
       value: 50.0
       units: milliarcsecond
       filters: [r, i]
       dependencies:
         - AF3
-        - D: {value: 200.0, units: arcmin}
     - level: stretch
       value: 20.0
       units: milliarcsecond
       filters: [r, i]
       dependencies:
         - AF3
-        - D: {value: 200.0, units: arcmin}
