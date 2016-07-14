@@ -32,7 +32,7 @@ from lsst.afw.table import (SourceCatalog, SchemaMapper, Field,
 from lsst.afw.fits.fitsLib import FitsError
 
 from .util import (getCcdKeyName, averageRaDecFromCat)
-from .base import BlobBase, Datum
+from .base import BlobBase
 
 
 class MatchedMultiVisitDataset(BlobBase):
@@ -58,12 +58,20 @@ class MatchedMultiVisitDataset(BlobBase):
 
     Attributes
     ----------
-    filterName
-    mag
-    magerr
+    filterName : `str`
+        Name of filter used for all observations.
+    mag : ndarray
+        Mean PSF magnitudes of stars over multiple visits (magnitudes).
+    magerr : ndarray
+        Median 1-sigma uncertainty of PSF magnitudes over multiple visits
+        (magnitudes).
     magrms
+        RMS of PSF magnitudes over multiple visits (magnitudes).
     snr
+        Median signal-to-noise ratio of PSF magnitudes over multiple visits
+        (magnitudes).
     dist
+        RMS of sky coordinates of stars over multiple visits (milliarcseconds).
     goodMatches
         all good matches, as an afw.table.GroupView;
         good matches contain only objects whose detections all have
@@ -73,13 +81,19 @@ class MatchedMultiVisitDataset(BlobBase):
            to reject failed zeropoints.
         3. and do not have flags set for bad, cosmic ray, edge or saturated
 
+        *Not serialized.*
+
     safeMatches
         safe matches, as an afw.table.GroupView. Safe matches
         are good matches that are sufficiently bright and sufficiently
         compact.
+
+        *Not serialized.*
     magKey
         Key for `"base_PsfFlux_mag"` in the `goodMatches` and `safeMatches`
         catalog tables.
+
+        *Not serialized.*
     """
     def __init__(self, repo, dataIds, matchRadius=None, safeSnr=50.,
                  verbose=False):
@@ -90,8 +104,38 @@ class MatchedMultiVisitDataset(BlobBase):
             matchRadius = afwGeom.Angle(1, afwGeom.arcseconds)
 
         # Extract single filter
-        self._doc['filter_name'] = set([dId['filter']
-                                        for dId in dataIds]).pop()
+        self.registerDatum(
+            'filterName', value=set([dId['filter'] for dId in dataIds]).pop(),
+            units='', description='Filter name')
+
+        # Register datums stored by this blob; will be set later
+        self.registerDatum(
+            'mag',
+            units='mag',
+            label='{band}'.format(band=self.filterName),
+            description='Mean PSF magnitudes of stars over multiple visits')
+        self.registerDatum(
+            'magrms',
+            units='mag',
+            label='RMS({band})'.format(band=self.filterName),
+            description='RMS of PSF magnitudes over multiple visits')
+        self.registerDatum(
+            'magerr',
+            units='mag',
+            label='sigma({band})'.format(band=self.filterName),
+            description='Median 1-sigma uncertainty of PSF magnitudes over '
+                        'multiple visits')
+        self.registerDatum(
+            'snr',
+            units='',
+            label='SNR({band})'.format(band=self.filterName),
+            description='Median signal-to-noise ratio of PSF magnitudes over '
+                        'multiple visits')
+        self.registerDatum(
+            'dist',
+            units='milliarcsecond',
+            label='d',
+            description='RMS of sky coordinates of stars over multiple visits')
 
         # Match catalogs across visits
         self._matchedCatalog = self._loadAndMatchCatalogs(
@@ -104,38 +148,6 @@ class MatchedMultiVisitDataset(BlobBase):
     @property
     def schema(self):
         return 'multi-visit-star-blob-v1.0.0'
-
-    @property
-    def filterName(self):
-        """Name of the filter observations. All observations are taken with
-        a single filter, by design. (`str`).
-        """
-        return self._doc['filter_name']
-
-    @property
-    def mag(self):
-        """Mean PSF magnitude for good matches."""
-        return self._doc['mag'].value
-
-    @property
-    def magerr(self):
-        """Median of PSF magnitude for good matches."""
-        return self._doc['mag_err'].value
-
-    @property
-    def magrms(self):
-        """Standard deviation of PSF magnitude for good matches."""
-        return self._doc['mag_rms'].value
-
-    @property
-    def snr(self):
-        """Median PSF flux SNR for good matches."""
-        return self._doc['snr'].value
-
-    @property
-    def dist(self):
-        """RMS RA/Dec separation, in milliarcsecond."""
-        return self._doc['dist'].value
 
     def _loadAndMatchCatalogs(self, repo, dataIds, matchRadius):
         """Load data from specific visit. Match with reference.
@@ -288,49 +300,30 @@ class MatchedMultiVisitDataset(BlobBase):
         safeMatches = goodMatches.where(safeFilter)
 
         # Pass field=psfMagKey so np.mean just gets that as its input
-        goodPsfSnr = goodMatches.aggregate(np.median, field=psfSnrKey)  # SNR
-        goodPsfMag = goodMatches.aggregate(np.mean, field=psfMagKey)  # mag
-        goodPsfMagRms = goodMatches.aggregate(np.std, field=psfMagKey)  # mag
-        goodPsfMagErr = goodMatches.aggregate(np.median, field=psfMagErrKey)
+        self.snr = goodMatches.aggregate(np.median, field=psfSnrKey)  # SNR
+        self.mag = goodMatches.aggregate(np.mean, field=psfMagKey)  # mag
+        self.magrms = goodMatches.aggregate(np.std, field=psfMagKey)  # mag
+        self.magerr = goodMatches.aggregate(np.median, field=psfMagErrKey)
         # positionRms knows how to query a group so we give it the whole thing
         # by going with the default `field=None`.
-        dist = goodMatches.aggregate(positionRms)
+        self.dist = goodMatches.aggregate(positionRms)
 
-        # Persist results in a serializable-form
-        self._doc['mag'] = Datum(
-            goodPsfMag,
-            'mag',
-            label='{band}'.format(band=self.filterName),
-            description='Mean PSF magnitudes of stars over multiple visits')
-        self._doc['mag_rms'] = Datum(
-            goodPsfMagRms,
-            'mag',
-            label='RMS({band})'.format(band=self.filterName),
-            description='RMS of PSF magnitudes over multiple visits')
-        self._doc['mag_err'] = Datum(
-            goodPsfMagErr,
-            'mag',
-            label='sigma({band})'.format(band=self.filterName),
-            description='Median 1-sigma uncertainty of PSF magnitudes over '
-                        'multiple visits')
-        self._doc['snr'] = Datum(
-            goodPsfSnr,
-            None,
-            label='SNR({band})'.format(band=self.filterName),
-            description='Median signal-to-noise ratio of PSF magnitudes over '
-                        'multiple visits')
-        self._doc['dist'] = Datum(
-            dist,
-            'milliarcsecond',
-            label='d',
-            description='RMS of sky coordinates of stars over multiple visits')
-
+        # These attributes are not serialized
         self.goodMatches = goodMatches
         self.safeMatches = safeMatches
 
 
 class AnalyticPhotometryModel(BlobBase):
     """Serializable analytic photometry error model for multi-visit catalogs.
+
+    This model is originally presented in http://arxiv.org/abs/0805.2366v4
+    (Eq 4, 5):
+
+    .. math::
+
+       \sigma_1^2 &= \sigma_\mathrm{sys}^2 + \sigma_\mathrm{rand}^2 \\
+       x &= 10^{0.4(m-m_5)} \\
+       \sigma_\mathrm{rand}^2 &= (0.04 - \gamma) x + \gamma x^2~[\mathrm{mag}^2]
 
     Parameters
     ----------
@@ -346,10 +339,16 @@ class AnalyticPhotometryModel(BlobBase):
 
     Attributes
     ----------
-    sigmaSys
-    gamma
-    m5
-    photRms
+    brightSnr : float
+        Threshold in SNR for bright sources used in this  model.
+    sigmaSys : float
+        Systematic error floor.
+    gamma : float
+        Proxy for sky brightness and read noise.
+    m5 : float
+        5-sigma photometric depth (magnitudes).
+    photRms : float
+        RMS photometric scatter for 'good' stars (millimagnitudes).
 
     Notes
     -----
@@ -361,12 +360,40 @@ class AnalyticPhotometryModel(BlobBase):
                  matchRef=500):
         BlobBase.__init__(self)
 
-        self._doc['doc'] \
-            = "Photometric uncertainty model from " \
-              "http://arxiv.org/abs/0805.2366v4 (Eq 4, 5): " \
-              "sigma_1^2 = sigma_sys^2 + sigma_rand^2, " \
-              "sigma_rand^2 = (0.04 - gamma) * x + gamma * x^2 [mag^2] " \
-              "where x = 10**(0.4*(m-m_5))"
+        self.registerDatum(
+            'brightSnr',
+            units='',
+            label='Bright SNR',
+            description='Threshold in SNR for bright sources used in this '
+                        'model')
+        self.registerDatum(
+            'sigmaSys',
+            units='mag',
+            label='sigma(sys)',
+            description='Systematic error floor')
+        self.registerDatum(
+            'gamma',
+            units='',
+            label='gamma',
+            description='Proxy for sky brightness and read noise')
+        self.registerDatum(
+            'm5',
+            units='mag',
+            label='m5',
+            description='5-sigma depth')
+        self.registerDatum(
+            'photScatter',
+            units='mmag',
+            label='RMS',
+            description='RMS photometric scatter for good stars')
+
+        # FIXME add a description field to blobs?
+        # self._doc['doc'] \
+        #     = "Photometric uncertainty model from " \
+        #       "http://arxiv.org/abs/0805.2366v4 (Eq 4, 5): " \
+        #       "sigma_1^2 = sigma_sys^2 + sigma_rand^2, " \
+        #       "sigma_rand^2 = (0.04 - gamma) * x + gamma * x^2 [mag^2] " \
+        #       "where x = 10**(0.4*(m-m_5))"
 
         self._compute(
             matchedMultiVisitDataset.snr,
@@ -374,78 +401,46 @@ class AnalyticPhotometryModel(BlobBase):
             matchedMultiVisitDataset.magerr * 1000.,
             matchedMultiVisitDataset.magrms * 1000.,
             matchedMultiVisitDataset.dist,
-            brightSnr,
-            medianRef,
-            matchRef)
+            len(matchedMultiVisitDataset.goodMatches),
+            brightSnr=brightSnr,
+            medianRef=medianRef,
+            matchRef=matchRef)
 
     @property
     def schema(self):
         return 'multi-visit-photometry-model-v1.0.0'
 
-    @property
-    def sigmaSys(self):
-        return self._doc['sigmaSys'].value
-
-    @property
-    def gamma(self):
-        return self._doc['gamma'].value
-
-    @property
-    def m5(self):
-        return self._doc['m5'].value
-
-    @property
-    def photRms(self):
-        return self._doc['phot_rms'].value
-
-    def _compute(self, snr, mag, mmagErr, mmagrms, dist, match,
+    def _compute(self, snr, mag, mmagErr, mmagrms, dist, nMatch,
                  brightSnr=100,
                  medianRef=100, matchRef=500):
-        bright = np.where(np.asarray(snr) > brightSnr)
-        photScatter = np.median(np.asarray(mmagrms)[bright])
+
+        self.brightSnr = brightSnr
+
+        bright = np.where(np.asarray(snr) > self.brightSnr)
+        self.photScatter = np.median(np.asarray(mmagrms)[bright])
         print("Photometric scatter (median) - SNR > %.1f : %.1f %s" %
-              (brightSnr, photScatter, "mmag"))
+              (self.brightSnr, self.photScatter, "mmag"))
 
         fit_params = fitPhotErrModel(mag[bright], mmagErr[bright])
+        self.sigmaSys = fit_params['sigmaSys']
+        self.gamma = fit_params['gamma']
+        self.m5 = fit_params['m5']
 
-        if photScatter > medianRef:
+        if self.photScatter > medianRef:
             print('Median photometric scatter %.3f %s is larger than '
                   'reference : %.3f %s '
-                  % (photScatter, "mmag", medianRef, "mag"))
-        if match < matchRef:
+                  % (self.photScatter, "mmag", medianRef, "mag"))
+        if nMatch < matchRef:
             print("Number of matched sources %d is too small (shoud be > %d)"
-                  % (match, matchRef))
-
-        self._doc['bright_snr'] = Datum(
-            brightSnr,
-            '',
-            label='Bright SNR',
-            description='Threshold in SNR for bright sources used in this '
-                        'model')
-        self._doc['sigmaSys'] = Datum(
-            fit_params['sigmaSys'],
-            'mag',
-            label='sigma(sys)',
-            description='Systematic error floor')
-        self._doc['gamma'] = Datum(
-            fit_params['gamma'],
-            None,
-            label='gamma',
-            description='Proxy for sky brightness and read noise')
-        self._doc['m5'] = Datum(
-            fit_params['m5'],
-            'mag',
-            label='m5',
-            description='5-sigma depth')
-        self._doc['phot_rms'] = Datum(
-            photScatter,
-            'mmag',
-            label='RMS',
-            description='RMS photometric scatter for good stars')
+                  % (nMatch, matchRef))
 
 
 class AnalyticAstrometryModel(BlobBase):
     """Serializable model of astronometry errors across multiple visits.
+
+    .. math::
+
+       \mathrm{astromRms} = C \theta / \mathrm{SNR} + \sigma_\mathrm{sys}
 
     Parameters
     ----------
@@ -459,6 +454,19 @@ class AnalyticAstrometryModel(BlobBase):
     matchRef : int, optional
         Should match at least matchRef stars.
 
+    Attributes
+    ----------
+    brightSnr : float
+        Threshold SNR for bright sources used in this model.
+    C : float
+        Model scaling factor.
+    theta : float
+        Seeing (milliarcsecond).
+    sigmaSys : float
+        Systematic error floor (milliarcsecond).
+    astromRms : float
+        Astrometric scatter (RMS) for good stars (milliarcsecond).
+
     Notes
     -----
     The scatter and match defaults are appropriate to SDSS are the defaults
@@ -469,19 +477,21 @@ class AnalyticAstrometryModel(BlobBase):
                  medianRef=100, matchRef=500):
         BlobBase.__init__(self)
 
-        self._doc['doc'] \
-            = "Astrometric astrometry model: mas = C*theta/SNR + sigmaSys"
+        # FIXME add description field to blobs
+        # self._doc['doc'] \
+        #     = "Astrometric astrometry model: mas = C*theta/SNR + sigmaSys"
 
         self._compute(
             matchedMultiVisitDataset.snr,
             matchedMultiVisitDataset.dist,
-            len(matchedMultiVisitDataset.goodMatches))
+            len(matchedMultiVisitDataset.goodMatches),
+            brightSnr=brightSnr, medianRef=medianRef, matchRef=matchRef)
 
     @property
     def schema(self):
         return 'multi-visit-photometry-model-v1.0.0'
 
-    def _compute(self, snr, dist, match,
+    def _compute(self, snr, dist, nMatch,
                  brightSnr=100,
                  medianRef=100, matchRef=500):
         print('Median value of the astrometric scatter - all magnitudes: '
@@ -498,33 +508,37 @@ class AnalyticAstrometryModel(BlobBase):
             print('Median astrometric scatter %.1f %s is larger than '
                   'reference : %.1f %s ' %
                   (astromScatter, "mas", medianRef, "mas"))
-        if match < matchRef:
-            print("Number of matched sources %d is too small (shoud be > %d)" % (match, matchRef))
+        if nMatch < matchRef:
+            print("Number of matched sources %d is too small (shoud be > %d)" % (nMatch, matchRef))
 
-        self._doc['bright_snr'] = Datum(
-            brightSnr,
-            '',
+        self.registerDatum(
+            'brightSnr',
+            value=brightSnr,
+            units='',
             label='Bright SNR',
             description='Threshold in SNR for bright sources used in this '
                         'model')
-        self._doc['C'] = Datum(
-            fit_params['C'],
-            None,
-            label='C',
+        self.registerDatum(
+            'C',
+            value=fit_params['C'],
+            units='',
             description='Scaling factor')
-        self._doc['theta'] = Datum(
-            fit_params['theta'],
-            'milliarcsecond',
+        self.registerDatum(
+            'theta',
+            value=fit_params['theta'],
+            units='milliarcsecond',
             label='theta',
             description='Seeing')
-        self._doc['sigmaSys'] = Datum(
-            fit_params['sigmaSys'],
-            'milliarcsecond',
+        self.registerDatum(
+            'sigmaSys',
+            value=fit_params['sigmaSys'],
+            units='milliarcsecond',
             label='sigma(sys)',
             description='Systematic error floor')
-        self._doc['astrom_rms'] = Datum(
-            astromScatter,
-            'milliarcsecond',
+        self.registerDatum(
+            'astromRms',
+            value=astromScatter,
+            units='milliarcsecond',
             label='RMS',
             description='Astrometric scatter (RMS) for good stars')
 

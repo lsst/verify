@@ -99,6 +99,44 @@ class JsonSerializationMixin(object):
             json.dump(self.json, outfile, sort_keys=True, indent=2)
 
 
+class DatumAttributeMixin(object):
+
+    def _register_datum_attribute(self, attribute, key, value=None,
+                                  units=None, label=None, description=None,
+                                  datum=None):
+        _value = None
+        _units = None
+        _label = None
+        _description = None
+
+        # default to values from Datum
+        if datum is not None:
+            _label = datum.label
+            _description = datum.description
+            _units = datum.units
+            _value = datum.value
+
+        # Apply overrides if arguments are supplied
+        if value is not None:
+            _value = value
+
+        if units is not None:
+            _units = units
+
+        if description is not None:
+            _description = description
+
+        if label is not None:
+            _label = label
+
+        # Use parameter name as label if necessary
+        if _label is None:
+            _label = key
+
+        attribute[key] = Datum(
+            _value, units=_units, label=_label, description=_description)
+
+
 class Datum(JsonSerializationMixin):
     """A value annotated with units, a plot label and description.
 
@@ -525,7 +563,7 @@ class Specification(JsonSerializationMixin):
             'dependencies': self.dependencies})
 
 
-class MeasurementBase(JsonSerializationMixin):
+class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
     """Baseclass for Measurement classes.
 
     Attributes
@@ -573,9 +611,7 @@ class MeasurementBase(JsonSerializationMixin):
         elif key in self.extras:
             return self.extras[key].value
         else:
-            raise AttributeError(
-                'Object {0} does not have attribute {1}'.format(str(self),
-                                                                key))
+            super(MeasurementBase, self).__getattr__(key)
 
     def __setattr__(self, key, value):
         _bootstrap = ('parameters', 'extras')
@@ -622,7 +658,7 @@ class MeasurementBase(JsonSerializationMixin):
         paramKey : str
             Name of the parameter; used as the key in the `parameters`
             attribute of this object.
-        value : obj or :class:`lsst.validate.drp.base.Datum`
+        value : obj
             Value of the parameter.
         units : str, optional
             An astropy-compatible unit string.
@@ -637,9 +673,9 @@ class MeasurementBase(JsonSerializationMixin):
             If a `Datum` is provided, its value, units and label will be
             used unless overriden by other arguments to `registerParameter`.
         """
-        self._register_managed_attribute(self.parameters, paramKey,
-                                         value=value, label=label, units=units,
-                                         description=description, datum=datum)
+        self._register_datum_attribute(self.parameters, paramKey,
+                                       value=value, label=label, units=units,
+                                       description=description, datum=datum)
 
     def registerExtra(self, extraKey, value=None, units=None, label=None,
                       description=None, datum=None):
@@ -660,7 +696,7 @@ class MeasurementBase(JsonSerializationMixin):
         extraKey : str
             Name of the extra; used as the key in the `extras`
             attribute of this object.
-        value : obj or :class:`lsst.validate.drp.base.Datum`
+        value : obj
             Value of the extra, either as a regular object, or already
             represented as a :class:`~lsst.validate.drp.base.Datum`.
         units : str, optional
@@ -677,44 +713,9 @@ class MeasurementBase(JsonSerializationMixin):
             will be used unless overriden by other arguments to
             `registerExtra`.
         """
-        self._register_managed_attribute(self.extras, extraKey,
-                                         value=value, label=label, units=units,
-                                         description=description, datum=datum)
-
-    def _register_managed_attribute(self, attribute, key, value=None,
-                                    units=None, label=None, description=None,
-                                    datum=None):
-        _value = None
-        _units = None
-        _label = None
-        _description = None
-
-        # default to values from Datum
-        if datum is not None:
-            _label = datum.label
-            _description = datum.description
-            _units = datum.units
-            _value = datum.value
-
-        # Apply overrides if arguments are supplied
-        if value is not None:
-            _value = value
-
-        if units is not None:
-            _units = units
-
-        if description is not None:
-            _description = description
-
-        if label is not None:
-            _label = label
-
-        # Use parameter name as label if necessary
-        if _label is None:
-            _label = key
-
-        attribute[key] = Datum(
-            _value, units=_units, label=_label, description=_description)
+        self._register_datum_attribute(self.extras, extraKey,
+                                       value=value, label=label, units=units,
+                                       description=description, datum=datum)
 
     @abc.abstractproperty
     def metric(self):
@@ -792,14 +793,36 @@ class MeasurementBase(JsonSerializationMixin):
         return self.metric.checkSpec(self.value, name, bandpass=self.bandpass)
 
 
-class BlobBase(JsonSerializationMixin):
+class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
     """Baseclass for Blob classes. Blobs are flexible containers of data
     that are serialized to JSON.
+
+    Properties
+    ----------
+    datums : dict
+        A `dict` of `Datums` instances contained by the Blob instance. The
+        values of blobs can also be accessed as attributes of the BlobBase
+        subclass. Keys in `datums` and attributes share the same names.
+    identifier : str
+        Unique identifier for this blob.
     """
 
     def __init__(self):
+        self.datums = {}
         self._id = uuid.uuid4().hex
-        self._doc = {}
+
+    def __getattr__(self, key):
+        if key in self.datums:
+            return self.datums[key].value
+        else:
+            super(BlobBase, self).__getattr__(key)
+
+    def __setattr__(self, key, value):
+        if key != 'datums' and key in self.datums:
+            # Setting value of a serialized Datum
+            self.datums[key].value = value
+        else:
+            super(BlobBase, self).__setattr__(key, value)
 
     @abc.abstractproperty
     def schema(self):
@@ -812,12 +835,49 @@ class BlobBase(JsonSerializationMixin):
 
     @property
     def json(self):
-        json_doc = JsonSerializationMixin.jsonify_dict(self._doc)
+        json_doc = JsonSerializationMixin.jsonify_dict(self.datums)
         return json_doc
 
-    def __getitem__(self, key):
-        """Access Blob members by key."""
-        return self._doc[key]
+    def registerDatum(self, name, value=None, units=None, label=None,
+                      description=None, datum=None):
+        """Register a new Datum to be contained by, and serialized via,
+        this blob.
+
+        The value of the Datum can either be set at registration time (with
+        the `value` argument) or later by setting the instance attribute
+        named `name`.
+
+        Values of Datums can always be accessed or updated through instance
+        attributes.
+
+        The full Datum object can be accessed as items of the `datums`
+        dictionary attached to this class. This method is useful for accessing
+        or updating metadata about a datum, such as units, label or
+        description.
+
+        Parameters
+        ----------
+        name : str
+            Name of the datum; used as the key in the `datums`
+            attribute of this object.
+        value : obj
+            Value of the datum.
+        units : str, optional
+            An astropy-compatible unit string.
+            See http://docs.astropy.org/en/stable/units/.
+        label : str, optional
+            Label suitable for plot axes (without units). By default the
+            `name` is used as the `label`. Setting this label argument
+            overrides this default.
+        description : `str`, optional
+            Extended description.
+        datum : `Datum`, optional
+            If a `Datum` is provided, its value, units and label will be
+            used unless overriden by other arguments to `registerParameter`.
+        """
+        self._register_datum_attribute(self.datums, name,
+                                       value=value, label=label, units=units,
+                                       description=description, datum=datum)
 
 
 class Job(JsonSerializationMixin):
