@@ -48,8 +48,8 @@ class ADxMeasurement(MeasurementBase):
     job : :class:`lsst.validate.drp.base.Job`, optional
         If provided, the measurement will register itself with the Job
         object.
-    linkedBlobs : list, optional
-        A `list` of additional blobs (subclasses of BlobSerializerBase) that
+    linkedBlobs : dict, optional
+        A `dict` of additional blobs (subclasses of BlobBase) that
         can provide additional context to the measurement, though aren't
         direct dependencies of the computation (e.g., `matchedDataset).
 
@@ -107,7 +107,8 @@ class ADxMeasurement(MeasurementBase):
 
     def __init__(self, x, matchedDataset, amx, bandpass, specName,
                  verbose=False, job=None,
-                 linkedBlobs=None, metricYamlDoc=None, metricYamlPath=None):
+                 linkedBlobs=None,
+                 metricYamlDoc=None, metricYamlPath=None):
         MeasurementBase.__init__(self)
 
         if x not in [1, 2, 3]:
@@ -127,16 +128,13 @@ class ADxMeasurement(MeasurementBase):
         self.registerParameter('magRange', datum=amx.parameters['magRange'])
         self.registerParameter('AMx', datum=amx.datum)
 
-        # FIXME link to the blob with rmsDistMas created by AMx.
-
         self.matchedDataset = matchedDataset
 
-        # Add external blob so that links will be persisted with
+        # Add external blobs so that links will be persisted with
         # the measurement
         if linkedBlobs is not None:
-            for blob in linkedBlobs:
-                self.linkBlob(blob)
-        self.linkBlob(self.matchedDataset)
+            for name, blob in linkedBlobs.items():
+                setattr(self, name, blob)
 
         afx = getattr(self.metric.getSpec(specName, bandpass=self.bandpass),
                       'AF{0:d}'.format(x))\

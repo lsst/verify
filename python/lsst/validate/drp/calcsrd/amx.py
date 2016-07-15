@@ -22,7 +22,7 @@ from __future__ import print_function, absolute_import
 
 import numpy as np
 
-from ..base import MeasurementBase, Metric, Datum, BlobBase
+from ..base import MeasurementBase, Metric
 from ..util import radiansToMilliarcsec, calcRmsDistances
 
 
@@ -52,8 +52,8 @@ class AMxMeasurement(MeasurementBase):
     job : :class:`lsst.validate.drp.base.Job`, optional
         If provided, the measurement will register itself with the Job
         object.
-    linkedBlobs : list, optional
-        A `list` of additional blobs (subclasses of BlobSerializerBase) that
+    linkedBlobs : dict, optional
+        A `dict` of additional blobs (subclasses of BlobBase) that
         can provide additional context to the measurement, though aren't
         direct dependencies of the computation (e.g., `matchedDataset).
 
@@ -153,9 +153,8 @@ class AMxMeasurement(MeasurementBase):
         # Add external blob so that links will be persisted with
         # the measurement
         if linkedBlobs is not None:
-            for blob in linkedBlobs:
-                self.linkBlob(blob)
-        self.linkBlob(self.matchedDataset)
+            for name, blob in linkedBlobs.items():
+                setattr(self, name, blob)
 
         matches = matchedDataset.safeMatches
 

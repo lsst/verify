@@ -181,71 +181,72 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
                                               verbose=verbose)
     photomModel = AnalyticPhotometryModel(matchedDataset)
     astromModel = AnalyticAstrometryModel(matchedDataset)
+    linkedBlobs = {'photomModel': photomModel, 'astromModel': astromModel}
 
     job = Job()
 
     PA1 = PA1Measurement(matchedDataset, bandpass=filterName, verbose=verbose,
-                         job=job, linkedBlobs=[photomModel, astromModel])
+                         job=job, linkedBlobs=linkedBlobs)
 
     pa2Metric = Metric.fromYaml('PA2', yamlDoc=yamlDoc)
     for specName in pa2Metric.getSpecNames(bandpass=filterName):
         PA2Measurement(matchedDataset, pa1=PA1, bandpass=filterName,
                        specName=specName, verbose=verbose,
-                       job=job, linkedBlobs=[photomModel, astromModel])
+                       job=job, linkedBlobs=linkedBlobs)
 
     pf1Metric = Metric.fromYaml('PF1', yamlDoc=yamlDoc)
     for specName in pf1Metric.getSpecNames(bandpass=filterName):
         PF1Measurement(matchedDataset, pa1=PA1, bandpass=filterName,
                        specName=specName, verbose=verbose,
-                       job=job, linkedBlobs=[photomModel, astromModel])
+                       job=job, linkedBlobs=linkedBlobs)
 
     AM1 = AMxMeasurement(1, matchedDataset,
                          bandpass=filterName, verbose=verbose,
-                         job=job, linkedBlobs=[photomModel, astromModel])
+                         job=job, linkedBlobs=linkedBlobs)
 
     af1Metric = Metric.fromYaml('AF1', yamlDoc=yamlDoc)
     for specName in af1Metric.getSpecNames(bandpass=filterName):
         AFxMeasurement(1, matchedDataset, AM1,
                        bandpass=filterName, specName=specName,
                        verbose=verbose,
-                       job=job, linkedBlobs=[photomModel, astromModel])
+                       job=job, linkedBlobs=linkedBlobs)
 
         ADxMeasurement(1, matchedDataset, AM1,
                        bandpass=filterName, specName=specName,
                        verbose=verbose,
-                       job=job, linkedBlobs=[photomModel, astromModel])
+                       job=job, linkedBlobs=linkedBlobs)
 
     AM2 = AMxMeasurement(2, matchedDataset,
                          bandpass=filterName, verbose=verbose,
-                         job=job, linkedBlobs=[photomModel, astromModel])
+                         job=job, linkedBlobs=linkedBlobs)
 
     af2Metric = Metric.fromYaml('AF2', yamlDoc=yamlDoc)
     for specName in af2Metric.getSpecNames(bandpass=filterName):
         AFxMeasurement(2, matchedDataset, AM2,
                        bandpass=filterName, specName=specName,
                        verbose=verbose,
-                       job=job, linkedBlobs=[photomModel, astromModel])
+                       job=job, linkedBlobs=linkedBlobs)
 
         ADxMeasurement(2, matchedDataset, AM2,
                        bandpass=filterName, specName=specName,
                        verbose=verbose,
-                       job=job, linkedBlobs=[photomModel, astromModel])
+                       job=job, linkedBlobs=linkedBlobs)
 
     AM3 = AMxMeasurement(3, matchedDataset,
                          bandpass=filterName, verbose=verbose,
-                         job=job, linkedBlobs=[photomModel, astromModel])
+                         job=job, linkedBlobs=linkedBlobs)
 
     af3Metric = Metric.fromYaml('AF3', yamlDoc=yamlDoc)
     for specName in af3Metric.getSpecNames(bandpass=filterName):
         AFxMeasurement(3, matchedDataset, AM3,
                        bandpass=filterName, specName=specName,
                        verbose=verbose,
-                       job=job, linkedBlobs=[photomModel, astromModel])
+                       job=job, linkedBlobs=linkedBlobs)
 
         ADxMeasurement(3, matchedDataset, AM3,
                        bandpass=filterName, specName=specName,
                        verbose=verbose,
-                       job=job, linkedBlobs=[photomModel, astromModel])
+                       job=job, linkedBlobs=linkedBlobs)
 
     job.write_json(outputPrefix.rstrip('_') + '.json')
 

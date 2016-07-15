@@ -386,7 +386,11 @@ class Metric(JsonSerializationMixin):
         return m
 
     def __getattr__(self, key):
-        return self.dependencies[key]
+        if key in self.dependencies:
+            return self.dependencies[key]
+        else:
+            raise AttributeError("%r object has no attribute %r" %
+                                 (self.__class__, key))
 
     @property
     def reference(self):
@@ -569,7 +573,11 @@ class Specification(JsonSerializationMixin):
 
     def __getattr__(self, key):
         """Access dependencies with keys as attributes."""
-        return self.dependencies[key]
+        if key in self.dependencies:
+            return self.dependencies[key]
+        else:
+            raise AttributeError("%r object has no attribute %r" %
+                                 (self.__class__, key))
 
     @property
     def datum(self):
@@ -642,7 +650,7 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
     def __init__(self):
         self.parameters = {}
         self.extras = {}
-        self._linkedBlobs = []
+        self._linkedBlobs = {}
         self._id = uuid.uuid4().hex
         self.specName = None
         self.bandpass = None
@@ -653,12 +661,18 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
             return self.parameters[key].value
         elif key in self.extras:
             return self.extras[key].value
+        elif key in self._linkedBlobs:
+            return self._linkedBlobs[key]
         else:
-            super(MeasurementBase, self).__getattr__(key)
+            raise AttributeError("%r object has no attribute %r" %
+                                 (self.__class__, key))
 
     def __setattr__(self, key, value):
-        _bootstrap = ('parameters', 'extras')
-        if key not in _bootstrap and key in self.parameters:
+        # avoiding __setattr__ loops by not handling names in _bootstrap
+        _bootstrap = ('parameters', 'extras', '_linkedBlobs')
+        if key not in _bootstrap and isinstance(value, BlobBase):
+            self._linkedBlobs[key] = value
+        elif key not in _bootstrap and key in self.parameters:
             # Setting value of a serializable parameter
             self.parameters[key].value = value
         elif key not in _bootstrap and key in self.extras:
@@ -667,15 +681,9 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
         else:
             super(MeasurementBase, self).__setattr__(key, value)
 
-    def linkBlob(self, blob):
-        """Add a blob so that it will be linked to this measurement in
-        the serialized JSON. This does not cause the blob itself to be
-        persisted in a Job document, however.
-        """
-        self._linkedBlobs.append(blob)
-
     @property
     def blobs(self):
+        """`dict` of blobs attached to this measurement instance."""
         return self._linkedBlobs
 
     @property
@@ -807,7 +815,8 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
     @property
     def json(self):
         """a `dict` that can be serialized as semantic SQuaSH json."""
-        blobIds = list(set([b.identifier for b in self._linkedBlobs]))
+        blobIds = list(set([b.identifier for n, b in
+                            self._linkedBlobs.items()]))
         object_doc = {'metric': self.metric,
                       'identifier': self.identifier,
                       'value': self.value,
@@ -854,7 +863,8 @@ class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
         if key in self.datums:
             return self.datums[key].value
         else:
-            super(BlobBase, self).__getattr__(key)
+            raise AttributeError("%r object has no attribute %r" %
+                                 (self.__class__, key))
 
     def __setattr__(self, key, value):
         if key != 'datums' and key in self.datums:
@@ -965,7 +975,7 @@ class Job(JsonSerializationMixin):
         if m.identifier not in self._measurement_ids:
             self._measurements.append(m)
             self._measurement_ids.add(m.identifier)
-            for b in m.blobs:
+            for name, b in m.blobs.items():
                 self.registerBlob(b)
 
     def getMeasurement(self, metricName, specName=None, bandpass=None):
