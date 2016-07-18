@@ -29,8 +29,49 @@
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.mathjax',
-              'documenteer.sphinxext']
+extensions = [
+    'sphinx.ext.mathjax',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.todo',
+    'sphinx.ext.coverage',
+    'sphinx.ext.inheritance_diagram',
+    'sphinx.ext.viewcode',
+    'astropy_helpers.sphinx.ext.numpydoc',
+    'astropy_helpers.sphinx.ext.astropyautosummary',
+    'astropy_helpers.sphinx.ext.autodoc_enhancements',
+    'astropy_helpers.sphinx.ext.automodsumm',
+    'astropy_helpers.sphinx.ext.automodapi',
+    'documenteer.sphinxext']
+
+
+# -- Autodoc settings -----------------------------------------------------
+
+# Don't show summaries of the members in each class along with the
+# class' docstring
+numpydoc_show_class_members = False
+
+autosummary_generate = True
+
+automodapi_toctreedirnm = 'py-api'
+
+# Class documentation should contain *both* the class docstring and
+# the __init__ docstring
+autoclass_content = "both"
+
+# Render inheritance diagrams in SVG
+graphviz_output_format = "svg"
+
+graphviz_dot_args = [
+    '-Nfontsize=10',
+    '-Nfontname=Helvetica Neue, Helvetica, Arial, sans-serif',
+    '-Efontsize=10',
+    '-Efontname=Helvetica Neue, Helvetica, Arial, sans-serif',
+    '-Gfontsize=10',
+    '-Gfontname=Helvetica Neue, Helvetica, Arial, sans-serif'
+]
+
+# --------------------------------------------------------------------------
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
