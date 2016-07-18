@@ -840,10 +840,11 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
 
 
 class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
-    """Baseclass for Blob classes. Blobs are flexible containers of data
-    that are serialized to JSON.
+    """Base class for Blob classes.
 
-    Properties
+    Blobs are flexible containers of data that are serialized to JSON.
+
+    Attributes
     ----------
     datums : dict
         A `dict` of `Datums` instances contained by the Blob instance. The

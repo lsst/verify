@@ -79,21 +79,21 @@ class AFxMeasurement(MeasurementBase):
     These two requirements correspond to relative astrometric precision for a
     single image of 10 mas (per coordinate).
 
-    ================== =========== ============ ============
-         Quantity      Design Spec Minimum Spec Stretch Goal
-    ------------------ ----------- ------------ ------------
-    AM1 (milliarcsec)        10          20            5
-    AF1 (%)                  10          20            5
-    AD1 (milliarcsec)        20          40           10
-
-    AM2 (milliarcsec)        10          20            5
-    AF2 (%)                  10          20            5
-    AD2 (milliarcsec)        20          40           10
-
-    AM3 (milliarcsec)        15          30           10
-    AF3 (%)                  10          20            5
-    AD3 (milliarcsec)        30          50           20
-    =================  =========== ============ ============
+    ========================= ====== ======= =======
+    Astrometric Repeatability          Specification
+    ------------------------- ----------------------
+                       Metric Design Minimum Stretch
+    ========================= ====== ======= =======
+            AM1 (milliarcsec)     10      20       5
+            AF1 (%)               10      20       5
+            AD1 (milliarcsec)     20      40      10
+            AM2 (milliarcsec)     10      20       5
+            AF2 (%)               10      20       5
+            AD2 (milliarcsec)     20      40      10
+            AM3 (milliarcsec)     15      30      10
+            AF3 (%)               10      20       5
+            AD3 (milliarcsec)     30      50      20
+    ========================= ====== ======= =======
 
     Table 18: The specifications for astrometric precision.
     The three blocks of values correspond to D=5, 20 and 200 arcmin,
