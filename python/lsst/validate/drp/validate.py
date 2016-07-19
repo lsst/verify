@@ -37,6 +37,9 @@ from .plot import (plotAMx, plotPA1, plotAnalyticPhotometryModel,
                    plotAnalyticAstrometryModel)
 
 
+__all__ = ['run', 'runOneFilter']
+
+
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'

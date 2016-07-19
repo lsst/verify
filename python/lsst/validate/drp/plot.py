@@ -26,6 +26,13 @@ import scipy.stats
 from .matchreduce import fitExp, expModel, astromErrModel, photErrModel
 
 
+__all__ = ['plotOutlinedLinesHorizontal', 'plotOutlinedLinesVertical',
+           'plotOutlinedLines', 'plotOutlinedAxline',
+           'plotAnalyticAstrometryModel', 'plotExpFit',
+           'plotAstromErrModelFit', 'plotPhotErrModelFit',
+           'plotAnalyticPhotometryModel', 'plotPA1', 'plotAMx']
+
+
 # Plotting defaults
 plt.rcParams['axes.linewidth'] = 2
 plt.rcParams['mathtext.default'] = 'regular'

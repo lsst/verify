@@ -35,6 +35,12 @@ from .util import (getCcdKeyName, averageRaDecFromCat)
 from .base import BlobBase
 
 
+__all__ = ['MatchedMultiVisitDataset', 'AnalyticAstrometryModel',
+           'AnalyticPhotometryModel', 'isExtended', 'magNormDiff',
+           'fitExp', 'fitAstromErrModel', 'fitPhotErrModel',
+           'positionRms', 'astromErrModel', 'photErrModel']
+
+
 class MatchedMultiVisitDataset(BlobBase):
     """Container for matched star catalogs from multple visits, with filtering,
     summary statistics, and modelling.
