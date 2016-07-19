@@ -17,6 +17,9 @@
 # You should have received a copy of the LSST License Statement and
 # the GNU General Public License along with this program.  If not,
 # see <https://www.lsstcorp.org/LegalNotices/>.
+"""Matplotlib plots describing lsst.validate.drp metric measurements, as well
+as analytic models of photometric and astrometric repeatability.
+"""
 
 from __future__ import print_function, division
 
@@ -615,7 +618,7 @@ def plotAMx(amx, afx, bandpass, amxSpecName='design', outputPrefix=""):
         prefix=outputPrefix,
         metric=amx.label,
         D=int(amx.D),
-        Dunits=amx.parameters['D'].latex_units,
+        Dunits=amx.parameters['D'].units,
         magBright=amx.magRange[0],
         magFaint=amx.magRange[1],
         ext='png')

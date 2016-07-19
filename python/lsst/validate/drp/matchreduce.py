@@ -17,6 +17,9 @@
 # You should have received a copy of the LSST License Statement and
 # the GNU General Public License along with this program.  If not,
 # see <https://www.lsstcorp.org/LegalNotices/>.
+"""Blob classes that reduce a multi-visit dataset and encapsulate data
+for measurement classes, plotting functions, and JSON persistence.
+"""
 
 from __future__ import print_function, absolute_import
 from scipy.optimize import curve_fit
