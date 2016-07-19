@@ -60,7 +60,8 @@ automodapi_toctreedirnm = 'py-api'
 autoclass_content = "both"
 
 # Render inheritance diagrams in SVG
-graphviz_output_format = "svg"
+# graphviz_output_format = "svg"
+graphviz_output_format = "png"
 
 graphviz_dot_args = [
     '-Nfontsize=10',
