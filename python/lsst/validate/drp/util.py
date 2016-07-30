@@ -17,6 +17,7 @@
 # You should have received a copy of the LSST License Statement and
 # the GNU General Public License along with this program.  If not,
 # see <https://www.lsstcorp.org/LegalNotices/>.
+"""Miscellaneous functions to support lsst.validate.drp."""
 
 from __future__ import print_function, division
 

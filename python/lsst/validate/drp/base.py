@@ -17,6 +17,8 @@
 # You should have received a copy of the LSST License Statement and
 # the GNU General Public License along with this program.  If not,
 # see <https://www.lsstcorp.org/LegalNotices/>.
+"""lsst.validate.drp's Measurement API that handles JSON persistence.
+"""
 
 from __future__ import print_function, division
 
@@ -840,10 +842,11 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
 
 
 class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
-    """Baseclass for Blob classes. Blobs are flexible containers of data
-    that are serialized to JSON.
+    """Base class for Blob classes.
 
-    Properties
+    Blobs are flexible containers of data that are serialized to JSON.
+
+    Attributes
     ----------
     datums : dict
         A `dict` of `Datums` instances contained by the Blob instance. The

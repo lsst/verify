@@ -17,6 +17,9 @@
 # You should have received a copy of the LSST License Statement and
 # the GNU General Public License along with this program.  If not,
 # see <https://www.lsstcorp.org/LegalNotices/>.
+"""Main driver functions for metric measurements, plotting, specification
+grading, and persistence.
+"""
 
 from __future__ import print_function, absolute_import
 
@@ -35,6 +38,9 @@ from .calcsrd import (PA1Measurement, PA2Measurement, PF1Measurement,
 from .base import Metric, Job
 from .plot import (plotAMx, plotPA1, plotAnalyticPhotometryModel,
                    plotAnalyticAstrometryModel)
+
+
+__all__ = ['run', 'runOneFilter']
 
 
 class bcolors:
