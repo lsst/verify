@@ -876,7 +876,7 @@ class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
     @property
     def name(self):
         """Name of this blob (the BlobBase subclass's Python namespace)."""
-        return str(self.__class__)
+        return str(self.__name__)
 
     @property
     def identifier(self):
