@@ -20,401 +20,34 @@
 
 from __future__ import print_function, absolute_import
 
-import json
-import numpy as np
+import os
+from textwrap import TextWrapper
 
-import lsst.afw.geom as afwGeom
-import lsst.afw.image as afwImage
-import lsst.afw.image.utils as afwImageUtils
-from lsst.afw.table import SourceCatalog, SchemaMapper, Field
-from lsst.afw.table import MultiMatch, SimpleRecord, GroupView
-from lsst.afw.fits.fitsLib import FitsError
-import lsst.daf.persistence as dafPersist
-import lsst.pipe.base as pipeBase
+import yaml
 
-from .base import ValidateErrorNoStars
-from .calcSrd import calcAM1, calcAM2, calcAM3, calcPA1, calcPA2
-from . import calcSrd
-from .check import checkAstrometry, checkPhotometry, positionRms
-from .plot import plotAstrometry, plotPhotometry, plotPA1, plotAMx
-from .print import printPA1, printPA2, printAMx
-from .srdSpec import srdSpec, loadSrdRequirements
-from .util import getCcdKeyName, repoNameToPrefix, calcOrNone, loadParameters
-from .io import (saveKpmToJson, loadKpmFromJson, MultiVisitStarBlobSerializer,
-                 MeasurementSerializer, DatumSerializer, JobSerializer,
-                 persist_job)
+from lsst.utils import getPackageDir
 
+from .util import repoNameToPrefix
+from .matchreduce import (MatchedMultiVisitDataset, AnalyticPhotometryModel,
+                          AnalyticAstrometryModel)
+from .calcsrd import (PA1Measurement, PA2Measurement, PF1Measurement,
+                      AMxMeasurement, AFxMeasurement, ADxMeasurement)
+from .base import Metric, Job
+from .plot import (plotAMx, plotPA1, plotAnalyticPhotometryModel,
+                   plotAnalyticAstrometryModel)
 
-def loadAndMatchData(repo, dataIds,
-                     matchRadius=afwGeom.Angle(1, afwGeom.arcseconds),
-                     verbose=False):
-    """Load data from specific visit.  Match with reference.
 
-    Parameters
-    ----------
-    repo : string
-        The repository.  This is generally the directory on disk
-        that contains the repository and mapper.
-    dataIds : list of dict
-        List of `butler` data IDs of Image catalogs to compare to reference.
-        The `calexp` cpixel image is needed for the photometric calibration.
-    matchRadius :  afwGeom.Angle().
-        Radius for matching.
-    verbose : bool, optional
-        Output additional information on the analysis steps.
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
-    Returns
-    -------
-    afw.table.GroupView
-        An object of matched catalog.
-    """
 
-    # Following
-    # https://github.com/lsst/afw/blob/tickets/DM-3896/examples/repeatability.ipynb
-    butler = dafPersist.Butler(repo)
-    dataset = 'src'
-
-    # 2016-02-08 MWV:
-    # I feel like I could be doing something more efficient with
-    # something along the lines of the following:
-    #    dataRefs = [dafPersist.ButlerDataRef(butler, vId) for vId in dataIds]
-
-    ccdKeyName = getCcdKeyName(dataIds[0])
-
-    schema = butler.get(dataset + "_schema", immediate=True).schema
-    mapper = SchemaMapper(schema)
-    mapper.addMinimalSchema(schema)
-    mapper.addOutputField(Field[float]('base_PsfFlux_snr', "PSF flux SNR"))
-    mapper.addOutputField(Field[float]('base_PsfFlux_mag', "PSF magnitude"))
-    mapper.addOutputField(Field[float]('base_PsfFlux_magerr', "PSF magnitude uncertainty"))
-    newSchema = mapper.getOutputSchema()
-
-    # Create an object that can match multiple catalogs with the same schema
-    mmatch = MultiMatch(newSchema,
-                        dataIdFormat={'visit': int, ccdKeyName: int},
-                        radius=matchRadius,
-                        RecordClass=SimpleRecord)
-
-    # create the new extented source catalog
-    srcVis = SourceCatalog(newSchema)
-
-    for vId in dataIds:
-        try:
-            calexpMetadata = butler.get("calexp_md", vId, immediate=True)
-        except FitsError as fe:
-            print(fe)
-            print("Could not open calibrated image file for ", vId)
-            print("Skipping %s " % repr(vId))
-            continue
-        except TypeError as te:
-            # DECam images that haven't been properly reformatted
-            # can trigger a TypeError because of a residual FITS header
-            # LTV2 which is a float instead of the expected integer.
-            # This generates an error of the form:
-            #
-            # lsst::pex::exceptions::TypeError: 'LTV2 has mismatched type'
-            #
-            # See, e.g., DM-2957 for details.
-            print(te)
-            print("Calibration image header information malformed.")
-            print("Skipping %s " % repr(vId))
-            continue
-
-        calib = afwImage.Calib(calexpMetadata)
-
-        oldSrc = butler.get('src', vId, immediate=True)
-        print(len(oldSrc), "sources in ccd %s  visit %s" % (vId[ccdKeyName], vId["visit"]))
-
-        # create temporary catalog
-        tmpCat = SourceCatalog(SourceCatalog(newSchema).table)
-        tmpCat.extend(oldSrc, mapper=mapper)
-        tmpCat['base_PsfFlux_snr'][:] = tmpCat['base_PsfFlux_flux'] / tmpCat['base_PsfFlux_fluxSigma']
-        with afwImageUtils.CalibNoThrow():
-            (tmpCat['base_PsfFlux_mag'][:], tmpCat['base_PsfFlux_magerr'][:]) = \
-                calib.getMagnitude(tmpCat['base_PsfFlux_flux'],
-                                   tmpCat['base_PsfFlux_fluxSigma'])
-
-        srcVis.extend(tmpCat, False)
-        mmatch.add(catalog=tmpCat, dataId=vId)
-
-    # Complete the match, returning a catalog that includes
-    # all matched sources with object IDs that can be used to group them.
-    matchCat = mmatch.finish()
-
-    # Create a mapping object that allows the matches to be manipulated
-    # as a mapping of object ID to catalog of sources.
-    allMatches = GroupView.build(matchCat)
-
-    return allMatches
-
-
-def analyzeData(allMatches, safeSnr=50.0, verbose=False):
-    """Calculate summary statistics for each star.
-
-    Parameters
-    ----------
-    allMatches : afw.table.GroupView
-        GroupView object with matches.
-    safeSnr : float, optional
-        Minimum median SNR for a match to be considered "safe".
-    verbose : bool, optional
-        Output additional information on the analysis steps.
-
-    Returns
-    -------
-    pipeBase.Struct containing:
-    - mag: mean PSF magnitude for good matches
-    - magerr: median of PSF magnitude for good matches
-    - magrms: standard deviation of PSF magnitude for good matches
-    - snr: median PSF flux SNR for good matches
-    - dist: RMS RA/Dec separation, in milliarcsecond
-    - goodMatches: all good matches, as an afw.table.GroupView;
-        good matches contain only objects whose detections all have
-          * a PSF Flux measurement with S/N > 1
-          * a finite (non-nan) PSF magnitude
-            - This separate check is largely to reject failed zeropoints.
-          * and do not have flags set for bad, cosmic ray, edge or saturated
-    - safeMatches: safe matches, as an afw.table.GroupView;
-        safe matches are good matches that are sufficiently bright and sufficiently compact
-    """
-
-    # Filter down to matches with at least 2 sources and good flags
-    flagKeys = [allMatches.schema.find("base_PixelFlags_flag_%s" % flag).key
-                for flag in ("saturated", "cr", "bad", "edge")]
-    nMatchesRequired = 2
-
-    psfSnrKey = allMatches.schema.find("base_PsfFlux_snr").key
-    psfMagKey = allMatches.schema.find("base_PsfFlux_mag").key
-    psfMagErrKey = allMatches.schema.find("base_PsfFlux_magerr").key
-    extendedKey = allMatches.schema.find("base_ClassificationExtendedness_value").key
-
-    def goodFilter(cat, goodSnr=3):
-        if len(cat) < nMatchesRequired:
-            return False
-        for flagKey in flagKeys:
-            if cat.get(flagKey).any():
-                return False
-        if not np.isfinite(cat.get(psfMagKey)).all():
-            return False
-        psfSnr = np.median(cat.get(psfSnrKey))
-        # Note that this also implicitly checks for psfSnr being non-nan.
-        return psfSnr >= goodSnr
-
-    goodMatches = allMatches.where(goodFilter)
-
-    # Filter further to a limited range in S/N and extendedness
-    # to select bright stars.
-    safeMaxExtended = 1.0
-
-    def safeFilter(cat):
-        psfSnr = np.median(cat.get(psfSnrKey))
-        extended = np.max(cat.get(extendedKey))
-        return psfSnr >= safeSnr and extended < safeMaxExtended
-
-    safeMatches = goodMatches.where(safeFilter)
-
-    # Pass field=psfMagKey so np.mean just gets that as its input
-    goodPsfSnr = goodMatches.aggregate(np.median, field=psfSnrKey)  # SNR
-    goodPsfMag = goodMatches.aggregate(np.mean, field=psfMagKey)  # mag
-    goodPsfMagRms = goodMatches.aggregate(np.std, field=psfMagKey)  # mag
-    goodPsfMagErr = goodMatches.aggregate(np.median, field=psfMagErrKey)
-    # positionRms knows how to query a group so we give it the whole thing
-    #   by going with the default `field=None`.
-    dist = goodMatches.aggregate(positionRms)
-
-    return pipeBase.Struct(
-        mag = goodPsfMag,
-        magerr = goodPsfMagErr,
-        magrms = goodPsfMagRms,
-        snr = goodPsfSnr,
-        dist = dist,
-        goodMatches = goodMatches,
-        safeMatches = safeMatches,
-    )
-
-
-def didThisRepoPass(repo, dataIds, configFile, **kwargs):
-    """Convenience function for calling didIPass using the standard conventions for output filenames.
-
-    Parameters
-    ----------
-    repo : str
-        Path name of repository
-    dataIds : list
-        Data Ids that were analyzed
-    configFile : str
-        Configuration file with requirements specified as a dict.  E.g.,
-
-        requirements: {'PA1': 25, 'PA2': 35}
-
-    Returns
-    -------
-    bool
-        Did all of the measured and required metrics pass.
-
-    Raises
-    ------
-    AttributeError
-        If the configuration file does not contain a `requirements` dict.
-
-    See Also
-    --------
-    didIPass : The key function that does the work.
-    """
-    outputPrefix = repoNameToPrefix(repo)
-    filters = set(d['filter'] for d in dataIds)
-    try:
-        requirements = loadParameters(configFile).requirements
-    except AttributeError as ae:
-        print("Configuration file %s does not contain a `requirements` dict." % configFile)
-        raise(ae)
-
-    return didIPass(outputPrefix, filters, requirements, **kwargs)
-
-
-def didThisRepoPassSrd(repo, dataIds, level='design', **kwargs):
-    """Convenience function for calling didIPass using the LSST SRD requirements.
-
-    Parameters
-    ----------
-    repo : str
-        Path name of repository
-    dataIds : list
-        Data Ids that were analyzed
-
-    Returns
-    -------
-    bool
-        Did all of the measured and required metrics pass.
-
-    See Also
-    --------
-    didIPass : The key function that does the work.
-    """
-    outputPrefix = repoNameToPrefix(repo)
-    filters = set(d['filter'] for d in dataIds)
-
-    requirements = loadSrdRequirements(srdSpec, level=level)
-
-    return didIPass(outputPrefix, filters, requirements, **kwargs)
-
-
-def didIPass(*args, **kwargs):
-    """Did this set pass.
-
-    Returns
-    -------
-    bool
-        Did all of the measured and requiremd metrics pass.
-    """
-    passedScores = scoreMetrics(*args, **kwargs)
-
-    didAllPass = True
-    for (metric, filter), passed in passedScores.iteritems():
-        if not passed:
-            print("Failed metric, filter: %s, %s" % (metric, filter))
-            didAllPass = False
-
-    return didAllPass
-
-
-def scoreMetrics(outputPrefix, filters, requirements, verbose=False):
-    """Score Key Performance metrics.  Returns dict((metric, filter), Pass/Fail)
-
-    Parameters
-    ----------
-    outputPrefix : str
-        The starting name for the output JSON files with the results
-    filters : list, str, or None
-        The filters in the analysis.  Output JSON files will be searched as
-            "%s%s" % (outputPrefix, filters[i])
-        If `None`, then JSON files will be searched for as just
-            "%s" % outputPrefix.
-    requirements : dict
-        The requirements on each of the Key Performance Metrics
-        Skips measurements for any metric without an entry in `requirements`.
-
-    Returns
-    -------
-    dict of (str, str) -> bool
-        A dictionary of results.  (metricName, filter) : True/False
-
-
-    We provide the ability to check against configured standards
-    instead of just the srdSpec because
-    1. Different data sets may not lend themselves to satisfying the SRD.
-    2. The pipeline continues to improve.
-       Specifying a set of standards and updating that allows for a natural tightening of requirements.
-
-    Note that there is no filter-dependence for the requirements.
-    """
-    if isinstance(filters, str):
-        filters = list(filters)
-
-    fileSnippet = dict(
-        zip(
-            ("PA1", "PF1", "PA2", "AM1", "AF1", "AM2", "AF2", "AM3", "AF3"),
-            ("PA1", "PA2", "PA2", "AM1", "AM1", "AM2", "AM2", "AM3", "AM3")
-        )
-    )
-    lookupKeyName = dict(
-        zip(
-            ("PA1", "PF1", "PA2", "AM1", "AF1", "AM2", "AF2", "AM3", "AF3"),
-            ("PA1", "PF1", "PA2", "AMx", "AFx", "AMx", "AFx", "AMx", "AFx")
-        )
-    )
-    metricsToConsider = ("PA1", "PF1", "PA2",
-                         "AM1", "AF1", "AM2", "AF2", "AM3", "AF3")
-
-    if verbose:
-        print("{:16s}   {:13s} {:20s}".format("Measured", "Required", "Passes"))
-
-    passed = {}
-    for f in filters:
-        if f:
-            thisPrefix = "%s%s_" % (outputPrefix, f)
-        else:
-            thisPrefix = outputPrefix
-        # get json files
-        # Multiple metrics are sometimes stored in a file.
-        # The names in those files may be generic ("AMx" instead of "AM1")
-        # so we have three different, almost identical tuples here.
-        for metricName in metricsToConsider:
-            jsonFile = "%s%s.%s" % (thisPrefix, fileSnippet[metricName], 'json')
-
-            metricNameKey = lookupKeyName[metricName]
-
-            metricUnitsKey = metricNameKey.lower()+'Units'
-
-            try:
-                metricResults = loadKpmFromJson(jsonFile).getDict()
-            except IOError:
-                print("No results available for %s" % metricName)
-                continue
-
-            if metricName not in requirements:
-                if verbose:
-                    print("No requirement specified for %s.  Skipping." % metricName)
-                continue
-
-            # Check values against configured standards
-            passed[(metricName, f)] = metricResults[metricNameKey] <= requirements[metricName]
-
-            if verbose:
-                kpmInfoToPrint = {
-                    "name": metricName,
-                    "value": metricResults[metricNameKey],
-                    "units": metricResults[metricUnitsKey],
-                    "spec": requirements[metricName],
-                    "result": passed[(metricName, f)],
-                }
-                kpmInfoFormat = "{name:4s}: {value:5.2f} {units:4s} < {spec:5.2f} {units:4s} == {result}"
-                print(kpmInfoFormat.format(**kpmInfoToPrint))
-
-    return passed
-
-
-####
 def run(repo, dataIds, outputPrefix=None, level="design", verbose=False, **kwargs):
     """Main executable.
 
@@ -452,25 +85,43 @@ def run(repo, dataIds, outputPrefix=None, level="design", verbose=False, **kwarg
     if outputPrefix is None:
         outputPrefix = repoNameToPrefix(repo)
 
+    jobs = {}
     for filt in allFilters:
         # Do this here so that each outputPrefix will have a different name for each filter.
         thisOutputPrefix = "%s_%s_" % (outputPrefix.rstrip('_'), filt)
         theseVisitDataIds = [v for v in dataIds if v['filter'] == filt]
-        runOneFilter(repo, theseVisitDataIds, outputPrefix=thisOutputPrefix, verbose=verbose, filterName=filt,
-                     **kwargs)
+        job = runOneFilter(repo, theseVisitDataIds,
+                           outputPrefix=thisOutputPrefix,
+                           verbose=verbose, filterName=filt,
+                           **kwargs)
+        jobs[filt] = job
 
-    if verbose:
-        print("==============================")
-        print("Comparison against *LSST SRD*.")
+    for filt, job in jobs.items():
+        print('')
+        print(bcolors.BOLD + bcolors.HEADER + "=" * 65 + bcolors.ENDC)
+        print(bcolors.BOLD + bcolors.HEADER + '{0} band summary'.format(filt) + bcolors.ENDC)
+        print(bcolors.BOLD + bcolors.HEADER + "=" * 65 + bcolors.ENDC)
 
-    SRDrequirements = {}
-    for k, v in srdSpec.getDict().iteritems():
-        if isinstance(v, dict):
-            SRDrequirements[k] = v[level]
-        else:
-            SRDrequirements[k] = v
+        for specName in job.availableSpecLevels:
+            passed = True
 
-    scoreMetrics(outputPrefix, allFilters, SRDrequirements, verbose=verbose)
+            measurementCount = 0
+            failCount = 0
+            for m in job._measurements:
+                if m.value is None:
+                    continue
+                measurementCount += 1
+                if not m.checkSpec(specName):
+                    passed = False
+                    failCount += 1
+
+            if passed:
+                print('Passed {level:12s} {count:d} measurements'.format(
+                    level=specName, count=measurementCount))
+            else:
+                msg = 'Failed {level:12s} {failCount} of {count:d} failed'.format(
+                    level=specName, failCount=failCount, count=measurementCount)
+                print(bcolors.FAIL + msg + bcolors.ENDC)
 
 
 def runOneFilter(repo, visitDataIds, brightSnr=100,
@@ -517,218 +168,159 @@ def runOneFilter(repo, visitDataIds, brightSnr=100,
         Output additional information on the analysis steps.
 
     """
+    # Cache the YAML definitions of metrics (optional)
+    yamlPath = os.path.join(getPackageDir('validate_drp'),
+                            'metrics.yaml')
+    with open(yamlPath) as f:
+        yamlDoc = yaml.load(f)
 
     if outputPrefix is None:
         outputPrefix = repoNameToPrefix(repo)
 
-    filterName = set([dId['filter'] for dId in visitDataIds]).pop()
-    allMatches = loadAndMatchData(repo, visitDataIds, verbose=verbose)
-    struct = analyzeData(allMatches, brightSnr, verbose=verbose)
+    matchedDataset = MatchedMultiVisitDataset(repo, visitDataIds,
+                                              verbose=verbose)
+    photomModel = AnalyticPhotometryModel(matchedDataset)
+    astromModel = AnalyticAstrometryModel(matchedDataset)
+    linkedBlobs = {'photomModel': photomModel, 'astromModel': astromModel}
 
-    magavg = struct.mag
-    magerr = struct.magerr
-    magrms = struct.magrms
-    dist = struct.dist
-    match = len(struct.goodMatches)
-    safeMatches = struct.safeMatches
+    job = Job()
 
-    mmagerr = 1000*magerr
-    mmagrms = 1000*magrms
+    PA1 = PA1Measurement(matchedDataset, bandpass=filterName, verbose=verbose,
+                         job=job, linkedBlobs=linkedBlobs)
 
-    astromStruct = \
-        checkAstrometry(struct.snr, dist, match,
-                        brightSnr=brightSnr,
-                        medianRef=medianAstromscatterRef, matchRef=matchRef)
-    photStruct = \
-        checkPhotometry(struct.snr, magavg, mmagerr, mmagrms, dist, match,
-                        brightSnr=brightSnr,
-                        medianRef=medianPhotoscatterRef, matchRef=matchRef)
+    pa2Metric = Metric.fromYaml('PA2', yamlDoc=yamlDoc)
+    for specName in pa2Metric.getSpecNames(bandpass=filterName):
+        PA2Measurement(matchedDataset, pa1=PA1, bandpass=filterName,
+                       specName=specName, verbose=verbose,
+                       job=job, linkedBlobs=linkedBlobs)
+
+    pf1Metric = Metric.fromYaml('PF1', yamlDoc=yamlDoc)
+    for specName in pf1Metric.getSpecNames(bandpass=filterName):
+        PF1Measurement(matchedDataset, pa1=PA1, bandpass=filterName,
+                       specName=specName, verbose=verbose,
+                       job=job, linkedBlobs=linkedBlobs)
+
+    AM1 = AMxMeasurement(1, matchedDataset,
+                         bandpass=filterName, verbose=verbose,
+                         job=job, linkedBlobs=linkedBlobs)
+
+    af1Metric = Metric.fromYaml('AF1', yamlDoc=yamlDoc)
+    for specName in af1Metric.getSpecNames(bandpass=filterName):
+        AFxMeasurement(1, matchedDataset, AM1,
+                       bandpass=filterName, specName=specName,
+                       verbose=verbose,
+                       job=job, linkedBlobs=linkedBlobs)
+
+        ADxMeasurement(1, matchedDataset, AM1,
+                       bandpass=filterName, specName=specName,
+                       verbose=verbose,
+                       job=job, linkedBlobs=linkedBlobs)
+
+    AM2 = AMxMeasurement(2, matchedDataset,
+                         bandpass=filterName, verbose=verbose,
+                         job=job, linkedBlobs=linkedBlobs)
+
+    af2Metric = Metric.fromYaml('AF2', yamlDoc=yamlDoc)
+    for specName in af2Metric.getSpecNames(bandpass=filterName):
+        AFxMeasurement(2, matchedDataset, AM2,
+                       bandpass=filterName, specName=specName,
+                       verbose=verbose,
+                       job=job, linkedBlobs=linkedBlobs)
+
+        ADxMeasurement(2, matchedDataset, AM2,
+                       bandpass=filterName, specName=specName,
+                       verbose=verbose,
+                       job=job, linkedBlobs=linkedBlobs)
+
+    AM3 = AMxMeasurement(3, matchedDataset,
+                         bandpass=filterName, verbose=verbose,
+                         job=job, linkedBlobs=linkedBlobs)
+
+    af3Metric = Metric.fromYaml('AF3', yamlDoc=yamlDoc)
+    for specName in af3Metric.getSpecNames(bandpass=filterName):
+        AFxMeasurement(3, matchedDataset, AM3,
+                       bandpass=filterName, specName=specName,
+                       verbose=verbose,
+                       job=job, linkedBlobs=linkedBlobs)
+
+        ADxMeasurement(3, matchedDataset, AM3,
+                       bandpass=filterName, specName=specName,
+                       verbose=verbose,
+                       job=job, linkedBlobs=linkedBlobs)
+
+    job.write_json(outputPrefix.rstrip('_') + '.json')
+
     if makePlot:
-        plotAstrometry(dist, magavg, struct.snr,
-                       fit_params=astromStruct.params,
-                       brightSnr=brightSnr, outputPrefix=outputPrefix)
-        plotPhotometry(magavg, struct.snr, mmagerr, mmagrms,
-                       fit_params=photStruct.params,
-                       brightSnr=brightSnr, filterName=filterName, outputPrefix=outputPrefix)
+        if AM1.value:
+            plotAMx(job.getMeasurement('AM1'),
+                    job.getMeasurement('AF1', specName='design'),
+                    filterName, amxSpecName='design',
+                    outputPrefix=outputPrefix)
+        if AM2.value:
+            plotAMx(job.getMeasurement('AM2'),
+                    job.getMeasurement('AF2', specName='design'),
+                    filterName, amxSpecName='design',
+                    outputPrefix=outputPrefix)
+        if AM3.value:
+            plotAMx(job.getMeasurement('AM3'),
+                    job.getMeasurement('AF3', specName='design'),
+                    filterName, amxSpecName='design',
+                    outputPrefix=outputPrefix)
 
-    magKey = allMatches.schema.find("base_PsfFlux_mag").key
+        plotPA1(job.getMeasurement('PA1'), outputPrefix=outputPrefix)
 
-    AM1, AM2, AM3 = [calcOrNone(func, safeMatches, ValidateErrorNoStars, verbose=verbose)
-                     for func in (calcAM1, calcAM2, calcAM3)]
-    PA1, PA2 = [func(safeMatches, magKey, verbose=verbose) for func in (calcPA1, calcPA2)]
+        plotAnalyticPhotometryModel(matchedDataset, photomModel,
+                                    outputPrefix=outputPrefix)
 
-    blob = MultiVisitStarBlobSerializer.init_from_structs(
-        filterName, struct, astromStruct, photStruct)
-    json.dumps(blob.json)
-
-    measurement_serializers = []
-
-    # Serialize AMx, AFx, ADx
-    for AMx in (AM1, AM2, AM3):
-        if AMx is None:
-            continue
-        x = AMx.x
-
-        AMx_serializer = MeasurementSerializer(
-            metric=calcSrd.AMxSerializer(x=x),
-            value=DatumSerializer(
-                value=AMx.AMx,
-                units='milliarcsecond',
-                label='AM{0:d}'.format(x),
-                description='Median RMS of the astrometric distance '
-                            'distribution for stellar pairs with separation '
-                            'of D arcmin (repeatability)'),
-            parameters=calcSrd.AMxParamSerializer(
-                D=DatumSerializer(
-                    value=AMx.D,
-                    units='arcmin',
-                    label='D',
-                    description='Fiducial distance between two objects to '
-                                'consider'),
-                annulus=DatumSerializer(
-                    value=AMx.annulus,
-                    units='arcmin',
-                    label='annulus',
-                    description='Annulus for selecting pairs of stars'),
-                mag_range=DatumSerializer(
-                    value=AMx.magRange,
-                    units='mag',
-                    label='mag range',
-                    description='(bright, faint) magnitude selection range')),
-            blob_id=blob.id)
-        measurement_serializers.append(AMx_serializer)
-
-        # So... only one spec level is computed???
-        AFx_serializer = MeasurementSerializer(
-            metric=calcSrd.AFxSerializer(x=x, level=AMx.level),
-            value=DatumSerializer(
-                value=AMx.AFx,
-                units='',
-                label='AF{0:d}'.format(x),
-                description='Fraction of pairs that deviate more than AD{0:d} '
-                            'from median AM{0:d} ({1})'.format(x, AMx.level)),
-            parameters=calcSrd.AFxParamSerializer(
-                ADx=DatumSerializer(
-                    value=AMx.ADx_spec,
-                    units='milliarcsecond',
-                    label='AD{0:d}'.format(x),
-                    description='Deviation from median RMS AM{0:d} '
-                                'containing AF{0:d} of sample'.format(x)),
-                AMx=DatumSerializer(
-                    value=AMx.AMx,
-                    units='milliarcsecond',
-                    label='AM{0:d}'.format(x),
-                    description='Median RMS of the astrometric distance '
-                                'distribution for stellar pairs with '
-                                'separation of D arcmin (repeatability)'),
-                D=DatumSerializer(
-                    value=AMx.D,
-                    units='arcmin',
-                    label='D',
-                    description='Fiducial distance between two objects to '
-                                'consider'),
-                annulus=DatumSerializer(
-                    value=AMx.annulus,
-                    units='arcmin',
-                    label='annulus',
-                    description='Annulus for selecting pairs of stars'),
-                mag_range=DatumSerializer(
-                    value=AMx.magRange,
-                    units='mag',
-                    label='mag range',
-                    description='(bright, faint) magnitude selection range')),
-            blob_id=blob.id)
-        measurement_serializers.append(AFx_serializer)
-
-    # Serialize PA1
-    PA1_serializer = MeasurementSerializer(
-        metric=calcSrd.PA1Serializer(),
-        value=DatumSerializer(
-            value=PA1.rms,
-            units='millimag',
-            label='PA1',
-            description='Median RMS of visit-to-visit relative photometry. '
-                        'LPM-17.'),
-        parameters=calcSrd.PA1ParamSerializer(
-            num_random_shuffles=50),
-        blob_id=blob.id)
-    json.dumps(PA1_serializer.json)
-    measurement_serializers.append(PA1_serializer)
-    # FIXME need to include the rest of PA1's measurement struct in a blob
-
-    # Serialize PA2 with each level of PF1
-    for level in srdSpec.levels:
-        PA2_serializer = MeasurementSerializer(
-            metric=calcSrd.PA2Serializer(spec_level=level),
-            value=DatumSerializer(
-                value=PA2.PA2_measured[level],
-                units='millimag',
-                label='PA2',
-                description='Mags from mean relative photometric RMS that '
-                            'encompasses PF1 of measurements.'),
-            parameters=calcSrd.PA2ParamSerializer(
-                num_random_shuffles=50,  # FIXME
-                PF1=DatumSerializer(
-                    value=PA2.PF1_spec[level],  # input for PA2
-                    units='',
-                    label='PF1',
-                    description='Fraction of measurements between PA1 and '
-                                'PF2, {0} spec'.format(level))),
-            blob_id=blob.id)
-        json.dumps(PA2_serializer.json)
-        measurement_serializers.append(PA2_serializer)
-
-    # Serialize PF1 with each level of PA2
-    for level in srdSpec.levels:
-        PF1_serializer = MeasurementSerializer(
-            metric=calcSrd.PF1Serializer(spec_level=level),
-            value=DatumSerializer(
-                value=PA2.PF1_measured[level],
-                units='',
-                label='PF1',
-                description='Fraction of measurements between PA1 and PF2, '
-                            '{0} spec'.format(level)),
-            parameters=calcSrd.PF1ParamSerializer(
-                PA2=DatumSerializer(
-                    value=PA2.PA2_spec[level],
-                    units='millimag',
-                    label='PA2',
-                    description='Mags from mean relative photometric RMS that '
-                                'encompasses PF1 of measurements at '
-                                '{0} spec'.format(level))),
-            blob_id=blob.id)
-        json.dumps(PF1_serializer.json)
-        measurement_serializers.append(PF1_serializer)
-
-    # Wrap measurements in a Job
-    job_serializer = JobSerializer(
-        measurements=measurement_serializers,
-        blobs=[blob])
-    persist_job(job_serializer, outputPrefix.rstrip('_') + '.json')
+        plotAnalyticAstrometryModel(matchedDataset, astromModel,
+                                    outputPrefix=outputPrefix)
 
     if makePrint:
-        print("=============================================")
-        print("Detailed comparison against SRD requirements.")
-        print("The LSST SRD is at:  http://ls.st/LPM-17")
-        printPA1(PA1)
-        printPA2(PA2)
-        for metric in (AM1, AM2, AM3):
-            if metric:
-                print("--")
-                printAMx(metric)
+        orderedMetrics = ['PA1', 'PF1', 'PA2',
+                          'AM1', 'AM2', 'AM3',
+                          'AF1', 'AF2', 'AF3',
+                          'AD1', 'AD2', 'AD3']
+        print(bcolors.BOLD + bcolors.HEADER + "=" * 65 + bcolors.ENDC)
+        print(bcolors.BOLD + bcolors.HEADER +
+              '{band} band metric measurements'.format(band=filterName) +
+              bcolors.ENDC)
+        print(bcolors.BOLD + bcolors.HEADER + "=" * 65 + bcolors.ENDC)
 
-    if makePlot:
-        plotPA1(PA1, outputPrefix=outputPrefix)
-        for metric in (AM1, AM2, AM3):
-            if metric:
-                plotAMx(metric, outputPrefix=outputPrefix)
+        wrapper = TextWrapper(width=65)
 
-    if makeJson:
-        for struct in (astromStruct, photStruct):
-            outfile = outputPrefix + "%s.json" % struct.name
-            saveKpmToJson(struct, outfile)
+        for metricName in orderedMetrics:
+            metric = Metric.fromYaml(metricName, yamlDoc=yamlDoc)
+            print(bcolors.HEADER + '{name} - {reference}'.format(
+                name=metric.name, reference=metric.reference))
+            print(wrapper.fill(bcolors.ENDC + '{description}'.format(
+                description=metric.description).strip()))
 
-        for metric in (AM1, AM2, AM3, PA1, PA2):
-            if metric:
-                outfile = outputPrefix + "%s.json" % metric.name
-                saveKpmToJson(metric, outfile)
+            for specName in metric.getSpecNames(bandpass=filterName):
+                try:
+                    m = job.getMeasurement(metricName, specName=specName,
+                                           bandpass=filterName)
+                except RuntimeError:
+                    print('\tSkipped {specName:12s} no spec'.format(
+                        specName=specName))
+                    continue
+
+                if m.value is None:
+                    print('\tSkipped {specName:12s} no measurement'.format(
+                        specName=specName))
+                    continue
+
+                spec = metric.getSpec(specName, bandpass=filterName)
+                passed = m.checkSpec(specName)
+                if passed:
+                    prefix = bcolors.OKBLUE + '\tPassed '
+                else:
+                    prefix = bcolors.FAIL + '\tFailed '
+                infoStr = '{specName:12s} {meas:.4f} {op} {spec:.4f} {units}'.format(
+                    specName=specName,
+                    meas=m.value,
+                    op=metric._operatorStr,  # FIXME make public attribute
+                    spec=spec.value,
+                    units=spec.units)
+                print(prefix + infoStr + bcolors.ENDC)
+
+    return job

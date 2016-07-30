@@ -1,0 +1,370 @@
+# Metrics from LPM-17 (the Science Requirements Document)
+# http://ls.st/lpm-17
+
+PA1:
+  reference:
+    doc: LPM-17
+    url: http://ls.st/lpm-17
+    page: 21
+  description: >
+    The maximum rms of the unresolved source magnitude distribution around the
+    mean value (repeatability).
+  operator: "<="
+  specs:
+    - level: design
+      value: 5.0
+      units: mmag
+      filters: [g, r, i]
+    - level: design
+      value: 7.5
+      units: mmag
+      filters: [u, z, y]
+    - level: minimum
+      value: 8.0
+      units: mmag
+      filters: [g, r, i]
+    - level: minimum
+      value: 12.0
+      units: mmag
+      filters: [u, z, y]
+    - level: stretch
+      value: 3.0
+      units: mmag
+      filters: [g, r, i]
+    - level: stretch
+      value: 4.5
+      units: mmag
+      filters: [u, z, y]
+
+PF1:
+  reference:
+    doc: LPM-17
+    url: http://ls.st/lpm-17
+    page: 21
+  description: >
+    The maximum fraction of magnitudes deviating by more than PA2 from mean (%).
+  operator: "<="
+  specs:
+    - level: design
+      value: 10.0
+      units: ''
+      dependencies:
+        - PA2
+    - level: minimum
+      value: 20.0
+      units: ''
+      dependencies:
+        - PA2
+    - level: stretch
+      value: 5.0
+      units: ''
+      dependencies:
+        - PA2
+
+PA2:
+  reference:
+    doc: LPM-17
+    url: http://ls.st/lpm-17
+    page: 21
+  description: >
+    At most PF1 % of magnitudes may deviate by more than this from the mean
+    (millimag).
+  operator: "<="
+  specs:
+    - level: design
+      value: 15.0
+      units: mmag
+      filters: [g, r, i]
+      dependencies:
+        - PF1
+    - level: design
+      value: 22.5
+      units: mmag
+      filters: [u, z, y]
+      dependencies:
+        - PF1
+    - level: minimum
+      value: 15.0
+      units: mmag
+      filters: [g, r, i]
+      dependencies:
+        - PF1
+    - level: minimum
+      value: 22.5
+      units: mmag
+      filters: [u, z, y]
+      dependencies:
+        - PF1
+    - level: stretch
+      value: 10.0
+      units: mmag
+      filters: [g, r, i]
+      dependencies:
+        - PF1
+    - level: stretch
+      value: 15.0
+      units: mmag
+      filters: [u, z, y]
+      dependencies:
+        - PF1
+
+AM1:
+  reference:
+    doc: LPM-17
+    url: http://ls.st/lpm-17
+    page: 23
+  description: >
+    The maximum rms of the astrometric distance distribution for stellar pairs
+    with separations of D=5 arcmin (repeatability) (milliarcsec).
+  operator: "<="
+  dependencies:
+    - D: {value: 5.0, units: arcmin}
+  specs:
+    - level: design
+      value: 10.0
+      units: mmag
+      filters: [r, i]
+    - level: minimum
+      value: 20.0
+      units: mmag
+      filters: [r, i]
+    - level: stretch
+      value: 5.0
+      units: mmag
+      filters: [r, i]
+
+AM2:
+  reference:
+    doc: LPM-17
+    url: http://ls.st/lpm-17
+    page: 23
+  description: >
+    The maximum rms of the astrometric distance distribution for stellar pairs
+    with separations of D=20 arcmin (repeatability) (milliarcsec).
+  operator: "<="
+  dependencies:
+    - D: {value: 20.0, units: arcmin}
+  specs:
+    - level: design
+      value: 10.0
+      units: mmag
+      filters: [r, i]
+    - level: minimum
+      value: 20.0
+      units: mmag
+      filters: [r, i]
+    - level: stretch
+      value: 5.0
+      units: mmag
+      filters: [r, i]
+
+AM3:
+  reference:
+    doc: LPM-17
+    url: http://ls.st/lpm-17
+    page: 23
+  description: >
+    The maximum rms of the astrometric distance distribution for stellar pairs
+    with separations of D=200. arcmin (repeatability) (milliarcsec).
+  operator: "<="
+  dependencies:
+    - D: {value: 200.0, units: arcmin}
+  specs:
+    - level: design
+      value: 15.0
+      units: mmag
+      filters: [r, i]
+    - level: minimum
+      value: 30.0
+      units: mmag
+      filters: [r, i]
+    - level: stretch
+      value: 10.0
+      units: mmag
+      filters: [r, i]
+
+AF1:
+  reference:
+    doc: LPM-17
+    url: http://ls.st/lpm-17
+    page: 23
+  description: >
+    The maximum fraction of astrometric distances which deviate by more than
+    ADx milliarcsec (see AMx) (%)
+  operator: "<="
+  dependencies:
+    - D: {value: 5.0, units: arcmin}
+  specs:
+    - level: design
+      value: 10.0
+      units: ''
+      filters: [r, i]
+      dependencies:
+        - AD1
+    - level: minimum
+      value: 20.0
+      units: ''
+      filters: [r, i]
+      dependencies:
+        - AD1
+    - level: stretch
+      value: 5.0
+      units: ''
+      filters: [r, i]
+      dependencies:
+        - AD1
+
+AF2:
+  reference:
+    doc: LPM-17
+    url: http://ls.st/lpm-17
+    page: 23
+  description: >
+    The maximum fraction of astrometric distances which deviate by more than
+    ADx milliarcsec (see AMx) (%)
+  operator: "<="
+  dependencies:
+    - D: {value: 20.0, units: arcmin}
+  specs:
+    - level: design
+      value: 10.0
+      units: ''
+      filters: [r, i]
+      dependencies:
+        - AD2
+    - level: minimum
+      value: 20.0
+      units: ''
+      filters: [r, i]
+      dependencies:
+        - AD2
+    - level: stretch
+      value: 5.0
+      units: ''
+      filters: [r, i]
+      dependencies:
+        - AD2
+
+AF3:
+  reference:
+    doc: LPM-17
+    url: http://ls.st/lpm-17
+    page: 23
+  description: >
+    The maximum fraction of astrometric distances which deviate by more than
+    ADx milliarcsec (see AMx) (%)
+  operator: "<="
+  dependencies:
+    - D: {value: 200.0, units: arcmin}
+  specs:
+    - level: design
+      value: 10.0
+      units: ''
+      filters: [r, i]
+      dependencies:
+        - AD3
+    - level: minimum
+      value: 20.0
+      units: ''
+      filters: [r, i]
+      dependencies:
+        - AD3
+    - level: stretch
+      value: 5.0
+      units: ''
+      filters: [r, i]
+      dependencies:
+        - AD3
+
+AD1:
+  reference:
+    doc: LPM-17
+    url: http://ls.st/lpm-17
+    page: 23
+  description: >
+    No more than AFx of the astrometric distances will deviate by more than
+    this from the median (see AMx, AFx) (milliarcsec).
+  operator: "<="
+  dependencies:
+    - D: {value: 5.0, units: arcmin}
+  specs:
+    - level: design
+      value: 20.0
+      units: milliarcsecond
+      filters: [r, i]
+      dependencies:
+        - AF1
+    - level: minimum
+      value: 40.0
+      units: milliarcsecond
+      filters: [r, i]
+      dependencies:
+        - AF1
+    - level: stretch
+      value: 10.0
+      units: milliarcsecond
+      filters: [r, i]
+      dependencies:
+        - AF1
+
+AD2:
+  reference:
+    doc: LPM-17
+    url: http://ls.st/lpm-17
+    page: 23
+  description: >
+    No more than AFx of the astrometric distances will deviate by more than
+    this from the median (see AMx, AFx) (milliarcsec).
+  operator: "<="
+  dependencies:
+    - D: {value: 20.0, units: arcmin}
+  specs:
+    - level: design
+      value: 20.0
+      units: milliarcsecond
+      filters: [r, i]
+      dependencies:
+        - AF2
+    - level: minimum
+      value: 40.0
+      units: milliarcsecond
+      filters: [r, i]
+      dependencies:
+        - AF2
+    - level: stretch
+      value: 10.0
+      units: milliarcsecond
+      filters: [r, i]
+      dependencies:
+        - AF2
+
+AD3:
+  reference:
+    doc: LPM-17
+    url: http://ls.st/lpm-17
+    page: 23
+  description: >
+    No more than AFx of the astrometric distances will deviate by more than
+    this from the median (see AMx, AFx) (milliarcsec).
+  operator: "<="
+  dependencies:
+    - D: {value: 200.0, units: arcmin}
+  specs:
+    - level: design
+      value: 30.0
+      units: milliarcsecond
+      filters: [r, i]
+      dependencies:
+        - AF3
+    - level: minimum
+      value: 50.0
+      units: milliarcsecond
+      filters: [r, i]
+      dependencies:
+        - AF3
+    - level: stretch
+      value: 20.0
+      units: milliarcsecond
+      filters: [r, i]
+      dependencies:
+        - AF3

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 #
 # LSST Data Management System
 # Copyright 2012-2016 LSST Corporation.
@@ -24,43 +23,47 @@
 
 from __future__ import print_function
 
-import sys
-
 import unittest
-
-import numpy as np
-from numpy.testing import assert_allclose
 
 import lsst.utils.tests as utilsTests
 
-from lsst.validate.drp import util
+from lsst.validate.drp.base import BlobBase
 
 
-class CoordTestCase(unittest.TestCase):
-    """Testing basic coordinate calculations."""
+class DemoBlob(BlobBase):
+
+    schema = 'demo'
+
+    def __init__(self):
+        BlobBase.__init__(self)
+
+        self.registerDatum(
+            'mag',
+            units='mag',
+            value=5,
+            description='Magnitude as int')
+
+
+class BlobBaseTestCase(unittest.TestCase):
+    """Test Mesaurement class (via MeasurementBase) functionality."""
 
     def setUp(self):
-        self.simpleRa = np.deg2rad([15, 25])
-        self.simpleDec = np.deg2rad([30, 45])
-        self.zeroDec = np.zeros_like(self.simpleRa)
-
-        self.wrapRa = [359.9999, 0.0001, -0.1, +0.1]
-        self.wrapDec = [1, 0, -1, 0]
-
-        self.simpleRms = [0.1, 0.2, 0.05]
-        self.annulus = [1, 2]
-        self.magrange = [20, 25]
+        self.blob = DemoBlob()
 
     def tearDown(self):
         pass
 
-    def testZeroDecSimpleAverageCoord(self):
-        meanRa, meanDec = util.averageRaDec(self.simpleRa, self.zeroDec)
-        assert_allclose([20, 0], np.rad2deg([meanRa, meanDec]))
+    def testAttribute(self):
+        self.assertEqual(self.blob.mag, 5)
 
-    def testSimpleAverageCoord(self):
-        meanRa, meanDec = util.averageRaDec(self.simpleRa, self.simpleDec)
-        assert_allclose([19.493625, 37.60447], np.rad2deg([meanRa, meanDec]))
+    def testJson(self):
+        print(dir(self.blob))
+        j = self.blob.json
+
+        self.assertEqual(j['data']['mag']['value'], 5)
+        self.assertEqual(j['data']['mag']['units'], 'mag')
+        self.assertEqual(j['data']['mag']['label'], 'mag')
+        self.assertEqual(j['data']['mag']['description'], 'Magnitude as int')
 
 
 def suite():
@@ -69,7 +72,7 @@ def suite():
     utilsTests.init()
 
     suites = []
-    suites += unittest.makeSuite(CoordTestCase)
+    suites += unittest.makeSuite(BlobBaseTestCase)
     return unittest.TestSuite(suites)
 
 
@@ -79,6 +82,4 @@ def run(shouldExit=False):
 
 
 if __name__ == "__main__":
-    if "--display" in sys.argv:
-        display = True
     run(True)

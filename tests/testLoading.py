@@ -32,7 +32,7 @@ import unittest
 import lsst.utils
 import lsst.utils.tests as utilsTests
 
-from lsst.validate.drp import util 
+from lsst.validate.drp import util
 
 
 class LoadDataTestCase(unittest.TestCase):
@@ -66,6 +66,7 @@ class LoadDataTestCase(unittest.TestCase):
         # Tests of the dict entries require constructing and comparing sets
         self.assertFalse(pbStruct.dataIds)
 
+
 def suite():
     """Returns a suite containing all the test cases in this module."""
 
@@ -79,6 +80,7 @@ def suite():
 def run(shouldExit=False):
     """Run the tests"""
     utilsTests.run(suite(), shouldExit)
+
 
 if __name__ == "__main__":
     if "--display" in sys.argv:
