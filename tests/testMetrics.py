@@ -31,14 +31,15 @@ import yaml
 from lsst.utils import getPackageDir
 import lsst.utils.tests as utilsTests
 
-from lsst.validate.drp.base import Metric, Specification, Datum
+from lsst.validate.base import Metric, Specification, Datum
 
 
 class MetricTestCase(unittest.TestCase):
     """Test Metrics and metrics.yaml functionality."""
 
     def setUp(self):
-        yamlPath = os.path.join(getPackageDir('validate_drp'), 'metrics.yaml')
+        yamlPath = os.path.join(getPackageDir('validate_base'),
+                                os.path.join('tests', 'data', 'metrics.yaml'))
         with open(yamlPath) as f:
             self.metricDoc = yaml.load(f)
 

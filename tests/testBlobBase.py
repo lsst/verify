@@ -26,8 +26,7 @@ from __future__ import print_function
 import unittest
 
 import lsst.utils.tests as utilsTests
-
-from lsst.validate.drp.base import BlobBase
+from lsst.validate.base import BlobBase
 
 
 class DemoBlob(BlobBase):

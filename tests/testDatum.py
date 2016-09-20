@@ -30,7 +30,7 @@ from numpy.testing import assert_almost_equal
 import lsst.utils.tests as utilsTests
 
 import astropy.units as u
-from lsst.validate.drp.base import Datum
+from lsst.validate.base import Datum
 
 
 class DatumTestCase(unittest.TestCase):

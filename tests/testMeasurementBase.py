@@ -30,7 +30,7 @@ from numpy.testing import assert_almost_equal
 
 import lsst.utils.tests as utilsTests
 
-from lsst.validate.drp.base import MeasurementBase, Metric, Datum
+from lsst.validate.base import MeasurementBase, Metric, Datum
 
 
 class DemoMeasurement(MeasurementBase):

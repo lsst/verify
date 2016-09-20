@@ -27,7 +27,7 @@ import unittest
 
 import lsst.utils.tests as utilsTests
 
-from lsst.validate.drp.base import Specification, Datum
+from lsst.validate.base import Specification, Datum
 
 
 class MetricTestCase(unittest.TestCase):
