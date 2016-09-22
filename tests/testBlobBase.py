@@ -11,7 +11,7 @@ from lsst.validate.base import BlobBase
 
 class DemoBlob(BlobBase):
 
-    schema = 'demo'
+    name = 'demo'
 
     def __init__(self):
         BlobBase.__init__(self)

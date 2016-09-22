@@ -864,10 +864,10 @@ class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
         else:
             super(BlobBase, self).__setattr__(key, value)
 
-    @property
+    @abc.abstractproperty
     def name(self):
         """Name of this blob (the BlobBase subclass's Python namespace)."""
-        return str(self.__name__)
+        pass
 
     @property
     def identifier(self):
