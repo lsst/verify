@@ -9,6 +9,7 @@ If you're not part of the LSST Project, please post your question or issue in [o
 *We don't use GitHub Issues.*
 
 If you're part of the LSST Project, please create a [JIRA ticket](https://jira.lsstcorp.org/).
+Use the `QA` component.
 
 ## Contributing code
 
