@@ -9,8 +9,6 @@ import unittest
 import yaml
 
 from lsst.utils import getPackageDir
-import lsst.utils.tests as utilsTests
-
 from lsst.validate.base import Metric, Specification, Datum
 
 
@@ -130,20 +128,5 @@ class MetricTestCase(unittest.TestCase):
         self.assertIsInstance(j['specifications'], list)
 
 
-def suite():
-    """Returns a suite containing all the test cases in this module."""
-
-    utilsTests.init()
-
-    suites = []
-    suites += unittest.makeSuite(MetricTestCase)
-    return unittest.TestSuite(suites)
-
-
-def run(shouldExit=False):
-    """Run the tests"""
-    utilsTests.run(suite(), shouldExit)
-
-
 if __name__ == "__main__":
-    run(True)
+    unittest.main()

@@ -5,8 +5,6 @@ from __future__ import print_function
 
 import unittest
 
-import lsst.utils.tests as utilsTests
-
 from lsst.validate.base import Specification, Datum
 
 
@@ -25,20 +23,5 @@ class MetricTestCase(unittest.TestCase):
         self.assertEqual(s.a.value, 5)
 
 
-def suite():
-    """Returns a suite containing all the test cases in this module."""
-
-    utilsTests.init()
-
-    suites = []
-    suites += unittest.makeSuite(MetricTestCase)
-    return unittest.TestSuite(suites)
-
-
-def run(shouldExit=False):
-    """Run the tests"""
-    utilsTests.run(suite(), shouldExit)
-
-
 if __name__ == "__main__":
-    run(True)
+    unittest.main()

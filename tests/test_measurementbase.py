@@ -8,8 +8,6 @@ import unittest
 import numpy as np
 from numpy.testing import assert_almost_equal
 
-import lsst.utils.tests as utilsTests
-
 from lsst.validate.base import MeasurementBase, Metric, Datum
 
 
@@ -108,20 +106,5 @@ class MeasurementBaseTestCase(unittest.TestCase):
                          'Some magnitudes')
 
 
-def suite():
-    """Returns a suite containing all the test cases in this module."""
-
-    utilsTests.init()
-
-    suites = []
-    suites += unittest.makeSuite(MeasurementBaseTestCase)
-    return unittest.TestSuite(suites)
-
-
-def run(shouldExit=False):
-    """Run the tests"""
-    utilsTests.run(suite(), shouldExit)
-
-
 if __name__ == "__main__":
-    run(True)
+    unittest.main()

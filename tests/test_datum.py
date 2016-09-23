@@ -6,10 +6,8 @@ from __future__ import print_function
 import unittest
 
 from numpy.testing import assert_almost_equal
-
-import lsst.utils.tests as utilsTests
-
 import astropy.units as u
+
 from lsst.validate.base import Datum
 
 
@@ -69,20 +67,5 @@ class DatumTestCase(unittest.TestCase):
             self.assertEqual(getattr(d, f), dj[f])
 
 
-def suite():
-    """Returns a suite containing all the test cases in this module."""
-
-    utilsTests.init()
-
-    suites = []
-    suites += unittest.makeSuite(DatumTestCase)
-    return unittest.TestSuite(suites)
-
-
-def run(shouldExit=False):
-    """Run the tests"""
-    utilsTests.run(suite(), shouldExit)
-
-
 if __name__ == "__main__":
-    run(True)
+    unittest.main()
