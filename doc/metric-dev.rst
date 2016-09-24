@@ -3,8 +3,8 @@ Creating and Using Metrics
 ##########################
 
 *Metrics* are scalar quantities that can be measured and monitored.
-``validate_drp`` is designed to measure metrics from :lpm:`17`, the LSST Science Requirements document.
-:lpm:`17`, for example, defines metrics that quantify photometric and astrometric measurement accuracy in the LSST Science Pipelines.
+For example, ``validate_drp`` is designed to measure metrics from :lpm:`17`, the LSST Science Requirements document.
+:lpm:`17`, defines metrics that quantify photometric and astrometric measurement accuracy in the LSST Science Pipelines.
 
 Each metric can be accompanied by several *specification* levels.
 Specifications are thresholds of a metric that define success or give some indication of algorithm development progress.
@@ -84,7 +84,7 @@ Within the object are the following fields:
    *Dependencies* are a way of specifying these quantities in a way that measurement classes can easily use.
    The ``dependencies`` field is a list of items.
    Each list item should be a one-item ``dict``.
-   The key specifies the name of the dependency (made available as an attribute of the :class:`~lsst.validate.drp.base.Metric`), while the value is a :class:`~lsst.validate.drp.base.Datum` with the following possible fields:
+   The key specifies the name of the dependency (made available as an attribute of the :class:`~lsst.validate.base.Metric`), while the value is a :class:`~lsst.validate.base.Datum` with the following possible fields:
    
    - ``value``: the scalar value of the dependency (typically a `float`, `int` or list/array).
    - ``units``: an ``astropy.units``-compatible string describing the units of ``value``.
@@ -158,10 +158,10 @@ Note that we only need to name the metric itself, the measurement framework will
 Creating Metric Objects in Python
 =================================
 
-Within Python, metrics are represented by instances of the :class:`lsst.validate.drp.base.Metric` class.
+Within Python, metrics are represented by instances of the :class:`lsst.validate.base.Metric` class.
 
-A metric object is built from a YAML definition with the :meth:`lsst.validate.drp.base.Metric.fromYaml` class method.
-:meth:`~lsst.validate.drp.base.Metric.fromYaml` takes the metric name and either the path of a metric YAML file (``yamlPath`` keyword argument) or a pre-parsed YAML object (``yamlDoc`` keyword argument).
+A metric object is built from a YAML definition with the :meth:`lsst.validate.base.Metric.fromYaml` class method.
+:meth:`~lsst.validate.base.Metric.fromYaml` takes the metric name and either the path of a metric YAML file (``yamlPath`` keyword argument) or a pre-parsed YAML object (``yamlDoc`` keyword argument).
 
 For example:
 
@@ -169,7 +169,7 @@ For example:
 
    import os
    from lsst.utils import getPackageDir
-   from lsst.validate.drp.base import Metric
+   from lsst.validate.base import Metric
    yamlPath = os.path.join(getPackageDir('validate_drp'),
                            'metrics.yaml')
    am1 = Metric.fromYaml('AM1', yamlPath=yamlPath)
@@ -178,7 +178,7 @@ Checking a Measurement Against a Specification
 ==============================================
 
 Ultimately, a metric object is most valuable in validating a measurement against a specification.
-For this, use the :meth:`lsst.validate.drp.base.Metric.checkSpec` method:
+For this, use the :meth:`lsst.validate.base.Metric.checkSpec` method:
 
 
 .. code-block:: python
@@ -187,14 +187,14 @@ For this, use the :meth:`lsst.validate.drp.base.Metric.checkSpec` method:
    am1.checkSpec(measuredValue, 'design')
 
 The last statement will return ``True`` if the measured value fulfills the 'design' specification.
-If a specification is bandpass dependent, the bandpass needs to be passed to the ``bandpass`` keyword argument of :meth:`~lsst.validate.drp.base.Metric.checkSpec`.
+If a specification is bandpass dependent, the bandpass needs to be passed to the ``bandpass`` keyword argument of :meth:`~lsst.validate.base.Metric.checkSpec`.
 
 In :doc:`measurement-dev` we describe how to make measurements with the ``validate_drp`` API.
 
 Accessing Specification Objects of a Metric
 ===========================================
 
-Since some measurements need to know about the specification levels of a metric, metrics provide a :meth:`~lsst.validate.drp.base.Metric.getSpec` method to resolve and retrieve a specification level.
+Since some measurements need to know about the specification levels of a metric, metrics provide a :meth:`~lsst.validate.base.Metric.getSpec` method to resolve and retrieve a specification level.
 For example:
 
 .. code-block:: python
@@ -215,7 +215,7 @@ The properties of a specification are retrieved through attributes:
    designSpec.astropy_quanity  # value and unit as an Astropy quantity
 
 Dependencies of specification levels can be obtained as attributes corresponding to their labels.
-Dependencies themselves are :class:`~lsst.validate.drp.base.Datum` objects, with a value and units.
+Dependencies themselves are :class:`~lsst.validate.base.Datum` objects, with a value and units.
 For example,
 
 .. code-block:: python

@@ -23,7 +23,7 @@ __all__ = ['ValidateError', 'ValidateErrorNoStars',
 
 
 class ValidateError(Exception):
-    """Base classes for exceptions in validate_drp."""
+    """Base classes for exceptions in validate_base."""
     pass
 
 
@@ -572,7 +572,7 @@ class Specification(JsonSerializationMixin):
     @property
     def datum(self):
         """Representation of this Specification as a
-        :class:`lsst.validate.drp.base.Datum`.
+        :class:`lsst.validate.base.Datum`.
         """
         return Datum(self.value, units=self.units, label=self.name,
                      description=self.description)
@@ -625,13 +625,13 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
         resolve a bandpass-specific specification.
     parameters : dict
         A `dict` containing all input parameters used by this measurement.
-        Parameters are :class:`lsst.validate.drp.base.Datum` instances.
+        Parameters are :class:`lsst.validate.base.Datum` instances.
         Parameter values can also be accessed and updated as instance
         attributes named after the parameter.
     extras : dict
         A `dict` containing all measurement by-products (extras) that have
         been registered for serialization. Extras are
-        :class:`lsst.validate.drp.base.Datum` instances. Values of extras can
+        :class:`lsst.validate.base.Datum` instances. Values of extras can
         also be accessed and updated as instance attributes named after
         the extra.
     """
@@ -739,7 +739,7 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
             attribute of this object.
         value : obj
             Value of the extra, either as a regular object, or already
-            represented as a :class:`~lsst.validate.drp.base.Datum`.
+            represented as a :class:`~lsst.validate.base.Datum`.
         units : str, optional
             The astropy-compatible unit string.
             See http://docs.astropy.org/en/stable/units/.
@@ -761,7 +761,7 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
     @abc.abstractproperty
     def metric(self):
         """An instance derived from
-        :class:`~lsst.validate.drp.base.MetricBase`.
+        :class:`~lsst.validate.base.MetricBase`.
         """
         pass
 
@@ -797,7 +797,7 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
     @property
     def datum(self):
         """Representation of this measurement as a
-        :class:`lsst.validate.drp.base.Datum`.
+        :class:`lsst.validate.base.Datum`.
         """
         return Datum(self.value, units=self.units, label=self.label,
                      description=self.metric.description)
@@ -925,7 +925,7 @@ class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
 
 class Job(JsonSerializationMixin):
     """A Job is a wrapper around all measurements and blob metadata associated
-    with a validate_drp run.
+    with a validation run.
 
     Use the Job.json attribute to access a json-serializable dict of all
     measurements and blobs associated with the Job.
@@ -959,7 +959,7 @@ class Job(JsonSerializationMixin):
 
         Parameters
         ----------
-        m : :class:`lsst.validate.drp.base.MeasurementBase`-type object
+        m : :class:`lsst.validate.base.MeasurementBase`-type object
             A measurement object.
         """
         assert isinstance(m, MeasurementBase)
@@ -1004,7 +1004,7 @@ class Job(JsonSerializationMixin):
 
         Parameters
         ----------
-        b : :class:`lsst.validate.drp.base.BlobBase`-type object
+        b : :class:`lsst.validate.base.BlobBase`-type object
             A blob object.
         """
         assert isinstance(b, BlobBase)

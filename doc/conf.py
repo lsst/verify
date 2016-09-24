@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# validate_drp documentation build configuration file, created by
+# validate_base documentation build configuration file, created by
 # sphinx-quickstart on Thu Jul  7 17:27:37 2016.
 #
 # This file is execfile()d with the current directory set to its
@@ -91,8 +91,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'validate_drp'
-copyright = u'2016, LSST/AURA'
+project = u'validate_base'
+copyright = u'2016 Association of Universities for Research in Astronomy, Inc.'
 author = u'LSST'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -176,7 +176,7 @@ html_theme = 'sphinx_rtd_theme'
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
 #
-# html_title = u'validate_drp vdev'
+# html_title = u'validate_base vdev'
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #
@@ -276,4 +276,4 @@ html_static_path = ['_static']
 # html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'validate_drpdoc'
+htmlhelp_basename = 'validate_basedoc'

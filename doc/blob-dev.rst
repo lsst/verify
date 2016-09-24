@@ -4,7 +4,7 @@ Providing Datasets to Measurements through Blobs
 
 A common pattern is to reduce a raw dataset, and share that dataset between several measurements.
 The measurement API allows such datasets to be expressed as 'blobs,'
-In the context of the measurement API, a blob is an object that contains :class:`~lsst.validate.drp.base.Datum` objects.
+In the context of the measurement API, a blob is an object that contains :class:`~lsst.validate.base.Datum` objects.
 
 There are several advantages of storing input datasets in blob objects:
 
@@ -15,11 +15,11 @@ There are several advantages of storing input datasets in blob objects:
 Template for a Blob Class
 =========================
 
-Blobs are subclasses of :class:`lsst.validate.BlobBase` that register one or more :class:`~lsst.validate.drp.base.Datum` objects.
+Blobs are subclasses of :class:`lsst.validate.BlobBase` that register one or more :class:`~lsst.validate.base.Datum` objects.
 
 .. code-block:: python
 
-   from lsst.validate.drp.base import BlobBase
+   from lsst.validate.base import BlobBase
 
 
    class SimpleBlob(BlobBase):
@@ -39,12 +39,12 @@ Blobs are subclasses of :class:`lsst.validate.BlobBase` that register one or mor
 In this example, the ``g`` and ``i`` attributes are initially registered with values.
 A third blob attribute, ``gi``, is also declared and its value is computed afterwards.
 
-Notice that, like :attr:`~lsst.validate.drp.base.MeasurementBase.parameters` and :attr:`~lsst.validate.drp.base.MeasurementBase.extras` of measurement classes, the values of :attr:`~lsst.validate.drp.base.BlobBase`-type objects can be accessed and updated directly through instance attributes.
+Notice that, like :attr:`~lsst.validate.base.MeasurementBase.parameters` and :attr:`~lsst.validate.base.MeasurementBase.extras` of measurement classes, the values of :attr:`~lsst.validate.base.BlobBase`-type objects can be accessed and updated directly through instance attributes.
 
 Accessing datum objects
 -----------------------
 
-Internally, blob attributes are stored as :class:`~lsst.validate.drp.base.Datum` objects, which can be accessed as items of the :attr:`~lsst.validate.drp.base.BlobBase.datums` attribute.
+Internally, blob attributes are stored as :class:`~lsst.validate.base.Datum` objects, which can be accessed as items of the :attr:`~lsst.validate.base.BlobBase.datums` attribute.
 
 .. code-block:: python
 
@@ -76,7 +76,7 @@ For example:
 Accessing blobs in measurements
 -------------------------------
 
-In addition to simply accessing blobs associated with a measurement through the instance attribute, blobs are also available as items of the measurement's :attr:`~lsst.validate.drp.base.MeasurementBase.blobs` attribute:
+In addition to simply accessing blobs associated with a measurement through the instance attribute, blobs are also available as items of the measurement's :attr:`~lsst.validate.base.MeasurementBase.blobs` attribute:
 
 .. code-block:: python
 
