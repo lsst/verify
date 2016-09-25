@@ -8,7 +8,6 @@ import unittest
 
 import yaml
 
-from lsst.utils import getPackageDir
 from lsst.validate.base import Metric, Specification, Datum
 
 
@@ -16,8 +15,8 @@ class MetricTestCase(unittest.TestCase):
     """Test Metrics and metrics.yaml functionality."""
 
     def setUp(self):
-        yamlPath = os.path.join(getPackageDir('validate_base'),
-                                os.path.join('tests', 'data', 'metrics.yaml'))
+        yamlPath = os.path.join(os.path.dirname(__file__),
+                                'data', 'metrics.yaml')
         with open(yamlPath) as f:
             self.metricDoc = yaml.load(f)
 

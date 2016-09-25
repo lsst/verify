@@ -4,15 +4,12 @@
 from __future__ import print_function, division
 
 import abc
-import os
 import json
 import uuid
 import operator
 import yaml
 import numpy as np
 import astropy.units
-
-from lsst.utils import getPackageDir
 
 
 __all__ = ['ValidateError', 'ValidateErrorNoStars',
@@ -302,23 +299,25 @@ class Metric(JsonSerializationMixin):
         metricName : str
             Name of the metric (e.g., PA1)
         yamlDoc : dict, optional
-            The full metrics.yaml file loaded as a `dict`. Use this option
+            A full metric YAML document loaded as a `dict`. Use this option
             to increase performance by eliminating redundant reads of a
-            metrics.yaml file.
+            common metric YAML file. Alternatively, set `yamlPath`.
         yamlPath : str, optional
-            The full path to a metrics.yaml file, in case a custom file
-            is being used. The metrics.yaml file included in `validate_drp`
-            is used by default.
+            The full path to a metrics.yaml file. Alternatively, set `yamlDoc`.
         resolveDependencies : bool, optional
-            If another metric is a *dependency* of this specification level's
-            definition
+            API users should always set this to `True`. The opposite is used
+            only used internally. 
+
+        Raises
+        ------
+        RuntimeError
+            Raised when neither `yamlDoc` or `yamlPath` are set.
         """
-        if yamlDoc is None:
-            if yamlPath is None:
-                yamlPath = os.path.join(getPackageDir('validate_drp'),
-                                        'metrics.yaml')
+        if yamlDoc is None and yamlPath is not None:
             with open(yamlPath) as f:
                 yamlDoc = yaml.load(f)
+        elif yamlDoc is None and yamlPath is None:
+            raise RuntimeError('Set either yamlDoc or yamlPath argument')
         metricDoc = yamlDoc[metricName]
 
         metricDeps = {}

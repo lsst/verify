@@ -3,7 +3,6 @@ setupRequired(pyyaml)
 setupRequired(numpy)
 setupRequired(astropy)
 setupRequired(sconsUtils)
-setupRequired(utils)
 
 envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
 envPrepend(PATH, ${PRODUCT_DIR}/bin)
