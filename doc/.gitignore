@@ -1,2 +1,6 @@
 _build
 py-api
+html
+*.tag
+*.inc
+doxygen.conf

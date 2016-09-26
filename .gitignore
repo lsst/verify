@@ -1,7 +1,3 @@
-CFHT/
-DECam/
-CFHT
-DECam
 *.log
 *.json
 *.png
@@ -17,10 +13,6 @@ config.log
 *.pyc
 *_wrap.cc
 *Lib.py
-doc/html
-doc/*.tag
-doc/*.inc
-doc/doxygen.conf
 tests/.tests
 version.py
 bin/*.py

@@ -1,29 +1,9 @@
-# LSST Data Management System
-# Copyright 2008-2016 AURA/LSST.
-#
-# This product includes software developed by the
-# LSST Project (http://www.lsst.org/).
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the LSST License Statement and
-# the GNU General Public License along with this program.  If not,
-# see <https://www.lsstcorp.org/LegalNotices/>.
-"""lsst.validate.drp's Measurement API that handles JSON persistence.
-"""
+# See COPYRIGHT file at the top of the source tree.
+"""Measurement API that handles JSON persistence."""
 
 from __future__ import print_function, division
 
 import abc
-import os
 import json
 import uuid
 import operator
@@ -31,11 +11,16 @@ import yaml
 import numpy as np
 import astropy.units
 
-from lsst.utils import getPackageDir
+
+__all__ = ['ValidateError', 'ValidateErrorNoStars',
+           'ValidateErrorSpecification',
+           'ValidateErrorUnknownSpecificationLevel', 'JsonSerializationMixin',
+           'DatumAttributeMixin', 'Datum', 'Metric', 'Specification',
+           'MeasurementBase', 'BlobBase', 'Job']
 
 
 class ValidateError(Exception):
-    """Base classes for exceptions in validate_drp."""
+    """Base classes for exceptions in validate_base."""
     pass
 
 
@@ -314,23 +299,25 @@ class Metric(JsonSerializationMixin):
         metricName : str
             Name of the metric (e.g., PA1)
         yamlDoc : dict, optional
-            The full metrics.yaml file loaded as a `dict`. Use this option
+            A full metric YAML document loaded as a `dict`. Use this option
             to increase performance by eliminating redundant reads of a
-            metrics.yaml file.
+            common metric YAML file. Alternatively, set `yamlPath`.
         yamlPath : str, optional
-            The full path to a metrics.yaml file, in case a custom file
-            is being used. The metrics.yaml file included in `validate_drp`
-            is used by default.
+            The full path to a metrics.yaml file. Alternatively, set `yamlDoc`.
         resolveDependencies : bool, optional
-            If another metric is a *dependency* of this specification level's
-            definition
+            API users should always set this to `True`. The opposite is used
+            only used internally. 
+
+        Raises
+        ------
+        RuntimeError
+            Raised when neither `yamlDoc` or `yamlPath` are set.
         """
-        if yamlDoc is None:
-            if yamlPath is None:
-                yamlPath = os.path.join(getPackageDir('validate_drp'),
-                                        'metrics.yaml')
+        if yamlDoc is None and yamlPath is not None:
             with open(yamlPath) as f:
                 yamlDoc = yaml.load(f)
+        elif yamlDoc is None and yamlPath is None:
+            raise RuntimeError('Set either yamlDoc or yamlPath argument')
         metricDoc = yamlDoc[metricName]
 
         metricDeps = {}
@@ -584,7 +571,7 @@ class Specification(JsonSerializationMixin):
     @property
     def datum(self):
         """Representation of this Specification as a
-        :class:`lsst.validate.drp.base.Datum`.
+        :class:`lsst.validate.base.Datum`.
         """
         return Datum(self.value, units=self.units, label=self.name,
                      description=self.description)
@@ -637,13 +624,13 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
         resolve a bandpass-specific specification.
     parameters : dict
         A `dict` containing all input parameters used by this measurement.
-        Parameters are :class:`lsst.validate.drp.base.Datum` instances.
+        Parameters are :class:`lsst.validate.base.Datum` instances.
         Parameter values can also be accessed and updated as instance
         attributes named after the parameter.
     extras : dict
         A `dict` containing all measurement by-products (extras) that have
         been registered for serialization. Extras are
-        :class:`lsst.validate.drp.base.Datum` instances. Values of extras can
+        :class:`lsst.validate.base.Datum` instances. Values of extras can
         also be accessed and updated as instance attributes named after
         the extra.
     """
@@ -751,7 +738,7 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
             attribute of this object.
         value : obj
             Value of the extra, either as a regular object, or already
-            represented as a :class:`~lsst.validate.drp.base.Datum`.
+            represented as a :class:`~lsst.validate.base.Datum`.
         units : str, optional
             The astropy-compatible unit string.
             See http://docs.astropy.org/en/stable/units/.
@@ -773,7 +760,7 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
     @abc.abstractproperty
     def metric(self):
         """An instance derived from
-        :class:`~lsst.validate.drp.base.MetricBase`.
+        :class:`~lsst.validate.base.MetricBase`.
         """
         pass
 
@@ -809,7 +796,7 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
     @property
     def datum(self):
         """Representation of this measurement as a
-        :class:`lsst.validate.drp.base.Datum`.
+        :class:`lsst.validate.base.Datum`.
         """
         return Datum(self.value, units=self.units, label=self.label,
                      description=self.metric.description)
@@ -876,10 +863,10 @@ class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
         else:
             super(BlobBase, self).__setattr__(key, value)
 
-    @property
+    @abc.abstractproperty
     def name(self):
         """Name of this blob (the BlobBase subclass's Python namespace)."""
-        return str(self.__name__)
+        pass
 
     @property
     def identifier(self):
@@ -937,7 +924,7 @@ class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
 
 class Job(JsonSerializationMixin):
     """A Job is a wrapper around all measurements and blob metadata associated
-    with a validate_drp run.
+    with a validation run.
 
     Use the Job.json attribute to access a json-serializable dict of all
     measurements and blobs associated with the Job.
@@ -971,7 +958,7 @@ class Job(JsonSerializationMixin):
 
         Parameters
         ----------
-        m : :class:`lsst.validate.drp.base.MeasurementBase`-type object
+        m : :class:`lsst.validate.base.MeasurementBase`-type object
             A measurement object.
         """
         assert isinstance(m, MeasurementBase)
@@ -1016,7 +1003,7 @@ class Job(JsonSerializationMixin):
 
         Parameters
         ----------
-        b : :class:`lsst.validate.drp.base.BlobBase`-type object
+        b : :class:`lsst.validate.base.BlobBase`-type object
             A blob object.
         """
         assert isinstance(b, BlobBase)
