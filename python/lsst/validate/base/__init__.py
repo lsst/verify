@@ -1,5 +1,5 @@
 # See COPYRIGHT file at the top of the source tree.
-"""A framework for measuring and defining performance metrics that can be
+"""Framework for measuring and defining performance metrics that can be
 submitted to the SQUASH service.
 """
 
@@ -9,4 +9,10 @@ try:
 except:
     __version__ = "unknown"
 
-from .base import *  # noqa: F403
+from .errors import *  # noqa: F403
+from .datum import *  # noqa: F403
+from .spec import *  # noqa: F403
+from .metric import *  # noqa: F403
+from .measurement import *  # noqa: F403
+from .blob import *  # noqa: F403
+from .job import *  # noqa: F403
