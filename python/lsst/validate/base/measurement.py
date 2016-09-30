@@ -19,19 +19,24 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
 
     Attributes
     ----------
+    blobs
+    identifier
     metric
+    value
     units
+    latex_units
     label
+    datum
     json
-    specName : str
-        A `str` identifying the specification level (e.g., design, minimum
-        stretch) that this measurement represents. `None` if this measurement
+    spec_name : `str`
+        A `str` identifying the specification level (e.g., 'design,' 'minimum,'
+        'stretch') that this measurement represents. `None` if this measurement
         applies to all specification levels.
-    bandpass : str
-        A `str` identifying the bandpass of observatons this measurement was
-        made from. Defaults to `None` if a measurement is not
-        bandpass-dependent. `bandpass` should be specificed if needed to
-        resolve a bandpass-specific specification.
+    filter_name : `str`
+        A `str` identifying the optical filter of observatons this measurement
+        was made from. Defaults to `None` if a measurement is not
+        filter-dependent. `filter_name` should be specificed if needed to
+        resolve a filter-specific specification.
     parameters : dict
         A `dict` containing all input parameters used by this measurement.
         Parameters are :class:`lsst.validate.base.Datum` instances.
@@ -49,10 +54,10 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
     def __init__(self):
         self.parameters = {}
         self.extras = {}
-        self._linkedBlobs = {}
+        self._linked_blobs = {}
         self._id = uuid.uuid4().hex
-        self.specName = None
-        self.bandpass = None
+        self.spec_name = None
+        self.filter_name = None
 
     def __getattr__(self, key):
         if key in self.parameters:
@@ -60,17 +65,17 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
             return self.parameters[key].value
         elif key in self.extras:
             return self.extras[key].value
-        elif key in self._linkedBlobs:
-            return self._linkedBlobs[key]
+        elif key in self._linked_blobs:
+            return self._linked_blobs[key]
         else:
             raise AttributeError("%r object has no attribute %r" %
                                  (self.__class__, key))
 
     def __setattr__(self, key, value):
         # avoiding __setattr__ loops by not handling names in _bootstrap
-        _bootstrap = ('parameters', 'extras', '_linkedBlobs')
+        _bootstrap = ('parameters', 'extras', '_linked_blobs')
         if key not in _bootstrap and isinstance(value, BlobBase):
-            self._linkedBlobs[key] = value
+            self._linked_blobs[key] = value
         elif key not in _bootstrap and key in self.parameters:
             # Setting value of a serializable parameter
             self.parameters[key].value = value
@@ -83,67 +88,69 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
     @property
     def blobs(self):
         """`dict` of blobs attached to this measurement instance."""
-        return self._linkedBlobs
+        return self._linked_blobs
 
     @property
     def identifier(self):
+        """A unique UUID4-based identifier for this measurement."""
         return self._id
 
-    def registerParameter(self, paramKey, value=None, units=None, label=None,
-                          description=None, datum=None):
+    def register_parameter(self, param_key, value=None, units=None, label=None,
+                           description=None, datum=None):
         """Register a measurement input parameter attribute.
 
         The value of the parameter can either be set at registration time
         (see `value` argument), or later by setting the object's attribute
-        named `paramKey`.
+        named `param_key`.
 
         The value of a parameter can always be accessed through the object's
-        attribute named `paramKey.`
+        attribute named `param_key.`
 
         Parameters are stored as :class:`Datum` objects, which can be accessed
         through the `parameters` attribute `dict`.
 
         Parameters
         ----------
-        paramKey : str
+        param_key : `str`
             Name of the parameter; used as the key in the `parameters`
             attribute of this object.
         value : obj
             Value of the parameter.
-        units : str, optional
+        units : `str`, optional
             An astropy-compatible unit string.
             See http://docs.astropy.org/en/stable/units/.
-        label : str, optional
+        label : `str`, optional
             Label suitable for plot axes (without units). By default the
             `paramKey` is used as the `label`. Setting this label argument
             overrides this default.
         description : `str`, optional
             Extended description.
-        datum : `Datum`, optional
-            If a `Datum` is provided, its value, units and label will be
-            used unless overriden by other arguments to `registerParameter`.
+        datum : :class:`~lsst.validate.base.Datum`, optional
+            If a :class:`~lsst.validate.base.Datum` is provided, its value,
+            units and label will be used unless overriden by other arguments to
+            :class:`~lsst.validate.base.Measurement.register_parameter`.
         """
-        self._register_datum_attribute(self.parameters, paramKey,
+        self._register_datum_attribute(self.parameters, param_key,
                                        value=value, label=label, units=units,
                                        description=description, datum=datum)
 
-    def registerExtra(self, extraKey, value=None, units=None, label=None,
-                      description=None, datum=None):
+    def register_extra(self, extra_key, value=None, units=None, label=None,
+                       description=None, datum=None):
         """Register a measurement extra---a by-product of a metric measurement.
 
         The value of the extra can either be set at registration time
         (see `value` argument), or later by setting the object's attribute
-        named `extraKey`.
+        named `extra_key`.
 
         The value of an extra can always be accessed through the object's
-        attribute named `exrtaKey.`
+        attribute named `extra_key.`
 
         Extras are stored as :class:`Datum` objects, which can be accessed
         through the `parameters` attribute `dict`.
 
         Parameters
         ----------
-        extraKey : str
+        extra_key : str
             Name of the extra; used as the key in the `extras`
             attribute of this object.
         value : obj
@@ -154,23 +161,24 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
             See http://docs.astropy.org/en/stable/units/.
         label : str, optional
             Label suitable for plot axes (without units). By default the
-            `extraKey` is used as the `label`. Setting this label argument
+            `extra_key` is used as the `label`. Setting this label argument
             overrides both of these.
         description : `str`, optional
             Extended description.
-        datum : `Datum`, optional
-            If a `Datum` is provided, its value, units, label and description
-            will be used unless overriden by other arguments to
-            `registerExtra`.
+        datum : :class:`~lsst.validate.base.Datum`, optional
+            If a :class:`~lsst.validate.base.Datum` is provided, its value,
+            units, label and description will be used unless overriden by other
+            arguments to
+            :meth:`~lsst.validate.base.Measurement.register_extra`.
         """
-        self._register_datum_attribute(self.extras, extraKey,
+        self._register_datum_attribute(self.extras, extra_key,
                                        value=value, label=label, units=units,
                                        description=description, datum=datum)
 
     @abc.abstractproperty
     def metric(self):
         """An instance derived from
-        :class:`~lsst.validate.base.MetricBase`.
+        :class:`~lsst.validate.base.Metric`.
         """
         pass
 
@@ -186,7 +194,7 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
 
     @property
     def latex_units(self):
-        """Units as a LateX string, wrapped in ``$``."""
+        """Units as a LaTeX string, wrapped in ``$``."""
         if self.units != '':
             fmtr = astropy.units.format.Latex()
             return fmtr.to_string(self.astropy_units)
@@ -213,26 +221,40 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
 
     @property
     def json(self):
-        """a `dict` that can be serialized as semantic SQuaSH json."""
-        blobIds = list(set([b.identifier for n, b in
-                            self._linkedBlobs.items()]))
+        """A `dict` that can be serialized as semantic SQUASH JSON."""
+        blob_ids = list(set([b.identifier for n, b in
+                             self._linked_blobs.items()]))
         object_doc = {'metric': self.metric,
                       'identifier': self.identifier,
                       'value': self.value,
                       'parameters': self.parameters,
                       'extras': self.extras,
-                      'blobs': blobIds,
-                      'spec_name': self.specName,
-                      'filter': self.bandpass}
+                      'blobs': blob_ids,
+                      'spec_name': self.spec_name,
+                      'filter': self.filter_name}
         json_doc = JsonSerializationMixin.jsonify_dict(object_doc)
         return json_doc
 
-    def checkSpec(self, name):
-        """Check this measurement against a specification level `name`, of the
+    def check_spec(self, name):
+        """Check this measurement against a specification level, of the
         metric.
 
+        Parameters
+        ----------
+        name : `str`
+            Specification level name.
+
+        Returns
+        -------
+        passed : `bool`
+            `True` if the measurement meets the specification level, `False`
+            otherwise.
+
+        Notes
+        -----
         Internally this method retrieves the Specification object, filtering
-        first by the `name`, but also by this object's `bandpass` attribute
-        if specifications are bandpass-dependent.
+        first by the `name`, but also by this object's `filter_name` attribute
+        if specifications are filter-dependent.
         """
-        return self.metric.checkSpec(self.value, name, bandpass=self.bandpass)
+        return self.metric.check_spec(self.value, name,
+                                      filter_name=self.filter_name)

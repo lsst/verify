@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # See COPYRIGHT file at the top of the source tree.
-
 from __future__ import print_function
 
 import unittest
@@ -20,7 +19,7 @@ class DatumTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def testProperties(self):
+    def test_properties(self):
         """Validate basic setters and getters."""
         d = Datum(5., 'mmag', label='millimag', description='Hello world')
 
@@ -45,18 +44,18 @@ class DatumTestCase(unittest.TestCase):
 
         self.assertIsInstance(d.quantity, u.Quantity)
 
-    def testBadUnit(self):
+    def test_bad_unit(self):
         """Ensure that units are being validated by astropy."""
         with self.assertRaises(ValueError):
             Datum(5., 'millimag')
 
-    def testUnitless(self):
+    def test_unitless(self):
         """Ensure that Datums can be unitless too."""
         d = Datum(5., '')
         self.assertEqual(d.units, '')
         self.assertEqual(d.astropy_units, u.dimensionless_unscaled)
 
-    def testJsonOutput(self):
+    def test_json_output(self):
         """Verify content from json property."""
         d = Datum(5., 'mmag', label='millimag', description='Hello world')
         dj = d.json

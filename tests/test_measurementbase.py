@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # See COPYRIGHT file at the top of the source tree.
-
 from __future__ import print_function
 
 import unittest
@@ -24,18 +23,18 @@ class DemoMeasurement(MeasurementBase):
 
         self.metric = Metric('Test', 'Test metric', '<')
 
-        testDatum = Datum(10., units='arcsecond', description='A datum')
+        test_datum = Datum(10., units='arcsecond', description='A datum')
 
-        self.registerParameter('strParam', units='',
-                               description='A string')
-        self.registerParameter('floatParam', units='mag',
-                               description='A float')
-        self.registerParameter('datumParam', datum=testDatum)
+        self.register_parameter('str_param', units='',
+                                description='A string')
+        self.register_parameter('float_param', units='mag',
+                                description='A float')
+        self.register_parameter('datum_param', datum=test_datum)
 
-        self.registerExtra('mags', units='mag', description='Some magnitudes')
+        self.register_extra('mags', units='mag', description='Some magnitudes')
 
-        self.strParam = 'hello world'
-        self.floatParam = 22.
+        self.str_param = 'hello world'
+        self.float_param = 22.
 
         self.mags = np.array([1., 2., 3.])
 
@@ -51,52 +50,52 @@ class MeasurementBaseTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def testFloatParam(self):
-        assert_almost_equal(self.meas.floatParam, 22.)
-        assert_almost_equal(self.meas.parameters['floatParam'].value, 22.)
-        self.assertEqual(self.meas.parameters['floatParam'].units, 'mag')
-        self.assertEqual(self.meas.parameters['floatParam'].label, 'floatParam')
-        self.assertEqual(self.meas.parameters['floatParam'].description,
+    def test_float_param(self):
+        assert_almost_equal(self.meas.float_param, 22.)
+        assert_almost_equal(self.meas.parameters['float_param'].value, 22.)
+        self.assertEqual(self.meas.parameters['float_param'].units, 'mag')
+        self.assertEqual(self.meas.parameters['float_param'].label, 'float_param')
+        self.assertEqual(self.meas.parameters['float_param'].description,
                          'A float')
 
         # update
-        self.meas.floatParam = 12.
-        assert_almost_equal(self.meas.floatParam, 12.)
-        assert_almost_equal(self.meas.parameters['floatParam'].value, 12.)
+        self.meas.float_param = 12.
+        assert_almost_equal(self.meas.float_param, 12.)
+        assert_almost_equal(self.meas.parameters['float_param'].value, 12.)
 
-    def testStrParam(self):
-        self.assertEqual(self.meas.strParam, 'hello world')
-        self.assertEqual(self.meas.parameters['strParam'].value, 'hello world')
-        self.assertEqual(self.meas.parameters['strParam'].units, '')
-        self.assertEqual(self.meas.parameters['strParam'].label, 'strParam')
-        self.assertEqual(self.meas.parameters['strParam'].description,
+    def test_str_param(self):
+        self.assertEqual(self.meas.str_param, 'hello world')
+        self.assertEqual(self.meas.parameters['str_param'].value, 'hello world')
+        self.assertEqual(self.meas.parameters['str_param'].units, '')
+        self.assertEqual(self.meas.parameters['str_param'].label, 'str_param')
+        self.assertEqual(self.meas.parameters['str_param'].description,
                          'A string')
 
         # update
-        self.meas.strParam = 'updated'
-        self.assertEqual(self.meas.strParam, 'updated')
-        self.assertEqual(self.meas.parameters['strParam'].value, 'updated')
+        self.meas.str_param = 'updated'
+        self.assertEqual(self.meas.str_param, 'updated')
+        self.assertEqual(self.meas.parameters['str_param'].value, 'updated')
 
-    def testDatumParam(self):
-        assert_almost_equal(self.meas.datumParam, 10.)
-        self.assertEqual(self.meas.parameters['datumParam'].units, 'arcsecond')
-        self.assertEqual(self.meas.parameters['datumParam'].label, 'datumParam')
+    def test_datum_param(self):
+        assert_almost_equal(self.meas.datum_param, 10.)
+        self.assertEqual(self.meas.parameters['datum_param'].units, 'arcsecond')
+        self.assertEqual(self.meas.parameters['datum_param'].label, 'datum_param')
 
-    def testExtra(self):
+    def test_extra(self):
         assert_almost_equal(self.meas.mags, np.array([1., 2., 3.]))
         assert_almost_equal(self.meas.extras['mags'].value, np.array([1., 2., 3.]))
         self.assertEqual(self.meas.extras['mags'].label, 'mags')
         self.assertEqual(self.meas.extras['mags'].units, 'mag')
         self.assertEqual(self.meas.extras['mags'].description, 'Some magnitudes')
 
-    def testJson(self):
+    def test_json(self):
         j = self.meas.json
 
         assert_almost_equal(j['value'], 5.)
-        self.assertEqual(j['parameters']['strParam']['value'], 'hello world')
-        self.assertEqual(j['parameters']['strParam']['units'], '')
-        self.assertEqual(j['parameters']['strParam']['label'], 'strParam')
-        self.assertEqual(j['parameters']['strParam']['description'],
+        self.assertEqual(j['parameters']['str_param']['value'], 'hello world')
+        self.assertEqual(j['parameters']['str_param']['units'], '')
+        self.assertEqual(j['parameters']['str_param']['label'], 'str_param')
+        self.assertEqual(j['parameters']['str_param']['description'],
                          'A string')
 
         assert_almost_equal(j['extras']['mags']['value'][0], self.meas.mags[0])

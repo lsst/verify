@@ -34,12 +34,11 @@ These are the key API classes, along with links to further documentation:
 - :class:`~lsst.validate.base.BlobBase` is a base class for making blobs, which are a way of storing datasets in an object that is both convenient for measurement classes and serializable for JSON. Measurement classes can share a common blob without storing duplicate data in the SQUASH database. Blobs are linked to the measurements that use them, allowing blobs to power plots that provide context to measurements. See :doc:`blob-dev` for more information.
 - :class:`~lsst.validate.base.Job` is a container for :class:`~lsst.validate.base.Metric`, :class:`~lsst.validate.base.MeasurementBase`-type and :class:`~lsst.validate.base.BlobBase`-type objects. Through a :class:`~lsst.validate.base.Job` instance, users can generate a single JSON object that can be submitted directly to the SQUASH dashboard API.
 
-Using lsst.validate.drp
-=======================
+Using lsst.validate.base
+========================
 
 .. toctree::
    :maxdepth: 2
-   :caption: Introduction to the Measurement API
 
    metric-dev
    measurement-dev

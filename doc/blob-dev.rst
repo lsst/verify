@@ -3,7 +3,7 @@ Providing Datasets to Measurements through Blobs
 ################################################
 
 A common pattern is to reduce a raw dataset, and share that dataset between several measurements.
-The measurement API allows such datasets to be expressed as 'blobs,'
+``lsst.validate.base`` allows such datasets to be expressed as 'blobs.'
 In the context of the measurement API, a blob is an object that contains :class:`~lsst.validate.base.Datum` objects.
 
 There are several advantages of storing input datasets in blob objects:
@@ -24,15 +24,15 @@ Blobs are subclasses of :class:`lsst.validate.BlobBase` that register one or mor
 
    class SimpleBlob(BlobBase):
    
-       def __init__(self, gMags, iMags):
+       def __init__(self, g_mags, i_mags):
            BlobBase.__init__(self)
 
-           self.registerDatum('g', value=gMags, units='mag',
-                              description='g-band magnitudes')
-           self.registerDatum('i', value=iMags, units='mag',
-                              description='i-band magnitudes')
-           self.registerDatum('gi', units='mag',
-                              description='g-i colour')
+           self.register_datum('g', value=g_mags, units='mag',
+                               description='g-band magnitudes')
+           self.register_datum('i', value=i_mags, units='mag',
+                               description='i-band magnitudes')
+           self.register_datum('gi', units='mag',
+                               description='g-i colour')
            
            self.gi = self.g - self.i
 
@@ -68,10 +68,10 @@ For example:
        label = 'MeanColour'
        units = 'mag'
        
-       def __init__(self, simpleBlob):
-           self.metric = Metric.fromYaml(self.label)
-           self.simpleBlob = simpleBlob
-           self.value = np.mean(self.simpleBlob.gi)
+       def __init__(self, simple_blob):
+           self.metric = Metric.from_yaml(self.label)
+           self.simple_blob = simple_blob
+           self.value = np.mean(self.simple_blob.gi)
 
 Accessing blobs in measurements
 -------------------------------
@@ -81,5 +81,5 @@ In addition to simply accessing blobs associated with a measurement through the 
 .. code-block:: python
 
    color = SimpleBlob(g, i)
-   meanColor = MeanColor(color)
-   meanColor.blobs['simpleBlob'].gi  # array of g-i colours
+   mean_color = MeanColor(color)
+   mean_color.blobs['simple_blob'].gi  # array of g-i colours

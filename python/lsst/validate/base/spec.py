@@ -15,26 +15,27 @@ class Specification(JsonSerializationMixin):
 
     Parameters
     ----------
-    name : str
+    name : `str`
         Name of the specification level for a metric. LPM-17 uses `'design'`,
         `'minimum'` and `'stretch'`.
-    value : float
+    value : `float`
         The specification threshold level.
-    bandpasses : list, optional
-        A list of bandpass names, if the specification level is dependent
-        on the bandpass.
-    dependencies : dict
-        A dictionary of named :class:`Datum` values that must be known when
-        making a measurement against a specification level. Dependencies can be
-        accessed as attributes of the specification object.
+    filter_names : `list`, optional
+        A list of optical filter names that this specification applies to.
+        Set only if the specification level is dependent on the filter.
+    dependencies : `dict`
+        A dictionary of named :class:`lsst.validate.base.Datum` values that
+        must be known when making a measurement against a specification level.
+        Dependencies can be accessed as attributes of the specification object.
     """
-    def __init__(self, name, value, units, bandpasses=None, dependencies=None):
+    def __init__(self, name, value, units, filter_names=None,
+                 dependencies=None):
         self.name = name
         self.label = name
         self.value = value
         self.units = units
         self.description = ''
-        self.bandpasses = bandpasses
+        self.filter_names = filter_names
         if dependencies:
             self.dependencies = dependencies
         else:
@@ -67,18 +68,19 @@ class Specification(JsonSerializationMixin):
 
     @property
     def astropy_units(self):
-        """Astropy unit object."""
+        """Astropy :astropy:class:`~astropy.units.Unit` object."""
         return astropy.units.Unit(self.units)
 
     @property
     def astropy_quanitity(self):
-        """Datum as an astropy Quantity."""
+        """Datum as an Astropy :astropy:class:`~astropy.units.Quantity`."""
         return self.value * self.astropy_units
 
     @property
     def json(self):
+        """Specification data as a JSON-serialiable `dict`."""
         return JsonSerializationMixin.jsonify_dict({
             'name': self.name,
             'value': Datum(self.value, self.units),
-            'filters': self.bandpasses,
+            'filters': self.filter_names,
             'dependencies': self.dependencies})

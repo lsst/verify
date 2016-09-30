@@ -10,17 +10,17 @@ __all__ = ['Job']
 
 
 class Job(JsonSerializationMixin):
-    """A Job is a wrapper around all measurements and blob metadata associated
-    with a validation run.
+    """A `Job` is a wrapper around all measurements and blob metadata
+    associated with a validation run.
 
-    Use the Job.json attribute to access a json-serializable dict of all
-    measurements and blobs associated with the Job.
+    Use the `Job.json` attribute to access a json-serializable dict of all
+    measurements and blobs associated with the `Job`.
 
     Parameters
     ----------
     measurements : `list`, optional
         List of `MeasurementBase`-derived objects.
-    blobs : list
+    blobs : `list`
         List of `BlobBase`-derived objects.
     """
     def __init__(self, measurements=None, blobs=None):
@@ -31,16 +31,16 @@ class Job(JsonSerializationMixin):
 
         if measurements:
             for m in measurements:
-                self.registerMeasurement(m)
+                self.register_measurement(m)
 
         if blobs:
             for b in measurements:
-                self.registerBlob(b)
+                self.register_blob(b)
 
-    def registerMeasurement(self, m):
+    def register_measurement(self, m):
         """Add a measurement object to the Job.
 
-        Registering a measurement will also automatically register all
+        Registering a measurement also automatically registers all
         linked blobs.
 
         Parameters
@@ -53,39 +53,62 @@ class Job(JsonSerializationMixin):
             self._measurements.append(m)
             self._measurement_ids.add(m.identifier)
             for name, b in m.blobs.items():
-                self.registerBlob(b)
+                self.register_blob(b)
 
-    def getMeasurement(self, metricName, specName=None, bandpass=None):
-        """Get a measurement in corresponding to the given criteria
-        within the job.
+    def get_measurement(self, metric_name, spec_name=None, filter_name=None):
+        """Get a measurement corresponding to the given criteria.
+
+        Parameters
+        ----------
+        metric_name : `str`
+            Name of the metric for the requested measurement.
+        spec_name : `str`, optional
+            Name of the specification level if the measurement algorithm is
+            dependent on the specification level of a metric.
+        filter_name : `str`, optional
+            Name of the optical filter if the measurement is specific to a
+            filter.
+
+        Returns
+        -------
+        measurement : :class:`lsst.validate.base.MeasurementBase`-type object
+            The single measurement instance that fulfills the search criteria.
+
+        Raises
+        ------
+        RuntimeError
+            Raised when a measurement cannot be found, either because no such
+            measurement exists or because the request is ambiguous
+            (`spec_name` or `filter_name` need to be set).
         """
-        candidates = [m for m in self._measurements if m.label == metricName]
+        candidates = [m for m in self._measurements if m.label == metric_name]
         if len(candidates) == 1:
             candidate = candidates[0]
-            if specName is not None and candidate.specName is not None:
-                assert candidate.specName == specName
-            if bandpass is not None and candidate.bandpass is not None:
-                assert candidate.bandpass == bandpass
+            if spec_name is not None and candidate.spec_name is not None:
+                assert candidate.spec_name == spec_name
+            if filter_name is not None and candidate.filter_name is not None:
+                assert candidate.filter_name == filter_name
             return candidate
 
-        # Filter by specName
-        if specName is not None:
-            candidates = [m for m in candidates if m.specName == specName]
+        # Filter by spec_name
+        if spec_name is not None:
+            candidates = [m for m in candidates if m.spec_name == spec_name]
         if len(candidates) == 1:
             candidate = candidates[0]
-            if bandpass is not None and candidate.bandpass is not None:
-                assert candidate.bandpass == bandpass
+            if filter_name is not None and candidate.filter_name is not None:
+                assert candidate.filter_name == filter_name
             return candidate
 
-        # Filter by bandpass
-        if bandpass is not None:
-            candidates = [m for m in candidates if m.bandpass == bandpass]
+        # Filter by filter_name
+        if filter_name is not None:
+            candidates = [m for m in candidates
+                          if m.filter_name == filter_name]
         if len(candidates) == 1:
             return candidates[0]
 
-        raise RuntimeError('Measurement not found', metricName, specName)
+        raise RuntimeError('Measurement not found', metric_name, spec_name)
 
-    def registerBlob(self, b):
+    def register_blob(self, b):
         """Add a blob object to the Job.
 
         Parameters
@@ -100,27 +123,29 @@ class Job(JsonSerializationMixin):
 
     @property
     def json(self):
+        """Job data as a JSON-serialiable `dict`."""
         doc = JsonSerializationMixin.jsonify_dict({
             'measurements': self._measurements,
             'blobs': self._blobs})
         return doc
 
     @property
-    def availableMetrics(self):
-        metricNames = []
+    def metric_names(self):
+        """Names of metrics included in this Job (`list`)."""
+        metric_names = []
         for m in self._measurements:
             if m.value is not None:
-                if m.metric.name not in metricNames:
-                    metricNames.append(m.metric.name)
-        return metricNames
+                if m.metric.name not in metric_names:
+                    metric_names.append(m.metric.name)
+        return metric_names
 
     @property
-    def availableSpecLevels(self):
+    def spec_levels(self):
         """List of spec names that available for metrics measured in this Job.
         """
-        specNames = []
+        spec_names = []
         for m in self._measurements:
             for spec in m.metric.specs:
-                if spec.name not in specNames:
-                    specNames.append(spec.name)
-        return specNames
+                if spec.name not in spec_names:
+                    spec_names.append(spec.name)
+        return spec_names

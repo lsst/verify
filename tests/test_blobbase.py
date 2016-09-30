@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # See COPYRIGHT file at the top of the source tree.
-
 from __future__ import print_function
 
 import unittest
@@ -9,13 +8,14 @@ from lsst.validate.base import BlobBase
 
 
 class DemoBlob(BlobBase):
+    """Example Blob class."""
 
     name = 'demo'
 
     def __init__(self):
         BlobBase.__init__(self)
 
-        self.registerDatum(
+        self.register_datum(
             'mag',
             units='mag',
             value=5,
@@ -23,7 +23,7 @@ class DemoBlob(BlobBase):
 
 
 class BlobBaseTestCase(unittest.TestCase):
-    """Test Mesaurement class (via MeasurementBase) functionality."""
+    """Test BlobBase functionality."""
 
     def setUp(self):
         self.blob = DemoBlob()
@@ -31,11 +31,10 @@ class BlobBaseTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def testAttribute(self):
+    def test_attribute(self):
         self.assertEqual(self.blob.mag, 5)
 
-    def testJson(self):
-        print(dir(self.blob))
+    def test_json(self):
         j = self.blob.json
 
         self.assertEqual(j['data']['mag']['value'], 5)

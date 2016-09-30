@@ -2,8 +2,8 @@
 Creating Measurement Classes
 ############################
 
-The :class:`lsst.validate.base.MeasurmentBase` abstract base class defines a standard interface for writing classes that make measurements of metrics.
-The :class:`~lsst.validate.base.MeasurementBase` base class ensures that measurements, along with metadata about the measurement, can be serialized and submitted to the QA database and SQUASH dashboard.
+The :class:`lsst.validate.base.MeasurmentBase` abstract base class defines a standard interface for writing classes that make measurements of :doc:`metrics <metric-doc>`.
+:class:`~lsst.validate.base.MeasurementBase` ensures that measurements, along with metadata about the measurement, can be serialized and submitted to the QA database and SQUASH dashboard.
 This page covers the usage of :class:`~lsst.validate.base.MeasurementBase` for creating measurement classes.
 
 A Minimal Measurement Class
@@ -14,6 +14,11 @@ This example is a basic template for a measurement:
 
 .. code-block:: python
 
+   import os
+   from lsst.utils import getPackageDir
+   from lsst.validate.base import MeasurementBase
+
+
    class PA1Measurement(MeasurementBase):
 
        metric = None
@@ -21,15 +26,20 @@ This example is a basic template for a measurement:
        units = 'mmag'
        label = 'PA1'
        
-       def __init__(self):
+       def __init__(self, yaml_path):
            MeasurementBase.__init__(self)
            
-           self.metric = Metric.fromYaml(self.label)
+           self.metric = Metric.from_yaml(self.label)
            
            # measurement code
            # ...
            
            self.value = 0  # Scalar value from measurement code
+
+
+   yaml_path = os.path.join(getPackageDir('validate_drp'),
+                            'metrics.yaml')
+   pa1_measurement = PA1Measurement(yaml_path)
 
 In a measurement class, the following metadata attributes must be specified (their presence is required by the :class:`~lsst.validate.base.MeasurementBase` abstract base class):
 
@@ -37,7 +47,7 @@ In a measurement class, the following metadata attributes must be specified (the
    The name of the metric.
 
 :attr:`~lsst.validate.base.MeasurementBase.metric`
-   A :class:`~lsst.validate.base.Metric` object. In this example, the :meth:`~lsst.validate.drp.Metric.fromYaml` class method constructs a :class:`~lsst.validate.base.Metric` instance for PA1 from the :file:`metrics.yaml` file built into ``validate_drp``.
+   A :class:`~lsst.validate.base.Metric` object. In this example, the :meth:`~lsst.validate.drp.Metric.from_yaml` class method constructs a :class:`~lsst.validate.base.Metric` instance for PA1 from the :file:`metrics.yaml` file built into ``validate_drp``.
 
 :attr:`~lsst.validate.base.MeasurementBase.units`
    Units of the metric measurement. As in the :class:`~lsst.validate.base.Datum` class, ``units`` should be an ``astropy.units``-compatible string.
@@ -49,7 +59,7 @@ The measurement result is stored in a :attr:`~lsst.validate.base.MeasurementBase
 
 :attr:`~lsst.validate.base.MeasurementBase.value`
    The value attribute should be a scalar (`float` or `int`), in the same physical units indicated by the ``units`` attribute.
-   If a Measurement class is unable to make a measurement, ``value`` should be ``None``.
+   If a measurement class is unable to make a measurement, ``value`` should be ``None``.
 
 Storing Measurement Parameters
 ==============================
@@ -65,68 +75,67 @@ As a means of lightweight provenance, the measurement API provides a way to decl
        value = None
        units = 'mmag'
        label = 'PA1'
-       schema = 'pa1-1.0.0'
-       
-       def __init__(self, numRandomShuffles=50):
+
+       def __init__(self, yaml_path, numRandomShuffles=50):
            MeasurementBase.__init__(self)
            
-           self.metric = Metric.fromYaml(self.label)
+           self.metric = Metric.fromYaml(self.label, yaml_path)
 
-           self.registerParameter('numRandomShuffles',
-                                  value=numRandomShuffles,
-                                  units='',
-                                  description='Number of random shuffles')
+           self.register_parameter('num_random_shuffles',
+                                   value=num_random_shuffles,
+                                   units='',
+                                   description='Number of random shuffles')
            
            # ... measurement code
                               
-In this example, the ``PA1Measurement`` class registers a parameter named ``numRandomShuffles``.
+In this example, the ``PA1Measurement`` class registers a parameter named ``num_random_shuffles``.
 
 Accessing parameter values as object attributes
 -----------------------------------------------
 
-In addition to registering a parameter for serialization, the :meth:`~lsst.validate.base.MeasurementBase.registerParameter` method makes the values of parameters available as instance attributes.
+In addition to registering a parameter for serialization, the :meth:`~lsst.validate.base.MeasurementBase.register_parameter` method makes the values of parameters available as instance attributes.
 Continuing the ``PA1Measurement`` example:
 
 .. code-block:: python
 
-   pa1 = PA1Measurment(numRandomShuffles=50)
-   pa1.numRandomShuffles # == 50
+   pa1 = PA1Measurment(num_random_shuffles=50)
+   pa1.num_random_shuffles  # == 50
    
 Through attribute access, a parameter's value can be both *read* and *updated*.
 
-Accessing parameters as ``Datum`` objects
------------------------------------------
+Accessing parameters as Datum objects
+-------------------------------------
 
 Although the values of parameters can be accessed through object attributes, they are stored internally as :class:`~lsst.validate.base.Datum` objects.
 These full :class:`~lsst.validate.base.Datum` objects can be accessed as items of the :attr:`~lsst.validate.base.MeasurementBase.parameters` attribute:
 
 .. code-block:: python
 
-   pa1.parameters['numRandomShuffles'].value  # 50
-   pa1.parameters['numRandomShuffles'].units  # ''
-   pa1.parameters['numRandomShuffles'].label  # numRandomShuffles
-   pa1.parameters['numRandomShuffles'].description  # 'Number of random shuffles'
+   pa1.parameters['num_random_shuffles'].value  # 50
+   pa1.parameters['num_random_shuffles'].units  # ''
+   pa1.parameters['num_random_shuffles'].label  # 'num_random_shuffles'
+   pa1.parameters['num_random_shuffles'].description  # 'Number of random shuffles'
 
 Alternative ways of registering parameters
 ------------------------------------------
 
-The :meth:`~lsst.validate.drp.MeasurementBase.registerParameter` method is flexible in terms of its arguments.
+The :meth:`~lsst.validate.base.MeasurementBase.registerParameter` method is flexible in terms of its arguments.
 For example, it's possible to first register a parameter and set its value later:
 
 .. code-block:: python
 
-   self.registerParameter('numRandomShuffles', units='',
-                          description='Number of random shuffles')
+   self.register_parameter('num_random_shuffles', units='',
+                           description='Number of random shuffles')
    # ...
-   self.numRandomShuffles = 50
+   self.num_random_shuffles = 50
 
 Here, a label is not set; in this case the ``label`` defaults to the name of the parameter itself.
 
-It's also possible to provide a :class:`~lsst.validate.base.Datum` to :meth:`~lsst.validate.drp.MeasurementBase.registerParameter`:
+It's also possible to provide a :class:`~lsst.validate.base.Datum` to :meth:`~lsst.validate.base.MeasurementBase.register_parameter`:
 
 .. code-block:: python
 
-   self.registerParameter('numRandomShuffles',
+   self.registerParameter('num_random_shuffles',
                           datum=Datum(50, '', label='shuffles',
                                       description='Number of random shuffles'))
 
@@ -139,9 +148,9 @@ Although metric measurements are strictly scalar values, it can be useful to sto
 By registering them, these measurement by-products are automatically serialized with the measurement and available to the SQUASH dashboard application to make drive rich plots, such as histograms or scatter plots.
 This additional metadata helps a user understand a scalar metric measurement.
 
-Registering measurement outputs is similar to registering parameters, except that the :meth:`~lsst.validate.base.MeasurementBase.registerExtra` method is used.
+Registering measurement outputs is similar to registering parameters, except that the :meth:`~lsst.validate.base.MeasurementBase.register_extra` method is used.
 
-As an example, the PA1 measurement code (:class:`~lsst.validate.drp.calcsrd.PA1Measurement`) stores the inter-quartile range, RMS and magnitude difference of pairs of stars multiple random samples, along with mean magnitude of each pair of observed stars.
+As an example, the PA1 measurement code (:class:`~lsst.validate.drp.calcsrd.PA1Measurement`) stores the inter-quartile range, RMS and magnitude difference of pairs of stars multiple random samples, along with mean magnitude of each pair of observed stars:
 
 .. code-block:: python
 
@@ -151,42 +160,41 @@ As an example, the PA1 measurement code (:class:`~lsst.validate.drp.calcsrd.PA1M
           value = None
           units = 'mmag'
           label = 'PA1'
-          schema = 'pa1-1.0.0'
-          
-          def __init__(self, numRandomShuffles=50):
+
+          def __init__(self, yaml_path, num_random_shuffles=50):
               MeasurementBase.__init__(self)
               
-              self.metric = Metric.fromYaml(self.label)
+              self.metric = Metric.from_yaml(self.label, yaml_path=yaml_path)
               
               # register extras
-              self.registerExtra('rms', units='mmag',
-                                 description='Photometric repeatability RMS of '
-                                             'stellar pairs for each random sampling')
-              self.registerExtra('iqr', units='mmag',
-                                 description='Photometric repeatability IQR of '
-                                             'stellar pairsfor each random sample')
-              self.registerExtra('magDiff', units='mmag',
-                                 description='Difference magnitudes of stellar source pairs'
-                                             'for each random sample')
-              self.registerExtra('magMean', units='mag',
-                                 description='Mean magnitude of pairs of stellar '
-                                             'sources matched across visits, for '
-                                             'each random sample.')
+              self.register_extra('rms', units='mmag',
+                                  description='Photometric repeatability RMS of '
+                                              'stellar pairs for each random sampling')
+              self.register_extra('iqr', units='mmag',
+                                  description='Photometric repeatability IQR of '
+                                              'stellar pairs for each random sample')
+              self.register_extra('mag_diff', units='mmag',
+                                  description='Difference magnitudes of stellar source pairs'
+                                              'for each random sample')
+              self.register_extra('mag_mean', units='mag',
+                                  description='Mean magnitude of pairs of stellar '
+                                              'sources matched across visits, for '
+                                              'each random sample.')
 
               # ... make measurements
               
               # Set values of extras
               self.rms = np.array([pa1.rms for pa1 in pa1Samples])
               self.iqr = np.array([pa1.iqr for pa1 in pa1Samples])
-              self.magDiff = np.array([pa1.magDiffs for pa1 in pa1Samples])
-              self.magMean = np.array([pa1.magMean for pa1 in pa1Samples])
+              self.mag_diff = np.array([pa1.mag_diffs for pa1 in pa1Samples])
+              self.mag_mean = np.array([pa1.mag_mean for pa1 in pa1Samples])
        
               # The scalar metric measurement
               self.value = np.mean(self.iqr)
 
-The :meth:`~lsst.validate.base.MeasurementBase.registerExtra` method works just like the :meth:`~lsst.validate.base.MeasurementBase.registerParameter` method.
+The :meth:`~lsst.validate.base.MeasurementBase.register_extra` method works just like the :meth:`~lsst.validate.base.MeasurementBase.register_parameter` method.
 Specifically, the value of the extra can be set at registration time.
-An extra can also be registered with a pre-made ``Datum`` object.
+An extra can also be registered with a pre-made :class:`~lsst.validate.base.Datum` object.
 
 Accessing and updating the values and Datum objects of measurement extras
 -------------------------------------------------------------------------
