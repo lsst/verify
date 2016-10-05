@@ -10,18 +10,31 @@ __all__ = ['Job']
 
 
 class Job(JsonSerializationMixin):
-    """A `Job` is a wrapper around all measurements and blob metadata
-    associated with a validation run.
+    """A `Job` wraps all measurements and blob metadata associated with a
+    validation run.
 
-    Use the `Job.json` attribute to access a json-serializable dict of all
+    Measurements and blobs can be added both during initialization, or anytime
+    afterwards with the `register_measurement` and `register_blob` methods.
+
+    The `get_measurement` method lets you search for a stored measurement
+    based on the `Metric` name (and filter or specification name, if the
+    measurement is dependent on those).
+
+    Use the `Job.json` attribute to access a json-serializable `dict` of all
     measurements and blobs associated with the `Job`.
+
+    A `Job` can only contain measurements against one dataset at a time.
+    Typically, `Job`\ s are uploaded to SQUASH separately for each tested
+    dataset.
 
     Parameters
     ----------
     measurements : `list`, optional
-        List of `MeasurementBase`-derived objects.
-    blobs : `list`
-        List of `BlobBase`-derived objects.
+        List of `MeasurementBase`-derived objects. Additional measurements can
+        be added with the `register_measurement` method.
+    blobs : `list`, optional
+        List of `BlobBase`-derived objects. Additional blobs can be added
+        with the `register_blob` method.
     """
     def __init__(self, measurements=None, blobs=None):
         self._measurements = []
@@ -38,14 +51,14 @@ class Job(JsonSerializationMixin):
                 self.register_blob(b)
 
     def register_measurement(self, m):
-        """Add a measurement object to the Job.
+        """Add a measurement object to the `Job`.
 
         Registering a measurement also automatically registers all
         linked blobs.
 
         Parameters
         ----------
-        m : :class:`lsst.validate.base.MeasurementBase`-type object
+        m : `MeasurementBase`-type object
             A measurement object.
         """
         assert isinstance(m, MeasurementBase)
@@ -61,7 +74,7 @@ class Job(JsonSerializationMixin):
         Parameters
         ----------
         metric_name : `str`
-            Name of the metric for the requested measurement.
+            Name of the `Metric` for the requested measurement.
         spec_name : `str`, optional
             Name of the specification level if the measurement algorithm is
             dependent on the specification level of a metric.
@@ -71,7 +84,7 @@ class Job(JsonSerializationMixin):
 
         Returns
         -------
-        measurement : :class:`lsst.validate.base.MeasurementBase`-type object
+        measurement : `MeasurementBase`-type object
             The single measurement instance that fulfills the search criteria.
 
         Raises
@@ -79,7 +92,7 @@ class Job(JsonSerializationMixin):
         RuntimeError
             Raised when a measurement cannot be found, either because no such
             measurement exists or because the request is ambiguous
-            (`spec_name` or `filter_name` need to be set).
+            (``spec_name`` or ``filter_name`` need to be set).
         """
         candidates = [m for m in self._measurements if m.label == metric_name]
         if len(candidates) == 1:
@@ -109,11 +122,11 @@ class Job(JsonSerializationMixin):
         raise RuntimeError('Measurement not found', metric_name, spec_name)
 
     def register_blob(self, b):
-        """Add a blob object to the Job.
+        """Add a blob object to the `Job`.
 
         Parameters
         ----------
-        b : :class:`lsst.validate.base.BlobBase`-type object
+        b : `BlobBase`-type object
             A blob object.
         """
         assert isinstance(b, BlobBase)
@@ -123,7 +136,7 @@ class Job(JsonSerializationMixin):
 
     @property
     def json(self):
-        """Job data as a JSON-serialiable `dict`."""
+        """`Job` data as a JSON-serialiable `dict`."""
         doc = JsonSerializationMixin.jsonify_dict({
             'measurements': self._measurements,
             'blobs': self._blobs})
@@ -131,7 +144,7 @@ class Job(JsonSerializationMixin):
 
     @property
     def metric_names(self):
-        """Names of metrics included in this Job (`list`)."""
+        """Names of `Metric`\ s measured in this `Job` (`list`)."""
         metric_names = []
         for m in self._measurements:
             if m.value is not None:
@@ -141,7 +154,8 @@ class Job(JsonSerializationMixin):
 
     @property
     def spec_levels(self):
-        """List of spec names that available for metrics measured in this Job.
+        """`list` of names of specification levels that are available for
+        `Metric`\ s measured in this `Job`.
         """
         spec_names = []
         for m in self._measurements:

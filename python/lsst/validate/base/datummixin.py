@@ -8,7 +8,9 @@ __all__ = ['DatumAttributeMixin']
 
 
 class DatumAttributeMixin(object):
-    """Mixin that provides a :class:`Datum`-like API to non-Datum classes."""
+    """Mixin that provides a `~lsst.validate.base.Datum`-like API to
+    non-`~lsst.validate.base.Datum` classes.
+    """
 
     def _register_datum_attribute(self, attribute, key, value=None,
                                   units=None, label=None, description=None,

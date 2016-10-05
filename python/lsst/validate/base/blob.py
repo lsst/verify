@@ -12,20 +12,19 @@ __all__ = ['BlobBase']
 
 
 class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
-    """Base class for Blob classes.
+    """Base class for blobs: flexible containers of data that are serialized
+    to JSON.
 
-    Blobs are flexible containers of data that are serialized to JSON.
+    .. seealso::
 
-    Attributes
-    ----------
-    datums : dict
-        A `dict` of `Datums` instances contained by the Blob instance. The
-        values of blobs can also be accessed as attributes of the BlobBase
-        subclass. Keys in `datums` and attributes share the same names.
-    identifier : str
-        Unique identifier for this blob instance
-    name : str
-        Name of the Blob class.
+       The page :ref:`creating-blobs` describes how to create blob classes.
+    """
+
+    datums = dict()
+    """`dict` of `Datum` instances contained by the blob instance.
+
+    The values of blobs can also be accessed as attributes of the `BlobBase`
+    subclass. Keys in `datums` and attributes share the same names.
     """
 
     def __init__(self):
@@ -48,17 +47,17 @@ class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
 
     @abc.abstractproperty
     def name(self):
-        """Name of this blob (the BlobBase subclass's Python namespace)."""
+        """Name of this blob (the `BlobBase` subclass's Python namespace)."""
         pass
 
     @property
     def identifier(self):
-        """A unique UUID4-based identifier for this blob (`str`)."""
+        """Unique UUID4-based identifier for this blob (`str`)."""
         return self._id
 
     @property
     def json(self):
-        """Job data as a JSON-serialiable `dict`."""
+        """Job data as a JSON-serializable `dict`."""
         json_doc = JsonSerializationMixin.jsonify_dict({
             'identifer': self.identifier,
             'name': self.name,
@@ -71,38 +70,36 @@ class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
         this blob.
 
         The value of the `Datum` can either be set at registration time (with
-        the `value` argument) or later by setting the instance attribute
-        named `name`.
+        the ``value`` or ``datum`` arguments) or later by setting the instance
+        attribute named ``name``.
 
-        Values of Datums can always be accessed or updated through instance
+        Values of `Datum`\ s can always be accessed or updated through instance
         attributes.
 
         The full `Datum` object can be accessed as items of the `datums`
         dictionary attached to this class. This method is useful for accessing
-        or updating metadata about a datum, such as
-        :attr:`~lsst.validate.drp.base.Datum.units`,
-        :attr:`~lsst.validate.drp.base.Datum.label`, or
-        :attr:`~lsst.validate.drp.base.Datum.description`.
+        or updating metadata about a `Datum`, such as: `Datum.units`,
+        `Datum.label`, or `Datum.description`.
 
         Parameters
         ----------
         name : `str`
-            Name of the datum; used as the key in the `datums`
-            attribute of this object.
+            Name of the `Datum`; used as the key in the `datums` attribute of
+            this object.
         value : obj
-            Value of the datum.
+            Value of the `Datum`.
         units : `str`, optional
-            An astropy-compatible unit string.
+            `astropy.units.Unit`-compatible unit string.
             See http://docs.astropy.org/en/stable/units/.
         label : `str`, optional
             Label suitable for plot axes (without units). By default the
-            `name` is used as the `label`. Setting this label argument
+            `name` is used as the ``label``. Setting this label argument
             overrides this default.
         description : `str`, optional
             Extended description.
         datum : `Datum`, optional
             If a `Datum` is provided, its value, units and label will be
-            used unless overriden by other arguments to `register_parameter`.
+            used unless overriden by other arguments to `register_datum`.
         """
         self._register_datum_attribute(self.datums, name,
                                        value=value, label=label, units=units,

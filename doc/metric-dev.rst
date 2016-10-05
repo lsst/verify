@@ -1,3 +1,5 @@
+.. _validate-base-using-metrics:
+
 ##########################
 Creating and Using Metrics
 ##########################
@@ -13,6 +15,8 @@ Specifications are thresholds of a metric that define success or give some indic
 This page describes the schema and API for defining and using both metrics and specifications in ``validate_drp``.
 This API can also be adopted by other validation and integration test packages.
 A key feature of this API is that metrics and measurements can be submitted directly to the LSST DM quality assurance database and dashboard: SQUASH.
+
+.. _validate-base-metric-yaml:
 
 Defining Metrics and Specifications in YAML
 ===========================================
@@ -104,8 +108,8 @@ First we describe required fields, followed by optional fields to deal with spec
 
 ``level``
    This field provides the name of the specification.
-   In the :lpm:`17` Science Requirements Document, levels are one of `design`, `minimum` and `stretch`, which describe a set of algorithmic performance goals.
-   One can define different a different system of levels, or even add a new set of specifications to existing metrics.
+   In the :lpm:`17` Science Requirements Document levels are one of ``design``, ``minimum`` and ``stretch``.
+   You can define different a different system of levels, or even add a new set of specifications to existing metrics.
 
 ``value``
    This field is the scalar value (`float` or `int`) that defines the metric's threshold level.

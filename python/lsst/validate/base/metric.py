@@ -13,49 +13,65 @@ __all__ = ['Metric']
 
 
 class Metric(JsonSerializationMixin):
-    """Container for the definition of a Metric and specification levels.
+    """Container for the definition of a metric and its specification levels.
+
+    Metrics can either be instantiated programatically, or from a :ref:`metric
+    YAML file <validate-base-metric-yaml>` with the `from_yaml` class method.
+
+    .. seealso::
+
+       See the :ref:`validate-base-using-metrics` page for usage details.
 
     Parameters
     ----------
     name : `str`
         Name of the metric (e.g., ``'PA1'``).
-    description : str
+    description : `str`
         Short description about the metric.
-    operator_str : str
-        A string, such as `'<='`, that defines a success test for a
+    operator_str : `str`
+        A string, such as ``'<='``, that defines a success test for a
         measurement (on the left hand side) against the metric specification
         level (right hand side).
-    specs : list, optional
+    specs : `list`, optional
         A list of `Specification` objects that define various specification
         levels for this metric.
-    reference_doc : str, optional
-        The document handle that originally defined the metric (e.g. LPM-17)
-    reference_url : str, optional
+    reference_doc : `str`, optional
+        The document handle that originally defined the metric
+        (e.g., ``'LPM-17'``).
+    reference_url : `str`, optional
         The document's URL.
-    reference_page : str, optional
+    reference_page : `str`, optional
         Page where metric in defined in the reference document.
-
-    Attributes
-    ----------
-    name : `str`
-        Name of the metric
-    description : `str`
-        Short description of the metric.
-    reference_doc : `str`
-        Name of the document that specifies this metric.
-    reference_url : `str`
-        URL of the document that specifies this metric.
-    reference_page : `int`
-        Page number in the document that specifies this metric.
-    dependencies : `dict`
-        A dictionary of named :class:`Datum` values that must be known when
-        making a measurement against metric. Dependencies can be
-        accessed as attributes of the specification object.
-    operator : function
-        Binary comparision operator that tests success of a measurement
-        fulfilling a specification of this metric. Measured value is on
-        left side of comparison and specification level is on right side.
     """
+
+    name = None
+    """Name of the metric (`str`)."""
+
+    description = None
+    """Short description of the metric (`str`)."""
+
+    reference_doc = None
+    """Name of the document that specifies this metric (`str`)."""
+
+    reference_url = None
+    """URL of the document that specifies this metric (`str`)."""
+
+    reference_page = None
+    """Page number in the document that specifies this metric (`int`)."""
+
+    dependencies = dict()
+    """`dict` of named :class:`Datum` values that must be known when making
+    a measurement against metric. Dependencies can also be accessed as
+    attributes of the metric. Attribute names are the same as key names in
+    `dependencies`.
+    """
+
+    operator = None
+    """Binary comparision operator that tests success of a measurement
+    fulfilling a specification of this metric. Measured value is on left side
+    of comparison and specification level is on right side.
+    """
+
     def __init__(self, name, description, operator_str,
                  specs=None, dependencies=None,
                  reference_doc=None, reference_url=None, reference_page=None):
@@ -81,28 +97,33 @@ class Metric(JsonSerializationMixin):
     @classmethod
     def from_yaml(cls, metric_name, yaml_doc=None, yaml_path=None,
                   resolve_dependencies=True):
-        """Create a `Metric` instance from YAML document that defines
+        """Create a `Metric` instance from a YAML document that defines
         metrics.
+
+        .. seealso::
+
+           See :ref:`validate-base-metric-yaml` for details on the metric YAML
+           schema.
 
         Parameters
         ----------
         metric_name : `str`
-            Name of the metric (e.g., ``'PA1'``)
+            Name of the metric (e.g., ``'PA1'``).
         yaml_doc : `dict`, optional
             A full metric YAML document loaded as a `dict`. Use this option
             to increase performance by eliminating redundant reads of a
-            common metric YAML file. Alternatively, set `yaml_path`.
+            common metric YAML file. Alternatively, set ``yaml_path``.
         yaml_path : `str`, optional
-            The full path to a metrics.yaml file. Alternatively, set
-            `yaml_doc`.
-        resolve_dependencies : bool, optional
+            The full file path to a metric YAML file. Alternatively, set
+            ``yaml_doc``.
+        resolve_dependencies : `bool`, optional
             API users should always set this to `True`. The opposite is used
             only used internally.
 
         Raises
         ------
         RuntimeError
-            Raised when neither `yaml_doc` or `yaml_path` are set.
+            Raised when neither ``yaml_doc`` or ``yaml_path`` are set.
         """
         if yaml_doc is None and yaml_path is not None:
             with open(yaml_path) as f:
@@ -174,7 +195,11 @@ class Metric(JsonSerializationMixin):
 
     @property
     def reference(self):
-        """A nicely formatted reference string."""
+        """Documentation reference as human-readable text (`str`).
+
+        Uses `reference_doc`, `reference_page`, and `reference_url`, as
+        available.
+        """
         ref_str = ''
         if self.reference_doc and self.reference_page:
             ref_str = '{doc}, p. {page:d}'.format(doc=self.reference_doc,
@@ -192,23 +217,23 @@ class Metric(JsonSerializationMixin):
     @staticmethod
     def convert_operator_str(op_str):
         """Convert a string representing a binary comparison operator to
-        an operator function itself.
+        the operator function itself.
 
-        Operators are designed so that the measurement is on the left-hand
+        Operators are oriented so that the measurement is on the left-hand
         side, and specification level on the right hand side.
 
         The following operators are permitted:
 
-        ====== ==================
-        op_str op_func
-        ====== ==================
-        ``>=`` :mod:`operator.ge`
-        ``>``  :mod:`operator.gt`
-        ``<``  :mod:`operator.lt`
-        ``<=`` :mod:`operator.le`
-        ``==`` :mod:`operator.eq`
-        ``!=`` :mod:`operator.ne`
-        ====== ==================
+        ========== =============
+        ``op_str`` Function
+        ========== =============
+        ``>=``     `operator.ge`
+        ``>``      `operator.gt`
+        ``<``      `operator.lt`
+        ``<=``     `operator.le`
+        ``==``     `operator.eq`
+        ``!=``     `operator.ne`
+        ========== =============
 
         Parameters
         ----------
@@ -218,7 +243,7 @@ class Metric(JsonSerializationMixin):
         Returns
         -------
         op_func : obj
-            An operator function from the :mod:`operator` standard library
+            An operator function from the `operator` standard library
             module.
         """
         operators = {'>=': operator.ge,
@@ -230,21 +255,21 @@ class Metric(JsonSerializationMixin):
         return operators[op_str]
 
     def get_spec(self, name, filter_name=None):
-        """Get a specification by name, and other qualitifications.
+        """Get a specification by name and other qualifications.
 
         Parameters
         ----------
         name : `str`
-            Name of a specification level (design, minimum, stretch).
+            Name of a specification level (e.g., ``'design'``, ``'minimum'``,
+            ``'stretch'``).
         filter_name : `str`, optional
             The name of the optical filter to qualify a filter-dependent
             specification level.
 
         Returns
         -------
-        spec : :class:`lsst.validate.base.Specification`
-            The :class:`~lsst.validate.base.Specification` that matches the
-            name and other qualifications.
+        spec : `Specification`
+            The `Specification` that matches the name and other qualifications.
 
         Raises
         ------
@@ -280,7 +305,7 @@ class Metric(JsonSerializationMixin):
         Returns
         -------
         spec_names : `list`
-            Specific names as a list of strings,
+            Specification names as a list of strings,
             e.g. ``['design', 'minimum', 'stretch']``.
         """
         spec_names = []
@@ -294,13 +319,26 @@ class Metric(JsonSerializationMixin):
         return list(set(spec_names))
 
     def check_spec(self, value, spec_name, filter_name=None):
-        """Compare a measurement `value` against a named specification level
-        (:class:`lsst.validate.base.Specification`).
+        """Compare a measurement against a named specification level.
+
+        .. todo::
+
+           This method should be able to leverage unit information in the
+           comparison.
+
+        Parameters
+        ----------
+        value : `int`, `float`
+            The measurement's scalar value.
+        spec_name : `str`
+            Name of a `Specification` associated with this metric.
+        filter_name : `str`, optional
+            Name of the applicable filter, if needed.
 
         Returns
         -------
         passed : `bool`
-            `True` if a value meets the specification, `False` otherwise.
+            `True` if the value meets the specification, `False` otherwise.
         """
         spec = self.get_spec(spec_name, filter_name=filter_name)
 
@@ -309,7 +347,9 @@ class Metric(JsonSerializationMixin):
 
     @property
     def json(self):
-        """Render metric as a JSON object (`dict`)."""
+        """`dict` that can be serialized as semantic JSON, compatible with
+        the SQUASH metric service.
+        """
         ref_doc = {
             'doc': self.reference_doc,
             'page': self.reference_page,

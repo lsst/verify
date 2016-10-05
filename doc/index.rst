@@ -1,6 +1,6 @@
-###################################################
-lsst.validate.drp — Science Requirements Monitoring
-###################################################
+#################################################
+lsst.validate.base — Metric Measurement Framework
+#################################################
 
 .. TODO slim down this intro
 
@@ -48,3 +48,9 @@ Python API Reference
 ====================
 
 .. automodapi:: lsst.validate.base
+
+.. automodapi:: lsst.validate.base.jsonmixin
+   :no-inheritance-diagram:
+
+.. automodapi:: lsst.validate.base.datummixin
+   :no-inheritance-diagram:

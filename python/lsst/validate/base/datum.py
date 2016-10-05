@@ -16,14 +16,13 @@ class Datum(JsonSerializationMixin):
     Parameters
     ----------
     value : `str`, `int`, `float` or 1-D iterable.
-        Value of the datum.
+        Value of the `Datum`.
     units : `str`
-        Astropy-compatible units string. See
-        http://docs.astropy.org/en/stable/units/
+        See http://docs.astropy.org/en/stable/units/.
     label : `str`, optional
         Label suitable for plot axes (without units).
     description : `str`, optional
-        Extended description.
+        Extended description of the `Datum`.
     """
     def __init__(self, value, units, label=None, description=None):
         self._doc = {}
@@ -34,7 +33,7 @@ class Datum(JsonSerializationMixin):
 
     @property
     def json(self):
-        """Datum as a `dict` compatible with overall Job JSON schema."""
+        """Datum as a `dict` compatible with overall `Job` JSON schema."""
         # Copy the dict so that the serializer is immutable
         v = self.value
         if isinstance(v, np.ndarray):
@@ -58,7 +57,8 @@ class Datum(JsonSerializationMixin):
 
     @property
     def units(self):
-        """Astropy-compatible unit string."""
+        """`astropy.units.Unit`-compatible `str` indicating units of ``value``.
+        """
         return self._doc['units']
 
     @units.setter
@@ -70,7 +70,7 @@ class Datum(JsonSerializationMixin):
 
     @property
     def latex_units(self):
-        """Units as a LateX string, wrapped in ``$``."""
+        """Units as a LaTeX string, wrapped in ``$``."""
         if self.units != '':
             fmtr = astropy.units.format.Latex()
             return fmtr.to_string(self.astropy_units)

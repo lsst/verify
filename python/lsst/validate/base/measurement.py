@@ -15,41 +15,56 @@ __all__ = ['MeasurementBase']
 
 
 class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
-    """Baseclass for Measurement classes.
+    """Base class for Measurement classes.
 
-    Attributes
-    ----------
-    blobs
-    identifier
-    metric
-    value
-    units
-    latex_units
-    label
-    datum
-    json
-    spec_name : `str`
-        A `str` identifying the specification level (e.g., 'design,' 'minimum,'
-        'stretch') that this measurement represents. `None` if this measurement
-        applies to all specification levels.
-    filter_name : `str`
-        A `str` identifying the optical filter of observatons this measurement
-        was made from. Defaults to `None` if a measurement is not
-        filter-dependent. `filter_name` should be specificed if needed to
-        resolve a filter-specific specification.
-    parameters : dict
-        A `dict` containing all input parameters used by this measurement.
-        Parameters are :class:`lsst.validate.base.Datum` instances.
-        Parameter values can also be accessed and updated as instance
-        attributes named after the parameter.
-    extras : dict
-        A `dict` containing all measurement by-products (extras) that have
-        been registered for serialization. Extras are
-        :class:`lsst.validate.base.Datum` instances. Values of extras can
-        also be accessed and updated as instance attributes named after
-        the extra.
+    This class isn't instantiated directly. Instead, developers should
+    subclass `MeasurementBase` to create a measurement classes for each
+    metric being measured.
+
+    Subclasses must (at least) implement the following attributes:
+
+    - `metric`
+    - `value`
+    - `units`
+    - `label`
+    - `spec_name` (if applicable)
+    - `filter_name` (if applicable)
+
+    .. seealso::
+
+       The :ref:`validate-drp-measurement-class` page shows how to create
+       measurement classes using `MeasurementBase`.
     """
+
     __metaclass__ = abc.ABCMeta
+
+    parameters = dict()
+    """`dict` containing all input parameters used by this measurement.
+    Parameters are `Datum` instances. Parameter values can be accessed
+    and updated as instance attributes named after the parameter.
+    """
+
+    extras = dict()
+    """`dict` containing all measurement by-products (called *extras*) that
+    have been registered for serialization.
+
+    Extras are `Datum` instances. Values of extras can also be accessed and
+    updated as instance attributes named after the extra.
+    """
+
+    spec_name = None
+    """Name of the specification level (e.g., 'design,' 'minimum,' 'stretch')
+    that this measurement represents.
+
+    `None` if this measurement applies to all specification levels.
+    """
+
+    filter_name = None
+    """Name of the optical filter for the observations this measurement
+    was made from.
+
+    `None` if a measurement is not filter-dependent.
+    """
 
     def __init__(self):
         self.parameters = {}
@@ -92,7 +107,7 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
 
     @property
     def identifier(self):
-        """A unique UUID4-based identifier for this measurement."""
+        """Unique UUID4-based identifier for this measurement (`str`)."""
         return self._id
 
     def register_parameter(self, param_key, value=None, units=None, label=None,
@@ -100,13 +115,13 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
         """Register a measurement input parameter attribute.
 
         The value of the parameter can either be set at registration time
-        (see `value` argument), or later by setting the object's attribute
-        named `param_key`.
+        (see ``value`` argument), or later by setting the object's attribute
+        named ``param_key``.
 
         The value of a parameter can always be accessed through the object's
-        attribute named `param_key.`
+        attribute named after the provided ``param_key``.
 
-        Parameters are stored as :class:`Datum` objects, which can be accessed
+        Parameters are stored as `Datum` objects, which can be accessed
         through the `parameters` attribute `dict`.
 
         Parameters
@@ -114,21 +129,20 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
         param_key : `str`
             Name of the parameter; used as the key in the `parameters`
             attribute of this object.
-        value : obj
+        value : obj, optional
             Value of the parameter.
         units : `str`, optional
-            An astropy-compatible unit string.
+            `astropy.units.Unit`-compatible string.
             See http://docs.astropy.org/en/stable/units/.
         label : `str`, optional
             Label suitable for plot axes (without units). By default the
-            `paramKey` is used as the `label`. Setting this label argument
-            overrides this default.
+            ``param_key`` is used as the `label`. Setting this ``label``
+            argument overrides that default.
         description : `str`, optional
-            Extended description.
-        datum : :class:`~lsst.validate.base.Datum`, optional
-            If a :class:`~lsst.validate.base.Datum` is provided, its value,
-            units and label will be used unless overriden by other arguments to
-            :class:`~lsst.validate.base.Measurement.register_parameter`.
+            Extended description of the parameter.
+        datum : `Datum`, optional
+            If a `Datum` is provided, its value, units and label will be used
+            unless overriden by other arguments to this method.
         """
         self._register_datum_attribute(self.parameters, param_key,
                                        value=value, label=label, units=units,
@@ -139,37 +153,36 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
         """Register a measurement extra---a by-product of a metric measurement.
 
         The value of the extra can either be set at registration time
-        (see `value` argument), or later by setting the object's attribute
-        named `extra_key`.
+        (see ``value`` argument), or later by setting the object's attribute
+        named ``extra_key``.
 
         The value of an extra can always be accessed through the object's
-        attribute named `extra_key.`
+        attribute named after ``extra_key``.
 
-        Extras are stored as :class:`Datum` objects, which can be accessed
+        Extras are stored as `Datum` objects, which can be accessed
         through the `parameters` attribute `dict`.
 
         Parameters
         ----------
-        extra_key : str
+        extra_key : `str`
             Name of the extra; used as the key in the `extras`
             attribute of this object.
         value : obj
             Value of the extra, either as a regular object, or already
-            represented as a :class:`~lsst.validate.base.Datum`.
-        units : str, optional
-            The astropy-compatible unit string.
-            See http://docs.astropy.org/en/stable/units/.
-        label : str, optional
+            represented as a `Datum`.
+        units : `str`, optional
+            `astropy.units.Unit`-compatible string indicating units of
+            ``value``. See http://docs.astropy.org/en/stable/units/.
+        label : `str`, optional
             Label suitable for plot axes (without units). By default the
-            `extra_key` is used as the `label`. Setting this label argument
+            ``extra_key`` is used as the ``label``. Setting this label argument
             overrides both of these.
         description : `str`, optional
             Extended description.
-        datum : :class:`~lsst.validate.base.Datum`, optional
-            If a :class:`~lsst.validate.base.Datum` is provided, its value,
-            units, label and description will be used unless overriden by other
-            arguments to
-            :meth:`~lsst.validate.base.Measurement.register_extra`.
+        datum : `Datum`, optional
+            If a `Datum` is provided, its value, units, label and description
+            will be used unless overriden by other arguments to
+            `register_extra`.
         """
         self._register_datum_attribute(self.extras, extra_key,
                                        value=value, label=label, units=units,
@@ -177,19 +190,20 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
 
     @abc.abstractproperty
     def metric(self):
-        """An instance derived from
-        :class:`~lsst.validate.base.Metric`.
+        """`Metric` that this measurement is associated to.
         """
         pass
 
     @abc.abstractproperty
     def value(self):
-        """Metric measurement value."""
+        """`Metric` measurement value."""
         pass
 
     @abc.abstractproperty
     def units(self):
-        """Astropy-compatible units string. (`str`)."""
+        """`astropy.units.Unit`-compatible string with units of `value`
+        (`str`).
+        """
         pass
 
     @property
@@ -203,19 +217,17 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
 
     @property
     def astropy_units(self):
-        """Astropy unit object."""
+        """Measurement units as a `astropy.units.Unit`."""
         return astropy.units.Unit(self.units)
 
     @abc.abstractproperty
     def label(self):
-        """Lable (`str`) suitable for plot axes; without units."""
+        """Name of the `Metric` associated with this measurement (`str`)."""
         pass
 
     @property
     def datum(self):
-        """Representation of this measurement as a
-        :class:`lsst.validate.base.Datum`.
-        """
+        """Representation of this measurement as a `Datum`."""
         return Datum(self.value, units=self.units, label=self.label,
                      description=self.metric.description)
 
@@ -236,25 +248,25 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
         return json_doc
 
     def check_spec(self, name):
-        """Check this measurement against a specification level, of the
-        metric.
+        """Check this measurement against a `Specification` level, of the
+        `Metric`.
 
         Parameters
         ----------
         name : `str`
-            Specification level name.
+            `Specification` level name.
 
         Returns
         -------
         passed : `bool`
-            `True` if the measurement meets the specification level, `False`
+            `True` if the measurement meets the `Specification` level, `False`
             otherwise.
 
         Notes
         -----
-        Internally this method retrieves the Specification object, filtering
-        first by the `name`, but also by this object's `filter_name` attribute
-        if specifications are filter-dependent.
+        Internally this method retrieves the `Specification` object, filtering
+        first by the ``name``, but also by this object's `filter_name`
+        attribute if specifications are filter-dependent.
         """
         return self.metric.check_spec(self.value, name,
                                       filter_name=self.filter_name)
