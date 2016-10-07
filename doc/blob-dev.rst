@@ -1,6 +1,6 @@
 .. currentmodule:: lsst.validate.base
 
-.. _creating-blobs:
+.. _validate-base-creating-blobs:
 
 ################################################
 Providing Datasets to Measurements through Blobs

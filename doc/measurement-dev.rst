@@ -1,6 +1,6 @@
 .. currentmodule:: lsst.validate.base
 
-.. _validate-drp-measurement-class: 
+.. _validate-base-measurement-class: 
 
 ############################
 Creating Measurement Classes
@@ -146,6 +146,8 @@ It's also possible to provide a `Datum` to `MeasurementBase.register_parameter`:
                                       description='Number of random shuffles'))
 
 This can be useful when copying a parameter already available as a :class:`~lsst.validate.base.Datum`.
+
+.. _validate-base-measurement-extras:
 
 Storing Extra Measurement Outputs
 =================================

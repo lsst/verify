@@ -32,7 +32,7 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
 
     .. seealso::
 
-       The :ref:`validate-drp-measurement-class` page shows how to create
+       The :ref:`validate-base-measurement-class` page shows how to create
        measurement classes using `MeasurementBase`.
     """
 

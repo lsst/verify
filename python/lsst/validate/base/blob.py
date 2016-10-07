@@ -17,7 +17,8 @@ class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
 
     .. seealso::
 
-       The page :ref:`creating-blobs` describes how to create blob classes.
+       The page :ref:`validate-base-creating-blobs` describes how to create
+       blob classes.
     """
 
     datums = dict()

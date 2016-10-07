@@ -122,14 +122,18 @@ First we describe required fields, followed by optional fields to deal with spec
    
    If a value is *unitless*, such as a fraction or percent, the unit should be an empty string, ``''``.
 
+.. _validate-base-filter-specific-specs:
+
 Defining filter-specific specifications
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------
 
 In some cases, a specification might be different depending on the optical filter used.
 For example, in :lpm:`17`, the PA1 metric has different specification levels for g, r and i filters than u, z and y filters.
 This situation is accommodated by creating two separate specification objects for each set of filters.
 Then each specification object defines what filters it applies to through a ``filters`` field.
 ``filters`` should be an array (list) type, where each value is a string with the filter's name.
+
+.. _validate-base-metric-spec-dependencies:
 
 Defining metrics that are dependent on the specification levels of other metrics
 ----------------------------------------------------------------------------------
@@ -158,6 +162,8 @@ For example, the PF1 metric is written as:
 This dependency means that a measurement being compared against the 'design' specification of PF1 must use the PA2 'design' specification level as a parameter.
 
 Note that we only need to name the metric itself, the measurement framework will automatically find the equivalent specification in the dependent metric based on matching the level and filter.
+
+.. _validate-base-metrics-in-python:
 
 Creating Metric Objects in Python
 =================================
