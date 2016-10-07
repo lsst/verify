@@ -22,7 +22,7 @@ Features
 `lsst.validate.base` gives developers all the tools needed to make and report measurements to SQUASH_:
 
 - Define metrics and their specifications :ref:`in YAML <validate-base-metric-yaml>`.
-- Work with metrics and specifications :ref:`in Python <validate-base-metrics-in-python>` with `Metric` and `Specification` classes.
+- Work with metrics and specifications :ref:`in Python <validate-base-using-metrics>` with `Metric` and `Specification` classes.
 - Have different specifications apply to data from :ref:`different optical filters <validate-base-filter-specific-specs>`.
 - :ref:`Annotate metrics <validate-base-metric-yaml>` with configuration parameters needed by measurement code---even :ref:`specification levels of other metrics <validate-base-metric-spec-dependencies>`.
 - Create semantically-rich :ref:`measurement classes <validate-base-measurement-class>` that record not only a value but also metadata like input parameters and measurement by-products using the `MeasurementBase` base class.
@@ -36,6 +36,7 @@ Using lsst.validate.base
 .. toctree::
    :maxdepth: 2
 
+   metric-yaml
    metric-dev
    measurement-dev
    blob-dev
