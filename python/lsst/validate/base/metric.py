@@ -66,12 +66,6 @@ class Metric(JsonSerializationMixin):
     `dependencies`.
     """
 
-    operator = None
-    """Binary comparision operator that tests success of a measurement
-    fulfilling a specification of this metric. Measured value is on left side
-    of comparison and specification level is on right side.
-    """
-
     def __init__(self, name, description, operator_str,
                  specs=None, dependencies=None,
                  reference_doc=None, reference_url=None, reference_page=None):
@@ -81,8 +75,7 @@ class Metric(JsonSerializationMixin):
         self.reference_url = reference_url
         self.reference_page = reference_page
 
-        self._operator_str = operator_str
-        self.operator = Metric.convert_operator_str(operator_str)
+        self.operator_str = operator_str
 
         if specs is None:
             self.specs = []
@@ -195,7 +188,7 @@ class Metric(JsonSerializationMixin):
 
     @property
     def reference(self):
-        """Documentation reference as human-readable text (`str`).
+        """Documentation reference as human-readable text (`str`, read-only).
 
         Uses `reference_doc`, `reference_page`, and `reference_url`, as
         available.
@@ -213,6 +206,31 @@ class Metric(JsonSerializationMixin):
             ref_str = self.reference_url
 
         return ref_str
+
+    @property
+    def operator_str(self):
+        """String representation of comparison operator.
+
+        The comparison is oriented with the measurement on the left-hand side
+        and the specification level on the right-hand side.
+        """
+        return self._operator_str
+
+    @operator_str.setter
+    def operator_str(self, v):
+        # Cache the operator function as a means of validating the input too
+        self._operator = Metric.convert_operator_str(v)
+        self._operator_str = v
+
+    @property
+    def operator(self):
+        """Binary comparision operator that tests success of a measurement
+        fulfilling a specification of this metric.
+
+        Measured value is on left side of comparison and specification level
+        is on right side.
+        """
+        return self._operator
 
     @staticmethod
     def convert_operator_str(op_str):
