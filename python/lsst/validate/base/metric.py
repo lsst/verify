@@ -33,8 +33,11 @@ class Metric(JsonSerializationMixin):
         measurement (on the left hand side) against the metric specification
         level (right hand side).
     specs : `list`, optional
-        A list of `Specification` objects that define various specification
+        A `list` of `Specification` objects that define various specification
         levels for this metric.
+    parameters : `dict`, optional
+        A `dict` of named `Datum` values that must be known when measuring
+        a metric.
     reference_doc : `str`, optional
         The document handle that originally defined the metric
         (e.g., ``'LPM-17'``).
@@ -59,15 +62,16 @@ class Metric(JsonSerializationMixin):
     reference_page = None
     """Page number in the document that specifies this metric (`int`)."""
 
-    dependencies = dict()
-    """`dict` of named :class:`Datum` values that must be known when making
-    a measurement against metric. Dependencies can also be accessed as
-    attributes of the metric. Attribute names are the same as key names in
-    `dependencies`.
+    parameters = dict()
+    """`dict` of named :class:`Datum` values that must be known when measuring
+    a metric.
+
+    Parameters can also be accessed as attributes of the metric. Attribute
+    names are the same as key names in `parameters`.
     """
 
     def __init__(self, name, description, operator_str,
-                 specs=None, dependencies=None,
+                 specs=None, parameters=None,
                  reference_doc=None, reference_url=None, reference_page=None):
         self.name = name
         self.description = description
@@ -82,10 +86,14 @@ class Metric(JsonSerializationMixin):
         else:
             self.specs = specs
 
-        if dependencies is None:
-            self.dependencies = {}
+        if parameters is None:
+            self.parameters = {}
         else:
-            self.dependencies = dependencies
+            assert isinstance(parameters, dict)
+            for key, value in parameters.items():
+                assert isinstance(key, basestring)
+                assert isinstance(value, Datum)
+            self.parameters = parameters
 
     @classmethod
     def from_yaml(cls, metric_name, yaml_doc=None, yaml_path=None,
@@ -125,17 +133,14 @@ class Metric(JsonSerializationMixin):
             raise RuntimeError('Set either yaml_doc or yaml_path argument')
         metric_doc = yaml_doc[metric_name]
 
-        metric_deps = {}
-        if 'dependencies' in metric_doc:
-            for metric_dep_item in metric_doc['dependencies']:
-                name = metric_dep_item.keys()[0]
-                metric_dep_item = dict(metric_dep_item[name])
-                v = metric_dep_item['value']
-                units = metric_dep_item['units']
-                d = Datum(v, units,
-                          label=metric_dep_item.get('label', None),
-                          description=metric_dep_item.get('description', None))
-                metric_deps[name] = d
+        metric_params = {}
+        if 'parameters' in metric_doc:
+            for param_name, param_data in metric_doc['parameters'].items():
+                d = Datum(param_data['value'],
+                          param_data['units'],
+                          label=param_data.get('label', None),
+                          description=param_data.get('description', None))
+                metric_params[param_name] = d
 
         m = cls(
             metric_name,
@@ -144,7 +149,7 @@ class Metric(JsonSerializationMixin):
             reference_doc=metric_doc['reference'].get('doc', None),
             reference_url=metric_doc['reference'].get('url', None),
             reference_page=metric_doc['reference'].get('page', None),
-            dependencies=metric_deps)
+            parameters=metric_params)
 
         for spec_doc in metric_doc['specs']:
             deps = None
@@ -180,8 +185,8 @@ class Metric(JsonSerializationMixin):
         return m
 
     def __getattr__(self, key):
-        if key in self.dependencies:
-            return self.dependencies[key]
+        if key in self.parameters:
+            return self.parameters[key]
         else:
             raise AttributeError("%r object has no attribute %r" %
                                  (self.__class__, key))
@@ -377,4 +382,4 @@ class Metric(JsonSerializationMixin):
             'reference': ref_doc,
             'description': self.description,
             'specifications': self.specs,
-            'dependencies': self.dependencies})
+            'parameters': self.parameters})

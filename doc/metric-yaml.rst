@@ -41,8 +41,8 @@ For example, here's the AM1 metric's definition:
        The maximum rms of the astrometric distance distribution for stellar pairs
        with separations of D=5 arcmin (repeatability) (milliarcsec).
      operator: "<="
-     dependencies:
-       - D: {value: 5.0, units: arcmin}
+     parameters:
+       D: {value: 5.0, units: arcmin}
      specs:
        - level: design
          value: 10.0
@@ -91,18 +91,30 @@ The following operators are allowed:
 - ``!=``
 
 dependencies field (optional)
+parameters field (optional)
 -----------------------------
 
 Some metrics have specific quantities that measurement code must use.
-*Dependencies* are a way of specifying these quantities in a way that measurement classes can easily use.
-The ``dependencies`` field is a list of items.
-Each list item should be a one-item ``dict``.
-The key specifies the name of the dependency (made available as an attribute of `lsst.validate.base.Metric`), while the value is a `Datum`-type with the following possible fields:
+*Parameters* are a way of specifying these quantities in a way that measurement classes can easily use.
+Declaring these *parameters* with the metric in YAML helps to centralize a metric's definition.
+
+The ``parameters`` field contains key-value pairs.
+The **keys** are names of the parameters.
+These **keys** are the same as in the `Metric.parameters` attribute, and are also attribute names of the `Metric` object itself.
+**Values** are also key-value pairs with the following fields:.
 
 - ``value``: the scalar value of the dependency (typically a `float`, `int` or list/array).
 - ``units``: an ``astropy.units``-compatible string describing the units of ``value``.
 - ``label``: the short label for this parameter (optional).
 - ``description``: a sentence or two describing this parameter (optional).
+
+Example:
+
+.. code-block:: yaml
+
+   parameters:
+     D: {value: 5.0, units: arcmin}
+     mag_max: {value: 22.0, units: mag}
 
 specs field
 -----------

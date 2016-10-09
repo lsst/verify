@@ -117,8 +117,8 @@ AM1:
     The maximum rms of the astrometric distance distribution for stellar pairs
     with separations of D=5 arcmin (repeatability) (milliarcsec).
   operator: "<="
-  dependencies:
-    - D: {value: 5.0, units: arcmin}
+  parameters:
+    D: {value: 5.0, units: arcmin}
   specs:
     - level: design
       value: 10.0
@@ -142,8 +142,8 @@ AM2:
     The maximum rms of the astrometric distance distribution for stellar pairs
     with separations of D=20 arcmin (repeatability) (milliarcsec).
   operator: "<="
-  dependencies:
-    - D: {value: 20.0, units: arcmin}
+  parameters:
+    D: {value: 20.0, units: arcmin}
   specs:
     - level: design
       value: 10.0
@@ -167,8 +167,8 @@ AM3:
     The maximum rms of the astrometric distance distribution for stellar pairs
     with separations of D=200. arcmin (repeatability) (milliarcsec).
   operator: "<="
-  dependencies:
-    - D: {value: 200.0, units: arcmin}
+  parameters:
+    D: {value: 200.0, units: arcmin}
   specs:
     - level: design
       value: 15.0
@@ -192,8 +192,8 @@ AF1:
     The maximum fraction of astrometric distances which deviate by more than
     ADx milliarcsec (see AMx) (%)
   operator: "<="
-  dependencies:
-    - D: {value: 5.0, units: arcmin}
+  parameters:
+    D: {value: 5.0, units: arcmin}
   specs:
     - level: design
       value: 10.0
@@ -223,8 +223,8 @@ AF2:
     The maximum fraction of astrometric distances which deviate by more than
     ADx milliarcsec (see AMx) (%)
   operator: "<="
-  dependencies:
-    - D: {value: 20.0, units: arcmin}
+  parameters:
+    D: {value: 20.0, units: arcmin}
   specs:
     - level: design
       value: 10.0
@@ -254,8 +254,8 @@ AF3:
     The maximum fraction of astrometric distances which deviate by more than
     ADx milliarcsec (see AMx) (%)
   operator: "<="
-  dependencies:
-    - D: {value: 200.0, units: arcmin}
+  parameters:
+    D: {value: 200.0, units: arcmin}
   specs:
     - level: design
       value: 10.0
@@ -285,8 +285,8 @@ AD1:
     No more than AFx of the astrometric distances will deviate by more than
     this from the median (see AMx, AFx) (milliarcsec).
   operator: "<="
-  dependencies:
-    - D: {value: 5.0, units: arcmin}
+  parameters:
+    D: {value: 5.0, units: arcmin}
   specs:
     - level: design
       value: 20.0
@@ -316,8 +316,8 @@ AD2:
     No more than AFx of the astrometric distances will deviate by more than
     this from the median (see AMx, AFx) (milliarcsec).
   operator: "<="
-  dependencies:
-    - D: {value: 20.0, units: arcmin}
+  parameters:
+    D: {value: 20.0, units: arcmin}
   specs:
     - level: design
       value: 20.0
@@ -347,8 +347,8 @@ AD3:
     No more than AFx of the astrometric distances will deviate by more than
     this from the median (see AMx, AFx) (milliarcsec).
   operator: "<="
-  dependencies:
-    - D: {value: 200.0, units: arcmin}
+  parameters:
+    D: {value: 200.0, units: arcmin}
   specs:
     - level: design
       value: 30.0

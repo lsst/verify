@@ -108,12 +108,12 @@ class MetricTestCase(unittest.TestCase):
         reference_doc = 'TEST-1'
         reference_page = 1
         reference_url = 'example.com'
-        deps = {'dep': Datum(5, 'mag')}
+        params = {'p': Datum(5, 'mag')}
         m = Metric(name, description, operator_str,
                    reference_doc=reference_doc,
                    reference_url=reference_url,
                    reference_page=reference_page,
-                   dependencies=deps)
+                   parameters=params)
 
         j = m.json
         self.assertEqual(j['name'], name)
@@ -121,8 +121,8 @@ class MetricTestCase(unittest.TestCase):
         self.assertEqual(j['reference']['doc'], reference_doc)
         self.assertEqual(j['reference']['page'], reference_page)
         self.assertEqual(j['reference']['url'], reference_url)
-        self.assertEqual(j['dependencies']['dep']['value'], 5)
-        self.assertEqual(j['dependencies']['dep']['units'], 'mag')
+        self.assertEqual(j['parameters']['p']['value'], 5)
+        self.assertEqual(j['parameters']['p']['units'], 'mag')
         self.assertIsInstance(j['specifications'], list)
 
 
