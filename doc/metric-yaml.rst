@@ -14,7 +14,7 @@ Each metric can be accompanied by several *specification* levels.
 Specifications are thresholds of a metric that define success or give some indication of algorithm development progress.
 :lpm:`17`, for example, defines 'minimum,' 'design,' and 'stretch' specifications for each metric.
 
-Defining metric and specifications in a YAML_ file allows you to separate science configuration from code, while still keeping metrics accessible from the code and versioned in Git.
+Defining metrics and specifications in a YAML_ file allows you to separate science configuration from code, while still keeping metrics accessible from the code and versioned in Git.
 
 This page describes the schema describing for metrics and specifications in YAML_.
 
@@ -61,14 +61,6 @@ Note that the key for this object is the name of the metric itself, 'AM1.`
 
 The following sections describe fields in a metric object.
 
-reference field
----------------
-
-The ``reference`` field contains a dictionary of key-value pairs that document where this metric is formally defined.
-In the AM1 example, the metric is defined in the ``doc`` 'LPM-17' on ``page`` 23.
-The URL of that document is also provided.
-This metadata is optional, and subsets of the ``doc``, ``page`` and ``url`` fields are allowed.
-
 description field
 -----------------
 
@@ -90,7 +82,17 @@ The following operators are allowed:
 - ``==``
 - ``!=``
 
-dependencies field (optional)
+reference field (optional)
+--------------------------
+
+The ``reference`` field contains a dictionary of key-value pairs that document where this metric is formally defined.
+
+Allowed fields are:
+
+- ``doc``: Handle of the document that formally defines the metric. For example, ``doc: LPM-17``
+- ``page``: Page number in ``doc`` where the metric is defined. For example, ``page: 23``. This should be specified if ``doc`` is not an HTML document and ``url`` does not deeply link to the metric's definition.
+- ``url``: Web URL to the documentation where the metric is defined. If possible, this should be a deep link directly to the metric definition.
+
 parameters field (optional)
 -----------------------------
 
