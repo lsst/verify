@@ -90,6 +90,15 @@ class MetricTestCase(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.assertEqual(m.get_spec('b', filter_name='z'))
 
+    def test_get_spec_dependency(self):
+        af1 = Metric.from_yaml('AF1', yaml_doc=self.metric_doc)
+        dep = af1.get_spec_dependency('design', 'AD1', filter_name='r')
+
+        ad1 = Metric.from_yaml('AD1', yaml_doc=self.metric_doc)
+
+        self.assertEqual(dep.value,
+                         ad1.get_spec('design', filter_name='r').value)
+
     def test_check_spec(self):
         """Test Metric.check_spec()."""
         a = Specification('a', 0, 'mag')

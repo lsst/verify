@@ -316,6 +316,39 @@ class Metric(JsonSerializationMixin):
             'No {2} spec found for name={0} filter_name={1}'.format(
                 name, filter_name, self.name))
 
+    def get_spec_dependency(self, spec_name, dep_name, filter_name=None):
+        """Get the `Datum` of a specification's dependency.
+
+        If the dependency is a metric, this method resolves the value of the
+        dependent metric's specification level ``spec_name``. In other words,
+        ``spec_name`` refers to the specification level of both *this* metric
+        and of the dependency metric.
+
+        Parameters
+        ----------
+        spec_name : `str`
+            `Specification` name.
+        dep_name : `str`
+            Name of the dependency.
+        filter_name : `str`, optional
+            Name of the optical filter, if this metric's specifications are
+            optical filter dependent.
+
+        Returns
+        -------
+        datum : `Datum`
+            The dependency resolved for the metric's specification.
+        """
+        spec = self.get_spec(spec_name, filter_name=filter_name)
+        dep = spec.dependencies[dep_name]
+        if isinstance(dep, Metric):
+            dep_spec = dep.get_spec(spec_name, filter_name=filter_name)
+            return dep_spec.datum
+        else:
+            # The dependency should be a straight Datum
+            assert isinstance(dep, Datum) is True
+            return dep
+
     def get_spec_names(self, filter_name=None):
         """List names of all specification levels defined for this metric;
         optionally filtering by attributes such as filter name.
