@@ -2,6 +2,7 @@
 from __future__ import print_function, division
 
 import operator
+from collections import OrderedDict
 import yaml
 
 from .jsonmixin import JsonSerializationMixin
@@ -9,7 +10,7 @@ from .datum import Datum
 from .spec import Specification
 
 
-__all__ = ['Metric']
+__all__ = ['Metric', 'load_metrics']
 
 
 class Metric(JsonSerializationMixin):
@@ -301,7 +302,6 @@ class Metric(JsonSerializationMixin):
         """
         # First collect candidate specifications by name
         candidates = [s for s in self.specs if s.name == name]
-
         if len(candidates) == 1:
             return candidates[0]
 
@@ -383,3 +383,55 @@ class Metric(JsonSerializationMixin):
             'description': self.description,
             'specifications': self.specs,
             'parameters': self.parameters})
+
+
+def load_metrics(yaml_path):
+    """Load metric from a YAML document into an ordered dictionary of
+    `Metric`\ s.
+
+    .. seealso::
+
+       :ref:`validate-base-metric-yaml`.
+
+    Parameters
+    ----------
+    yaml_path : `str`
+        The full file path to a metric YAML file.
+
+    Returns
+    -------
+    metrics : `collectinos.OrderedDict`
+        A dictionary of `Metric` instances, ordered to matched layout of YAML
+        document at YAML path. Keys are names of metrics (`str`).
+
+    See also
+    --------
+    Metric.from_yaml
+        Make a single `Metric` instance from a YAML document.
+    """
+    with open(yaml_path) as f:
+        metrics_doc = _load_ordered_yaml(f)
+    metrics = []
+    for key in metrics_doc:
+        metrics.append((key, Metric.from_yaml(key, metrics_doc)))
+    return OrderedDict(metrics)
+
+
+def _load_ordered_yaml(stream, Loader=yaml.Loader,
+                       object_pairs_hook=OrderedDict):
+    """Load a YAML document into an OrderedDict
+
+    Solution from http://stackoverflow.com/a/21912744
+    """
+    class OrderedLoader(Loader):
+        pass
+
+    def construct_mapping(loader, node):
+        loader.flatten_mapping(node)
+        return object_pairs_hook(loader.construct_pairs(node))
+
+    OrderedLoader.add_constructor(
+        yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+        construct_mapping)
+
+    return yaml.load(stream, OrderedLoader)
