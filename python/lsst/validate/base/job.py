@@ -68,6 +68,12 @@ class Job(JsonSerializationMixin):
             for name, b in m.blobs.items():
                 self.register_blob(b)
 
+    @property
+    def measurements(self):
+        """Measurement iterator."""
+        for m in self._measurements:
+            yield m
+
     def get_measurement(self, metric_name, spec_name=None, filter_name=None):
         """Get a measurement corresponding to the given criteria.
 
@@ -133,6 +139,12 @@ class Job(JsonSerializationMixin):
         if b.identifier not in self._blob_ids:
             self._blobs.append(b)
             self._blob_ids.add(b.identifier)
+
+    @property
+    def blobs(self):
+        """Blob iterator."""
+        for b in self._blobs:
+            yield b
 
     @property
     def json(self):
