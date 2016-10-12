@@ -220,10 +220,10 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
         """Measurement units as a `astropy.units.Unit`."""
         return astropy.units.Unit(self.units)
 
-    @abc.abstractproperty
+    @property
     def label(self):
         """Name of the `Metric` associated with this measurement (`str`)."""
-        pass
+        return self.metric.name
 
     @property
     def datum(self):

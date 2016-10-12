@@ -15,8 +15,6 @@ class DemoMeasurement(MeasurementBase):
     metric = None
     value = None
     units = 'mag'
-    label = 'T'
-    schema = 't-v1.0.0'
 
     def __init__(self):
         MeasurementBase.__init__(self)
@@ -49,6 +47,9 @@ class MeasurementBaseTestCase(unittest.TestCase):
 
     def tearDown(self):
         pass
+
+    def test_label(self):
+        self.assertEqual(self.meas.label, 'Test')
 
     def test_float_param(self):
         assert_almost_equal(self.meas.float_param, 22.)
