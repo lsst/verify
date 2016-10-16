@@ -93,6 +93,7 @@ class MeasurementBaseTestCase(unittest.TestCase):
         j = self.meas.json
 
         assert_almost_equal(j['value'], 5.)
+        self.assertEqual(j['units'], 'mag')
         self.assertEqual(j['parameters']['str_param']['value'], 'hello world')
         self.assertEqual(j['parameters']['str_param']['units'], '')
         self.assertEqual(j['parameters']['str_param']['label'], 'str_param')

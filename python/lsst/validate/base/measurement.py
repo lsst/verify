@@ -239,6 +239,7 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
         object_doc = {'metric': self.metric,
                       'identifier': self.identifier,
                       'value': self.value,
+                      'units': self.units,
                       'parameters': self.parameters,
                       'extras': self.extras,
                       'blobs': blob_ids,
