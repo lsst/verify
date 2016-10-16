@@ -24,6 +24,7 @@ For example:
 .. code-block:: python
 
    import os
+   import astropy.units as u
    from lsst.utils import getPackageDir
    from lsst.validate.base import Metric
    yaml_path = os.path.join(getPackageDir('validate_drp'),
@@ -38,8 +39,8 @@ For this, use the `Metric.check_spec` method:
 
 .. code-block:: python
 
-   measuredValue = 2.  # hypothetical measured value
-   am1.check_spec(measuredValue, 'design')
+   measured_value = 2. * u.arcmin  # hypothetical measured value
+   am1.check_spec(measured_value, 'design')
 
 The last statement will return ``True`` if the measured value fulfills the 'design' specification.
 If a specification is filter-dependent, the filter's name needs to be passed to the ``filter_name`` keyword argument of `Metric.check_spec`.
@@ -62,12 +63,11 @@ The properties of a specification are retrieved through attributes:
 
 .. code-block:: python
 
-   design_spec.value
-   design_spec.units
+   design_spec.quantity  # an astropy.units.Quantity
+   design_spec.unit  # an astropy.units.Unit
    design_spec.label
    design_spec.filter_names
    design_spec.latex_units  # units marked up as LaTeX math
-   design_spec.astropy_quantity  # value and unit as an Astropy quantity
 
 Dependencies of specification levels can be obtained as attributes corresponding to their labels.
 Dependencies themselves are `Datum` objects, with a value and units.
@@ -76,7 +76,7 @@ For example,
 .. code-block:: python
 
    design_spec.d  # the distance parameter
-   design_spec.d.value  # value of distance parameter
-   design_spec.d.units  # units of the distance parameter
+   design_spec.d.quantity  # value of distance parameter
+   design_spec.d.unit  # units of the distance parameter
 
 See :doc:`measurement-dev` for examples of measurements that retrieve dependencies of metrics and their specification levels.

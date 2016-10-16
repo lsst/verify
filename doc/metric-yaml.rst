@@ -46,16 +46,16 @@ For example, here's the AM1 metric's definition:
      specs:
        - level: design
          value: 10.0
-         units: mmag
-         filters: [r, i]
+         unit: mmag
+         filter_names: [r, i]
        - level: minimum
          value: 20.0
-         units: mmag
-         filters: [r, i]
+         unit: mmag
+         filter_names: [r, i]
        - level: stretch
          value: 5.0
-         units: mmag
-         filters: [r, i]
+         unit: mmag
+         filter_names: [r, i]
 
 Note that the key for this object is the name of the metric itself, 'AM1.`
 
@@ -106,7 +106,7 @@ These **keys** are the same as in the `Metric.parameters` attribute, and are als
 **Values** are also key-value pairs with the following fields:.
 
 - ``value``: the scalar value of the dependency (typically a `float`, `int` or list/array).
-- ``units``: an ``astropy.units``-compatible string describing the units of ``value``.
+- ``unit``: an `astropy.units-compatible string <http://docs.astropy.org/en/stable/units/format.html>`_ describing the units of ``value``.
 - ``label``: the short label for this parameter (optional).
 - ``description``: a sentence or two describing this parameter (optional).
 
@@ -115,8 +115,8 @@ Example:
 .. code-block:: yaml
 
    parameters:
-     D: {value: 5.0, units: arcmin}
-     mag_max: {value: 22.0, units: mag}
+     D: {value: 5.0, unit: arcmin}
+     mag_max: {value: 22.0, unit: mag}
 
 specs field
 -----------
@@ -146,10 +146,10 @@ value field
 The ``value`` field is the scalar value (`float` or `int`) that defines the metric's threshold level.
 The specification's value placed on the *right hand side* of the metric's comparison operator when being compared to a measurement.
 
-units field
+unit field
 -----------
 
-The ``units`` field annotates the level with units, such as ``'mag'`` or ``'arcsec'``.
+The ``unit`` field annotates the level with physical units, such as ``'mag'`` or ``'arcsec'``.
 Units are described by `astropy.units.Unit`-compatible strings.
 See the `astropy.units` documentation for what units are available.
 
@@ -157,14 +157,14 @@ If a value is *unitless*, such as a fraction or percent, the unit should be an e
 
 .. _validate-base-filter-specific-specs:
 
-filters field (optional)
-------------------------
+filter\_names field (optional)
+------------------------------
 
 In some cases, a specification might be different depending on the optical filter used.
-For example, in :lpm:`17`, the PA1 metric has different specification levels for g, r and i filters than u, z and y filters.
+For example, in :lpm:`17`, the PA1 metric has different specification levels for *g*, *r* and *i* filters than *u*, *z* and *y* filters.
 This situation is accommodated by creating two separate specification objects for each set of filters.
-Then each specification object defines what filters it applies to through a ``filters`` field.
-``filters`` should be an array (list) type, where each value is a string with the filter's name.
+Then each specification object defines what filters it applies to through a ``filter_names`` field.
+``filter_names`` should be an array (list) type, where each value is a string with the filter's name.
 
 .. _validate-base-metric-spec-dependencies:
 
@@ -188,7 +188,7 @@ For example, the PF1 metric is written as:
       specs:
         - level: design
           value: 10.0
-          units: ''
+          unit: ''
           dependencies:
             - PA2
 

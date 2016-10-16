@@ -1,6 +1,7 @@
 # See COPYRIGHT file at the top of the source tree.
 from __future__ import print_function, division
 
+import astropy.units
 from .datum import Datum
 
 
@@ -12,27 +13,23 @@ class DatumAttributeMixin(object):
     non-`~lsst.validate.base.Datum` classes.
     """
 
-    def _register_datum_attribute(self, attribute, key, value=None,
-                                  units=None, label=None, description=None,
+    def _register_datum_attribute(self, attribute, key, quantity=None,
+                                  label=None, description=None,
                                   datum=None):
         _value = None
-        _units = None
         _label = None
         _description = None
 
-        # default to values from Datum
         if datum is not None:
+            assert isinstance(datum, Datum)
+            _value = datum.quantity
             _label = datum.label
             _description = datum.description
-            _units = datum.units
-            _value = datum.value
 
-        # Apply overrides if arguments are supplied
-        if value is not None:
-            _value = value
-
-        if units is not None:
-            _units = units
+        if quantity is not None and _value is None:
+            assert isinstance(quantity, astropy.units.Quantity) or \
+                isinstance(quantity, str) or isinstance(quantity, bool)
+            _value = quantity
 
         if description is not None:
             _description = description
@@ -44,5 +41,4 @@ class DatumAttributeMixin(object):
         if _label is None:
             _label = key
 
-        attribute[key] = Datum(
-            _value, units=_units, label=_label, description=_description)
+        attribute[key] = Datum(_value, label=_label, description=_description)

@@ -138,7 +138,7 @@ class Metric(JsonSerializationMixin):
         if 'parameters' in metric_doc:
             for param_name, param_data in metric_doc['parameters'].items():
                 d = Datum(param_data['value'],
-                          param_data['units'],
+                          param_data['unit'],
                           label=param_data.get('label', None),
                           description=param_data.get('description', None))
                 metric_params[param_name] = d
@@ -168,8 +168,8 @@ class Metric(JsonSerializationMixin):
                         name = dep_item.keys()[0]
                         dep_item = dict(dep_item[name])
                         v = dep_item['value']
-                        units = dep_item['units']
-                        d = Datum(v, units,
+                        unit = dep_item['unit']
+                        d = Datum(v, unit,
                                   label=dep_item.get('label', None),
                                   description=dep_item.get('description', None))
                     else:
@@ -177,9 +177,9 @@ class Metric(JsonSerializationMixin):
                             'Cannot process dependency %r' % dep_item)
                     deps[name] = d
             spec = Specification(name=spec_doc['level'],
-                                 value=spec_doc['value'],
-                                 units=spec_doc['units'],
-                                 filter_names=spec_doc.get('filters', None),
+                                 quantity=spec_doc['value'],
+                                 unit=spec_doc['unit'],
+                                 filter_names=spec_doc.get('filter_names', None),
                                  dependencies=deps)
             m.specs.append(spec)
 
@@ -374,18 +374,13 @@ class Metric(JsonSerializationMixin):
 
         return list(set(spec_names))
 
-    def check_spec(self, value, spec_name, filter_name=None):
+    def check_spec(self, quantity, spec_name, filter_name=None):
         """Compare a measurement against a named specification level.
-
-        .. todo::
-
-           This method should be able to leverage unit information in the
-           comparison.
 
         Parameters
         ----------
-        value : `int`, `float`
-            The measurement's scalar value.
+        value : `astropy.units.Quantity`
+            The measurement value.
         spec_name : `str`
             Name of a `Specification` associated with this metric.
         filter_name : `str`, optional
@@ -397,9 +392,7 @@ class Metric(JsonSerializationMixin):
             `True` if the value meets the specification, `False` otherwise.
         """
         spec = self.get_spec(spec_name, filter_name=filter_name)
-
-        # NOTE: assumes units are the same
-        return self.operator(value, spec.value)
+        return self.operator(quantity, spec.quantity)
 
     @property
     def json(self):
@@ -433,7 +426,7 @@ def load_metrics(yaml_path):
 
     Returns
     -------
-    metrics : `collectinos.OrderedDict`
+    metrics : `collections.OrderedDict`
         A dictionary of `Metric` instances, ordered to matched layout of YAML
         document at YAML path. Keys are names of metrics (`str`).
 

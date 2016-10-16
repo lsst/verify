@@ -3,32 +3,33 @@ from __future__ import print_function, division
 
 import abc
 import uuid
-import astropy.units
 
 from .datummixin import DatumAttributeMixin
 from .jsonmixin import JsonSerializationMixin
 from .blob import BlobBase
-from .datum import Datum
+from .datum import Datum, QuantityAttributeMixin
 
 
 __all__ = ['MeasurementBase']
 
 
-class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
+class MeasurementBase(QuantityAttributeMixin, JsonSerializationMixin,
+                      DatumAttributeMixin):
     """Base class for Measurement classes.
 
     This class isn't instantiated directly. Instead, developers should
-    subclass `MeasurementBase` to create a measurement classes for each
+    subclass `MeasurementBase` to create measurement classes for each
     metric being measured.
 
     Subclasses must (at least) implement the following attributes:
 
     - `metric`
-    - `value`
-    - `units`
     - `label`
     - `spec_name` (if applicable)
     - `filter_name` (if applicable)
+
+    Subclasses are also responsible for assiging the measurement's value
+    to the `quantity` attribute (as an `astropy.units.Quantity`).
 
     .. seealso::
 
@@ -38,13 +39,13 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
 
     __metaclass__ = abc.ABCMeta
 
-    parameters = dict()
+    parameters = None
     """`dict` containing all input parameters used by this measurement.
     Parameters are `Datum` instances. Parameter values can be accessed
     and updated as instance attributes named after the parameter.
     """
 
-    extras = dict()
+    extras = None
     """`dict` containing all measurement by-products (called *extras*) that
     have been registered for serialization.
 
@@ -67,6 +68,7 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
     """
 
     def __init__(self):
+        self._quantity = None
         self.parameters = {}
         self.extras = {}
         self._linked_blobs = {}
@@ -77,9 +79,9 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
     def __getattr__(self, key):
         if key in self.parameters:
             # Requesting a serializable parameter
-            return self.parameters[key].value
+            return self.parameters[key].quantity
         elif key in self.extras:
-            return self.extras[key].value
+            return self.extras[key].quantity
         elif key in self._linked_blobs:
             return self._linked_blobs[key]
         else:
@@ -91,12 +93,14 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
         _bootstrap = ('parameters', 'extras', '_linked_blobs')
         if key not in _bootstrap and isinstance(value, BlobBase):
             self._linked_blobs[key] = value
-        elif key not in _bootstrap and key in self.parameters:
+        elif key not in _bootstrap and self.parameters is not None and \
+                key in self.parameters:
             # Setting value of a serializable parameter
-            self.parameters[key].value = value
-        elif key not in _bootstrap and key in self.extras:
+            self.parameters[key].quantity = value
+        elif key not in _bootstrap and self.extras is not None and \
+                key in self.extras:
             # Setting value of a serializable measurement extra
-            self.extras[key].value = value
+            self.extras[key].quantity = value
         else:
             super(MeasurementBase, self).__setattr__(key, value)
 
@@ -110,12 +114,12 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
         """Unique UUID4-based identifier for this measurement (`str`)."""
         return self._id
 
-    def register_parameter(self, param_key, value=None, units=None, label=None,
-                           description=None, datum=None):
+    def register_parameter(self, param_key, quantity=None,
+                           label=None, description=None, datum=None):
         """Register a measurement input parameter attribute.
 
         The value of the parameter can either be set at registration time
-        (see ``value`` argument), or later by setting the object's attribute
+        (see ``quantity`` argument), or later by setting the object's attribute
         named ``param_key``.
 
         The value of a parameter can always be accessed through the object's
@@ -129,11 +133,8 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
         param_key : `str`
             Name of the parameter; used as the key in the `parameters`
             attribute of this object.
-        value : obj, optional
+        quantity : `astropy.units.Quantity`, `str` or `bool`.
             Value of the parameter.
-        units : `str`, optional
-            `astropy.units.Unit`-compatible string.
-            See http://docs.astropy.org/en/stable/units/.
         label : `str`, optional
             Label suitable for plot axes (without units). By default the
             ``param_key`` is used as the `label`. Setting this ``label``
@@ -141,19 +142,20 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
         description : `str`, optional
             Extended description of the parameter.
         datum : `Datum`, optional
-            If a `Datum` is provided, its value, units and label will be used
-            unless overriden by other arguments to this method.
+            If a `Datum` is provided, its quantity, label and description
+            are be used unless overriden by other arguments to this method.
         """
         self._register_datum_attribute(self.parameters, param_key,
-                                       value=value, label=label, units=units,
-                                       description=description, datum=datum)
+                                       quantity=quantity, label=label,
+                                       description=description,
+                                       datum=datum)
 
-    def register_extra(self, extra_key, value=None, units=None, label=None,
+    def register_extra(self, extra_key, quantity=None, unit=None, label=None,
                        description=None, datum=None):
         """Register a measurement extra---a by-product of a metric measurement.
 
         The value of the extra can either be set at registration time
-        (see ``value`` argument), or later by setting the object's attribute
+        (see ``quantity`` argument), or later by setting the object's attribute
         named ``extra_key``.
 
         The value of an extra can always be accessed through the object's
@@ -167,12 +169,8 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
         extra_key : `str`
             Name of the extra; used as the key in the `extras`
             attribute of this object.
-        value : obj
-            Value of the extra, either as a regular object, or already
-            represented as a `Datum`.
-        units : `str`, optional
-            `astropy.units.Unit`-compatible string indicating units of
-            ``value``. See http://docs.astropy.org/en/stable/units/.
+        quantity : `astropy.units.Quantity`, `str`, or `bool`
+            Value of the extra.
         label : `str`, optional
             Label suitable for plot axes (without units). By default the
             ``extra_key`` is used as the ``label``. Setting this label argument
@@ -180,45 +178,20 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
         description : `str`, optional
             Extended description.
         datum : `Datum`, optional
-            If a `Datum` is provided, its value, units, label and description
+            If a `Datum` is provided, its value, label and description
             will be used unless overriden by other arguments to
             `register_extra`.
         """
         self._register_datum_attribute(self.extras, extra_key,
-                                       value=value, label=label, units=units,
-                                       description=description, datum=datum)
+                                       quantity=quantity, label=label,
+                                       description=description,
+                                       datum=datum)
 
     @abc.abstractproperty
     def metric(self):
         """`Metric` that this measurement is associated to.
         """
         pass
-
-    @abc.abstractproperty
-    def value(self):
-        """`Metric` measurement value."""
-        pass
-
-    @abc.abstractproperty
-    def units(self):
-        """`astropy.units.Unit`-compatible string with units of `value`
-        (`str`).
-        """
-        pass
-
-    @property
-    def latex_units(self):
-        """Units as a LaTeX string, wrapped in ``$``."""
-        if self.units != '':
-            fmtr = astropy.units.format.Latex()
-            return fmtr.to_string(self.astropy_units)
-        else:
-            return ''
-
-    @property
-    def astropy_units(self):
-        """Measurement units as a `astropy.units.Unit`."""
-        return astropy.units.Unit(self.units)
 
     @property
     def label(self):
@@ -228,7 +201,7 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
     @property
     def datum(self):
         """Representation of this measurement as a `Datum`."""
-        return Datum(self.value, units=self.units, label=self.label,
+        return Datum(self.quantity, label=self.label,
                      description=self.metric.description)
 
     @property
@@ -238,13 +211,13 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
                              self._linked_blobs.items()]))
         object_doc = {'metric': self.metric,
                       'identifier': self.identifier,
-                      'value': self.value,
-                      'units': self.units,
+                      'value': self.quantity.value,
+                      'unit': self.unit_str,
                       'parameters': self.parameters,
                       'extras': self.extras,
                       'blobs': blob_ids,
                       'spec_name': self.spec_name,
-                      'filter': self.filter_name}
+                      'filter_name': self.filter_name}
         json_doc = JsonSerializationMixin.jsonify_dict(object_doc)
         return json_doc
 
@@ -269,5 +242,5 @@ class MeasurementBase(JsonSerializationMixin, DatumAttributeMixin):
         first by the ``name``, but also by this object's `filter_name`
         attribute if specifications are filter-dependent.
         """
-        return self.metric.check_spec(self.value, name,
+        return self.metric.check_spec(self.quantity, name,
                                       filter_name=self.filter_name)

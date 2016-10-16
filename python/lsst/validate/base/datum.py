@@ -1,108 +1,144 @@
 # See COPYRIGHT file at the top of the source tree.
 from __future__ import print_function, division
 
-import numpy as np
 import astropy.units
 
 from .jsonmixin import JsonSerializationMixin
 
 
-__all__ = ['Datum']
+__all__ = ['Datum', 'QuantityAttributeMixin']
 
 
-class Datum(JsonSerializationMixin):
+class QuantityAttributeMixin(object):
+    """Mixin with common attributes for classes that wrap an
+    `astropy.units.Quantity`.
+
+    Subclasses must have a self._quantity attribute that is an
+    `astropy.units.Quantity` or `str` or `bool` (only numeric values are
+    astropy quantities).
+    """
+
+    @property
+    def quantity(self):
+        """Value of the datum (`astropy.units.Quantity`, `str`, or `bool`)."""
+        return self._quantity
+
+    @quantity.setter
+    def quantity(self, q):
+        assert isinstance(q, astropy.units.Quantity) or \
+            isinstance(q, basestring) or isinstance(q, bool)
+        self._quantity = q
+
+    @property
+    def unit(self):
+        """Read-only `astropy.units.Unit` of the `quantity`.
+
+        If the `quantity` is a `str` or `bool`, the unit is `None`.
+        """
+        q = self.quantity
+        if q is None or isinstance(q, basestring) or isinstance(q, bool):
+            return None
+        else:
+            return q.unit
+
+    @property
+    def unit_str(self):
+        """Read-only `astropy.units.Unit`-compatible `str` indicating units of
+        `quantity`.
+        """
+        if self.unit is None:
+            # unitless quantites have an empty string for a unit; retain this
+            # behaviour for str and bool quantities.
+            return ''
+        else:
+            return str(self.unit)
+
+    @property
+    def latex_unit(self):
+        """Units as a LaTeX string, wrapped in ``$``."""
+        if self.unit is not None and self.unit != '':
+            fmtr = astropy.units.format.Latex()
+            return fmtr.to_string(self.unit)
+        else:
+            return ''
+
+
+class Datum(QuantityAttributeMixin, JsonSerializationMixin):
     """A value annotated with units, a plot label and description.
+
+    Datum supports natively support Astropy `~astropy.units.Quantity` and
+    units. In addition, a Datum can also wrap string and boolean values.
 
     Parameters
     ----------
-    value : `str`, `int`, `float` or 1-D iterable.
+    quantity : `astropy.units.Quantity`, `int`, `float` or iterable.
         Value of the `Datum`.
-    units : `str`
-        See http://docs.astropy.org/en/stable/units/.
+    unit : `str`
+        Units of ``quantity`` as a `str` if ``quantity`` is not supplied as an
+        `astropy.units.Quantity`. See http://docs.astropy.org/en/stable/units/.
     label : `str`, optional
         Label suitable for plot axes (without units).
     description : `str`, optional
         Extended description of the `Datum`.
     """
-    def __init__(self, value, units, label=None, description=None):
-        self._doc = {}
-        self.value = value
-        self.units = units
+    def __init__(self, quantity=None, unit=None, label=None, description=None):
+        self._label = None
+        self._description = None
+
         self.label = label
         self.description = description
+
+        self._quantity = None
+
+        if quantity is None:
+            self._quantity = None
+        elif isinstance(quantity, astropy.units.Quantity) or \
+                isinstance(quantity, basestring) or isinstance(quantity, bool):
+            self.quantity = quantity
+        elif unit is not None:
+            self.quantity = astropy.units.Quantity(quantity, unit=unit)
+        else:
+            print(quantity)
+            raise ValueError('`unit` argument must be supplied to Datum '
+                             'if `quantity` is not an astropy.unit.Quantity.')
 
     @property
     def json(self):
         """Datum as a `dict` compatible with overall `Job` JSON schema."""
-        # Copy the dict so that the serializer is immutable
-        v = self.value
-        if isinstance(v, np.ndarray):
-            v = v.tolist()
+        if self.quantity is None:
+            v = None
+        elif isinstance(self.quantity, basestring) or \
+                isinstance(self.quantity, bool):
+            v = self.quantity
+        elif len(self.quantity.shape) > 0:
+            v = self.quantity.value.tolist()
+        else:
+            v = self.quantity.value
+
         d = {
             'value': v,
-            'units': self.units,
+            'unit': self.unit_str,
             'label': self.label,
             'description': self.description
         }
         return d
 
     @property
-    def value(self):
-        """Value of the datum (`str`, `int`, `float` or 1-D iterable.)."""
-        return self._doc['value']
-
-    @value.setter
-    def value(self, v):
-        self._doc['value'] = v
-
-    @property
-    def units(self):
-        """`astropy.units.Unit`-compatible `str` indicating units of ``value``.
-        """
-        return self._doc['units']
-
-    @units.setter
-    def units(self, value):
-        # verify that Astropy can parse the unit string
-        if value is not None:
-            astropy.units.Unit(value, parse_strict='raise')
-        self._doc['units'] = value
-
-    @property
-    def latex_units(self):
-        """Units as a LaTeX string, wrapped in ``$``."""
-        if self.units != '':
-            fmtr = astropy.units.format.Latex()
-            return fmtr.to_string(self.astropy_units)
-        else:
-            return ''
-
-    @property
-    def astropy_units(self):
-        """Astropy unit object."""
-        return astropy.units.Unit(self.units)
-
-    @property
-    def quantity(self):
-        """Datum as an astropy Quantity."""
-        return self.value * self.astropy_units
-
-    @property
     def label(self):
         """Label for plotting (without units)."""
-        return self._doc['label']
+        return self._label
 
     @label.setter
     def label(self, value):
         assert isinstance(value, basestring) or value is None
-        self._doc['label'] = value
+        self._label = value
 
     @property
     def description(self):
-        """Extended description of Datum."""
-        return self._doc['description']
+        """Extended description."""
+        return self._description
 
     @description.setter
     def description(self, value):
         assert isinstance(value, basestring) or value is None
-        self._doc['description'] = value
+        self._description = value

@@ -20,52 +20,44 @@ This is a basic template for a measurement class:
 .. code-block:: python
 
    import os
+   import astropy.units as u
    from lsst.utils import getPackageDir
    from lsst.validate.base import MeasurementBase
 
 
    class PA1Measurement(MeasurementBase):
 
-       label = 'PA1'
        metric = None
-       value = None
-       units = 'mmag'
        
        def __init__(self, yaml_path):
            MeasurementBase.__init__(self)
            
-           self.metric = Metric.from_yaml(self.label, yaml_path=yaml_path)
+           self.metric = Metric.from_yaml('PA1', yaml_path=yaml_path)
            
            # measurement code
            # ...
            
-           self.value = 0  # Scalar value from measurement code
+           # This is the scalar measurement value; always as an astropy.unit.Quantity
+           self.quantity = 2. * u.mmag
 
 
    yaml_path = os.path.join(getPackageDir('validate_drp'),
                             'metrics.yaml')
    pa1_measurement = PA1Measurement(yaml_path)
 
-In a measurement class, the following metadata attributes must be specified (their presence is required by the :class:`~lsst.validate.base.MeasurementBase` abstract base class):
+In a measurement class, the `MeasurementBase.metric` attribute must be set with a `Metric` object (this is required by the :class:`~lsst.validate.base.MeasurementBase` abstract base class).
+In this example, the `Metric.from_yaml` class method constructs a `Metric` instance for PA1 from the :file:`metrics.yaml` file built into ``validate_drp``.
 
-`MeasurementBase.label`
-   The name of the metric.
-
-`MeasurementBase.metric`
-   A `Metric` object. In this example, the `Metric.from_yaml` class method constructs a `Metric` instance for PA1 from the :file:`metrics.yaml` file built into ``validate_drp``.
-
-`MeasurementBase.units`
-   Units of the measurement value. As in `Datum`\ s, `MeasurementBase.units` should be an `astropy.units.Unit`-compatible string.
-
-Storing a Measurement Value
-===========================
+Storing a Measurement Quantity
+==============================
 
 The purpose of a measurement class is to make a make a measurement; those calculations should occur in a measurement instance's ``__init__`` method.
 Any data required for a measurement should be provided through the measurement class's ``__init__`` method.
 
-The measurement result is stored in a `MeasurementBase.value` attribute.
-`MeasurementBase.value` must be a scalar (`float` or `int`), in the same physical units indicated by the ``units`` attribute.
-If a measurement class is unable to make a measurement, ``value`` should be ``None``.
+The measurement result is stored in a `MeasurementBase.quantity` attribute.
+`MeasurementBase.quantity` must be a scalar `astropy.units.Quantity`.
+The units of `MeasurementBase.quantity` must be compatible with the units of the `Metric`.
+If a measurement class is unable to make a measurement, `MeasurementBase.quantity` should be ``None``.
 
 Registering Measurement Parameters
 ==================================
@@ -78,9 +70,6 @@ As a means of lightweight provenance, the measurement API provides a way to decl
    class PA1Measurement(MeasurementBase):
 
        metric = None
-       value = None
-       units = 'mmag'
-       label = 'PA1'
 
        def __init__(self, yaml_path, num_random_shuffles=50):
            MeasurementBase.__init__(self)
@@ -88,13 +77,15 @@ As a means of lightweight provenance, the measurement API provides a way to decl
            self.metric = Metric.from_yaml(self.label, yaml_path)
 
            self.register_parameter('num_random_shuffles',
-                                   value=num_random_shuffles,
-                                   units='',
+                                   quantity=num_random_shuffles * u.Unit(''),
                                    description='Number of random shuffles')
            
            # ... measurement code
                               
 In this example, the ``PA1Measurement`` class registers a parameter named ``num_random_shuffles``.
+
+A parameter's 'quantity' can be a `astropy.units.Quantity`, `str` or `bool`.
+In this example, ``num_random_shuffles`` doesn't have physical units, so it is a unitless `~astropy.units.Quantity`.
 
 Accessing parameter values as object attributes
 -----------------------------------------------
@@ -108,6 +99,7 @@ Continuing the ``PA1Measurement`` example:
    pa1.num_random_shuffles  # == 50
    
 Through attribute access, a parameter's value can be both *read* and *updated*.
+Remember that a parameter can only be set with a `~astropy.units.Quantity`, `str` or `bool` type.
 
 Accessing parameters as Datum objects
 -------------------------------------
@@ -117,8 +109,8 @@ You can access these `Datum`\ s as items of the :attr:`~lsst.validate.base.Measu
 
 .. code-block:: python
 
-   pa1.parameters['num_random_shuffles'].value  # 50
-   pa1.parameters['num_random_shuffles'].units  # ''
+   pa1.parameters['num_random_shuffles'].quantity  # 50
+   pa1.parameters['num_random_shuffles'].unit  # astropy.units.Unit('')
    pa1.parameters['num_random_shuffles'].label  # 'num_random_shuffles'
    pa1.parameters['num_random_shuffles'].description  # 'Number of random shuffles'
 
@@ -130,10 +122,10 @@ For example, it's possible to first register a parameter and set its value later
 
 .. code-block:: python
 
-   self.register_parameter('num_random_shuffles', units='',
+   self.register_parameter('num_random_shuffles',
                            description='Number of random shuffles')
    # ...
-   self.num_random_shuffles = 50
+   self.num_random_shuffles = 50 * u.Unit('')
 
 Here, a label is not set; in this case the ``label`` defaults to the name of the parameter itself.
 
@@ -163,9 +155,6 @@ As an example, the PA1 measurement code (``~lsst.validate.drp.calcsrd.PA1Measure
    class PA1Measurement(MeasurementBase):
    
           metric = None
-          value = None
-          units = 'mmag'
-          label = 'PA1'
 
           def __init__(self, yaml_path, num_random_shuffles=50):
               MeasurementBase.__init__(self)
@@ -173,16 +162,16 @@ As an example, the PA1 measurement code (``~lsst.validate.drp.calcsrd.PA1Measure
               self.metric = Metric.from_yaml(self.label, yaml_path=yaml_path)
               
               # register extras
-              self.register_extra('rms', units='mmag',
+              self.register_extra('rms',
                                   description='Photometric repeatability RMS of '
                                               'stellar pairs for each random sampling')
-              self.register_extra('iqr', units='mmag',
+              self.register_extra('iqr',
                                   description='Photometric repeatability IQR of '
                                               'stellar pairs for each random sample')
-              self.register_extra('mag_diff', units='mmag',
+              self.register_extra('mag_diff',
                                   description='Difference magnitudes of stellar source pairs'
                                               'for each random sample')
-              self.register_extra('mag_mean', units='mag',
+              self.register_extra('mag_mean',
                                   description='Mean magnitude of pairs of stellar '
                                               'sources matched across visits, for '
                                               'each random sample.')
@@ -190,13 +179,13 @@ As an example, the PA1 measurement code (``~lsst.validate.drp.calcsrd.PA1Measure
               # ... make measurements
               
               # Set values of extras
-              self.rms = np.array([pa1.rms for pa1 in pa1Samples])
-              self.iqr = np.array([pa1.iqr for pa1 in pa1Samples])
-              self.mag_diff = np.array([pa1.mag_diffs for pa1 in pa1Samples])
-              self.mag_mean = np.array([pa1.mag_mean for pa1 in pa1Samples])
+              self.rms = np.array([pa1.rms for pa1 in pa1Samples]) * u.mmag
+              self.iqr = np.array([pa1.iqr for pa1 in pa1Samples]) * u.mmag
+              self.mag_diff = np.array([pa1.mag_diffs for pa1 in pa1Samples]) * u.mmag
+              self.mag_mean = np.array([pa1.mag_mean for pa1 in pa1Samples]) * u.mag
        
               # The scalar metric measurement
-              self.value = np.mean(self.iqr)
+              self.quantity = np.mean(self.iqr)
 
 `MeasurementBase.register_extra` method works just like :meth:`MeasurementBase.register_parameter` method.
 Specifically, the value of the extra can be set at registration time, or afterwards by setting an instance attribute (shown above).
@@ -212,8 +201,8 @@ Following the PA1 measurement example:
 .. code-block:: python
 
    pa1 = PA1Measurement()
-   pa1.extras['rms'].value  # == pa1.rms
-   pa1.extras['rms'].units  # 'mmag'
+   pa1.extras['rms'].quantity  # == pa1.rms
+   pa1.extras['rms'].unit  # u.Unit('mmag')
    pa1.extras['rms'].label  # 'rms'
    pa1.extras['rms'].decription  # 'Photometric repeatability RMS ...'
 

@@ -6,6 +6,7 @@ import os
 import unittest
 
 import yaml
+import astropy.units as u
 
 from lsst.validate.base import Metric, Specification, Datum
 
@@ -49,7 +50,7 @@ class MetricTestCase(unittest.TestCase):
                     reference_doc='Doc')
         self.assertEqual(m4.reference, 'Doc')
 
-    def testOperatorConversion(self):
+    def test_operator_conversion(self):
         """Tests for Metric.convert_operator_str."""
         self.assertTrue(Metric.convert_operator_str('>=')(7, 7))
         self.assertTrue(Metric.convert_operator_str('>')(7, 5))
@@ -58,7 +59,7 @@ class MetricTestCase(unittest.TestCase):
         self.assertTrue(Metric.convert_operator_str('==')(7, 7))
         self.assertTrue(Metric.convert_operator_str('!=')(7, 5))
 
-    def testAM1GetSpecNames(self):
+    def test_am1_get_spec_names(self):
         """Test get_spec_names against AM1."""
         am1 = Metric.from_yaml('AM1', yaml_doc=self.metric_doc)
         spec_names_all = am1.get_spec_names()
@@ -96,8 +97,8 @@ class MetricTestCase(unittest.TestCase):
 
         ad1 = Metric.from_yaml('AD1', yaml_doc=self.metric_doc)
 
-        self.assertEqual(dep.value,
-                         ad1.get_spec('design', filter_name='r').value)
+        self.assertEqual(dep.quantity,
+                         ad1.get_spec('design', filter_name='r').quantity)
 
     def test_check_spec(self):
         """Test Metric.check_spec()."""
@@ -106,8 +107,9 @@ class MetricTestCase(unittest.TestCase):
         b_ug = Specification('b', 4, 'mag', filter_names=['u', 'g'])
         m = Metric('test', 'test', '<', specs=[a, b_r, b_ug])
 
-        self.assertFalse(m.check_spec(3, 'b', filter_name='r'))
-        self.assertTrue(m.check_spec(3, 'b', filter_name='g'))
+        self.assertFalse(m.check_spec(3 * u.mag, 'b', filter_name='r'))
+        self.assertTrue(m.check_spec(3 * u.mag, 'b', filter_name='g'))
+        self.assertTrue(m.check_spec(10 * u.mmag, 'b', filter_name='g'))
 
     def test_json(self):
         """Simple test of the serialized JSON content of a metric."""
@@ -131,7 +133,7 @@ class MetricTestCase(unittest.TestCase):
         self.assertEqual(j['reference']['page'], reference_page)
         self.assertEqual(j['reference']['url'], reference_url)
         self.assertEqual(j['parameters']['p']['value'], 5)
-        self.assertEqual(j['parameters']['p']['units'], 'mag')
+        self.assertEqual(j['parameters']['p']['unit'], 'mag')
         self.assertIsInstance(j['specifications'], list)
 
 

@@ -23,27 +23,33 @@ Blobs are subclasses of `BlobBase` that register one or more `Datum` objects.
 
 .. code-block:: python
 
+   import astropy.units as u
    from lsst.validate.base import BlobBase
 
 
    class SimpleBlob(BlobBase):
 
+       name = 'SimpleBlob'
+
        def __init__(self, g_mags, i_mags):
            BlobBase.__init__(self)
 
-           self.register_datum('g', value=g_mags, units='mag',
+           self.register_datum('g', quantity=g_mags * u.mag,
                                description='g-band magnitudes')
-           self.register_datum('i', value=i_mags, units='mag',
+           self.register_datum('i', quantity=i_mags * u.mag,
                                description='i-band magnitudes')
-           self.register_datum('gi', units='mag',
+           self.register_datum('gi',
                                description='g-i colour')
 
            self.gi = self.g - self.i
 
-In this example, the ``g`` and ``i`` attributes are initially registered with values.
-A third blob attribute, ``gi``, is also declared and its value is computed afterwards.
+``name`` is a required attribute for `BlobBase` subclasses.
+This name identifies the blob in the JSON output.
 
-Notice that, like `MeasurementBase.parameters` and `MeasurementBase.extras` attributes of measurement classes, values contained in `BlobBase`-type objects can be accessed and updated directly through instance attributes.
+In this example, the ``g`` and ``i`` attributes are initially registered with quantities.
+A third blob attribute, ``gi``, is also declared and its quantity is computed afterwards.
+
+Notice that, like `MeasurementBase.parameters` and `MeasurementBase.extras` attributes of measurement classes, quantities contained in `BlobBase`-type objects can be accessed and updated directly through instance attributes.
 
 Accessing datum objects
 -----------------------
@@ -53,8 +59,8 @@ Internally, blob attributes are stored as `Datum` objects, which can be accessed
 .. code-block:: python
 
    blob = SimpleBlob(g, i)
-   blob.datums['gi'].value  # == blob.gi
-   blob.datums['gi'].units  # 'mag'
+   blob.datums['gi'].quantity  # == blob.gi
+   blob.datums['gi'].unit  # u.Unit('mag')
    blob.datums['gi'].label  # 'gi', this was automatically set from the name
    blob.datums['gi'].description  # 'g-i colour'
 
@@ -68,14 +74,13 @@ For example:
 .. code-block:: python
 
    class MeanColor(MeasurementBase):
-   
-       label = 'MeanColour'
-       units = 'mag'
+
+       metric = None
        
        def __init__(self, simple_blob):
            self.metric = Metric.from_yaml(self.label)
            self.simple_blob = simple_blob
-           self.value = np.mean(self.simple_blob.gi)
+           self.quantity = np.mean(self.simple_blob.gi)
 
 Accessing blobs in measurements
 -------------------------------

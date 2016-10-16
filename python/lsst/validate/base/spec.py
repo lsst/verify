@@ -4,13 +4,13 @@ from __future__ import print_function, division
 import astropy.units
 
 from .jsonmixin import JsonSerializationMixin
-from .datum import Datum
+from .datum import Datum, QuantityAttributeMixin
 
 
 __all__ = ['Specification']
 
 
-class Specification(JsonSerializationMixin):
+class Specification(QuantityAttributeMixin, JsonSerializationMixin):
     """A specification level, or threshold, associated with a `Metric`.
 
     Parameters
@@ -18,11 +18,12 @@ class Specification(JsonSerializationMixin):
     name : `str`
         Name of the specification level for a metric. LPM-17, for example,
         uses ``'design'``, ``'minimum'`` and ``'stretch'`` terminology.
-    value : `float` or `int`
+    quantity : `astropy.units.Quantity`, `float`, or `int`
         The specification threshold level.
-    units : `str`
+    unit : `str`, optional
         `astropy.units.Unit`-compatible `str` describing the units of
-        ``value``.
+        ``value`` (only necessary if `quantity` is a `float` or `int`).
+        An empty string (``''``) describes a unitless quantity.
     filter_names : `list`, optional
         A list of optical filter names that this specification applies to.
         Set only if the specification level is dependent on the filter.
@@ -40,17 +41,8 @@ class Specification(JsonSerializationMixin):
     terminology.
     """
 
-    label = None
-    """Label, typically for plots, that describes the specification (`str`).
-
-    By default this is the same as the `name`.
-    """
-
-    value = None
-    """The specification threshold level (`float` or `int`)."""
-
-    description = ''
-    """Extended description of the specification label (`str`)."""
+    quantity = None
+    """The specification threshold level (`astropy.units.Quantity`)."""
 
     filter_names = None
     """`list` of names of optical filters that this Specification level
@@ -59,7 +51,7 @@ class Specification(JsonSerializationMixin):
     Default is `None` if the `Specification` is filter-independent.
     """
 
-    dependencies = dict()
+    dependencies = None
     """`dict` of named `Datum` values that must be known when making a
     measurement against a specification level.
 
@@ -67,13 +59,13 @@ class Specification(JsonSerializationMixin):
     object. The names of class attributes match keys in `dependencies`.
     """
 
-    def __init__(self, name, value, units, filter_names=None,
+    def __init__(self, name, quantity, unit=None, filter_names=None,
                  dependencies=None):
         self.name = name
-        self.label = name
-        self.value = value
-        self.units = units
-        self.description = ''
+        if unit is not None:
+            self.quantity = quantity * astropy.units.Unit(unit)
+        else:
+            self.quantity = quantity
         self.filter_names = filter_names
         if dependencies:
             self.dependencies = dependencies
@@ -91,27 +83,7 @@ class Specification(JsonSerializationMixin):
     @property
     def datum(self):
         """Representation of this `Specification` as a `Datum`."""
-        return Datum(self.value, units=self.units, label=self.name,
-                     description=self.description)
-
-    @property
-    def latex_units(self):
-        """Units as a LaTeX math string, wrapped in ``$``."""
-        if self.units != '':
-            fmtr = astropy.units.format.Latex()
-            return fmtr.to_string(self.astropy_units)
-        else:
-            return ''
-
-    @property
-    def astropy_units(self):
-        """The specification's units as a `astropy.units.Unit` instance."""
-        return astropy.units.Unit(self.units)
-
-    @property
-    def astropy_quanitity(self):
-        """Datum as an Astropy `~astropy.units.Quantity`."""
-        return self.value * self.astropy_units
+        return Datum(self.quantity, label=self.name)
 
     @property
     def json(self):
@@ -120,6 +92,7 @@ class Specification(JsonSerializationMixin):
         """
         return JsonSerializationMixin.jsonify_dict({
             'name': self.name,
-            'value': Datum(self.value, self.units),
-            'filters': self.filter_names,
+            'value': self.quantity.value,
+            'unit': self.unit_str,
+            'filter_names': self.filter_names,
             'dependencies': self.dependencies})

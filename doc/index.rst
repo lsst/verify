@@ -27,7 +27,7 @@ Features
 - :ref:`Annotate metrics <validate-base-metric-yaml>` with configuration parameters needed by measurement code---even :ref:`specification levels of other metrics <validate-base-metric-spec-dependencies>`.
 - Create semantically-rich :ref:`measurement classes <validate-base-measurement-class>` that record not only a value but also metadata like input parameters and measurement by-products using the `MeasurementBase` base class.
 - :ref:`Package input datasets as blobs <validate-base-creating-blobs>` that can power drill-down visualizations of measurements on the SQUASH_ dashboard.
-- Give numbers meaning with Astropy_-compatible units, plot labels, and descriptions using the `Datum` class.
+- Give numbers meaning with with Astropy :py:obj:`~astropy.units.Quantity`, plot labels, and descriptions using the `Datum` class.
 - Build a self-describing JSON document of measurements and blobs that's ready to submit to the SQUASH_ web API using the `Job` class.
 
 Using lsst.validate.base
