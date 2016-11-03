@@ -31,6 +31,12 @@ class SpecificationTestCase(unittest.TestCase):
         self.assertEqual(json_data['value'], 5.)
         self.assertEqual(json_data['unit'], 'mag')
 
+        # rebuild from json
+        s2 = Specification.from_json(json_data)
+        self.assertEqual(s.name, s2.name)
+        self.assertEqual(s.quantity, s2.quantity)
+        self.assertEqual(s.filter_names, s2.filter_names)
+
         # test datum output
         d = s.datum
         self.assertEqual(d.quantity, 5 * u.mag)
@@ -50,6 +56,12 @@ class SpecificationTestCase(unittest.TestCase):
         self.assertEqual(json_data['value'], 5.)
         self.assertEqual(json_data['unit'], 'mag')
 
+        # rebuild from json
+        s2 = Specification.from_json(json_data)
+        self.assertEqual(s.name, s2.name)
+        self.assertEqual(s.quantity, s2.quantity)
+        self.assertEqual(s.filter_names, s2.filter_names)
+
         # test datum output
         d = s.datum
         self.assertEqual(d.quantity, 5 * u.mag)
@@ -61,10 +73,18 @@ class SpecificationTestCase(unittest.TestCase):
         self.assertEqual(s.quantity.value, 100.)
         self.assertEqual(s.unit, u.Unit(''))
         self.assertEqual(s.unit_str, '')
+
+        # test json output
         json_data = s.json
         self.assertEqual(json_data['name'], 'design')
         self.assertEqual(json_data['value'], 100.)
         self.assertEqual(json_data['unit'], '')
+
+        # rebuild from json
+        s2 = Specification.from_json(json_data)
+        self.assertEqual(s.name, s2.name)
+        self.assertEqual(s.quantity, s2.quantity)
+        self.assertEqual(s.filter_names, s2.filter_names)
 
         # test datum output
         d = s.datum

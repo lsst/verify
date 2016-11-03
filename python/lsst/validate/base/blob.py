@@ -6,9 +6,10 @@ import uuid
 
 from .jsonmixin import JsonSerializationMixin
 from .datummixin import DatumAttributeMixin
+from .datum import Datum
 
 
-__all__ = ['BlobBase']
+__all__ = ['BlobBase', 'DeserializedBlob']
 
 
 class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
@@ -56,6 +57,23 @@ class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
         """Unique UUID4-based identifier for this blob (`str`)."""
         return self._id
 
+    @classmethod
+    def from_json(cls, json_data):
+        """Construct a Blob from a JSON dataset.
+
+        Parameters
+        ----------
+        json_data : `dict`
+            Blob JSON object.
+
+        Returns
+        -------
+        blob : `BlobBase`-type
+            Blob from JSON.
+        """
+        datums = {k: Datum.from_json(v) for k, v in json_data['data'].items()}
+        return cls(json_data['name'], json_data['identifier'], datums)
+
     @property
     def json(self):
         """Job data as a JSON-serializable `dict`."""
@@ -102,3 +120,18 @@ class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
         self._register_datum_attribute(self.datums, name,
                                        quantity=quantity, label=label,
                                        description=description, datum=datum)
+
+
+class DeserializedBlob(BlobBase):
+    """A concrete Blob deserialized from JSON.
+
+    This class should only be used internally.
+    """
+
+    name = None
+
+    def __init__(self, name, id_, datums):
+        BlobBase.__init__(self)
+        self.name = name
+        self._id = id_
+        self.datums = datums

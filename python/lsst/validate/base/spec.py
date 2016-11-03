@@ -85,6 +85,29 @@ class Specification(QuantityAttributeMixin, JsonSerializationMixin):
         """Representation of this `Specification` as a `Datum`."""
         return Datum(self.quantity, label=self.name)
 
+    @classmethod
+    def from_json(cls, json_data):
+        """Construct a Specification from a JSON document.
+
+        Parameters
+        ----------
+        json_data : `dict`
+            Specification JSON object.
+
+        Returns
+        -------
+        specification : `Specification`
+            Specification from JSON.
+        """
+        q = Datum._rebuild_quantity(json_data['value'], json_data['unit'])
+        deps = {k: Datum.from_json(v)
+                for k, v in json_data['dependencies'].items()}
+        s = cls(name=json_data['name'],
+                quantity=q,
+                filter_names=json_data['filter_names'],
+                dependencies=deps)
+        return s
+
     @property
     def json(self):
         """`dict` that can be serialized as semantic JSON, compatible with

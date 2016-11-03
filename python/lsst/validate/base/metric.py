@@ -185,6 +185,34 @@ class Metric(JsonSerializationMixin):
 
         return m
 
+    @classmethod
+    def from_json(cls, json_data):
+        """Construct a Metric from a JSON dataset.
+
+        Parameters
+        ----------
+        json_data : `dict`
+            Metric JSON object.
+
+        Returns
+        -------
+        metric : `Metric`
+            Metric from JSON.
+        """
+        specs = [Specification.from_json(v)
+                 for v in json_data['specifications']]
+        params = {k: Datum.from_json(v)
+                  for k, v in json_data['parameters'].items()}
+        m = cls(json_data['name'],
+                json_data['description'],
+                json_data['operator_str'],
+                specs=specs,
+                parameters=params,
+                reference_doc=json_data['reference']['doc'],
+                reference_page=json_data['reference']['page'],
+                reference_url=json_data['reference']['url'])
+        return m
+
     def __getattr__(self, key):
         if key in self.parameters:
             return self.parameters[key]
@@ -405,6 +433,7 @@ class Metric(JsonSerializationMixin):
             'url': self.reference_url}
         return JsonSerializationMixin.jsonify_dict({
             'name': self.name,
+            'operator_str': self.operator_str,
             'reference': ref_doc,
             'description': self.description,
             'specifications': self.specs,

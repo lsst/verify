@@ -2,8 +2,8 @@
 from __future__ import print_function, division
 
 from .jsonmixin import JsonSerializationMixin
-from .blob import BlobBase
-from .measurement import MeasurementBase
+from .blob import BlobBase, DeserializedBlob
+from .measurement import MeasurementBase, DeserializedMeasurement
 
 
 __all__ = ['Job']
@@ -47,7 +47,7 @@ class Job(JsonSerializationMixin):
                 self.register_measurement(m)
 
         if blobs:
-            for b in measurements:
+            for b in blobs:
                 self.register_blob(b)
 
     def register_measurement(self, m):
@@ -145,6 +145,28 @@ class Job(JsonSerializationMixin):
         """Blob iterator."""
         for b in self._blobs:
             yield b
+
+    @classmethod
+    def from_json(cls, json_data):
+        """Construct a Job and constituent objects from a JSON dataset.
+
+        Parameters
+        ----------
+        json_data : `dict`
+            Job JSON object (as produced by `json`).
+
+        Returns
+        -------
+        job : `Job`-type
+            Job from JSON.
+        """
+        blobs = [DeserializedBlob.from_json(doc) for doc in json_data['blobs']]
+        measurements = [
+            DeserializedMeasurement.from_json(doc,
+                                              blobs_json=json_data['blobs'])
+            for doc in json_data['measurements']]
+        job = cls(measurements=measurements, blobs=blobs)
+        return job
 
     @property
     def json(self):

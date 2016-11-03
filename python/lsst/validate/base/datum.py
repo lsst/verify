@@ -1,7 +1,8 @@
 # See COPYRIGHT file at the top of the source tree.
 from __future__ import print_function, division
 
-import astropy.units
+import numpy as np
+import astropy.units as u
 
 from .jsonmixin import JsonSerializationMixin
 
@@ -25,7 +26,7 @@ class QuantityAttributeMixin(object):
 
     @quantity.setter
     def quantity(self, q):
-        assert isinstance(q, astropy.units.Quantity) or \
+        assert isinstance(q, u.Quantity) or \
             isinstance(q, basestring) or isinstance(q, bool)
         self._quantity = q
 
@@ -57,10 +58,39 @@ class QuantityAttributeMixin(object):
     def latex_unit(self):
         """Units as a LaTeX string, wrapped in ``$``."""
         if self.unit is not None and self.unit != '':
-            fmtr = astropy.units.format.Latex()
+            fmtr = u.format.Latex()
             return fmtr.to_string(self.unit)
         else:
             return ''
+
+    @staticmethod
+    def _rebuild_quantity(value, unit):
+        """Rebuild a quantity from the value and unit serialized to JSON.
+
+        Parameters
+        ----------
+        value : `list`, `float`, `int`, `str`, `bool`
+            Serialized quantity value.
+        unit : `str`
+            Serialized quantity unit string.
+
+        Returns
+        -------
+        q : `astropy.units.Quantity`
+            Astropy quantity.
+        """
+        if isinstance(value, basestring) or \
+                isinstance(value, bool) or \
+                value is None:
+            # a str or bool
+            _quantity = value
+        elif isinstance(value, list):
+            # an astropy quantity array
+            _quantity = np.array(value) * u.Unit(unit)
+        else:
+            # scalar astropy quantity
+            _quantity = value * u.Unit(unit)
+        return _quantity
 
 
 class Datum(QuantityAttributeMixin, JsonSerializationMixin):
@@ -92,15 +122,33 @@ class Datum(QuantityAttributeMixin, JsonSerializationMixin):
 
         if quantity is None:
             self._quantity = None
-        elif isinstance(quantity, astropy.units.Quantity) or \
+        elif isinstance(quantity, u.Quantity) or \
                 isinstance(quantity, basestring) or isinstance(quantity, bool):
             self.quantity = quantity
         elif unit is not None:
-            self.quantity = astropy.units.Quantity(quantity, unit=unit)
+            self.quantity = u.Quantity(quantity, unit=unit)
         else:
-            print(quantity)
             raise ValueError('`unit` argument must be supplied to Datum '
                              'if `quantity` is not an astropy.unit.Quantity.')
+
+    @classmethod
+    def from_json(cls, json_data):
+        """Construct a Datum from a JSON dataset.
+
+        Parameters
+        ----------
+        json_data : `dict`
+            Datum JSON object.
+
+        Returns
+        -------
+        datum : `Datum`
+            Datum from JSON.
+        """
+        q = Datum._rebuild_quantity(json_data['value'], json_data['unit'])
+        d = cls(quantity=q, label=json_data['label'],
+                description=json_data['description'])
+        return d
 
     @property
     def json(self):

@@ -81,6 +81,13 @@ class DatumTestCase(unittest.TestCase):
         self.assertEqual(d.unit_str, '')
         self.assertEqual(d.unit, u.dimensionless_unscaled)
 
+        json_data = d.json
+        d2 = Datum.from_json(json_data)
+        self.assertEqual(d.quantity, d2.quantity)
+        self.assertEqual(d.unit, d2.unit)
+        self.assertEqual(d.label, d2.label)
+        self.assertEqual(d.description, d2.description)
+
     def test_str_quantity(self):
         """Quantity as a string."""
         d = Datum('Hello world', label='Test string',
@@ -91,6 +98,13 @@ class DatumTestCase(unittest.TestCase):
         self.assertEqual(d.label, 'Test string')
         self.assertEqual(d.description, 'Test description.')
 
+        json_data = d.json
+        d2 = Datum.from_json(json_data)
+        self.assertEqual(d.quantity, d2.quantity)
+        self.assertEqual(d.unit, d2.unit)
+        self.assertEqual(d.label, d2.label)
+        self.assertEqual(d.description, d2.description)
+
     def test_bool_quantity(self):
         """Quantity as a boolean."""
         d = Datum(True, label='Test boolean',
@@ -100,6 +114,15 @@ class DatumTestCase(unittest.TestCase):
         self.assertEqual(d.unit_str, '')
         self.assertEqual(d.label, 'Test boolean')
         self.assertEqual(d.description, 'Test description.')
+
+        json_data = d.json
+        d2 = Datum.from_json(json_data)
+        print(d2.quantity)
+        print(d2.unit)
+        self.assertEqual(d.quantity, d2.quantity)
+        self.assertEqual(d.unit, d2.unit)
+        self.assertEqual(d.label, d2.label)
+        self.assertEqual(d.description, d2.description)
 
     def test_json_output(self):
         """Verify content from json property."""

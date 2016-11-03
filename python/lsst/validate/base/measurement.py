@@ -6,11 +6,12 @@ import uuid
 
 from .datummixin import DatumAttributeMixin
 from .jsonmixin import JsonSerializationMixin
-from .blob import BlobBase
+from .blob import BlobBase, DeserializedBlob
 from .datum import Datum, QuantityAttributeMixin
+from .metric import Metric
 
 
-__all__ = ['MeasurementBase']
+__all__ = ['MeasurementBase', 'DeserializedMeasurement']
 
 
 class MeasurementBase(QuantityAttributeMixin, JsonSerializationMixin,
@@ -207,8 +208,7 @@ class MeasurementBase(QuantityAttributeMixin, JsonSerializationMixin,
     @property
     def json(self):
         """A `dict` that can be serialized as semantic SQUASH JSON."""
-        blob_ids = list(set([b.identifier for n, b in
-                             self._linked_blobs.items()]))
+        blob_ids = {k: b.identifier for k, b in self._linked_blobs.items()}
         object_doc = {'metric': self.metric,
                       'identifier': self.identifier,
                       'value': self.quantity.value,
@@ -220,6 +220,48 @@ class MeasurementBase(QuantityAttributeMixin, JsonSerializationMixin,
                       'filter_name': self.filter_name}
         json_doc = JsonSerializationMixin.jsonify_dict(object_doc)
         return json_doc
+
+    @classmethod
+    def from_json(cls, json_data, blobs_json=None):
+        """Construct a measurement from a JSON dataset.
+
+        Parameters
+        ----------
+        json_data : `dict`
+            Measurement JSON object.
+        blobs_json : `list`
+            JSON serialization of blobs. This is the ``blobs`` object
+            produced by `Job.json`.
+
+        Returns
+        -------
+        measurement : `MeasurementBase`-type
+            Measurement from JSON.
+        """
+        q = cls._rebuild_quantity(json_data['value'], json_data['unit'])
+
+        parameters = {k: Datum.from_json(v)
+                      for k, v in json_data['parameters'].items()}
+        extras = {k: Datum.from_json(v)
+                  for k, v in json_data['extras'].items()}
+
+        linked_blobs = {}
+        if blobs_json is not None:
+            for k, id_ in json_data['blobs'].items():
+                for blob_doc in blobs_json:
+                    if blob_doc['identifier'] == id_:
+                        blob = DeserializedBlob.from_json(blob_doc)
+                        linked_blobs[k] = blob
+
+        m = cls(quantity=q,
+                id_=json_data['identifier'],
+                metric=Metric.from_json(json_data['metric']),
+                parameters=parameters,
+                linked_blobs=linked_blobs,
+                extras=extras,
+                spec_name=json_data['spec_name'],
+                filter_name=json_data['filter_name'])
+        return m
 
     def check_spec(self, name):
         """Check this measurement against a `Specification` level, of the
@@ -244,3 +286,29 @@ class MeasurementBase(QuantityAttributeMixin, JsonSerializationMixin,
         """
         return self.metric.check_spec(self.quantity, name,
                                       filter_name=self.filter_name)
+
+
+class DeserializedMeasurement(MeasurementBase):
+    """Measurement deserialized from JSON.
+
+    For internal use only.
+    """
+
+    metric = None
+
+    def __init__(self, quantity=None, id_=None, metric=None,
+                 parameters=None, extras=None, linked_blobs=None,
+                 spec_name=None, filter_name=None):
+        MeasurementBase.__init__(self)
+        if linked_blobs is not None:
+            self._linked_blobs = linked_blobs
+        if parameters is not None:
+            self.parameters = parameters
+        if extras is not None:
+            self.extras = extras
+
+        self.metric = metric
+        self._quantity = quantity
+        self._id = id_
+        self.spec_name = spec_name
+        self.filter_name = filter_name

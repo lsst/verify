@@ -6,7 +6,8 @@ import unittest
 
 import astropy.units as u
 
-from lsst.validate.base import MeasurementBase, Metric, Datum, BlobBase
+from lsst.validate.base import (MeasurementBase, Metric, Datum, BlobBase,
+                                DeserializedMeasurement, Job)
 
 
 class DemoBlob(BlobBase):
@@ -117,6 +118,26 @@ class MeasurementBaseTestCase(unittest.TestCase):
         self.assertIn('blobs', doc)
         self.assertEqual(doc['spec_name'], None)
         self.assertEqual(doc['filter_name'], None)
+
+    def test_json_deserialization(self):
+        job = Job(measurements=[self.meas])
+        job_json = job.json
+
+        meas_doc = job_json['measurements'][0]
+        blobs_doc = job_json['blobs']
+
+        # Rebuild from JSON
+        m2 = DeserializedMeasurement.from_json(meas_doc, blobs_json=blobs_doc)
+        self.assertEqual(self.meas.metric.name, m2.metric.name)
+        self.assertEqual(self.meas.quantity, m2.quantity)
+        for k, param in self.meas.parameters.items():
+            self.assertEqual(param.quantity, m2.parameters[k].quantity)
+        for k, extra in self.meas.extras.items():
+            self.assertEqual(extra.quantity, m2.extras[k].quantity)
+        for k, blob in self.meas._linked_blobs.items():
+            for kk, datum in blob.datums.items():
+                print(m2._linked_blobs.keys())
+                self.assertEqual(datum.quantity, m2._linked_blobs[k].datums[kk].quantity)
 
     def test_datum_param(self):
         self.assertEqual(self.meas.datum_param, 10 * u.arcsec)
@@ -237,7 +258,7 @@ class MeasurementBaseTestCase(unittest.TestCase):
 
     def test_blob_link(self):
         doc = self.meas.json
-        self.assertIn(self.meas.ablob.identifier, doc['blobs'])
+        self.assertEqual(self.meas.ablob.identifier, doc['blobs']['ablob'])
 
 
 if __name__ == "__main__":

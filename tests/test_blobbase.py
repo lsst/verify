@@ -6,6 +6,7 @@ import unittest
 import astropy.units as u
 
 from lsst.validate.base import BlobBase
+from lsst.validate.base.blob import DeserializedBlob
 
 
 class DemoBlob(BlobBase):
@@ -59,6 +60,16 @@ class BlobBaseTestCase(unittest.TestCase):
         self.assertEqual(j['data']['mag']['unit'], 'mag')
         self.assertEqual(j['data']['mag']['label'], 'mag')
         self.assertEqual(j['data']['mag']['description'], 'Magnitude')
+
+        # Rebuild from blob
+        b2 = DeserializedBlob.from_json(j)
+        self.assertEqual(self.blob.name, b2.name)
+        self.assertEqual(self.blob.identifier, b2.identifier)
+        for k, datum in self.blob.datums.items():
+            datum2 = self.blob.datums[k]
+            self.assertEqual(datum.quantity, datum2.quantity)
+            self.assertEqual(datum.label, datum2.label)
+            self.assertEqual(datum.description, datum2.description)
 
 
 if __name__ == "__main__":

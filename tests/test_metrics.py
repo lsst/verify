@@ -129,12 +129,26 @@ class MetricTestCase(unittest.TestCase):
         j = m.json
         self.assertEqual(j['name'], name)
         self.assertEqual(j['description'], description)
+        self.assertEqual(j['operator_str'], operator_str)
         self.assertEqual(j['reference']['doc'], reference_doc)
         self.assertEqual(j['reference']['page'], reference_page)
         self.assertEqual(j['reference']['url'], reference_url)
         self.assertEqual(j['parameters']['p']['value'], 5)
         self.assertEqual(j['parameters']['p']['unit'], 'mag')
         self.assertIsInstance(j['specifications'], list)
+
+        # rebuild from json
+        m2 = Metric.from_json(j)
+        self.assertEqual(m.name, m2.name)
+        self.assertEqual(m.description, m2.description)
+        self.assertEqual(m.description, m2.description)
+        self.assertEqual(m.reference_doc, m2.reference_doc)
+        self.assertEqual(m.reference_page, m2.reference_page)
+        self.assertEqual(m.reference_url, m2.reference_url)
+        for name, param in m.parameters.items():
+            self.assertEqual(param.quantity, m2.parameters[name].quantity)
+        for spec1, spec2 in zip(m.specs, m2.specs):
+            self.assertEqual(spec1.quantity, spec2.quantity)
 
 
 if __name__ == "__main__":
