@@ -117,8 +117,23 @@ class DatumTestCase(unittest.TestCase):
 
         json_data = d.json
         d2 = Datum.from_json(json_data)
-        print(d2.quantity)
-        print(d2.unit)
+        self.assertEqual(d.quantity, d2.quantity)
+        self.assertEqual(d.unit, d2.unit)
+        self.assertEqual(d.label, d2.label)
+        self.assertEqual(d.description, d2.description)
+
+    def test_none(self):
+        """Quantity as None."""
+        d = Datum(None, label='Test None',
+                  description='Test description.')
+        self.assertEqual(d.quantity, None)
+        self.assertEqual(d.unit, None)
+        self.assertEqual(d.unit_str, '')
+        self.assertEqual(d.label, 'Test None')
+        self.assertEqual(d.description, 'Test description.')
+
+        json_data = d.json
+        d2 = Datum.from_json(json_data)
         self.assertEqual(d.quantity, d2.quantity)
         self.assertEqual(d.unit, d2.unit)
         self.assertEqual(d.label, d2.label)

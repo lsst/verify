@@ -79,6 +79,11 @@ class DemoMeasurement(MeasurementBase):
         self.register_extra('q_extra', quantity=1000. * u.microJansky,
                             description='Quantity extra')
 
+        # none-type extra
+        self.register_extra('none_extra', label='none type',
+                            description='None type Extra')
+        self.none_extra = None
+
 
 class MeasurementBaseTestCase(unittest.TestCase):
     """Test Mesaurement class (via MeasurementBase) functionality."""
@@ -259,6 +264,27 @@ class MeasurementBaseTestCase(unittest.TestCase):
     def test_blob_link(self):
         doc = self.meas.json
         self.assertEqual(self.meas.ablob.identifier, doc['blobs']['ablob'])
+
+
+class DemoNoneQuantityMeasurement(MeasurementBase):
+    """Measurement whose quantity is None."""
+
+    metric = None
+
+    def __init__(self):
+        MeasurementBase.__init__(self)
+        self.metric = Metric('Test', 'Test metric', '<')
+        self.quantity = None
+
+
+class MeasurementBaseNoneQuantityTestCase(unittest.TestCase):
+    """Test Mesaurement class (via MeasurementBase) functionality."""
+
+    def setUp(self):
+        self.meas = DemoNoneQuantityMeasurement()
+
+    def test_none_quantity(self):
+        self.assertTrue(self.meas.quantity is None)
 
 
 if __name__ == "__main__":

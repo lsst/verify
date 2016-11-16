@@ -15,19 +15,20 @@ class QuantityAttributeMixin(object):
     `astropy.units.Quantity`.
 
     Subclasses must have a self._quantity attribute that is an
-    `astropy.units.Quantity` or `str` or `bool` (only numeric values are
+    `astropy.units.Quantity`, `str`, `bool`, or `None` (only numeric values are
     astropy quantities).
     """
 
     @property
     def quantity(self):
-        """Value of the datum (`astropy.units.Quantity`, `str`, or `bool`)."""
+        """Value of the datum (`astropy.units.Quantity`, `str`, `bool`,
+           `None`)."""
         return self._quantity
 
     @quantity.setter
     def quantity(self, q):
         assert isinstance(q, u.Quantity) or \
-            isinstance(q, basestring) or isinstance(q, bool)
+            isinstance(q, basestring) or isinstance(q, bool) or q is None
         self._quantity = q
 
     @property
