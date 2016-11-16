@@ -286,6 +286,10 @@ class MeasurementBaseNoneQuantityTestCase(unittest.TestCase):
     def test_none_quantity(self):
         self.assertTrue(self.meas.quantity is None)
 
+    def test_none_json(self):
+        data = self.meas.json
+        self.assertTrue(data['value'] is None)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -4,7 +4,6 @@ from __future__ import print_function
 
 import unittest
 
-from numpy.testing import assert_almost_equal
 import astropy.units as u
 
 from lsst.validate.base import Datum

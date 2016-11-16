@@ -4,6 +4,7 @@ from __future__ import print_function, division
 import abc
 import uuid
 
+import astropy.units as u
 from .datummixin import DatumAttributeMixin
 from .jsonmixin import JsonSerializationMixin
 from .blob import BlobBase, DeserializedBlob
@@ -208,10 +209,14 @@ class MeasurementBase(QuantityAttributeMixin, JsonSerializationMixin,
     @property
     def json(self):
         """A `dict` that can be serialized as semantic SQUASH JSON."""
+        if isinstance(self.quantity, u.Quantity):
+            _value = self.quantity.value
+        else:
+            _value = self.quantity
         blob_ids = {k: b.identifier for k, b in self._linked_blobs.items()}
         object_doc = {'metric': self.metric,
                       'identifier': self.identifier,
-                      'value': self.quantity.value,
+                      'value': _value,
                       'unit': self.unit_str,
                       'parameters': self.parameters,
                       'extras': self.extras,
