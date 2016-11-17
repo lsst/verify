@@ -20,12 +20,12 @@ class DemoBlob(BlobBase):
 
         self.register_datum(
             'mag',
-            quantity=5 * u.mag,
+            quantity=5. * u.mag,
             description='Magnitude')
 
         self.register_datum(
             'updateable_mag',
-            quantity=5 * u.mag,
+            quantity=5. * u.mag,
             description='Magnitude')
 
 
@@ -44,7 +44,7 @@ class DemoMeasurement(MeasurementBase):
         # datum-based parameters
         self.register_parameter(
             'datum_param',
-            datum=Datum(10 * u.arcsec),
+            datum=Datum(10. * u.arcsec),
             description='A datum')
         # set this parameter later
         self.register_parameter(
@@ -54,7 +54,7 @@ class DemoMeasurement(MeasurementBase):
         # quantity-based parameter
         self.register_parameter(
             'q_param',
-            quantity=10 * u.arcsec,
+            quantity=10. * u.arcsec,
             description='A quantity')
         # set this parameter later
         self.register_parameter(
@@ -74,6 +74,13 @@ class DemoMeasurement(MeasurementBase):
         # set this parameter later
         self.register_parameter('deferred_bool_param',
                                 description='A boolean')
+
+        # int-type parameter
+        self.register_parameter('int_param', 42,
+                                description='An integer parameter')
+        # set this parameter later
+        self.register_parameter('deferred_int_param',
+                                description='An integer')
 
         # quantity-based extras
         self.register_extra('q_extra', quantity=1000. * u.microJansky,
@@ -116,7 +123,7 @@ class MeasurementBaseTestCase(unittest.TestCase):
         """Test basic structure of the json output."""
         doc = self.meas.json
         self.assertEqual(doc['metric']['name'], 'Test')
-        self.assertEqual(doc['value'], 5)
+        self.assertEqual(doc['value'], 5.)
         self.assertEqual(doc['unit'], 'mag')
         self.assertIn('parameters', doc)
         self.assertIn('extras', doc)
@@ -167,9 +174,9 @@ class MeasurementBaseTestCase(unittest.TestCase):
 
         self.meas.deferred_datum_param = 10. * u.arcsec
 
-        self.assertEqual(self.meas.deferred_datum_param, 10 * u.arcsec)
+        self.assertEqual(self.meas.deferred_datum_param, 10. * u.arcsec)
         self.assertEqual(self.meas.parameters['deferred_datum_param'].quantity,
-                         10 * u.arcsec)
+                         10. * u.arcsec)
         self.assertEqual(self.meas.parameters['deferred_datum_param'].unit,
                          u.arcsec)
         self.assertEqual(self.meas.parameters['deferred_datum_param'].label,
@@ -179,9 +186,9 @@ class MeasurementBaseTestCase(unittest.TestCase):
             'A datum')
 
     def test_quantity_param(self):
-        self.assertEqual(self.meas.q_param, 10 * u.arcsec)
+        self.assertEqual(self.meas.q_param, 10. * u.arcsec)
         self.assertEqual(self.meas.parameters['q_param'].quantity,
-                         10 * u.arcsec)
+                         10. * u.arcsec)
         self.assertEqual(self.meas.parameters['q_param'].unit,
                          u.arcsec)
         self.assertEqual(self.meas.parameters['q_param'].label,
@@ -201,9 +208,9 @@ class MeasurementBaseTestCase(unittest.TestCase):
 
         self.meas.deferred_q_param = 10. * u.arcsec
 
-        self.assertEqual(self.meas.deferred_q_param, 10 * u.arcsec)
+        self.assertEqual(self.meas.deferred_q_param, 10. * u.arcsec)
         self.assertEqual(self.meas.parameters['deferred_q_param'].quantity,
-                         10 * u.arcsec)
+                         10. * u.arcsec)
         self.assertEqual(self.meas.parameters['deferred_q_param'].unit,
                          u.arcsec)
         self.assertEqual(self.meas.parameters['deferred_q_param'].label,
@@ -246,6 +253,17 @@ class MeasurementBaseTestCase(unittest.TestCase):
         self.assertEqual(
             self.meas.parameters['deferred_bool_param'].description,
             'A boolean')
+
+    def test_int_param(self):
+        """Test that a parameter can be a unitless integer."""
+        self.assertEqual(self.meas.int_param, 42)
+        self.assertEqual(self.meas.parameters['int_param'].quantity, 42)
+
+    def test_deferred_int_param(self):
+        self.meas.deferred_int_param = 25
+        self.assertEqual(self.meas.deferred_int_param, 25)
+        self.assertEqual(
+            self.meas.parameters['deferred_int_param'].quantity, 25)
 
     def test_quantity_extra(self):
         self.assertEqual(self.meas.q_extra, 1000. * u.microJansky)

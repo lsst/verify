@@ -74,9 +74,9 @@ class MetricTestCase(unittest.TestCase):
 
     def testGetSpec(self):
         """Test Metric.getSpec() search strategy."""
-        a = Specification('a', 0, 'mag')
-        b_r = Specification('b', 0, 'mag', filter_names=['r'])
-        b_ug = Specification('b', 0, 'mag', filter_names=['u', 'g'])
+        a = Specification('a', 0., 'mag')
+        b_r = Specification('b', 0., 'mag', filter_names=['r'])
+        b_ug = Specification('b', 0., 'mag', filter_names=['u', 'g'])
 
         m = Metric('test', 'test', '==', specs=[a, b_r, b_ug])
 
@@ -102,14 +102,14 @@ class MetricTestCase(unittest.TestCase):
 
     def test_check_spec(self):
         """Test Metric.check_spec()."""
-        a = Specification('a', 0, 'mag')
-        b_r = Specification('b', 2, 'mag', filter_names=['r'])
-        b_ug = Specification('b', 4, 'mag', filter_names=['u', 'g'])
+        a = Specification('a', 0., 'mag')
+        b_r = Specification('b', 2., 'mag', filter_names=['r'])
+        b_ug = Specification('b', 4., 'mag', filter_names=['u', 'g'])
         m = Metric('test', 'test', '<', specs=[a, b_r, b_ug])
 
-        self.assertFalse(m.check_spec(3 * u.mag, 'b', filter_name='r'))
-        self.assertTrue(m.check_spec(3 * u.mag, 'b', filter_name='g'))
-        self.assertTrue(m.check_spec(10 * u.mmag, 'b', filter_name='g'))
+        self.assertFalse(m.check_spec(3. * u.mag, 'b', filter_name='r'))
+        self.assertTrue(m.check_spec(3. * u.mag, 'b', filter_name='g'))
+        self.assertTrue(m.check_spec(10. * u.mmag, 'b', filter_name='g'))
 
     def test_json(self):
         """Simple test of the serialized JSON content of a metric."""
@@ -119,7 +119,7 @@ class MetricTestCase(unittest.TestCase):
         reference_doc = 'TEST-1'
         reference_page = 1
         reference_url = 'example.com'
-        params = {'p': Datum(5, 'mag')}
+        params = {'p': Datum(5., 'mag')}
         m = Metric(name, description, operator_str,
                    reference_doc=reference_doc,
                    reference_url=reference_url,
@@ -133,7 +133,7 @@ class MetricTestCase(unittest.TestCase):
         self.assertEqual(j['reference']['doc'], reference_doc)
         self.assertEqual(j['reference']['page'], reference_page)
         self.assertEqual(j['reference']['url'], reference_url)
-        self.assertEqual(j['parameters']['p']['value'], 5)
+        self.assertEqual(j['parameters']['p']['value'], 5.)
         self.assertEqual(j['parameters']['p']['unit'], 'mag')
         self.assertIsInstance(j['specifications'], list)
 

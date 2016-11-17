@@ -77,15 +77,15 @@ As a means of lightweight provenance, the measurement API provides a way to decl
            self.metric = Metric.from_yaml(self.label, yaml_path)
 
            self.register_parameter('num_random_shuffles',
-                                   quantity=num_random_shuffles * u.Unit(''),
+                                   quantity=num_random_shuffles,
                                    description='Number of random shuffles')
            
            # ... measurement code
                               
 In this example, the ``PA1Measurement`` class registers a parameter named ``num_random_shuffles``.
 
-A parameter's 'quantity' can be a `astropy.units.Quantity`, `str` or `bool`.
-In this example, ``num_random_shuffles`` doesn't have physical units, so it is a unitless `~astropy.units.Quantity`.
+A parameter's 'quantity' can be a `astropy.units.Quantity`, `str`, `bool` or a unitless int.
+In this example, ``num_random_shuffles`` doesn't have physical units, so it is a unitless `int`.
 
 Accessing parameter values as object attributes
 -----------------------------------------------
@@ -99,7 +99,7 @@ Continuing the ``PA1Measurement`` example:
    pa1.num_random_shuffles  # == 50
    
 Through attribute access, a parameter's value can be both *read* and *updated*.
-Remember that a parameter can only be set with a `~astropy.units.Quantity`, `str` or `bool` type.
+Remember that a parameter can only be set with a `~astropy.units.Quantity`, `str`, `bool`, or `int` type.
 
 Accessing parameters as Datum objects
 -------------------------------------
@@ -125,7 +125,7 @@ For example, it's possible to first register a parameter and set its value later
    self.register_parameter('num_random_shuffles',
                            description='Number of random shuffles')
    # ...
-   self.num_random_shuffles = 50 * u.Unit('')
+   self.num_random_shuffles = 50
 
 Here, a label is not set; in this case the ``label`` defaults to the name of the parameter itself.
 

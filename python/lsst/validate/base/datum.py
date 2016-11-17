@@ -28,7 +28,8 @@ class QuantityAttributeMixin(object):
     @quantity.setter
     def quantity(self, q):
         assert isinstance(q, u.Quantity) or \
-            isinstance(q, basestring) or isinstance(q, bool) or q is None
+            isinstance(q, basestring) or isinstance(q, bool) or \
+            isinstance(q, int) or q is None
         self._quantity = q
 
     @property
@@ -38,7 +39,8 @@ class QuantityAttributeMixin(object):
         If the `quantity` is a `str` or `bool`, the unit is `None`.
         """
         q = self.quantity
-        if q is None or isinstance(q, basestring) or isinstance(q, bool):
+        if q is None or isinstance(q, basestring) or isinstance(q, bool) or \
+                isinstance(q, int):
             return None
         else:
             return q.unit
@@ -77,11 +79,12 @@ class QuantityAttributeMixin(object):
 
         Returns
         -------
-        q : `astropy.units.Quantity`
+        q : `astropy.units.Quantity`, `str`, `int`, `bool` or `None`
             Astropy quantity.
         """
         if isinstance(value, basestring) or \
                 isinstance(value, bool) or \
+                isinstance(value, int) or \
                 value is None:
             # a str or bool
             _quantity = value
@@ -98,7 +101,8 @@ class Datum(QuantityAttributeMixin, JsonSerializationMixin):
     """A value annotated with units, a plot label and description.
 
     Datum supports natively support Astropy `~astropy.units.Quantity` and
-    units. In addition, a Datum can also wrap string and boolean values.
+    units. In addition, a Datum can also wrap strings, booleans and integers.
+    A Datums's value can also be `None`.
 
     Parameters
     ----------
@@ -107,6 +111,7 @@ class Datum(QuantityAttributeMixin, JsonSerializationMixin):
     unit : `str`
         Units of ``quantity`` as a `str` if ``quantity`` is not supplied as an
         `astropy.units.Quantity`. See http://docs.astropy.org/en/stable/units/.
+        Units are not used by `str`, `bool`, `int` or `None` types.
     label : `str`, optional
         Label suitable for plot axes (without units).
     description : `str`, optional
@@ -124,7 +129,8 @@ class Datum(QuantityAttributeMixin, JsonSerializationMixin):
         if quantity is None:
             self._quantity = None
         elif isinstance(quantity, u.Quantity) or \
-                isinstance(quantity, basestring) or isinstance(quantity, bool):
+                isinstance(quantity, basestring) or \
+                isinstance(quantity, bool) or isinstance(quantity, int):
             self.quantity = quantity
         elif unit is not None:
             self.quantity = u.Quantity(quantity, unit=unit)
@@ -157,6 +163,7 @@ class Datum(QuantityAttributeMixin, JsonSerializationMixin):
         if self.quantity is None:
             v = None
         elif isinstance(self.quantity, basestring) or \
+                isinstance(self.quantity, int) or \
                 isinstance(self.quantity, bool):
             v = self.quantity
         elif len(self.quantity.shape) > 0:

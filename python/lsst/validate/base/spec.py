@@ -1,7 +1,7 @@
 # See COPYRIGHT file at the top of the source tree.
 from __future__ import print_function, division
 
-import astropy.units
+import astropy.units as u
 
 from .jsonmixin import JsonSerializationMixin
 from .datum import Datum, QuantityAttributeMixin
@@ -22,7 +22,7 @@ class Specification(QuantityAttributeMixin, JsonSerializationMixin):
         The specification threshold level.
     unit : `str`, optional
         `astropy.units.Unit`-compatible `str` describing the units of
-        ``value`` (only necessary if `quantity` is a `float` or `int`).
+        ``value`` (only necessary if `quantity` is a `float`).
         An empty string (``''``) describes a unitless quantity.
     filter_names : `list`, optional
         A list of optical filter names that this specification applies to.
@@ -63,7 +63,7 @@ class Specification(QuantityAttributeMixin, JsonSerializationMixin):
                  dependencies=None):
         self.name = name
         if unit is not None:
-            self.quantity = quantity * astropy.units.Unit(unit)
+            self.quantity = quantity * u.Unit(unit)
         else:
             self.quantity = quantity
         self.filter_names = filter_names
@@ -113,9 +113,13 @@ class Specification(QuantityAttributeMixin, JsonSerializationMixin):
         """`dict` that can be serialized as semantic JSON, compatible with
         the SQUASH metric service.
         """
+        if isinstance(self.quantity, u.Quantity):
+            v = self.quantity.value
+        else:
+            v = self.quantity
         return JsonSerializationMixin.jsonify_dict({
             'name': self.name,
-            'value': self.quantity.value,
+            'value': v,
             'unit': self.unit_str,
             'filter_names': self.filter_names,
             'dependencies': self.dependencies})

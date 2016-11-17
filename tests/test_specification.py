@@ -39,7 +39,7 @@ class SpecificationTestCase(unittest.TestCase):
 
         # test datum output
         d = s.datum
-        self.assertEqual(d.quantity, 5 * u.mag)
+        self.assertEqual(d.quantity, 5. * u.mag)
         self.assertEqual(d.label, 'design')
 
     def test_from_value(self):
@@ -64,7 +64,7 @@ class SpecificationTestCase(unittest.TestCase):
 
         # test datum output
         d = s.datum
-        self.assertEqual(d.quantity, 5 * u.mag)
+        self.assertEqual(d.quantity, 5. * u.mag)
         self.assertEqual(d.label, 'design')
 
     def test_unitless(self):
@@ -91,6 +91,19 @@ class SpecificationTestCase(unittest.TestCase):
         self.assertEqual(d.quantity, 100. * u.Unit(''))
         self.assertEqual(d.label, 'design')
 
+    def test_unitless_int(self):
+        """Test that a specification can be a unitless integer (count)."""
+        s = Specification('design', 10)
+        self.assertEqual(s.quantity, 10)
+
+        # test JSON output
+        json_data = s.json
+        self.assertEqual(json_data['value'], 10)
+
+        # rebuild from JSON
+        s2 = Specification.from_json(json_data)
+        self.assertEqual(s.quantity, s2.quantity)
+
     def test_filters(self):
         """Test setting filter dependencies."""
         filter_names = ['u', 'g']
@@ -100,11 +113,11 @@ class SpecificationTestCase(unittest.TestCase):
         self.assertEqual(len(filter_names), len(s.filter_names))
 
     def test_dependency_access(self):
-        deps = {'a': Datum(5, 'mag')}
+        deps = {'a': Datum(5., 'mag')}
         s = Specification('design', 0., '', dependencies=deps)
-        self.assertEqual(s.a.quantity, 5 * u.mag)
+        self.assertEqual(s.a.quantity, 5. * u.mag)
         json_data = s.json
-        self.assertEqual(json_data['dependencies']['a']['value'], 5)
+        self.assertEqual(json_data['dependencies']['a']['value'], 5.)
         self.assertEqual(json_data['dependencies']['a']['unit'], 'mag')
 
 

@@ -28,7 +28,8 @@ class DatumAttributeMixin(object):
 
         if quantity is not None and _value is None:
             assert isinstance(quantity, astropy.units.Quantity) or \
-                isinstance(quantity, str) or isinstance(quantity, bool)
+                isinstance(quantity, str) or isinstance(quantity, bool) or \
+                isinstance(quantity, int)
             _value = quantity
 
         if description is not None:
