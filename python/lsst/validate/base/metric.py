@@ -138,7 +138,7 @@ class Metric(JsonSerializationMixin):
         if 'parameters' in metric_doc:
             for param_name, param_data in metric_doc['parameters'].items():
                 d = Datum(param_data['value'],
-                          param_data['unit'],
+                          param_data.get('unit', ''),
                           label=param_data.get('label', None),
                           description=param_data.get('description', None))
                 metric_params[param_name] = d

@@ -119,18 +119,19 @@ AM1:
   operator: "<="
   parameters:
     D: {value: 5.0, unit: arcmin}
+    x: {value: 1}
   specs:
     - level: design
       value: 10.0
-      unit: mmag
+      unit: marcsec
       filter_names: [r, i]
     - level: minimum
       value: 20.0
-      unit: mmag
+      unit: marcsec
       filter_names: [r, i]
     - level: stretch
       value: 5.0
-      unit: mmag
+      unit: marcsec
       filter_names: [r, i]
 
 AM2:
@@ -144,18 +145,19 @@ AM2:
   operator: "<="
   parameters:
     D: {value: 20.0, unit: arcmin}
+    x: {value: 2}
   specs:
     - level: design
       value: 10.0
-      unit: mmag
+      unit: marcsec
       filter_names: [r, i]
     - level: minimum
       value: 20.0
-      unit: mmag
+      unit: marcsec
       filter_names: [r, i]
     - level: stretch
       value: 5.0
-      unit: mmag
+      unit: marcsec
       filter_names: [r, i]
 
 AM3:
@@ -169,18 +171,19 @@ AM3:
   operator: "<="
   parameters:
     D: {value: 200.0, unit: arcmin}
+    x: {value: 3}
   specs:
     - level: design
       value: 15.0
-      unit: mmag
+      unit: marcsec
       filter_names: [r, i]
     - level: minimum
       value: 30.0
-      unit: mmag
+      unit: marcsec
       filter_names: [r, i]
     - level: stretch
       value: 10.0
-      unit: mmag
+      unit: marcsec
       filter_names: [r, i]
 
 AF1:
@@ -194,6 +197,7 @@ AF1:
   operator: "<="
   parameters:
     D: {value: 5.0, unit: arcmin}
+    x: {value: 1}
   specs:
     - level: design
       value: 10.0
@@ -225,6 +229,7 @@ AF2:
   operator: "<="
   parameters:
     D: {value: 20.0, unit: arcmin}
+    x: {value: 2}
   specs:
     - level: design
       value: 10.0
@@ -256,6 +261,7 @@ AF3:
   operator: "<="
   parameters:
     D: {value: 200.0, unit: arcmin}
+    x: {value: 3}
   specs:
     - level: design
       value: 10.0
@@ -287,6 +293,7 @@ AD1:
   operator: "<="
   parameters:
     D: {value: 5.0, unit: arcmin}
+    x: {value: 1}
   specs:
     - level: design
       value: 20.0
@@ -318,6 +325,7 @@ AD2:
   operator: "<="
   parameters:
     D: {value: 20.0, unit: arcmin}
+    x: {value: 2}
   specs:
     - level: design
       value: 20.0
@@ -349,6 +357,7 @@ AD3:
   operator: "<="
   parameters:
     D: {value: 200.0, unit: arcmin}
+    x: {value: 3}
   specs:
     - level: design
       value: 30.0
