@@ -74,8 +74,6 @@ For example:
 .. code-block:: python
 
    class MeanColor(MeasurementBase):
-
-       metric = None
        
        def __init__(self, simple_blob):
            self.metric = Metric.from_yaml(self.label)

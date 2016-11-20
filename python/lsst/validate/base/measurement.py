@@ -25,10 +25,9 @@ class MeasurementBase(QuantityAttributeMixin, JsonSerializationMixin,
 
     Subclasses must (at least) implement the following attributes:
 
-    - `metric`
-    - `label`
-    - `spec_name` (if applicable)
-    - `filter_name` (if applicable)
+    - `metric` (set to a `Metric` instance).
+    - `spec_name` (if applicable).
+    - `filter_name` (if applicable).
 
     Subclasses are also responsible for assiging the measurement's value
     to the `quantity` attribute (as an `astropy.units.Quantity`).
@@ -189,11 +188,19 @@ class MeasurementBase(QuantityAttributeMixin, JsonSerializationMixin,
                                        description=description,
                                        datum=datum)
 
-    @abc.abstractproperty
+    @property
     def metric(self):
         """`Metric` that this measurement is associated to.
         """
-        pass
+        try:
+            return self._metric
+        except AttributeError:
+            raise AttributeError('`metric` attribute not set in {0}'.format(self.__class__))
+
+    @metric.setter
+    def metric(self, value):
+        assert isinstance(value, Metric)
+        self._metric = value
 
     @property
     def label(self):

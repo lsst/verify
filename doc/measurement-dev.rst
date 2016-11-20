@@ -26,8 +26,6 @@ This is a basic template for a measurement class:
 
 
    class PA1Measurement(MeasurementBase):
-
-       metric = None
        
        def __init__(self, yaml_path):
            MeasurementBase.__init__(self)
@@ -68,8 +66,6 @@ As a means of lightweight provenance, the measurement API provides a way to decl
 .. code-block:: python
 
    class PA1Measurement(MeasurementBase):
-
-       metric = None
 
        def __init__(self, yaml_path, num_random_shuffles=50):
            MeasurementBase.__init__(self)
@@ -153,8 +149,6 @@ As an example, the PA1 measurement code (``~lsst.validate.drp.calcsrd.PA1Measure
 .. code-block:: python
 
    class PA1Measurement(MeasurementBase):
-   
-          metric = None
 
           def __init__(self, yaml_path, num_random_shuffles=50):
               MeasurementBase.__init__(self)

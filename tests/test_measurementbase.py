@@ -31,8 +31,6 @@ class DemoBlob(BlobBase):
 
 class DemoMeasurement(MeasurementBase):
 
-    metric = None
-
     def __init__(self):
         MeasurementBase.__init__(self)
         self.metric = Metric('Test', 'Test metric', '<')
@@ -286,8 +284,6 @@ class MeasurementBaseTestCase(unittest.TestCase):
 
 class DemoNoneQuantityMeasurement(MeasurementBase):
     """Measurement whose quantity is None."""
-
-    metric = None
 
     def __init__(self):
         MeasurementBase.__init__(self)
