@@ -7,7 +7,7 @@ lsst.validate.base — Metric Measurement Framework
 #################################################
 
 `lsst.validate.base` is a framework for packages that measure software and data quality metrics.
-A metric can be any measureable scalar quantity, some examples are in the  LSST Science Requirements Document (:lpm:`17`), though packages can also define ad hoc metrics.
+A metric can be any measurable scalar quantity; some examples are in the  LSST Science Requirements Document (:lpm:`17`), though packages can also define ad hoc metrics.
 Measurements made through `lsst.validate.base` can be uploaded to LSST's SQUASH_ monitoring dashboard to help you see how code development affects performance.
 
 Features
@@ -19,7 +19,7 @@ Features
 - Create semantically-rich :ref:`measurement classes <validate-base-measurement-class>` that record not only a value but also metadata like input parameters and measurement by-products using the `MeasurementBase` base class.
 - :ref:`Package input datasets as blobs <validate-base-creating-blobs>` that can power drill-down visualizations of measurements on the SQUASH_ dashboard.
 - Record self-documenting datasets: values have units though Astropy :py:obj:`~astropy.units.Quantity`, and also have plot labels and descriptions (see the `Datum` class).
-- Build a self-describing JSON document of measurements and blobs that's ready to submit to the SQUASH_ web API using the `Job` class.
+- Build a :ref:`JSON document of measurements and blobs <validate-base-jobs>` that's ready to submit to the SQUASH_ web API using the `Job` class.
 
 Using lsst.validate.base
 ========================
@@ -31,6 +31,7 @@ Using lsst.validate.base
    metric-dev
    measurement-dev
    blob-dev
+   jobs
 
 Python API Reference
 ====================
