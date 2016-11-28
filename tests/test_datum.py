@@ -92,7 +92,7 @@ class DatumTestCase(unittest.TestCase):
         d = Datum('Hello world', label='Test string',
                   description='Test description.')
         self.assertEqual(d.quantity, 'Hello world')
-        self.assertEqual(d.unit, None)
+        self.assertIsNone(d.unit)
         self.assertEqual(d.unit_str, '')
         self.assertEqual(d.label, 'Test string')
         self.assertEqual(d.description, 'Test description.')
@@ -108,8 +108,8 @@ class DatumTestCase(unittest.TestCase):
         """Quantity as a boolean."""
         d = Datum(True, label='Test boolean',
                   description='Test description.')
-        self.assertEqual(d.quantity, True)
-        self.assertEqual(d.unit, None)
+        self.assertTrue(d.quantity)
+        self.assertIsNone(d.unit)
         self.assertEqual(d.unit_str, '')
         self.assertEqual(d.label, 'Test boolean')
         self.assertEqual(d.description, 'Test description.')
@@ -126,7 +126,7 @@ class DatumTestCase(unittest.TestCase):
         d = Datum(5, label='Test int',
                   description='Test description.')
         self.assertEqual(d.quantity, 5)
-        self.assertEqual(d.unit, None)
+        self.assertIsNone(d.unit)
         self.assertEqual(d.unit_str, '')
         self.assertEqual(d.label, 'Test int')
         self.assertEqual(d.description, 'Test description.')
@@ -142,8 +142,8 @@ class DatumTestCase(unittest.TestCase):
         """Quantity as None."""
         d = Datum(None, label='Test None',
                   description='Test description.')
-        self.assertEqual(d.quantity, None)
-        self.assertEqual(d.unit, None)
+        self.assertIsNone(d.quantity)
+        self.assertIsNone(d.unit)
         self.assertEqual(d.unit_str, '')
         self.assertEqual(d.label, 'Test None')
         self.assertEqual(d.description, 'Test description.')

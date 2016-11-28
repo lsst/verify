@@ -126,8 +126,8 @@ class MeasurementBaseTestCase(unittest.TestCase):
         self.assertIn('parameters', doc)
         self.assertIn('extras', doc)
         self.assertIn('blobs', doc)
-        self.assertEqual(doc['spec_name'], None)
-        self.assertEqual(doc['filter_name'], None)
+        self.assertIsNone(doc['spec_name'])
+        self.assertIsNone(doc['filter_name'])
 
     def test_json_deserialization(self):
         job = Job(measurements=[self.meas])
@@ -168,7 +168,7 @@ class MeasurementBaseTestCase(unittest.TestCase):
         self.assertEqual(doc['description'], 'A datum')
 
     def test_deferred_datum_param(self):
-        self.assertEqual(self.meas.deferred_datum_param, None)
+        self.assertIsNone(self.meas.deferred_datum_param)
 
         self.meas.deferred_datum_param = 10. * u.arcsec
 
@@ -202,7 +202,7 @@ class MeasurementBaseTestCase(unittest.TestCase):
         self.assertEqual(doc['description'], 'A quantity')
 
     def test_deferred_quantity_param(self):
-        self.assertEqual(self.meas.deferred_q_param, None)
+        self.assertIsNone(self.meas.deferred_q_param)
 
         self.meas.deferred_q_param = 10. * u.arcsec
 
@@ -235,8 +235,8 @@ class MeasurementBaseTestCase(unittest.TestCase):
             'A string')
 
     def test_bool_param(self):
-        self.assertEqual(self.meas.bool_param, False)
-        self.assertEqual(self.meas.parameters['bool_param'].quantity, False)
+        self.assertFalse(self.meas.bool_param)
+        self.assertFalse(self.meas.parameters['bool_param'].quantity)
         self.assertEqual(self.meas.parameters['bool_param'].label,
                          'bool_param')
         self.assertEqual(self.meas.parameters['bool_param'].description,
@@ -244,8 +244,7 @@ class MeasurementBaseTestCase(unittest.TestCase):
 
     def test_deferred_bool_param(self):
         self.meas.deferred_bool_param = True
-        self.assertEqual(self.meas.parameters['deferred_bool_param'].quantity,
-                         True)
+        self.assertTrue(self.meas.parameters['deferred_bool_param'].quantity)
         self.assertEqual(self.meas.parameters['deferred_bool_param'].label,
                          'deferred_bool_param')
         self.assertEqual(
@@ -298,11 +297,11 @@ class MeasurementBaseNoneQuantityTestCase(unittest.TestCase):
         self.meas = DemoNoneQuantityMeasurement()
 
     def test_none_quantity(self):
-        self.assertTrue(self.meas.quantity is None)
+        self.assertIsNone(self.meas.quantity)
 
     def test_none_json(self):
         data = self.meas.json
-        self.assertTrue(data['value'] is None)
+        self.assertIsNone(data['value'])
 
 
 if __name__ == "__main__":
