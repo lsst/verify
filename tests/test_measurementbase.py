@@ -1,45 +1,93 @@
 #!/usr/bin/env python
 # See COPYRIGHT file at the top of the source tree.
-
 from __future__ import print_function
 
 import unittest
 
-import numpy as np
-from numpy.testing import assert_almost_equal
+import astropy.units as u
 
-from lsst.validate.base import MeasurementBase, Metric, Datum
+from lsst.validate.base import (MeasurementBase, Metric, Datum, BlobBase,
+                                DeserializedMeasurement, Job)
+
+
+class DemoBlob(BlobBase):
+    """Example Blob class."""
+
+    name = 'demo'
+
+    def __init__(self):
+        BlobBase.__init__(self)
+
+        self.register_datum(
+            'mag',
+            quantity=5. * u.mag,
+            description='Magnitude')
+
+        self.register_datum(
+            'updateable_mag',
+            quantity=5. * u.mag,
+            description='Magnitude')
 
 
 class DemoMeasurement(MeasurementBase):
 
-    metric = None
-    value = None
-    units = 'mag'
-    label = 'T'
-    schema = 't-v1.0.0'
-
     def __init__(self):
         MeasurementBase.__init__(self)
-
         self.metric = Metric('Test', 'Test metric', '<')
+        self.quantity = 5. * u.mag
 
-        testDatum = Datum(10., units='arcsecond', description='A datum')
+        # link a blob
+        self.ablob = DemoBlob()
 
-        self.registerParameter('strParam', units='',
-                               description='A string')
-        self.registerParameter('floatParam', units='mag',
-                               description='A float')
-        self.registerParameter('datumParam', datum=testDatum)
+        # datum-based parameters
+        self.register_parameter(
+            'datum_param',
+            datum=Datum(10. * u.arcsec),
+            description='A datum')
+        # set this parameter later
+        self.register_parameter(
+            'deferred_datum_param',
+            description='A datum')
 
-        self.registerExtra('mags', units='mag', description='Some magnitudes')
+        # quantity-based parameter
+        self.register_parameter(
+            'q_param',
+            quantity=10. * u.arcsec,
+            description='A quantity')
+        # set this parameter later
+        self.register_parameter(
+            'deferred_q_param',
+            description='A quantity')
 
-        self.strParam = 'hello world'
-        self.floatParam = 22.
+        # string-based parameters
+        self.register_parameter('str_param', 'test_string',
+                                description='A string')
+        # set this parameter later
+        self.register_parameter('deferred_str_param',
+                                description='A string')
 
-        self.mags = np.array([1., 2., 3.])
+        # boolean parameters
+        self.register_parameter('bool_param', False,
+                                description='A boolean')
+        # set this parameter later
+        self.register_parameter('deferred_bool_param',
+                                description='A boolean')
 
-        self.value = 5.
+        # int-type parameter
+        self.register_parameter('int_param', 42,
+                                description='An integer parameter')
+        # set this parameter later
+        self.register_parameter('deferred_int_param',
+                                description='An integer')
+
+        # quantity-based extras
+        self.register_extra('q_extra', quantity=1000. * u.microJansky,
+                            description='Quantity extra')
+
+        # none-type extra
+        self.register_extra('none_extra', label='none type',
+                            description='None type Extra')
+        self.none_extra = None
 
 
 class MeasurementBaseTestCase(unittest.TestCase):
@@ -51,59 +99,210 @@ class MeasurementBaseTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def testFloatParam(self):
-        assert_almost_equal(self.meas.floatParam, 22.)
-        assert_almost_equal(self.meas.parameters['floatParam'].value, 22.)
-        self.assertEqual(self.meas.parameters['floatParam'].units, 'mag')
-        self.assertEqual(self.meas.parameters['floatParam'].label, 'floatParam')
-        self.assertEqual(self.meas.parameters['floatParam'].description,
-                         'A float')
+    def test_label(self):
+        self.assertEqual(self.meas.label, 'Test')
 
-        # update
-        self.meas.floatParam = 12.
-        assert_almost_equal(self.meas.floatParam, 12.)
-        assert_almost_equal(self.meas.parameters['floatParam'].value, 12.)
+    def test_quantity(self):
+        """Test that a measurement's quantity is an astropy Quantity
+        and that the measurement uses the QuantityAttributeMixin.
+        """
+        self.assertEqual(self.meas.quantity.value, 5.)
+        self.assertEqual(self.meas.unit_str, 'mag')
+        self.assertEqual(self.meas.unit, u.mag)
 
-    def testStrParam(self):
-        self.assertEqual(self.meas.strParam, 'hello world')
-        self.assertEqual(self.meas.parameters['strParam'].value, 'hello world')
-        self.assertEqual(self.meas.parameters['strParam'].units, '')
-        self.assertEqual(self.meas.parameters['strParam'].label, 'strParam')
-        self.assertEqual(self.meas.parameters['strParam'].description,
+    def test_quantity_datum(self):
+        """Test representation of measurement's quantity as a datum."""
+        d = self.meas.datum
+        self.assertEqual(self.meas.quantity, d.quantity)
+        self.assertEqual(self.meas.unit, d.unit)
+        self.assertEqual(self.meas.unit_str, d.unit_str)
+
+    def test_json(self):
+        """Test basic structure of the json output."""
+        doc = self.meas.json
+        self.assertEqual(doc['metric']['name'], 'Test')
+        self.assertEqual(doc['value'], 5.)
+        self.assertEqual(doc['unit'], 'mag')
+        self.assertIn('parameters', doc)
+        self.assertIn('extras', doc)
+        self.assertIn('blobs', doc)
+        self.assertIsNone(doc['spec_name'])
+        self.assertIsNone(doc['filter_name'])
+
+    def test_json_deserialization(self):
+        job = Job(measurements=[self.meas])
+        job_json = job.json
+
+        meas_doc = job_json['measurements'][0]
+        blobs_doc = job_json['blobs']
+
+        # Rebuild from JSON
+        m2 = DeserializedMeasurement.from_json(meas_doc, blobs_json=blobs_doc)
+        self.assertEqual(self.meas.metric.name, m2.metric.name)
+        self.assertEqual(self.meas.quantity, m2.quantity)
+        for k, param in self.meas.parameters.items():
+            self.assertEqual(param.quantity, m2.parameters[k].quantity)
+        for k, extra in self.meas.extras.items():
+            self.assertEqual(extra.quantity, m2.extras[k].quantity)
+        for k, blob in self.meas._linked_blobs.items():
+            for kk, datum in blob.datums.items():
+                print(m2._linked_blobs.keys())
+                self.assertEqual(datum.quantity, m2._linked_blobs[k].datums[kk].quantity)
+
+    def test_datum_param(self):
+        self.assertEqual(self.meas.datum_param, 10 * u.arcsec)
+        self.assertEqual(self.meas.parameters['datum_param'].quantity,
+                         10 * u.arcsec)
+        self.assertEqual(self.meas.parameters['datum_param'].unit,
+                         u.arcsec)
+        self.assertEqual(self.meas.parameters['datum_param'].label,
+                         'datum_param')
+        self.assertEqual(self.meas.parameters['datum_param'].description,
+                         'A datum')
+
+        # test json output
+        doc = self.meas.json['parameters']['datum_param']
+        self.assertEqual(doc['value'], 10)
+        self.assertEqual(doc['unit'], 'arcsec')
+        self.assertEqual(doc['label'], 'datum_param')
+        self.assertEqual(doc['description'], 'A datum')
+
+    def test_deferred_datum_param(self):
+        self.assertIsNone(self.meas.deferred_datum_param)
+
+        self.meas.deferred_datum_param = 10. * u.arcsec
+
+        self.assertEqual(self.meas.deferred_datum_param, 10. * u.arcsec)
+        self.assertEqual(self.meas.parameters['deferred_datum_param'].quantity,
+                         10. * u.arcsec)
+        self.assertEqual(self.meas.parameters['deferred_datum_param'].unit,
+                         u.arcsec)
+        self.assertEqual(self.meas.parameters['deferred_datum_param'].label,
+                         'deferred_datum_param')
+        self.assertEqual(
+            self.meas.parameters['deferred_datum_param'].description,
+            'A datum')
+
+    def test_quantity_param(self):
+        self.assertEqual(self.meas.q_param, 10. * u.arcsec)
+        self.assertEqual(self.meas.parameters['q_param'].quantity,
+                         10. * u.arcsec)
+        self.assertEqual(self.meas.parameters['q_param'].unit,
+                         u.arcsec)
+        self.assertEqual(self.meas.parameters['q_param'].label,
+                         'q_param')
+        self.assertEqual(self.meas.parameters['q_param'].description,
+                         'A quantity')
+
+        # test json output
+        doc = self.meas.json['parameters']['q_param']
+        self.assertEqual(doc['value'], 10)
+        self.assertEqual(doc['unit'], 'arcsec')
+        self.assertEqual(doc['label'], 'q_param')
+        self.assertEqual(doc['description'], 'A quantity')
+
+    def test_deferred_quantity_param(self):
+        self.assertIsNone(self.meas.deferred_q_param)
+
+        self.meas.deferred_q_param = 10. * u.arcsec
+
+        self.assertEqual(self.meas.deferred_q_param, 10. * u.arcsec)
+        self.assertEqual(self.meas.parameters['deferred_q_param'].quantity,
+                         10. * u.arcsec)
+        self.assertEqual(self.meas.parameters['deferred_q_param'].unit,
+                         u.arcsec)
+        self.assertEqual(self.meas.parameters['deferred_q_param'].label,
+                         'deferred_q_param')
+        self.assertEqual(self.meas.parameters['deferred_q_param'].description,
+                         'A quantity')
+
+    def test_str_param(self):
+        self.assertEqual(self.meas.str_param, 'test_string')
+        self.assertEqual(self.meas.parameters['str_param'].quantity,
+                         'test_string')
+        self.assertEqual(self.meas.parameters['str_param'].label, 'str_param')
+        self.assertEqual(self.meas.parameters['str_param'].description,
                          'A string')
 
-        # update
-        self.meas.strParam = 'updated'
-        self.assertEqual(self.meas.strParam, 'updated')
-        self.assertEqual(self.meas.parameters['strParam'].value, 'updated')
+    def test_deferred_str_param(self):
+        self.meas.deferred_str_param = 'deferred_test_string'
+        self.assertEqual(self.meas.parameters['deferred_str_param'].quantity,
+                         'deferred_test_string')
+        self.assertEqual(self.meas.parameters['deferred_str_param'].label,
+                         'deferred_str_param')
+        self.assertEqual(
+            self.meas.parameters['deferred_str_param'].description,
+            'A string')
 
-    def testDatumParam(self):
-        assert_almost_equal(self.meas.datumParam, 10.)
-        self.assertEqual(self.meas.parameters['datumParam'].units, 'arcsecond')
-        self.assertEqual(self.meas.parameters['datumParam'].label, 'datumParam')
+    def test_bool_param(self):
+        self.assertFalse(self.meas.bool_param)
+        self.assertFalse(self.meas.parameters['bool_param'].quantity)
+        self.assertEqual(self.meas.parameters['bool_param'].label,
+                         'bool_param')
+        self.assertEqual(self.meas.parameters['bool_param'].description,
+                         'A boolean')
 
-    def testExtra(self):
-        assert_almost_equal(self.meas.mags, np.array([1., 2., 3.]))
-        assert_almost_equal(self.meas.extras['mags'].value, np.array([1., 2., 3.]))
-        self.assertEqual(self.meas.extras['mags'].label, 'mags')
-        self.assertEqual(self.meas.extras['mags'].units, 'mag')
-        self.assertEqual(self.meas.extras['mags'].description, 'Some magnitudes')
+    def test_deferred_bool_param(self):
+        self.meas.deferred_bool_param = True
+        self.assertTrue(self.meas.parameters['deferred_bool_param'].quantity)
+        self.assertEqual(self.meas.parameters['deferred_bool_param'].label,
+                         'deferred_bool_param')
+        self.assertEqual(
+            self.meas.parameters['deferred_bool_param'].description,
+            'A boolean')
 
-    def testJson(self):
-        j = self.meas.json
+    def test_int_param(self):
+        """Test that a parameter can be a unitless integer."""
+        self.assertEqual(self.meas.int_param, 42)
+        self.assertEqual(self.meas.parameters['int_param'].quantity, 42)
+        self.assertIsNone(self.meas.parameters['int_param'].unit, None)
 
-        assert_almost_equal(j['value'], 5.)
-        self.assertEqual(j['parameters']['strParam']['value'], 'hello world')
-        self.assertEqual(j['parameters']['strParam']['units'], '')
-        self.assertEqual(j['parameters']['strParam']['label'], 'strParam')
-        self.assertEqual(j['parameters']['strParam']['description'],
-                         'A string')
+    def test_deferred_int_param(self):
+        self.meas.deferred_int_param = 25
+        self.assertEqual(self.meas.deferred_int_param, 25)
+        self.assertEqual(
+            self.meas.parameters['deferred_int_param'].quantity, 25)
 
-        assert_almost_equal(j['extras']['mags']['value'][0], self.meas.mags[0])
-        self.assertEqual(j['extras']['mags']['units'], 'mag')
-        self.assertEqual(j['extras']['mags']['label'], 'mags')
-        self.assertEqual(j['extras']['mags']['description'],
-                         'Some magnitudes')
+    def test_quantity_extra(self):
+        self.assertEqual(self.meas.q_extra, 1000. * u.microJansky)
+        self.assertEqual(self.meas.extras['q_extra'].quantity,
+                         1000. * u.microJansky)
+        self.assertEqual(self.meas.extras['q_extra'].label, 'q_extra')
+        self.assertEqual(self.meas.extras['q_extra'].description,
+                         'Quantity extra')
+
+        doc = self.meas.json['extras']['q_extra']
+        self.assertEqual(doc['value'], 1000.)
+        self.assertEqual(doc['unit'], 'uJy')
+        self.assertEqual(doc['label'], 'q_extra')
+        self.assertEqual(doc['description'], 'Quantity extra')
+
+    def test_blob_link(self):
+        doc = self.meas.json
+        self.assertEqual(self.meas.ablob.identifier, doc['blobs']['ablob'])
+
+
+class DemoNoneQuantityMeasurement(MeasurementBase):
+    """Measurement whose quantity is None."""
+
+    def __init__(self):
+        MeasurementBase.__init__(self)
+        self.metric = Metric('Test', 'Test metric', '<')
+        self.quantity = None
+
+
+class MeasurementBaseNoneQuantityTestCase(unittest.TestCase):
+    """Test Mesaurement class (via MeasurementBase) functionality."""
+
+    def setUp(self):
+        self.meas = DemoNoneQuantityMeasurement()
+
+    def test_none_quantity(self):
+        self.assertIsNone(self.meas.quantity)
+
+    def test_none_json(self):
+        data = self.meas.json
+        self.assertIsNone(data['value'])
 
 
 if __name__ == "__main__":
