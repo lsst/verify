@@ -49,7 +49,7 @@ For this, use the `Metric.check_spec` method:
 The last statement returns `True` if the measured value fulfills the 'design' specification.
 If a specification is filter-dependent, the filter's name needs to be passed to the ``filter_name`` keyword argument of `Metric.check_spec`.
 
-See :doc:`measurement-dev` for details on how to make measurements with the ``lsst.validate.base`` API.
+See :doc:`measurements` for details on how to make measurements with the ``lsst.validate.base`` API.
 
 Accessing Specification objects of a Metric
 ===========================================
@@ -83,4 +83,4 @@ For example,
    design_spec.PA2.quantity  # value of distance parameter
    design_spec.PA2.unit  # units of the distance parameter
 
-See :doc:`measurement-dev` for examples of measurements that retrieve dependencies of metrics and their specification levels.
+See :doc:`measurements` for examples of measurements that retrieve dependencies of metrics and their specification levels.

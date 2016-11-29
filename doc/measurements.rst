@@ -6,7 +6,7 @@
 Creating measurement classes
 ############################
 
-The `MeasurementBase` abstract base class defines a standard interface for writing classes that make measurements of :doc:`metrics <metric-dev>`.
+The `MeasurementBase` abstract base class defines a standard interface for writing classes that make measurements of :doc:`metrics <metrics>`.
 `MeasurementBase` ensures that measurements, along with metadata, can be serialized and submitted to the SQUASH_ metric monitoring service.
 
 This page covers the usage of `MeasurementBase` for creating measurement classes.

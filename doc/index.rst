@@ -28,9 +28,9 @@ Using lsst.validate.base
    :maxdepth: 2
 
    metric-yaml
-   metric-dev
-   measurement-dev
-   blob-dev
+   metrics
+   measurements
+   blobs
    jobs
 
 Python API reference

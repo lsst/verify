@@ -7,7 +7,7 @@ Using Jobs to collect and serialize measurements
 ################################################
 
 The `lsst.validate.base` framework works in tandem with the SQUASH_ metric monitoring service.
-This page describes how to use the `lsst.validate.base.Job` class to collect :doc:`measurements <measurement-dev>` and :doc:`blobs <blob-dev>`, and build a JSON document that is accepted by SQUASH's RESTful API.
+This page describes how to use the `lsst.validate.base.Job` class to collect :doc:`measurements <measurements>` and :doc:`blobs <blobs>`, and build a JSON document that is accepted by SQUASH's RESTful API.
 
 Collecting measurements in a Job
 ================================
@@ -95,7 +95,7 @@ Serializing to JSON
 JSON objects
 ------------
 
-Once all :doc:`measurements <measurement-dev>` and :doc:`blobs <blob-dev>` are registered in a `Job`, you can generate a JSON serialization of that dataset:
+Once all :doc:`measurements <measurements>` and :doc:`blobs <blobs>` are registered in a `Job`, you can generate a JSON serialization of that dataset:
 
 .. code-block:: python
 
