@@ -255,6 +255,7 @@ class MeasurementBaseTestCase(unittest.TestCase):
         """Test that a parameter can be a unitless integer."""
         self.assertEqual(self.meas.int_param, 42)
         self.assertEqual(self.meas.parameters['int_param'].quantity, 42)
+        self.assertIsNone(self.meas.parameters['int_param'].unit, None)
 
     def test_deferred_int_param(self):
         self.meas.deferred_int_param = 25

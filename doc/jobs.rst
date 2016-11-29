@@ -3,7 +3,7 @@
 .. _validate-base-jobs:
 
 ################################################
-Using Jobs to Collect and Serialize Measurements
+Using Jobs to collect and serialize measurements
 ################################################
 
 The `lsst.validate.base` framework works in tandem with the SQUASH_ metric monitoring service.
@@ -12,7 +12,7 @@ This page describes how to use the `lsst.validate.base.Job` class to collect :do
 Collecting measurements in a Job
 ================================
 
-A `Job` is a container for measurements their referenced data, including blobs.
+A `Job` is a container for measurements and their referenced data, including blobs.
 
 You can add multiple measurements to a `Job` when you create it:
 
@@ -133,7 +133,7 @@ Uploading lsst.validate.base's JSON to SQUASH
 At the moment the SQUASH_ API does not directly accept the JSON produced `Job.json`.
 Instead, it's shimmed with a package called `post-qa`_.
 We expect to standardize the process for uploading measurements to SQUASH_ in the near future.
-In the meantime, please contact the DM SQuaRE team on on community.lsst.org_ or the `#dm-square`_ Slack channel and we'll help integrate your package with SQUASH_.
+In the meantime, please contact the DM SQuaRE team on community.lsst.org_ or the `#dm-square`_ Slack channel and we'll help integrate your package with SQUASH_.
 
 .. _SQUASH: https://squash.lsst.codes
 .. _post-qa: https://github.com/lsst-sqre/post-qa

@@ -3,10 +3,10 @@
 .. _validate-base-creating-blobs:
 
 ################################################
-Providing Datasets to Measurements through Blobs
+Providing datasets to measurements through blobs
 ################################################
 
-A common pattern is to reduce a raw dataset, and share that dataset between several measurements.
+A common pattern is to reduce a raw dataset and share that dataset between several measurements.
 `lsst.validate.base` expresses such datasets as **blobs.**
 In the context of the `lsst.validate.base` framework, a blob is an object that contains `Datum` objects.
 
@@ -14,9 +14,10 @@ There are several advantages of storing input datasets in blob objects:
 
 - Any pre-reduction of a raw dataset can be done in the blob object, keeping a codebase organized.
 - Blobs can be passed to measurement objects, which simplifies the construction of measurements.
-- Blobs are automatically serialized alongside measurements and are available to the SQUASH dashboard. Blobs can be shared among several measurements, with the blob data only be stored once.
+- Blobs are automatically serialized alongside measurements and are available to the SQUASH dashboard.
+  Blobs can be shared among several measurements, with the blob data only being stored once.
 
-Template for a Blob Class
+Template for a blob class
 =========================
 
 Blobs are subclasses of `BlobBase` that register one or more `Datum` objects.
@@ -34,12 +35,9 @@ Blobs are subclasses of `BlobBase` that register one or more `Datum` objects.
        def __init__(self, g_mags, i_mags):
            BlobBase.__init__(self)
 
-           self.register_datum('g', quantity=g_mags * u.mag,
-                               description='g-band magnitudes')
-           self.register_datum('i', quantity=i_mags * u.mag,
-                               description='i-band magnitudes')
-           self.register_datum('gi',
-                               description='g-i colour')
+           self.register_datum('g', quantity=g_mags*u.mag, description='g-band magnitudes')
+           self.register_datum('i', quantity=i_mags*u.mag, description='i-band magnitudes')
+           self.register_datum('gi', description='g-i colour')
 
            self.gi = self.g - self.i
 
@@ -54,7 +52,7 @@ Notice that, like `MeasurementBase.parameters` and `MeasurementBase.extras` attr
 Accessing datum objects
 -----------------------
 
-Internally, blob attributes are stored as `Datum` objects, which can be accessed as items of the `BlobBase.datums` attribute.
+Internally, blob attributes are stored as `Datum` objects that can be accessed as items of the `BlobBase.datums` attribute.
 
 .. code-block:: python
 

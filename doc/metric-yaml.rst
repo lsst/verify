@@ -3,12 +3,11 @@
 .. _validate-base-metric-yaml:
 
 ###########################################
-Defining Metrics and Specifications in YAML
+Defining metrics and specifications in YAML
 ###########################################
 
 *Metrics* are scalar quantities that can be measured and monitored.
-For example, ``validate_drp`` is designed to measure metrics from :lpm:`17`, the LSST Science Requirements document.
-:lpm:`17`, defines metrics that quantify photometric and astrometric measurement accuracy in the LSST Science Pipelines.
+For example, ``validate_drp`` is designed to measure photometric and astrometric accuracy metrics defined in :lpm:`17`, the LSST Science Requirements document.
 
 Each metric can be accompanied by several *specification* levels.
 Specifications are thresholds of a metric that define success or give some indication of algorithm development progress.
@@ -24,7 +23,7 @@ This page describes the schema describing for metrics and specifications in YAML
 
 .. _validate-base-metric-objects-yaml:
 
-Metric Objects in YAML
+Metric objects in YAML
 ======================
 
 Each metric is a separate key-value object in a YAML file.
@@ -42,7 +41,7 @@ For example, here's the AM1 metric's definition:
        with separations of D=5 arcmin (repeatability) (milliarcsec).
      operator: "<="
      parameters:
-       D: {value: 5.0, units: arcmin}
+       D: {value: 5.0, unit: arcmin}
      specs:
        - level: design
          value: 10.0
@@ -57,7 +56,13 @@ For example, here's the AM1 metric's definition:
          unit: mmag
          filter_names: [r, i]
 
-Note that the key for this object is the name of the metric itself, 'AM1.`
+Note that the key for this object is the name of the metric itself, 'AM1.'
+
+.. note::
+
+   The ``description``\ ’s field begins with a ``>`` character.
+   This is a way of including a multi-line paragraph in YAML.
+   See the `YAML documentation <http://www.yaml.org/spec/1.2/spec.html>`__ for more information.
 
 The following sections describe fields in a metric object.
 
@@ -65,7 +70,7 @@ description field
 -----------------
 
 The ``description`` field is intended to provide a short summary that defines the metric.
-Details can be left for the referenced document.
+Details can be left to the referenced document.
 
 operator field
 --------------
@@ -89,9 +94,9 @@ The ``reference`` field contains a dictionary of key-value pairs that document w
 
 Allowed fields are:
 
-- ``doc``: Handle of the document that formally defines the metric. For example, ``doc: LPM-17``
+- ``doc``: Handle of the document that formally defines the metric. For example, ``doc: LPM-17``.
 - ``page``: Page number in ``doc`` where the metric is defined. For example, ``page: 23``. This should be specified if ``doc`` is not an HTML document and ``url`` does not deeply link to the metric's definition.
-- ``url``: Web URL to the documentation where the metric is defined. If possible, this should be a deep link directly to the metric definition.
+- ``url``: Web URL to the documentation where the metric is defined. If possible, this should be a deep link directly to the metric's definition.
 
 parameters field (optional)
 -----------------------------
@@ -105,7 +110,7 @@ The **keys** are names of the parameters.
 These **keys** are the same as in the `Metric.parameters` attribute, and are also attribute names of the `Metric` object itself.
 **Values** are also key-value pairs with the following fields:.
 
-- ``value``: the scalar value of the dependency (typically a `float`, `int` or list/array).
+- ``value``: the scalar value of the dependency (typically a float, int or list/array).
 - ``unit``: an `astropy.units-compatible string <http://docs.astropy.org/en/stable/units/format.html>`_ describing the units of ``value``.
 - ``label``: the short label for this parameter (optional).
 - ``description``: a sentence or two describing this parameter (optional).
@@ -131,19 +136,19 @@ Defining specifications in YAML
 ===============================
 
 This section describes the schema for specification objects, which are embedded in the ``specs`` field of metric objects, described above.
-First we describe required fields, followed by optional fields to deal with special circumstances.
+Required fields are described first, followed by optional fields to deal with special circumstances.
 
 level field
 -----------
 
 The ``level`` field provides the name of the specification.
-In the :lpm:`17` Science Requirements Document levels are one of ``design``, ``minimum`` and ``stretch``.
-You can define different a different system of levels, or even add a new set of specifications to existing metrics.
+In the :lpm:`17` Science Requirements Document, levels are one of ``design``, ``minimum`` and ``stretch``.
+You can define a different system of levels, or even add a new set of specifications to existing metrics.
 
 value field
 -----------
 
-The ``value`` field is the scalar value (`float` or `int`) that defines the metric's threshold level.
+The ``value`` field is the scalar value (float or int) that defines the metric's threshold level.
 The specification's value placed on the *right hand side* of the metric's comparison operator when being compared to a measurement.
 
 unit field
@@ -176,7 +181,7 @@ For example, PF1 is defined as:
 
    The maximum fraction of magnitudes deviating by more than PA2 from the mean.
 
-In order to measure PF1, we must use the specification levels of PA2 as a parameter of the measurement.
+To measure PF1, the measurement code must use the specification levels of PA2 as a parameter.
 In YAML, we can describe this relationship by including the name of the other metric as a list item in the specification's ``dependencies`` field.
 
 For example, the PF1 metric is written as:

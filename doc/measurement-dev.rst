@@ -3,18 +3,18 @@
 .. _validate-base-measurement-class: 
 
 ############################
-Creating Measurement Classes
+Creating measurement classes
 ############################
 
 The `MeasurementBase` abstract base class defines a standard interface for writing classes that make measurements of :doc:`metrics <metric-dev>`.
-`MeasurementBase` ensures that measurements, along with metadata about the measurement, can be serialized and submitted to the SQUASH_ metric monitoring service.
+`MeasurementBase` ensures that measurements, along with metadata, can be serialized and submitted to the SQUASH_ metric monitoring service.
 
 This page covers the usage of `MeasurementBase` for creating measurement classes.
 
-A Minimal Measurement Class
+A minimal measurement class
 ===========================
 
-At a minimum, measurement classes must subclass `MeasurementBase` and provide some metadata as instance attributes, such as the name of metric being measured and units of the measurement.
+At a minimum, measurement classes must subclass `MeasurementBase`.
 This is a basic template for a measurement class:
 
 .. code-block:: python
@@ -43,25 +43,25 @@ This is a basic template for a measurement class:
                             'metrics.yaml')
    pa1_measurement = PA1Measurement(yaml_path)
 
-In a measurement class, the `MeasurementBase.metric` attribute must be set with a `Metric` object (this is required by the :class:`~lsst.validate.base.MeasurementBase` abstract base class).
+In a measurement class, the `MeasurementBase.metric` attribute must be set with a `Metric` instance (this is required by the :class:`~lsst.validate.base.MeasurementBase` abstract base class).
 In this example, the `Metric.from_yaml` class method constructs a `Metric` instance for PA1 from the :file:`metrics.yaml` file built into ``validate_drp``.
 
-Storing a Measurement Quantity
+Storing a measurement quantity
 ==============================
 
-The purpose of a measurement class is to make a make a measurement; those calculations should occur in a measurement instance's ``__init__`` method.
-Any data required for a measurement should be provided through the measurement class's ``__init__`` method.
+The purpose of a measurement class is to make a measurement; those calculations should occur in a measurement instance's ``__init__`` method.
+Any data required for a measurement should be provided as arguments to the measurement class's ``__init__`` method.
 
 The measurement result is stored in a `MeasurementBase.quantity` attribute.
 `MeasurementBase.quantity` must be a scalar `astropy.units.Quantity`.
 The units of `MeasurementBase.quantity` must be compatible with the units of the `Metric`.
 If a measurement class is unable to make a measurement, `MeasurementBase.quantity` should be ``None``.
 
-Registering Measurement Parameters
+Registering measurement parameters
 ==================================
 
 Often a measurement code is customized with parameters.
-As a means of lightweight provenance, the measurement API provides a way to declare these parameters so that they're persisted to the database using the `MeasurementBase.register_parameter` method:
+As a means of lightweight provenance, the measurement API provides a `MeasurementBase.register_parameter` method to declare these parameters so that they're persisted to the database:
 
 .. code-block:: python
 
@@ -80,7 +80,7 @@ As a means of lightweight provenance, the measurement API provides a way to decl
                               
 In this example, the ``PA1Measurement`` class registers a parameter named ``num_random_shuffles``.
 
-A parameter's 'quantity' can be a `astropy.units.Quantity`, `str`, `bool` or a unitless int.
+A parameter's 'quantity' can be a `astropy.units.Quantity`, `str`, `bool` or a unitless `int`.
 In this example, ``num_random_shuffles`` doesn't have physical units, so it is a unitless `int`.
 
 Accessing parameter values as object attributes
@@ -106,7 +106,7 @@ You can access these `Datum`\ s as items of the :attr:`~lsst.validate.base.Measu
 .. code-block:: python
 
    pa1.parameters['num_random_shuffles'].quantity  # 50
-   pa1.parameters['num_random_shuffles'].unit  # astropy.units.Unit('')
+   pa1.parameters['num_random_shuffles'].unit  # None, as a unitless int
    pa1.parameters['num_random_shuffles'].label  # 'num_random_shuffles'
    pa1.parameters['num_random_shuffles'].description  # 'Number of random shuffles'
 
@@ -137,14 +137,14 @@ This can be useful when copying a parameter already available as a :class:`~lsst
 
 .. _validate-base-measurement-extras:
 
-Storing Extra Measurement Outputs
+Storing extra measurement outputs
 =================================
 
 Although metric measurements are strictly scalar values, your measurement might yield additional data that you want make available through the SQUASH dashboard.
-This additional data are called *extras*.
+These additional data are called *extras*.
 
 Registering extras is similar to registering parameters, except that the `MeasurementBase.register_extra` method is used.
-As an example, the PA1 measurement code (``~lsst.validate.drp.calcsrd.PA1Measurement``) stores the inter-quartile range, RMS and magnitude difference of pairs of stars multiple random samples, along with mean magnitude of each pair of observed stars:
+As an example, the PA1 measurement code (``lsst.validate.drp.calcsrd.PA1Measurement``) stores the inter-quartile range, RMS, and magnitude difference of stars observed across multiple random visits, along with the mean magnitude observed star:
 
 .. code-block:: python
 
@@ -181,7 +181,7 @@ As an example, the PA1 measurement code (``~lsst.validate.drp.calcsrd.PA1Measure
               # The scalar metric measurement
               self.quantity = np.mean(self.iqr)
 
-`MeasurementBase.register_extra` method works just like :meth:`MeasurementBase.register_parameter` method.
+`MeasurementBase.register_extra` works just like the :meth:`MeasurementBase.register_parameter` method.
 Specifically, the value of the extra can be set at registration time, or afterwards by setting an instance attribute (shown above).
 An extra can also be registered with a pre-made :class:`~lsst.validate.base.Datum` object.
 
