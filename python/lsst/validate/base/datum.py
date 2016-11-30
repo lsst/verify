@@ -1,5 +1,7 @@
 # See COPYRIGHT file at the top of the source tree.
 from __future__ import print_function, division
+from builtins import object
+from past.builtins import basestring
 
 import numpy as np
 import astropy.units as u

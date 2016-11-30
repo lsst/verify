@@ -1,4 +1,5 @@
 setupRequired(python)
+setupRequired(python_future)
 setupRequired(pyyaml)
 setupRequired(numpy)
 setupRequired(astropy)

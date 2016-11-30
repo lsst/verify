@@ -1,5 +1,6 @@
 # See COPYRIGHT file at the top of the source tree.
 from __future__ import print_function, division
+from future.utils import with_metaclass
 
 import abc
 import uuid
@@ -15,8 +16,12 @@ from .metric import Metric
 __all__ = ['MeasurementBase', 'DeserializedMeasurement']
 
 
-class MeasurementBase(QuantityAttributeMixin, JsonSerializationMixin,
-                      DatumAttributeMixin):
+class MeasurementBase(with_metaclass(abc.ABCMeta,
+                                     type('NewBase',
+                                          (QuantityAttributeMixin,
+                                           JsonSerializationMixin,
+                                           DatumAttributeMixin),
+                                          {}))):
     """Base class for Measurement classes.
 
     This class isn't instantiated directly. Instead, developers should
@@ -37,8 +42,6 @@ class MeasurementBase(QuantityAttributeMixin, JsonSerializationMixin,
        The :ref:`validate-base-measurement-class` page shows how to create
        measurement classes using `MeasurementBase`.
     """
-
-    __metaclass__ = abc.ABCMeta
 
     parameters = None
     """`dict` containing all input parameters used by this measurement.
