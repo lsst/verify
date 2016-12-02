@@ -129,16 +129,15 @@ class Datum(QuantityAttributeMixin, JsonSerializationMixin):
 
         self._quantity = None
 
-        if quantity is None:
-            self._quantity = None
-        elif isinstance(quantity, u.Quantity) or \
+        if isinstance(quantity, u.Quantity) or \
                 QuantityAttributeMixin._is_non_quantity_type(quantity):
             self.quantity = quantity
         elif unit is not None:
             self.quantity = u.Quantity(quantity, unit=unit)
         else:
             raise ValueError('`unit` argument must be supplied to Datum '
-                             'if `quantity` is not an astropy.unit.Quantity.')
+                             'if `quantity` is not an astropy.unit.Quantity, '
+                             'str, bool, int or None.')
 
     @classmethod
     def from_json(cls, json_data):
@@ -162,9 +161,7 @@ class Datum(QuantityAttributeMixin, JsonSerializationMixin):
     @property
     def json(self):
         """Datum as a `dict` compatible with overall `Job` JSON schema."""
-        if self.quantity is None:
-            v = None
-        elif QuantityAttributeMixin._is_non_quantity_type(self.quantity):
+        if QuantityAttributeMixin._is_non_quantity_type(self.quantity):
             v = self.quantity
         elif len(self.quantity.shape) > 0:
             v = self.quantity.value.tolist()
