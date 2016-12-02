@@ -27,11 +27,17 @@ class QuantityAttributeMixin(object):
            `None`)."""
         return self._quantity
 
+    @staticmethod
+    def _is_non_quantity_type(q):
+        """Test if a quantity is a acceptable (`str`, `bool`, `int`, or
+        `None`), but not `astropy.quantity`."""
+        return isinstance(q, basestring) or isinstance(q, bool) or \
+            isinstance(q, int) or q is None
+
     @quantity.setter
     def quantity(self, q):
         assert isinstance(q, u.Quantity) or \
-            isinstance(q, basestring) or isinstance(q, bool) or \
-            isinstance(q, int) or q is None
+            QuantityAttributeMixin._is_non_quantity_type(q)
         self._quantity = q
 
     @property
@@ -41,8 +47,7 @@ class QuantityAttributeMixin(object):
         If the `quantity` is a `str` or `bool`, the unit is `None`.
         """
         q = self.quantity
-        if q is None or isinstance(q, basestring) or isinstance(q, bool) or \
-                isinstance(q, int):
+        if QuantityAttributeMixin._is_non_quantity_type(q):
             return None
         else:
             return q.unit
@@ -84,11 +89,7 @@ class QuantityAttributeMixin(object):
         q : `astropy.units.Quantity`, `str`, `int`, `bool` or `None`
             Astropy quantity.
         """
-        if isinstance(value, basestring) or \
-                isinstance(value, bool) or \
-                isinstance(value, int) or \
-                value is None:
-            # a str or bool
+        if QuantityAttributeMixin._is_non_quantity_type(value):
             _quantity = value
         elif isinstance(value, list):
             # an astropy quantity array
@@ -131,8 +132,7 @@ class Datum(QuantityAttributeMixin, JsonSerializationMixin):
         if quantity is None:
             self._quantity = None
         elif isinstance(quantity, u.Quantity) or \
-                isinstance(quantity, basestring) or \
-                isinstance(quantity, bool) or isinstance(quantity, int):
+                QuantityAttributeMixin._is_non_quantity_type(quantity):
             self.quantity = quantity
         elif unit is not None:
             self.quantity = u.Quantity(quantity, unit=unit)
@@ -164,9 +164,7 @@ class Datum(QuantityAttributeMixin, JsonSerializationMixin):
         """Datum as a `dict` compatible with overall `Job` JSON schema."""
         if self.quantity is None:
             v = None
-        elif isinstance(self.quantity, basestring) or \
-                isinstance(self.quantity, int) or \
-                isinstance(self.quantity, bool):
+        elif QuantityAttributeMixin._is_non_quantity_type(self.quantity):
             v = self.quantity
         elif len(self.quantity.shape) > 0:
             v = self.quantity.value.tolist()
