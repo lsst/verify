@@ -1,14 +1,16 @@
 # See COPYRIGHT file at the top of the source tree.
 from __future__ import print_function, division
+from builtins import object
 
 import abc
 import json
+from future.utils import with_metaclass
 
 
 __all__ = ['JsonSerializationMixin']
 
 
-class JsonSerializationMixin(object):
+class JsonSerializationMixin(with_metaclass(abc.ABCMeta, object)):
     """Mixin that provides JSON serialization support to subclasses.
 
     Subclasses must implement the `json` method. The method returns a `dict`
@@ -16,8 +18,6 @@ class JsonSerializationMixin(object):
     the conversion of iterables, numbers, strings, booleans and
     `JsonSerializationMixin`-compatible objects into a JSON-serialiable object.
     """
-
-    __metaclass__ = abc.ABCMeta
 
     @abc.abstractproperty
     def json(self):
@@ -52,7 +52,7 @@ class JsonSerializationMixin(object):
               })
         """
         json_dict = {}
-        for k, v in d.iteritems():
+        for k, v in d.items():
             json_dict[k] = JsonSerializationMixin._jsonify_value(v)
         return json_dict
 

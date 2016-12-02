@@ -1,5 +1,6 @@
 # See COPYRIGHT file at the top of the source tree.
 from __future__ import print_function, division
+from past.builtins import basestring
 
 import operator
 from collections import OrderedDict
@@ -165,7 +166,7 @@ class Metric(JsonSerializationMixin):
                     elif isinstance(dep_item, dict):
                         # Likely a Datum
                         # in yaml, wrapper object is dict with single key-val
-                        name = dep_item.keys()[0]
+                        name = list(dep_item.keys())[0]
                         dep_item = dict(dep_item[name])
                         v = dep_item['value']
                         unit = dep_item['unit']

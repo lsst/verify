@@ -146,7 +146,6 @@ class MeasurementBaseTestCase(unittest.TestCase):
             self.assertEqual(extra.quantity, m2.extras[k].quantity)
         for k, blob in self.meas._linked_blobs.items():
             for kk, datum in blob.datums.items():
-                print(m2._linked_blobs.keys())
                 self.assertEqual(datum.quantity, m2._linked_blobs[k].datums[kk].quantity)
 
     def test_datum_param(self):
