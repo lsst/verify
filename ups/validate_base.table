@@ -5,5 +5,9 @@ setupRequired(numpy)
 setupRequired(astropy)
 setupRequired(sconsUtils)
 
+# bin/validate_metrics_repo.py uses these
+setupOptional(utils)
+setupOptional(pex_exceptions)
+
 envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
 envPrepend(PATH, ${PRODUCT_DIR}/bin)
