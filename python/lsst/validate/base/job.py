@@ -3,7 +3,6 @@ from __future__ import print_function, division
 
 from .jsonmixin import JsonSerializationMixin
 from .blob import BlobBase, DeserializedBlob
-from .measurement import MeasurementBase, DeserializedMeasurement
 
 
 __all__ = ['Job']
@@ -58,10 +57,9 @@ class Job(JsonSerializationMixin):
 
         Parameters
         ----------
-        m : `MeasurementBase`-type object
+        m : `Measurement`-type object
             A measurement object.
         """
-        assert isinstance(m, MeasurementBase)
         if m.identifier not in self._measurement_ids:
             self._measurements.append(m)
             self._measurement_ids.add(m.identifier)

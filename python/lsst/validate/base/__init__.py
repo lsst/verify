@@ -16,3 +16,4 @@ from .metric import *  # noqa: F403
 from .measurement import *  # noqa: F403
 from .blob import *  # noqa: F403
 from .job import *  # noqa: F403
+from .output import *
