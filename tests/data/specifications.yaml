@@ -1,0 +1,96 @@
+# Specifications from LPM-17 (the Science Requirements Document)
+# http://ls.st/lpm-17
+
+PA1
+  operator: "<="
+  specs:
+    - level: design
+      value: 5.0
+      filter_names: [g, r, i]
+    - level: design
+      value: 7.5
+      unit: mmag
+      filter_names: [u, z, y]
+    - level: minimum
+      value: 8.0
+      unit: mmag
+      filter_names: [g, r, i]
+    - level: minimum
+      value: 12.0
+      unit: mmag
+      filter_names: [u, z, y]
+    - level: stretch
+      value: 3.0
+      unit: mmag
+      filter_names: [g, r, i]
+    - level: stretch
+      value: 4.5
+      unit: mmag
+      filter_names: [u, z, y]
+
+
+PF1:
+  operator: "<="
+  specs:
+    - level: design
+      value: 10.0
+      dependencies:
+        - PA2
+    - level: minimum
+      value: 20.0
+      dependencies:
+        - PA2
+    - level: stretch
+      value: 5.0
+      dependencies:
+        - PA2
+
+PA2:
+  operator: "<="
+  specs:
+    - level: design
+      value: 15.0
+      filter_names: [g, r, i]
+      dependencies:
+        - PF1
+    - level: design
+      value: 22.5
+      filter_names: [u, z, y]
+      dependencies:
+        - PF1
+    - level: minimum
+      value: 15.0
+      filter_names: [g, r, i]
+      dependencies:
+        - PF1
+    - level: minimum
+      value: 22.5
+      filter_names: [u, z, y]
+      dependencies:
+        - PF1
+    - level: stretch
+      value: 10.0
+      filter_names: [g, r, i]
+      dependencies:
+        - PF1
+    - level: stretch
+      value: 15.0
+      filter_names: [u, z, y]
+      dependencies:
+        - PF1
+
+AM1:
+  operator: "<="
+  parameters:
+    D: {value: 5.0, unit: arcmin}
+    x: {value: 1}
+  specs:
+    - level: design
+      value: 10.0
+      filter_names: [r, i]
+    - level: minimum
+      value: 20.0
+      filter_names: [r, i]
+    - level: stretch
+      value: 5.0
+      filter_names: [r, i]
