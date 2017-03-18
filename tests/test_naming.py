@@ -41,6 +41,17 @@ class FullyQualifiedMetricName(unittest.TestCase):
             'validate_drp.PA1'
         )
 
+    def test_eq(self):
+        self.assertTrue(
+            self.name == Name(package='validate_drp', metric='PA1'))
+        self.assertFalse(
+            self.name == Name(package='validate_drp',
+                              metric='PA1',
+                              spec='design'))
+        self.assertFalse(
+            self.name == Name(package='validate_base',
+                              metric='PA1'))
+
     def test_has_package(self):
         self.assertTrue(self.name.has_package)
 
@@ -102,6 +113,14 @@ class MetricName(unittest.TestCase):
             str(self.name),
             'PA1'
         )
+
+    def test_eq(self):
+        self.assertTrue(
+            self.name == Name(metric='PA1'))
+        self.assertFalse(
+            self.name == Name(package='validate_drp', metric='PA2'))
+        self.assertFalse(
+            self.name == Name(metric='PA2'))
 
     def test_has_package(self):
         self.assertFalse(self.name.has_package)
@@ -169,6 +188,21 @@ class FullyQualifiedSpecificationName(unittest.TestCase):
             'validate_drp.PA1.design_gri'
         )
 
+    def test_eq(self):
+        self.assertTrue(
+            self.name == Name(package='validate_drp',
+                              metric='PA1',
+                              spec='design_gri'))
+        self.assertFalse(
+            self.name == Name(package='validate_drp',
+                              metric='PA1',
+                              spec='minimum'))
+        self.assertFalse(
+            self.name == Name(metric='PA1',
+                              spec='design_gri'))
+        self.assertFalse(
+            self.name == Name(spec='design_gri'))
+
     def test_has_package(self):
         self.assertTrue(self.name.has_package)
 
@@ -233,6 +267,16 @@ class RelativeSpecificationName(unittest.TestCase):
             'PA1.design_gri'
         )
 
+    def test_eq(self):
+        self.assertTrue(
+            self.name == Name(metric='PA1', spec='design_gri'))
+        self.assertFalse(
+            self.name == Name(package='validate_drp',
+                              metric='PA1',
+                              spec='design_gri'))
+        self.assertFalse(
+            self.name == Name(metric='PA1', spec='minimum'))
+
     def test_has_package(self):
         self.assertFalse(self.name.has_package)
 
@@ -294,6 +338,14 @@ class SpecificationName(unittest.TestCase):
             str(self.name),
             'design_gri'
         )
+
+    def test_eq(self):
+        self.assertTrue(
+            self.name == Name(spec='design_gri'))
+        self.assertFalse(
+            self.name == Name(metric='PA1', spec='design_gri'))
+        self.assertFalse(
+            self.name == Name(spec='minimum'))
 
     def test_has_package(self):
         self.assertFalse(self.name.has_package)
@@ -357,6 +409,15 @@ class PackageName(unittest.TestCase):
             str(self.name),
             'validate_drp'
         )
+
+    def test_eq(self):
+        self.assertTrue(
+            self.name == Name(package='validate_drp'))
+        self.assertFalse(
+            self.name == Name(package='validate_base'))
+        self.assertFalse(
+            self.name == Name(package='validate_drp',
+                              metric='PA1'))
 
     def test_has_package(self):
         self.assertTrue(self.name.has_package)

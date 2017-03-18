@@ -16,6 +16,11 @@ class Name(object):
         self.metric = metric
         self.spec = spec
 
+    def __eq__(self, other):
+        return (self.package == other.package) and \
+            (self.metric == other.metric) and \
+            (self.spec == other.spec)
+
     @property
     def has_package(self):
         """`True` if this object contains a package name (`bool`)."""
