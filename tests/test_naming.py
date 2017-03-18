@@ -6,6 +6,124 @@ import unittest
 from lsst.verify.naming import Name
 
 
+class NameConstructors(unittest.TestCase):
+    """Tests for Name constructor patterns."""
+
+    def test_fully_qualified_metric_name(self):
+        """Creating a fully-qualified metric name."""
+        ref_name = Name(package='validate_drp', metric='PA1')
+
+        self.assertEqual(
+            ref_name,
+            Name(metric='validate_drp.PA1')
+        )
+
+        # Use a Name to specifify metric field
+        self.assertEqual(
+            ref_name,
+            Name(metric=Name(package='validate_drp', metric='PA1'))
+        )
+
+        self.assertEqual(
+            ref_name,
+            Name(metric='validate_drp.PA1', package='validate_drp')
+        )
+
+        self.assertEqual(
+            ref_name,
+            Name('validate_drp.PA1')
+        )
+
+        self.assertEqual(
+            ref_name,
+            Name('validate_drp.PA1', metric='PA1')
+        )
+
+        with self.assertRaises(ValueError):
+            Name(metric='validate_drp.PA1', package='validate_base')
+
+    def test_metric_name(self):
+        """Creating a metric name."""
+        # Using a Name as an argument
+        self.assertEqual(
+            Name(metric='PA1'),
+            Name(metric=Name(metric='PA1'))
+        )
+
+        # Using the wrong type of name
+        with self.assertRaises(ValueError):
+            Name(metric=Name(spec='design_gri'))
+
+    def test_fully_qualified_specification_name(self):
+        """Creating fully-qualified specification name."""
+        ref_name = Name(package='validate_drp',
+                        metric='PA1',
+                        spec='design_gri')
+
+        self.assertEqual(
+            ref_name,
+            Name('validate_drp.PA1.design_gri')
+        )
+
+        # using a Name
+        self.assertEqual(
+            ref_name,
+            Name(ref_name)
+        )
+
+        self.assertEqual(
+            ref_name,
+            Name('validate_drp.PA1.design_gri',
+                 metric='PA1', spec='design_gri')
+        )
+
+    def test_relative_spec_name(self):
+        """Creating a relative specification name."""
+        ref_name = Name(metric='PA1',
+                        spec='design_gri')
+
+        self.assertEqual(
+            ref_name,
+            Name(spec='PA1.design_gri')
+        )
+
+        # Use a Name
+        self.assertEqual(
+            ref_name,
+            Name(spec=Name(metric='PA1', spec='design_gri'))
+        )
+
+        self.assertEqual(
+            ref_name,
+            Name(metric='PA1', spec='PA1.design_gri')
+        )
+
+        with self.assertRaises(ValueError):
+            Name(metric='PA2', spec='PA1.design_gri')
+
+    def test_specification_name(self):
+        """Creating a bare specification name."""
+        ref_name = Name(spec='design_gri')
+
+        # Ensure that Name can be used in addition to a string
+        self.assertEqual(
+            ref_name,
+            Name(spec=Name(spec='design_gri'))
+        )
+
+        # Using the wrong type of Name
+        with self.assertRaises(ValueError):
+            Name(spec=Name('validate_drp.PA1'))
+
+    def test_package_name(self):
+        """Creating a package name."""
+        # Ensure that Name can be used in addition to a string
+        self.assertEqual(
+            Name('validate_drp'),
+            Name(package=Name(package='validate_drp'))
+        )
+
+
 class FullyQualifiedMetricName(unittest.TestCase):
     """Simple fully-qualified metric name."""
 
@@ -166,6 +284,16 @@ class FullyQualifiedSpecificationName(unittest.TestCase):
 
     def test_spec_name(self):
         self.assertEqual(self.name.spec, 'design_gri')
+
+        with self.assertRaises(ValueError):
+            Name('validate_drp.PA1.design_gri', spec='minimum')
+
+        with self.assertRaises(ValueError):
+            Name('validate_drp.PA1.design_gri', metric='PA2')
+
+        # Can't create a specification with a metric gap
+        with self.assertRaises(ValueError):
+            Name(package='validate_drp', spec='design')
 
     def test_fqn(self):
         self.assertEqual(
@@ -411,6 +539,9 @@ class PackageName(unittest.TestCase):
         )
 
     def test_eq(self):
+        self.assertTrue(
+            self.name == Name('validate_drp')
+        )
         self.assertTrue(
             self.name == Name(package='validate_drp'))
         self.assertFalse(

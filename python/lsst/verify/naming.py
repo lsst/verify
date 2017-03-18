@@ -8,13 +8,179 @@ __all__ = ['Name']
 
 
 class Name(object):
-    """Semantic name of a metric or specification in the lsst.verify framework.
+    """Semantic name of a package, `lsst.verify.Metric` or
+    `lsst.verify.Specification` in the `lsst.verify` framework.
+
+    Parameters
+    ----------
+    package : `str` or `Name`
+       Name of the package, either as a string (``'validate_drp'``,
+       for example) or as a Name object (``Name(package='validate_drp')``
+       for example).
+
+       The ``package`` field can also be fully specified::
+
+           Name(package='validate_drp.PA1.design_gri')
+
+       or used as the sole positional argument::
+
+           Name('validate_drp.PA1.design_gri')
+    metric : `str` or `Name`
+       Name of the metric. The name can be relative (``'PA'``) or
+       fully-specified (``'validate_drp.PA1'``).
+    spec : `str` or `Name`
+       Name of the specification. The name can be bare (``'design_gri'``),
+       metric-relative (``'PA1.design_gri'``) or fully-specified
+       (``'validate_drp.PA1.design_gri'``)
+
+    Raises
+    ------
+    ValueError
+       Raised when arguments cannot be parsed or conflict (for example, if two
+       different package names are specified through two different fields).
     """
 
     def __init__(self, package=None, metric=None, spec=None):
-        self.package = package
-        self.metric = metric
-        self.spec = spec
+        self.package = None
+        self.metric = None
+        self.spec = None
+
+        if package is not None:
+            if isinstance(package, Name):
+                self.package = package.package
+                self.metric = package.metric
+                self.spec = package.spec
+            else:
+                # Assume a string type
+                self.package, self.metric, self.spec = \
+                    Name._parse_fqn_string(package)
+
+        if metric is not None:
+            if isinstance(metric, Name):
+                if metric.has_metric is False:
+                    raise ValueError(
+                        'metric={metric!r} argument does not include metric '
+                        'information.'.format(metric=metric))
+                _package = metric.package
+                _metric = metric.metric
+                _spec = metric.spec
+            else:
+                _package, _metric = \
+                    Name._parse_metric_name_string(metric)
+                _spec = None
+
+            # Ensure none of the new information is inconsistent
+            self._init_new_package_info(_package)
+            self._init_new_metric_info(_metric)
+            self._init_new_spec_info(_spec)
+
+        if spec is not None:
+            if isinstance(spec, Name):
+                if spec.has_spec is False:
+                    raise ValueError(
+                        'spec={spec!r} argument does not include '
+                        'specification information'.format(spec=spec))
+                _package = spec.package
+                _metric = spec.metric
+                _spec = spec.spec
+            else:
+                _package, _metric, _spec = \
+                    Name._parse_spec_name_string(spec)
+
+            # Ensure none of the new information is inconsistent
+            self._init_new_package_info(_package)
+            self._init_new_metric_info(_metric)
+            self._init_new_spec_info(_spec)
+
+        # Ensure the name doesn't have a metric gap
+        if self.package is not None \
+                and self.spec is not None \
+                and self.metric is None:
+            raise ValueError("Missing 'metric' given package={package!r} "
+                             "spec={spec!r}".format(package=package,
+                                                    spec=spec))
+
+    def _init_new_package_info(self, package):
+        """Check and add new package information (for __init__)."""
+        if package is not None:
+            if self.package is None or package == self.package:
+                # There's new or consistent package info
+                self.package = package
+            else:
+                message = 'You provided a conflicting package={package!r}.'
+                raise ValueError(message.format(package=package))
+
+    def _init_new_metric_info(self, metric):
+        """Check and add new metric information (for __init__)."""
+        if metric is not None:
+            if self.metric is None or metric == self.metric:
+                # There's new or consistent metric info
+                self.metric = metric
+            else:
+                message = 'You provided a conflicting metric={metric!r}.'
+                raise ValueError(message.format(metric=metric))
+
+    def _init_new_spec_info(self, spec):
+        """Check and add new spec information (for __init__)."""
+        if spec is not None:
+            if self.spec is None or spec == self.spec:
+                # There's new or consistent spec info
+                self.spec = spec
+            else:
+                message = 'You provided a conflicting spec={spec!r}.'
+                raise ValueError(message.format(spec=spec))
+
+    @staticmethod
+    def _parse_fqn_string(fqn):
+        """Parse a fully-qualified name.
+        """
+        parts = fqn.split('.')
+        if len(parts) == 1:
+            # Must be a package name alone
+            return parts[0], None, None
+        if len(parts) == 2:
+            # Must be a fully-qualified metric name
+            return parts[0], parts[1], None
+        elif len(parts) == 3:
+            # Must be a fully-qualified specification name
+            return parts
+        else:
+            # Don't know what this string is
+            raise ValueError('Cannot parse fully qualified name: '
+                             '{0!r}'.format(fqn))
+
+    @staticmethod
+    def _parse_metric_name_string(name):
+        """Parse a metric name."""
+        parts = name.split('.')
+        if len(parts) == 2:
+            # Must be a fully-qualified metric name
+            return parts[0], parts[1]
+        elif len(parts) == 1:
+            # A bare metric name
+            return None, parts[0]
+        else:
+            # Don't know what this string is
+            raise ValueError('Cannot parse metric name: '
+                             '{0!r}'.format(name))
+
+    @staticmethod
+    def _parse_spec_name_string(name):
+        """Parse a specification name."""
+        parts = name.split('.')
+        if len(parts) == 1:
+            # Bare specification name
+            return None, None, parts[0]
+        elif len(parts) == 2:
+            # metric-relative specification name
+            return None, parts[0], parts[1]
+        elif len(parts) == 3:
+            # fully-qualified specification name
+            return parts
+        else:
+            # Don't know what this string is
+            raise ValueError('Cannot parse specification name: '
+                             '{0!r}'.format(name))
 
     def __eq__(self, other):
         return (self.package == other.package) and \
