@@ -187,6 +187,31 @@ class Name(object):
             (self.metric == other.metric) and \
             (self.spec == other.spec)
 
+    def __contains__(self, name):
+        """Test if another Name is contained by this Name."""
+        contains = True  # tests will disprove membership
+
+        if self.is_package:
+            if name.is_package:
+                contains = False
+            else:
+                contains = self.package == name.package
+
+        elif self.is_metric:
+            if name.is_metric:
+                contains = False
+            else:
+                if self.has_package or name.has_package:
+                    contains = contains and (self.package == name.package)
+
+                contains = contains and (self.metric == name.metric)
+
+        else:
+            # Must be a specification, which cannot 'contain' anything
+            contains = False
+
+        return contains
+
     @property
     def has_package(self):
         """`True` if this object contains a package name (`bool`)."""

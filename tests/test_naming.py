@@ -170,6 +170,20 @@ class FullyQualifiedMetricName(unittest.TestCase):
             self.name == Name(package='validate_base',
                               metric='PA1'))
 
+    def test_contains(self):
+        self.assertTrue(
+            Name('validate_drp.PA1.design_gri') in self.name
+        )
+        self.assertFalse(
+            Name('validate_drp.PA2.design_gri') in self.name
+        )
+        self.assertFalse(
+            Name('validate_drp.PA2') in self.name
+        )
+        self.assertFalse(
+            Name('validate_drp') in self.name
+        )
+
     def test_has_package(self):
         self.assertTrue(self.name.has_package)
 
@@ -239,6 +253,23 @@ class MetricName(unittest.TestCase):
             self.name == Name(package='validate_drp', metric='PA2'))
         self.assertFalse(
             self.name == Name(metric='PA2'))
+
+    def test_contains(self):
+        self.assertTrue(
+            Name(spec='PA1.design_gri') in self.name
+        )
+        self.assertFalse(
+            Name('validate_drp.PA1.design_gri') in self.name
+        )
+        self.assertFalse(
+            Name('validate_drp.PA2.design_gri') in self.name
+        )
+        self.assertFalse(
+            Name('validate_drp.PA2') in self.name
+        )
+        self.assertFalse(
+            Name('validate_drp') in self.name
+        )
 
     def test_has_package(self):
         self.assertFalse(self.name.has_package)
@@ -475,6 +506,23 @@ class SpecificationName(unittest.TestCase):
         self.assertFalse(
             self.name == Name(spec='minimum'))
 
+    def test_contains(self):
+        self.assertFalse(
+            Name(spec='design_gri') in self.name
+        )
+        self.assertFalse(
+            Name(spec='PA1.design_gri') in self.name
+        )
+        self.assertFalse(
+            Name('validate_drp.PA1.design_gri') in self.name
+        )
+        self.assertFalse(
+            Name('validate_drp.PA1') in self.name
+        )
+        self.assertFalse(
+            Name('validate_drp') in self.name
+        )
+
     def test_has_package(self):
         self.assertFalse(self.name.has_package)
 
@@ -549,6 +597,20 @@ class PackageName(unittest.TestCase):
         self.assertFalse(
             self.name == Name(package='validate_drp',
                               metric='PA1'))
+
+    def test_contains(self):
+        self.assertFalse(
+            Name(spec='PA1.design_gri') in self.name
+        )
+        self.assertTrue(
+            Name('validate_drp.PA1.design_gri') in self.name
+        )
+        self.assertTrue(
+            Name('validate_drp.PA2.design_gri') in self.name
+        )
+        self.assertFalse(
+            Name('validate_drp') in self.name
+        )
 
     def test_has_package(self):
         self.assertTrue(self.name.has_package)
