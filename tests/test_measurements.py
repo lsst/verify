@@ -73,6 +73,7 @@ class MeasurementTestCase(unittest.TestCase):
         with self.assertRaises(KeyError):
             Measurement(metric, value, metric_set=self.metric_set)
 
+    @unittest.skip('FIXME DM-8477 Requires Astropy 1.3+')
     def test_create_invalid_unit(self):
         metric = 'test.unitless'
         value = 1235 * u.arcsec
