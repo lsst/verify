@@ -47,9 +47,15 @@ class BlobBaseTestCase(unittest.TestCase):
         self.blob.updateable_mag = 10. * u.mag
 
         self.assertEqual(self.blob.updateable_mag, 10 * u.mag)
-        self.assertEqual(self.blob.datums['updateable_mag'].quantity, 10 * u.mag)
-        self.assertEqual(self.blob.datums['updateable_mag'].label, 'updateable_mag')
-        self.assertEqual(self.blob.datums['updateable_mag'].description, 'Magnitude')
+        self.assertEqual(
+            self.blob.datums['updateable_mag'].quantity,
+            10 * u.mag)
+        self.assertEqual(
+            self.blob.datums['updateable_mag'].label,
+            'updateable_mag')
+        self.assertEqual(
+            self.blob.datums['updateable_mag'].description,
+            'Magnitude')
 
     def test_json(self):
         j = self.blob.json

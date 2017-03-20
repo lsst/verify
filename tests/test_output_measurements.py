@@ -1,7 +1,6 @@
 # See COPYRIGHT file at the top of the source tree.
 from __future__ import absolute_import, division, print_function
 
-import os
 import json
 import unittest
 import astropy.units as u
@@ -26,7 +25,8 @@ class OutputTestCase(unittest.TestCase):
     @unittest.skip('FIXME DM-8477 Likely to be removed.')
     def test_output_measurements_example(self):
         data = {'thing1': 10, 'thing2': 5.2}
-        self.outfile = lsst.validate.base.output_measurements(self._testMethodName, data)
+        self.outfile = lsst.validate.base.output_measurements(
+            self._testMethodName, data)
         result = read_log(self.outfile)
         self.assertEqual(data, result)
 

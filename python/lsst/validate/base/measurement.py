@@ -55,7 +55,8 @@ class MeasurementSet(object):
         return len(self.measurements)
 
     def __str__(self):
-        items = ",\n".join(str(self.measurements[k]) for k in sorted(self.measurements))
+        items = ",\n".join(str(self.measurements[k])
+                           for k in sorted(self.measurements))
         return "{0.name}: {{\n{1}\n}}".format(self, items)
 
 
@@ -115,34 +116,6 @@ class Measurement(QuantityAttributeMixin, JsonSerializationMixin):
             self.value = value
         self._id = uuid.uuid4().hex
 
-    # def __getattr__(self, key):
-    #     if key in self.parameters:
-    #         # Requesting a serializable parameter
-    #         return self.parameters[key].quantity
-    #     elif key in self.extras:
-    #         return self.extras[key].quantity
-    #     elif key in self._linked_blobs:
-    #         return self._linked_blobs[key]
-    #     else:
-    #         raise AttributeError("%r object has no attribute %r" %
-    #                              (self.__class__, key))
-
-    # def __setattr__(self, key, value):
-    #     # avoiding __setattr__ loops by not handling names in _bootstrap
-    #     _bootstrap = ('parameters', 'extras', '_linked_blobs')
-    #     if key not in _bootstrap and isinstance(value, BlobBase):
-    #         self._linked_blobs[key] = value
-    #     elif key not in _bootstrap and self.parameters is not None and \
-    #             key in self.parameters:
-    #         # Setting value of a serializable parameter
-    #         self.parameters[key].quantity = value
-    #     elif key not in _bootstrap and self.extras is not None and \
-    #             key in self.extras:
-    #         # Setting value of a serializable measurement extra
-    #         self.extras[key].quantity = value
-    #     else:
-    #         super(Measurement, self).__setattr__(key, value)
-
     @property
     def blobs(self):
         """`dict` of blobs attached to this measurement instance."""
@@ -155,79 +128,6 @@ class Measurement(QuantityAttributeMixin, JsonSerializationMixin):
 
     def __str__(self):
         return "{0.name}: {0.value}".format(self)
-
-    # def register_parameter(self, param_key, quantity=None,
-    #                        label=None, description=None, datum=None):
-    #     """Register a measurement input parameter attribute.
-
-    #     The value of the parameter can either be set at registration time
-    #     (see ``quantity`` argument), or later by setting the object's attribute
-    #     named ``param_key``.
-
-    #     The value of a parameter can always be accessed through the object's
-    #     attribute named after the provided ``param_key``.
-
-    #     Parameters are stored as `Datum` objects, which can be accessed
-    #     through the `parameters` attribute `dict`.
-
-    #     Parameters
-    #     ----------
-    #     param_key : `str`
-    #         Name of the parameter; used as the key in the `parameters`
-    #         attribute of this object.
-    #     quantity : `astropy.units.Quantity`, `str` or `bool`.
-    #         Value of the parameter.
-    #     label : `str`, optional
-    #         Label suitable for plot axes (without units). By default the
-    #         ``param_key`` is used as the `label`. Setting this ``label``
-    #         argument overrides that default.
-    #     description : `str`, optional
-    #         Extended description of the parameter.
-    #     datum : `Datum`, optional
-    #         If a `Datum` is provided, its quantity, label and description
-    #         are be used unless overriden by other arguments to this method.
-    #     """
-    #     self._register_datum_attribute(self.parameters, param_key,
-    #                                    quantity=quantity, label=label,
-    #                                    description=description,
-    #                                    datum=datum)
-
-    # def register_extra(self, extra_key, quantity=None, unit=None, label=None,
-    #                    description=None, datum=None):
-    #     """Register a measurement extra---a by-product of a metric measurement.
-
-    #     The value of the extra can either be set at registration time
-    #     (see ``quantity`` argument), or later by setting the object's attribute
-    #     named ``extra_key``.
-
-    #     The value of an extra can always be accessed through the object's
-    #     attribute named after ``extra_key``.
-
-    #     Extras are stored as `Datum` objects, which can be accessed
-    #     through the `parameters` attribute `dict`.
-
-    #     Parameters
-    #     ----------
-    #     extra_key : `str`
-    #         Name of the extra; used as the key in the `extras`
-    #         attribute of this object.
-    #     quantity : `astropy.units.Quantity`, `str`, or `bool`
-    #         Value of the extra.
-    #     label : `str`, optional
-    #         Label suitable for plot axes (without units). By default the
-    #         ``extra_key`` is used as the ``label``. Setting this label argument
-    #         overrides both of these.
-    #     description : `str`, optional
-    #         Extended description.
-    #     datum : `Datum`, optional
-    #         If a `Datum` is provided, its value, label and description
-    #         will be used unless overriden by other arguments to
-    #         `register_extra`.
-    #     """
-    #     self._register_datum_attribute(self.extras, extra_key,
-    #                                    quantity=quantity, label=label,
-    #                                    description=description,
-    #                                    datum=datum)
 
     @property
     def name(self):

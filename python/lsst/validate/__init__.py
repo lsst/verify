@@ -3,7 +3,7 @@
 try:
     # validate_base does not formally use on lsstimport, but we still attempt
     # to import it for compatiblity with the lsst.validate Stack.
-    import lsstimport  # noqa: F401
+    import lsstimport
 except ImportError:
     pass
 import pkgutil
