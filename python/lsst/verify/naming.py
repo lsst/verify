@@ -11,6 +11,8 @@ class Name(object):
     """Semantic name of a package, `lsst.verify.Metric` or
     `lsst.verify.Specification` in the `lsst.verify` framework.
 
+    ``Name``\ s are immutable.
+
     Parameters
     ----------
     package : `str` or `Name`
@@ -41,18 +43,18 @@ class Name(object):
     """
 
     def __init__(self, package=None, metric=None, spec=None):
-        self.package = None
-        self.metric = None
-        self.spec = None
+        self._package = None
+        self._metric = None
+        self._spec = None
 
         if package is not None:
             if isinstance(package, Name):
-                self.package = package.package
-                self.metric = package.metric
-                self.spec = package.spec
+                self._package = package.package
+                self._metric = package.metric
+                self._spec = package.spec
             else:
                 # Assume a string type
-                self.package, self.metric, self.spec = \
+                self._package, self._metric, self._spec = \
                     Name._parse_fqn_string(package)
 
         if metric is not None:
@@ -93,9 +95,9 @@ class Name(object):
             self._init_new_spec_info(_spec)
 
         # Ensure the name doesn't have a metric gap
-        if self.package is not None \
-                and self.spec is not None \
-                and self.metric is None:
+        if self._package is not None \
+                and self._spec is not None \
+                and self._metric is None:
             raise ValueError("Missing 'metric' given package={package!r} "
                              "spec={spec!r}".format(package=package,
                                                     spec=spec))
@@ -103,9 +105,9 @@ class Name(object):
     def _init_new_package_info(self, package):
         """Check and add new package information (for __init__)."""
         if package is not None:
-            if self.package is None or package == self.package:
+            if self._package is None or package == self._package:
                 # There's new or consistent package info
-                self.package = package
+                self._package = package
             else:
                 message = 'You provided a conflicting package={package!r}.'
                 raise ValueError(message.format(package=package))
@@ -113,9 +115,9 @@ class Name(object):
     def _init_new_metric_info(self, metric):
         """Check and add new metric information (for __init__)."""
         if metric is not None:
-            if self.metric is None or metric == self.metric:
+            if self._metric is None or metric == self._metric:
                 # There's new or consistent metric info
-                self.metric = metric
+                self._metric = metric
             else:
                 message = 'You provided a conflicting metric={metric!r}.'
                 raise ValueError(message.format(metric=metric))
@@ -123,9 +125,9 @@ class Name(object):
     def _init_new_spec_info(self, spec):
         """Check and add new spec information (for __init__)."""
         if spec is not None:
-            if self.spec is None or spec == self.spec:
+            if self._spec is None or spec == self._spec:
                 # There's new or consistent spec info
-                self.spec = spec
+                self._spec = spec
             else:
                 message = 'You provided a conflicting spec={spec!r}.'
                 raise ValueError(message.format(spec=spec))
@@ -181,6 +183,21 @@ class Name(object):
             # Don't know what this string is
             raise ValueError('Cannot parse specification name: '
                              '{0!r}'.format(name))
+
+    @property
+    def package(self):
+        """Package name (`str`)."""
+        return self._package
+
+    @property
+    def metric(self):
+        """Metric name (`str`)."""
+        return self._metric
+
+    @property
+    def spec(self):
+        """Specification name (`str`)."""
+        return self._spec
 
     def __eq__(self, other):
         return (self.package == other.package) and \
