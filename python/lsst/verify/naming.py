@@ -37,7 +37,7 @@ class Name(object):
 
     Raises
     ------
-    ValueError
+    TypeError
        Raised when arguments cannot be parsed or conflict (for example, if two
        different package names are specified through two different fields).
     """
@@ -54,22 +54,30 @@ class Name(object):
                 self._spec = package.spec
             else:
                 # Assume a string type
-                self._package, self._metric, self._spec = \
-                    Name._parse_fqn_string(package)
+                try:
+                    self._package, self._metric, self._spec = \
+                        Name._parse_fqn_string(package)
+                except ValueError as e:
+                    # Want to raise TypeError in __init__
+                    raise TypeError(str(e))
 
         if metric is not None:
             if isinstance(metric, Name):
                 if metric.has_metric is False:
-                    raise ValueError(
+                    raise TypeError(
                         'metric={metric!r} argument does not include metric '
                         'information.'.format(metric=metric))
                 _package = metric.package
                 _metric = metric.metric
                 _spec = metric.spec
             else:
-                _package, _metric = \
-                    Name._parse_metric_name_string(metric)
-                _spec = None
+                try:
+                    _package, _metric = \
+                        Name._parse_metric_name_string(metric)
+                    _spec = None
+                except ValueError as e:
+                    # Want to raise TypeError in __init__
+                    raise TypeError(str(e))
 
             # Ensure none of the new information is inconsistent
             self._init_new_package_info(_package)
@@ -79,15 +87,19 @@ class Name(object):
         if spec is not None:
             if isinstance(spec, Name):
                 if spec.has_spec is False:
-                    raise ValueError(
+                    raise TypeError(
                         'spec={spec!r} argument does not include '
                         'specification information'.format(spec=spec))
                 _package = spec.package
                 _metric = spec.metric
                 _spec = spec.spec
             else:
-                _package, _metric, _spec = \
-                    Name._parse_spec_name_string(spec)
+                try:
+                    _package, _metric, _spec = \
+                        Name._parse_spec_name_string(spec)
+                except ValueError as e:
+                    # want to raise TypeError in __init__
+                    raise TypeError(str(e))
 
             # Ensure none of the new information is inconsistent
             self._init_new_package_info(_package)
@@ -98,9 +110,9 @@ class Name(object):
         if self._package is not None \
                 and self._spec is not None \
                 and self._metric is None:
-            raise ValueError("Missing 'metric' given package={package!r} "
-                             "spec={spec!r}".format(package=package,
-                                                    spec=spec))
+            raise TypeError("Missing 'metric' given package={package!r} "
+                            "spec={spec!r}".format(package=package,
+                                                   spec=spec))
 
     def _init_new_package_info(self, package):
         """Check and add new package information (for __init__)."""
@@ -110,7 +122,7 @@ class Name(object):
                 self._package = package
             else:
                 message = 'You provided a conflicting package={package!r}.'
-                raise ValueError(message.format(package=package))
+                raise TypeError(message.format(package=package))
 
     def _init_new_metric_info(self, metric):
         """Check and add new metric information (for __init__)."""
@@ -120,7 +132,7 @@ class Name(object):
                 self._metric = metric
             else:
                 message = 'You provided a conflicting metric={metric!r}.'
-                raise ValueError(message.format(metric=metric))
+                raise TypeError(message.format(metric=metric))
 
     def _init_new_spec_info(self, spec):
         """Check and add new spec information (for __init__)."""
@@ -130,7 +142,7 @@ class Name(object):
                 self._spec = spec
             else:
                 message = 'You provided a conflicting spec={spec!r}.'
-                raise ValueError(message.format(spec=spec))
+                raise TypeError(message.format(spec=spec))
 
     @staticmethod
     def _parse_fqn_string(fqn):

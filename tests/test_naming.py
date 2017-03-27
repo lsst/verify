@@ -39,7 +39,7 @@ class NameConstructors(unittest.TestCase):
             Name('validate_drp.PA1', metric='PA1')
         )
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             Name(metric='validate_drp.PA1', package='validate_base')
 
     def test_metric_name(self):
@@ -51,7 +51,7 @@ class NameConstructors(unittest.TestCase):
         )
 
         # Using the wrong type of name
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             Name(metric=Name(spec='design_gri'))
 
     def test_fully_qualified_specification_name(self):
@@ -98,7 +98,7 @@ class NameConstructors(unittest.TestCase):
             Name(metric='PA1', spec='PA1.design_gri')
         )
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             Name(metric='PA2', spec='PA1.design_gri')
 
     def test_specification_name(self):
@@ -112,7 +112,7 @@ class NameConstructors(unittest.TestCase):
         )
 
         # Using the wrong type of Name
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             Name(spec=Name('validate_drp.PA1'))
 
     def test_package_name(self):
@@ -316,14 +316,14 @@ class FullyQualifiedSpecificationName(unittest.TestCase):
     def test_spec_name(self):
         self.assertEqual(self.name.spec, 'design_gri')
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             Name('validate_drp.PA1.design_gri', spec='minimum')
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             Name('validate_drp.PA1.design_gri', metric='PA2')
 
         # Can't create a specification with a metric gap
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             Name(package='validate_drp', spec='design')
 
     def test_fqn(self):
