@@ -170,6 +170,12 @@ class FullyQualifiedMetricName(unittest.TestCase):
             self.name == Name(package='validate_base',
                               metric='PA1'))
 
+    def test_hash(self):
+        self.assertEqual(
+            hash(self.name),
+            hash(Name('validate_drp.PA1'))
+        )
+
     def test_contains(self):
         self.assertTrue(
             Name('validate_drp.PA1.design_gri') in self.name
@@ -253,6 +259,16 @@ class MetricName(unittest.TestCase):
             self.name == Name(package='validate_drp', metric='PA2'))
         self.assertFalse(
             self.name == Name(metric='PA2'))
+
+    def test_hash(self):
+        self.assertEqual(
+            hash(self.name),
+            hash(Name(metric='PA1'))
+        )
+        self.assertNotEqual(
+            hash(self.name),
+            hash(Name(package='vaidate_drp', metric='PA1'))
+        )
 
     def test_contains(self):
         self.assertTrue(
@@ -361,6 +377,20 @@ class FullyQualifiedSpecificationName(unittest.TestCase):
                               spec='design_gri'))
         self.assertFalse(
             self.name == Name(spec='design_gri'))
+
+    def test_hash(self):
+        self.assertEqual(
+            hash(self.name),
+            hash(Name('validate_drp.PA1.design_gri'))
+        )
+        self.assertNotEqual(
+            hash(self.name),
+            hash(Name('validate_drp.PA1.minimum'))
+        )
+        self.assertNotEqual(
+            hash(self.name),
+            hash(Name(spec='PA1.design_gri'))
+        )
 
     def test_has_package(self):
         self.assertTrue(self.name.has_package)

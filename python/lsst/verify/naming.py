@@ -216,6 +216,9 @@ class Name(object):
             (self.metric == other.metric) and \
             (self.spec == other.spec)
 
+    def __hash__(self):
+        return hash((self.package, self.metric, self.spec))
+
     def __contains__(self, name):
         """Test if another Name is contained by this Name."""
         contains = True  # tests will disprove membership
