@@ -1,0 +1,59 @@
+# Specifications for validate_drp metrics against validation_data_cfht
+# gri-band datasets. The `base` partial provides a provenance query that
+# makes these specifications only test measurements made from the example
+# CFHT MegaCam visit 849375, 850587 dataset in g, r, and i bands. This same
+# dataset in used by validate_drp Jenkins jobs.
+
+---
+id: 'base'
+provenance_query:
+  # TODO: This syntax for a provenance query is a prototype.
+  dataset_repo_url: 'https://github.com/lsst/validation_data_cfht.git'
+  filters: ['g', 'r', 'i']
+  visits: [849375, 850587]
+  ccd: [12, 13, 14, 21, 22, 23]
+
+---
+# validate_drp.PA1.cfht_design_gri
+name: 'cfht_design_gri'
+base: ['PA1.design_gri', '#base']
+
+---
+# validate_drp.PA1.cfht_minimum_gri
+name: 'cfht_minimum_gri'
+base: ['PA1.minimum_gri', '#base']
+
+---
+# validate_drp.PA1.chfit_stretch_gri
+name: 'cfht_stretch_gri'
+base: ['PA1.stretch_gri', '#base']
+
+---
+# validate_drp.PF1_minimum_gri.cfht_gri
+name: 'cfht_gri'
+base: ['PF1_minimum_gri.srd', '#base']
+
+---
+# validate_drp.PF1_design_gri.cfht_gri
+name: 'cfht_gri'
+base: ['PF1_design_gri.srd', '#base']
+
+---
+# validate_drp.PF1_stretch_gri.cfht_gri
+name: 'cfht_gri'
+base: ['PF1_stretch_gri.srd', '#base']
+
+---
+# validate_drp.PA2_minimum_gri.cfht_gri
+name: 'cfht_gri'
+base: ['PA2_minimum_gri.srd', '#base']
+
+---
+# validate_drp.PA2_design_gri.cfht_gri
+name: 'cfht_gri'
+base: ['PA2_design_gri.srd', '#base']
+
+---
+# validate_drp.PA2_stretch_gri.cfht_gri
+name: 'cfht_gri'
+base: ['PA2_stretch_gri.srd', '#base']
