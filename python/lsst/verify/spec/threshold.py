@@ -8,6 +8,7 @@ from astropy.tests.helper import quantity_allclose
 
 from ..jsonmixin import JsonSerializationMixin
 from ..datum import Datum
+from ..naming import Name
 from .base import Specification
 
 
@@ -106,6 +107,48 @@ class ThresholdSpecification(Specification):
                 threshold=q,
                 operator_str=json_data['threshold']['operator'])
         return s
+
+    @classmethod
+    def deserialize(cls, name=None, threshold=None,
+                    metric=None, package=None, **kwargs):
+        """Deserialize from keys in a specification YAML document or a
+        JSON serialization into a `ThresholdSpecification` instance.
+
+        Parameters
+        ----------
+        name : `str` or `lsst.validate.base.Name`
+            Specification name, either as a string or
+            `~lsst.validate.base.Name`.
+        threshold : `dict`
+            A `dict` with fields:
+
+            - ``'value'``: threshold value (`float` or `int`).
+            - ``'unit'``: threshold unit, as an `astropy.units.Unit`-
+              compatible `str`.
+            - ``'operator'``: a binary comparison operator, described in
+              the class parameters documentation (`str`).
+        metric : `str` or `lsst.validate.base.Name`, optional
+            Name of the fully-qualified name of the metric the specification
+            corresponds to. This parameter is optional if ``name`` is already
+            fully-qualified.
+        package : `str` or `lsst.validate.base.Name`, optional
+            Name of the package the specification corresponds to. This
+            parameter is optional if ``name`` or ``metric`` are already
+            fully-qualified.
+        kwargs : `dict`
+            Keyword arguments passed directly to the
+            `lsst.validate.base.Specification` constructor.
+
+        Returns
+        -------
+        specification : `ThresholdSpecification`
+            A specification instance.
+        """
+        _name = Name(metric=metric, spec=name)
+        operator_str = threshold['operator']
+        _threshold = u.Quantity(threshold['value'],
+                                u.Unit(threshold['unit']))
+        return cls(_name, _threshold, operator_str, **kwargs)
 
     def _serialize_type(self):
         """Serialize attributes of this specification type to a `dict` that is

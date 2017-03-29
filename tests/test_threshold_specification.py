@@ -128,6 +128,9 @@ class ThresholdSpecificationTestCase(unittest.TestCase):
         self.assertEqual(s.threshold, s2.threshold)
         self.assertEqual(s.operator_str, s2.operator_str)
 
+        s3 = ThresholdSpecification.deserialize(**json_data)
+        self.assertEqual(s, s3)
+
         # test datum output
         d = s.datum
         self.assertEqual(d.quantity, 5. * u.mag)
