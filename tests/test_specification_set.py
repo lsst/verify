@@ -1,12 +1,14 @@
 # See COPYRIGHT file at the top of the source tree.
 from __future__ import print_function, division
 
+from collections import OrderedDict
 import unittest
 
 import astropy.units as u
 
+from lsst.verify.errors import SpecificationResolutionError
 from lsst.verify.naming import Name
-from lsst.verify.specset import SpecificationSet
+from lsst.verify.specset import SpecificationSet, SpecificationPartial
 from lsst.verify.spec import ThresholdSpecification
 
 
@@ -25,7 +27,16 @@ class TestSpecificationSet(unittest.TestCase):
                  self.spec_PA1_stretch,
                  self.spec_PA2_design]
 
-        self.spec_set = SpecificationSet(specifications=specs)
+        partial_PA1_doc = OrderedDict([
+            ('id', 'validate_drp.LPM-17-PA1#PA1-Base'),
+            ('threshold', OrderedDict([
+                ('unit', 'mag')
+            ]))
+        ])
+        partial_PA1 = SpecificationPartial(partial_PA1_doc)
+
+        self.spec_set = SpecificationSet(specifications=specs,
+                                         partials=[partial_PA1])
 
     def test_len(self):
         self.assertEqual(len(self.spec_set), 3)
@@ -52,6 +63,41 @@ class TestSpecificationSet(unittest.TestCase):
         # KeyError when requesting a metric (anything not a specification
         with self.assertRaises(KeyError):
             self.spec_set['validate_drp.PA1']
+
+    def test_resolve_document(self):
+        """Test specification document inheritance resolution."""
+        new_spec_doc = OrderedDict([
+            ('name', 'PA1.relaxed'),
+            ('base', ['PA1.design', 'validate_drp.LPM-17-PA1#PA1-Base']),
+            ('package', 'validate_drp'),
+            ('threshold', OrderedDict([
+                ('value', 1)
+            ]))
+        ])
+
+        resolved_doc = self.spec_set.resolve_document(new_spec_doc)
+
+        self.assertEqual(resolved_doc['name'], 'PA1.relaxed')
+        self.assertEqual(resolved_doc['threshold']['unit'], 'mag')
+        self.assertEqual(resolved_doc['threshold']['value'], 1)
+        self.assertEqual(resolved_doc['threshold']['operator'], '<')
+        self.assertNotIn('base', resolved_doc)
+
+    def test_unresolvable_document(self):
+        """Test that SpecificationResolutionError is raised for unresolveable
+        inheritance bases.
+        """
+        new_spec_doc = OrderedDict([
+            ('name', 'PA1.unresolved'),
+            ('base', 'PA1.non_existent'),
+            ('package', 'validate_drp'),
+            ('threshold', OrderedDict([
+                ('value', 10)
+            ]))
+        ])
+
+        with self.assertRaises(SpecificationResolutionError):
+            self.spec_set.resolve_document(new_spec_doc)
 
 
 if __name__ == "__main__":
