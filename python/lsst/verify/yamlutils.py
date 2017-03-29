@@ -4,6 +4,7 @@
 from __future__ import print_function, division
 
 from collections import OrderedDict
+from copy import deepcopy
 import yaml
 
 __all__ = ['load_ordered_yaml', 'load_all_ordered_yaml']
@@ -73,3 +74,79 @@ def _build_ordered_loader(Loader=yaml.Loader, object_pairs_hook=OrderedDict):
         construct_mapping)
 
     return OrderedLoader
+
+
+def merge_documents(base_doc, new_doc):
+    """Merge the content of a dict-like object onto a base dict-like object,
+    recursively following embedded dictionaries and lists.
+
+    Parameters
+    ----------
+    base_doc : `dict`-like
+        The base document.
+    new_doc : `dict`-like
+        The new document. Content from the new document are added to the
+        base document. Matching keys from the new document will override
+        the base document and new keys in the document are added to the
+        base document.
+
+    Returns
+    -------
+    merged_doc : `~collections.OrderedDict`
+        The merged document. The contents of ``merged_doc`` are copies
+        of originals in ``base_doc`` and ``new_doc``.
+
+    Notes
+    -----
+    This function implements a key-value document merging algorithm
+    design for specification YAML documents. The rules are:
+
+    - Key-values from ``base_doc`` not present in ``new_doc`` are carried into
+      ``merged_doc``.
+
+    - Key-values from ``new_doc`` not present in ``base_doc`` are carried into
+      ``merged_doc``.
+
+    - If both ``new_doc`` and ``base_doc`` share a key and the value from
+      **either** is a scalar (not a `dict` or `list`-type), the value from
+      ``new_doc`` is carried into ``merged_doc``.
+
+    - If both ``new_doc`` and ``base_doc`` share a key and the value from
+      **both** is a sequence (`list`-type) then the list items from the
+      ``new_doc`` are **appended** to the ``base_doc``\ 's list.
+
+    - If both ``new_doc`` and ``base_doc`` share a key and the value from
+      **both** is a mapping (`dict`-type) then the two values are
+      merged by recursively calling this ``merge_documents`` function.
+    """
+    # Create a copy so that the base doc is not mutated
+    merged_doc = deepcopy(base_doc)
+
+    for new_key, new_value in new_doc.items():
+        if new_key in merged_doc:
+            # Deal with merge by created the 'merged_value' from base and new
+            base_value = merged_doc[new_key]
+
+            if isinstance(base_value, dict) and isinstance(new_value, dict):
+                # Recursively merge these two dictionaries
+                merged_value = merge_documents(base_value, new_value)
+
+            elif isinstance(base_value, list) and isinstance(new_value, list):
+                # Both are lists: merge by appending the new items to the end
+                # of the base items.
+                # Copy the base's list so we're not modify the input
+                merged_value = deepcopy(base_value)
+                merged_value.extend(deepcopy(new_value))  # modifies in-place
+
+            else:
+                # A scalar: just over-write the existing base value
+                merged_value = deepcopy(new_value)
+
+            # Done merging this key-value pair
+            merged_doc[new_key] = merged_value
+
+        else:
+            # Add the new key that isn't over-writing merged_doc
+            merged_doc[new_key] = deepcopy(new_value)
+
+    return merged_doc
