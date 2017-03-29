@@ -24,7 +24,7 @@ class Specification(with_metaclass(abc.ABCMeta, JsonSerializationMixin)):
     instance).
     """
 
-    def __init__(self, name):
+    def __init__(self, name, **kwargs):
         # name attibute must be a Name instance representing a specification
         if not isinstance(name, Name):
             self._name = Name(spec=name)

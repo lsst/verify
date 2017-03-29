@@ -30,6 +30,9 @@ class ThresholdSpecification(Specification):
         so that ``measurement {{ operator }} threshold quantity`` is the
         specification test. Can be one of: ``'<'``, ``'<='``, ``'>'``,
         ``'>='``, ``'=='``, or ``'!='``.
+    kwargs : `dict`
+        Keyword arguments passed directly to the
+        `lsst.validate.base.Specification` constructor.
 
     Raises
     ------
@@ -43,8 +46,8 @@ class ThresholdSpecification(Specification):
     threshold = None
     """The specification threshold level (`astropy.units.Quantity`)."""
 
-    def __init__(self, name, threshold, operator_str):
-        Specification.__init__(self, name)
+    def __init__(self, name, threshold, operator_str, **kwargs):
+        Specification.__init__(self, name, **kwargs)
 
         self.threshold = threshold
         if not isinstance(self.threshold, u.Quantity):
