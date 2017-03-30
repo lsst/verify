@@ -4,13 +4,21 @@ from __future__ import print_function, division
 from past.builtins import basestring
 
 from collections import OrderedDict
+import os
+import re
 
 from .spec.base import Specification
 from .naming import Name
 from .errors import SpecificationResolutionError
-from .yamlutils import merge_documents
+from .yamlutils import merge_documents, load_all_ordered_yaml
 
 __all__ = ['SpecificationSet']
+
+
+# Pattern for SpecificationPartial names
+# package:path#name
+PARTIAL_PATTERN = re.compile('^(?:(?P<package>\S+):)'
+                             '?(?P<path>\S+)?#(?P<name>\S+)$')
 
 
 class SpecificationSet(object):
@@ -48,6 +56,216 @@ class SpecificationSet(object):
                     raise TypeError(message.format(partial))
 
                 self._partials[partial.name] = partial
+
+    @staticmethod
+    def _load_yaml_file(yaml_file_path, package_dirname):
+        """Ingest specifications and partials from a single YAML file.
+
+        Parameters
+        ----------
+        yaml_file_path : `str`
+            File path of the specification YAML file.
+        package_dirname : `str`
+            Path of the root directory for a package's specifications.
+
+        Returns
+        -------
+        spec_docs : `list`
+            Specification YAML documents (`~collections.OrderedDict`\ s).
+        partial_docs : `list`
+            Specificaton partial YAML documents
+            (`~collections.OrderedDict`\ s).
+
+        Notes
+        -----
+        As it loads specification and specification partial documents from
+        YAML, it normalizes and enriches the documents with context necessary
+        for constructing Specification and SpecificationPartial instances
+        in other methods:
+
+        - A ``'package`` field is added.
+        - A ``'metric'`` field is added, if possible.
+        - Specification names are made fully-qualified with the
+          format ``package.metric.spec_name`` if possible (as `str`).
+        - Partial IDs are fully-qualified with the format
+          ``package:relative_yaml_path_without_extension#id``, for example
+          ``validate_drp:custom/gri#base``.
+        - The ``base`` field is processed so that each partial or specification
+          name is fully-qualified.
+        """
+        # Ensure paths are absolute so we can make relative paths and
+        # determine the package name from the last directory component of
+        # the package_dirname.
+        package_dirname = os.path.abspath(package_dirname)
+        yaml_file_path = os.path.abspath(yaml_file_path)
+
+        if not os.path.isdir(package_dirname):
+            message = 'Specification package directory {0!r} not found.'
+            raise OSError(message.format(package_dirname))
+        if not os.path.isfile(yaml_file_path):
+            message = 'Specification YAML file {0!r} not found.'
+            raise OSError(message.format(yaml_file_path))
+
+        # Name of the stack package these specifcation belong to, based
+        # on our metrics/specification repo directory structure.
+        package_name = package_dirname.split(os.path.sep)[-1]
+
+        # path identifier used in names for partials does not have an
+        # extension, and must have '/' directory separators.
+        yaml_id = os.path.relpath(yaml_file_path,
+                                  start=package_dirname)
+        yaml_id = os.path.splitext(yaml_id)[0]
+        yaml_id = '/'.join(yaml_id.split(os.path.sep))
+
+        spec_docs = []
+        partial_docs = []
+        with open(yaml_file_path) as stream:
+            parsed_docs = load_all_ordered_yaml(stream)
+
+            for doc in parsed_docs:
+                doc['package'] = package_name
+
+                if 'id' in doc:
+                    # Must be a partial
+                    doc = SpecificationSet._process_partial_yaml_doc(
+                        doc, yaml_id)
+                    partial_docs.append(doc)
+
+                else:
+                    # Must be a specification
+                    doc = SpecificationSet._process_specification_yaml_doc(
+                        doc, yaml_id)
+                    spec_docs.append(doc)
+
+        return spec_docs, partial_docs
+
+    @staticmethod
+    def _process_specification_yaml_doc(doc, yaml_id):
+        """Process a specification yaml document.
+
+        Principle functionality is:
+
+        1. Make ``name`` fully qualified (if possible).
+        2. Add ``metric`` field (if possible).
+        3. Add ``package`` field (if possible).
+        """
+        # Ensure name is fully specified
+        metric = doc.get('metric', None)
+        package = doc.get('package', None)
+
+        try:
+            doc['name'] = SpecificationSet._normalize_spec_name(
+                doc['name'], metric=metric, package=package)
+
+            _name = Name(doc['name'])
+            doc['metric'] = _name.metric
+            doc['package'] - _name.package
+        except TypeError:
+            # Can't resolve the fully-qualified specification
+            # name until inheritance is resolved. No big deal.
+            pass
+
+        # Make all bases fully-specified
+        if 'base' in doc:
+            processed_bases = SpecificationSet._process_bases(
+                doc['base'], doc['package'], yaml_id)
+            doc['base'] = processed_bases
+
+        return doc
+
+    @staticmethod
+    def _process_partial_yaml_doc(doc, yaml_id):
+        """Process a specification yaml document.
+
+        Principle functionality is:
+
+        1. Make `id` fully specified.
+        2. Make bases fully specified.
+        """
+        package = doc['package']
+
+        # Ensure the id is fully specified
+        doc['id'] = SpecificationSet._normalize_partial_name(
+            doc['id'],
+            current_yaml_id=yaml_id,
+            package=package)
+
+        # Make all bases fully-specified
+        if 'base' in doc:
+            processed_bases = SpecificationSet._process_bases(
+                doc['base'], doc['package'], yaml_id)
+            doc['base'] = processed_bases
+
+        return doc
+
+    @staticmethod
+    def _process_bases(bases, package_name, yaml_id):
+        if not isinstance(bases, list):
+            bases = [bases]
+
+        processed_bases = []
+        for base_name in bases:
+            if '#' in base_name:
+                # Base name points is a partial
+                base_name = SpecificationSet._normalize_partial_name(
+                    base_name,
+                    current_yaml_id=yaml_id,
+                    package=package_name)
+            else:
+                # Base name points to a specification
+                base_name = SpecificationSet._normalize_spec_name(
+                    base_name,
+                    package=package_name)
+
+            processed_bases.append(base_name)
+
+        return processed_bases
+
+    @staticmethod
+    def _normalize_partial_name(name, current_yaml_id=None, package=None):
+        """Normalize a partial's identifier.
+
+        >>> SpecificationSet._normalize_partial_name(
+                '#base',
+                current_yaml_id='custom/bases',
+                package='validate_drp')
+        'validate.drp:custom/bases#base'
+        """
+        if '#' not in name:
+            # Name is probably coming from a partial's own `id` field
+            # which just has the post-# part of a specification's fully
+            # qualified name.
+            name = '#' + name
+
+        matches = PARTIAL_PATTERN.search(name)
+
+        # Use info from user arguments if not given directly.
+        # Thus a user can't override info already in the name
+        _package = matches.group('package')
+        if _package is None:
+            _package = package
+        _path = matches.group('path')
+        if _path is None:
+            _path = current_yaml_id
+        partial_name = matches.group('name')
+
+        # Create the fully-specified name
+        fmt = '{package}:{path}#{name}'
+        return fmt.format(package=_package,
+                          path=_path,
+                          name=partial_name)
+
+    @staticmethod
+    def _normalize_spec_name(name, metric=None, package=None):
+        """Normalize a specification name to a fully-qualified specification
+        name.
+
+        >>> SpecificationSet._normalize_spec_name('PA1.design',
+                                                  package='validate_drp')
+        'validate_drp.PA1.design'
+        """
+        name = Name(package=package, metric=metric, spec=name)
+        return name.fqn
 
     def __str__(self):
         count = len(self)

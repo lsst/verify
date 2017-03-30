@@ -2,7 +2,13 @@
 from __future__ import print_function, division
 
 from collections import OrderedDict
+import os
 import unittest
+try:
+    from StringIO import StringIO
+except ImportError:
+    # Python 3
+    from io import StringIO
 
 import astropy.units as u
 
@@ -10,6 +16,7 @@ from lsst.verify.errors import SpecificationResolutionError
 from lsst.verify.naming import Name
 from lsst.verify.specset import SpecificationSet, SpecificationPartial
 from lsst.verify.spec import ThresholdSpecification
+from lsst.verify.yamlutils import load_ordered_yaml
 
 
 class TestSpecificationSet(unittest.TestCase):
@@ -98,6 +105,138 @@ class TestSpecificationSet(unittest.TestCase):
 
         with self.assertRaises(SpecificationResolutionError):
             self.spec_set.resolve_document(new_spec_doc)
+
+
+class TestSpeciationSetLoadYamlFile(unittest.TestCase):
+    """Test Specificationset._load_yaml_file() and sub-functions."""
+
+    def setUp(self):
+        self.test_specs_dir = os.path.join(
+            os.path.dirname(__file__),
+            'data/specs')
+
+    def test_load_yaml_file(self):
+        package = 'validate_drp'
+        package_dirname = os.path.join(self.test_specs_dir, package)
+        path = os.path.join(package_dirname, 'cfht_gri.yaml')
+
+        spec_docs, partial_docs = SpecificationSet._load_yaml_file(
+            path, package_dirname)
+
+        self.assertEqual(len(spec_docs), 9)
+        self.assertEqual(len(partial_docs), 1)
+
+        self.assertEqual(partial_docs[0]['id'], 'validate_drp:cfht_gri#base')
+
+    def test_process_bases(self):
+        yaml_id = 'dirname/filename'
+        package_name = 'package'
+        bases = ['PA2_minimum_gri.srd', '#base']
+        expected = ['package.PA2_minimum_gri.srd',
+                    'package:dirname/filename#base']
+        self.assertEqual(
+            SpecificationSet._process_bases(bases, package_name, yaml_id),
+            expected
+        )
+
+    def test_process_bases_known_yaml_id(self):
+        """Process bases when a partial already has a yaml path."""
+        yaml_id = 'dirname/filename'
+        package_name = 'package'
+        bases = ['PA2_minimum_gri.srd', 'otherdir/otherfile#base']
+        expected = ['package.PA2_minimum_gri.srd',
+                    'package:otherdir/otherfile#base']
+        self.assertEqual(
+            SpecificationSet._process_bases(bases, package_name, yaml_id),
+            expected
+        )
+
+    def test_normalize_partial_name(self):
+        self.assertEqual(
+            SpecificationSet._normalize_partial_name(
+                'name',
+                current_yaml_id='dirname/filename',
+                package='package'),
+            'package:dirname/filename#name'
+        )
+
+        self.assertEqual(
+            SpecificationSet._normalize_partial_name(
+                'otherdir/otherfile#name',
+                current_yaml_id='dirname/filename',
+                package='package'),
+            'package:otherdir/otherfile#name'
+        )
+
+    def test_normalize_spec_name(self):
+        self.assertEqual(
+            SpecificationSet._normalize_spec_name(
+                'metric.spec', package='package'),
+            'package.metric.spec'
+        )
+
+        # Not resolveable
+        with self.assertRaises(TypeError):
+            SpecificationSet._normalize_spec_name(
+                'spec', package='package'),
+
+    def test_process_specification_yaml_doc_resolved_name(self):
+        doc = ("name: 'cfht_gri'\n"
+               "package: 'validate_drp'\n"
+               "base: ['PA2_design_gri.srd', '#base']\n")
+        yaml_doc = load_ordered_yaml(StringIO(doc))
+        processed = SpecificationSet._process_specification_yaml_doc(
+            yaml_doc, 'cfht_gri')
+
+        # name is unresolved
+        self.assertEqual(processed['name'], 'cfht_gri')
+        self.assertEqual(
+            processed['base'],
+            ['validate_drp.PA2_design_gri.srd', 'validate_drp:cfht_gri#base'])
+
+    def test_process_specification_yaml_doc_unresolved_name(self):
+        doc = ('name: "design_gri"\n'
+               'metric: "PA1"\n'
+               'package: "validate_drp"\n'
+               'base: "#PA1-base"\n'
+               'threshold:\n'
+               '  value: 5.0\n')
+        yaml_doc = load_ordered_yaml(StringIO(doc))
+        processed = SpecificationSet._process_specification_yaml_doc(
+            yaml_doc, 'LPM-17-PA1')
+
+        # name is resolved
+        self.assertEqual(processed['name'], 'validate_drp.PA1.design_gri')
+        self.assertEqual(
+            processed['base'],
+            ["validate_drp:LPM-17-PA1#PA1-base"])
+        self.assertEqual(
+            processed['metric'],
+            'PA1')
+        self.assertEqual(
+            processed['package'],
+            'validate_drp')
+
+    def test_process_partial_yaml_doc(self):
+        doc = ("id: 'PA1-base'\n"
+               "metric: 'PA1'\n"
+               "package: 'validate_drp'\n"
+               "threshold:\n"
+               "  unit: 'mmag'\n"
+               "  operator: '<='\n")
+        yaml_doc = load_ordered_yaml(StringIO(doc))
+        processed = SpecificationSet._process_partial_yaml_doc(
+            yaml_doc, 'LPM-17-PA1')
+
+        self.assertEqual(
+            processed['id'],
+            'validate_drp:LPM-17-PA1#PA1-base')
+        self.assertEqual(
+            processed['metric'],
+            'PA1')
+        self.assertEqual(
+            processed['package'],
+            'validate_drp')
 
 
 if __name__ == "__main__":
