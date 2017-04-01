@@ -8,6 +8,7 @@ import os
 import re
 
 from .spec.base import Specification
+from .spec.threshold import ThresholdSpecification
 from .naming import Name
 from .errors import SpecificationResolutionError
 from .yamlutils import merge_documents, load_all_ordered_yaml
@@ -56,6 +57,108 @@ class SpecificationSet(object):
                     raise TypeError(message.format(partial))
 
                 self._partials[partial.name] = partial
+
+    @classmethod
+    def load_single_package(cls, package_specs_dirname):
+        """Create a SpecificationSet from a filesystem directory containing
+        specification YAML files for a single package.
+
+        Parameters
+        ----------
+        package_specs_dirname : `str`
+            Directory containing specification definition YAML files for
+            metrics of a single package. The name of this directory (final
+            path component) is taken as the name of the package.
+
+        Returns
+        -------
+        spec_set : `SpecificationSet`
+            A `SpecificationSet` containing `Specification` instances.
+
+        See also
+        --------
+        SpecificationSet.load_metrics_package
+
+        Notes
+        -----
+        This SpecificationSet constructor is useful for loading specifications
+        from a directory containing specification definitions for a single
+        package. The directory name is interpreted as a package name
+        for fully-qualified metric and specification names.
+
+        To load a Verification Framework metrics package, like
+        ``validate_metrics``, with specifications for multple packages,
+        use `load_metrics_packge` instead.
+        """
+        instance = cls()
+        instance._load_package_dir(package_specs_dirname)
+
+        return instance
+
+    def _load_package_dir(self, package_specs_dirname):
+        yaml_extensions = ('.yaml', '.yml')
+        package_specs_dirname = os.path.abspath(package_specs_dirname)
+
+        all_docs = []
+
+        for (root_dir, _, filenames) in os.walk(package_specs_dirname):
+            for filename in filenames:
+                if os.path.splitext(filename)[-1] not in yaml_extensions:
+                    continue
+                filename = os.path.join(root_dir, filename)
+                spec_docs, partial_docs = SpecificationSet._load_yaml_file(
+                    filename,
+                    package_specs_dirname)
+                all_docs.extend(partial_docs)
+                all_docs.extend(spec_docs)
+
+        # resolve inheritance and Specification* instances when possible
+        while len(all_docs) > 0:
+            redo_queue = []
+
+            for doc in all_docs:
+                try:
+                    doc = self.resolve_document(doc)
+                except SpecificationResolutionError:
+                    # try again later
+                    redo_queue.append(doc)
+                    continue
+
+                if 'id' in doc:
+                    partial = SpecificationPartial(doc)
+                    self._partials[partial.name] = partial
+                else:
+                    # Make sure the name is fully qualified
+                    # since _process_specification_yaml_doc may not have
+                    # finished this yet
+                    doc['name'] = SpecificationSet._normalize_spec_name(
+                        doc['name'], metric=doc.get('metric', None),
+                        package=doc.get('package', None))
+
+                    # FIXME DM-8477 Need a registry to support multiple types
+                    if 'threshold' not in doc:
+                        message = ("We only support threshold-type "
+                                   "specifications\n"
+                                   "{0!r}".format(doc))
+                        raise NotImplementedError(message)
+                    spec = ThresholdSpecification.deserialize(**doc)
+
+                    name = spec.name
+
+                    if not name.is_fq:
+                        message = (
+                            'Fully-qualified name not resolved for'
+                            '{0!s}'.format(spec))
+                        raise SpecificationResolutionError(message)
+
+                    self._specs[name] = spec
+
+            if len(redo_queue) == len(all_docs):
+                message = ("There are unresolved specification "
+                           "documents: {0!r}")
+                raise SpecificationResolutionError(message.format(redo_queue))
+
+            all_docs = redo_queue
 
     @staticmethod
     def _load_yaml_file(yaml_file_path, package_dirname):
@@ -107,7 +210,7 @@ class SpecificationSet(object):
             raise OSError(message.format(yaml_file_path))
 
         # Name of the stack package these specifcation belong to, based
-        # on our metrics/specification repo directory structure.
+        # on our metrics/specification package directory structure.
         package_name = package_dirname.split(os.path.sep)[-1]
 
         # path identifier used in names for partials does not have an

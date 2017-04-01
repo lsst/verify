@@ -239,5 +239,19 @@ class TestSpeciationSetLoadYamlFile(unittest.TestCase):
             'validate_drp')
 
 
+class TestSpecificationSetLoadSinglePackage(unittest.TestCase):
+    """Test SpecificationSet.load_single_package."""
+
+    def setUp(self):
+        self.test_package_dir = os.path.join(
+            os.path.dirname(__file__),
+            'data/specs/validate_drp')
+
+    def test_load(self):
+        spec_set = SpecificationSet.load_single_package(self.test_package_dir)
+        self.assertTrue('validate_drp.PA1.design_gri' in spec_set)
+        self.assertTrue('validate_drp:cfht_gri#base' in spec_set)
+
+
 if __name__ == "__main__":
     unittest.main()
