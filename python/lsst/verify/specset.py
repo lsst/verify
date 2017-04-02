@@ -88,3 +88,25 @@ class SpecificationSet(object):
                 raise KeyError(message.format(name))
 
             return self._specs[name]
+
+
+class SpecificationPartial(object):
+    """A specification definition partial, used when parsing specification
+    YAML repositories.
+    """
+
+    def __init__(self, yaml_doc):
+        self.yaml_doc = yaml_doc
+        self.name = self.yaml_doc.pop('id')
+
+    def __str__(self):
+        return self.name
+
+    def __hash__(self):
+        return hash(self.name)
+
+    @property
+    def json(self):
+        """JSON-serializable representation of the partial."""
+        # This API is for compatibility with Specification classes
+        return self.yaml_doc
