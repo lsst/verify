@@ -2,7 +2,7 @@
 from __future__ import print_function, division
 
 from .jsonmixin import JsonSerializationMixin
-from .blob import BlobBase
+from .blob import Blob
 
 
 __all__ = ['Job']
@@ -32,7 +32,7 @@ class Job(JsonSerializationMixin):
         List of `MeasurementBase`-derived objects. Additional measurements can
         be added with the `register_measurement` method.
     blobs : `list`, optional
-        List of `BlobBase`-derived objects. Additional blobs can be added
+        List of `Blob`-type objects. Additional blobs can be added
         with the `register_blob` method.
     """
     def __init__(self, measurements=None, blobs=None):
@@ -130,10 +130,10 @@ class Job(JsonSerializationMixin):
 
         Parameters
         ----------
-        b : `BlobBase`-type object
+        b : `Blob`-type object
             A blob object.
         """
-        assert isinstance(b, BlobBase)
+        assert isinstance(b, Blob)
         if b.identifier not in self._blob_ids:
             self._blobs.append(b)
             self._blob_ids.add(b.identifier)

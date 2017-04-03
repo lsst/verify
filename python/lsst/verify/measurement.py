@@ -5,7 +5,7 @@ import uuid
 
 import astropy.units as u
 from .jsonmixin import JsonSerializationMixin
-from .blob import DeserializedBlob
+from .blob import Blob
 from .datum import Datum, QuantityAttributeMixin
 from .metric import Metric
 
@@ -193,7 +193,7 @@ class Measurement(QuantityAttributeMixin, JsonSerializationMixin):
             for k, id_ in json_data['blobs'].items():
                 for blob_doc in blobs_json:
                     if blob_doc['identifier'] == id_:
-                        blob = DeserializedBlob.from_json(blob_doc)
+                        blob = Blob.from_json(blob_doc)
                         linked_blobs[k] = blob
 
         m = cls(quantity=q,

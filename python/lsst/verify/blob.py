@@ -1,56 +1,54 @@
 # See COPYRIGHT file at the top of the source tree.
 from __future__ import print_function, division
 
-import abc
+from past.builtins import basestring
+
 import uuid
 
 from .jsonmixin import JsonSerializationMixin
-from .datummixin import DatumAttributeMixin
 from .datum import Datum
 
 
-__all__ = ['BlobBase', 'DeserializedBlob']
+__all__ = ['Blob']
 
 
-class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
-    """Base class for blobs: flexible containers of data that are serialized
+class Blob(JsonSerializationMixin):
+    """Blobs is a flexible container of data, as Datums, that are serializable
     to JSON.
 
     .. seealso::
 
        The page :ref:`verify-creating-blobs` describes how to create
        blob classes.
+
+    Parameters
+    ----------
+    name : `str`
+        Name of this type of blob. Blobs that share the same name generally
+        share the same schema of Datums.
+    datums : `dict` of `Datum`-types, optional
+        Datum-types. Each `Datum` can be later retrived from the Blob by key.
     """
 
-    datums = None
-    """`dict` of `Datum` instances contained by the blob instance.
-
-    The values of blobs can also be accessed as attributes of the `BlobBase`
-    subclass. Keys in `datums` and attributes share the same names.
-    """
-
-    def __init__(self):
-        self.datums = {}
+    def __init__(self, name, **datums):
+        # Internal read-only instance ID, access with the name attribute
         self._id = uuid.uuid4().hex
 
-    def __getattr__(self, key):
-        if key in self.datums:
-            return self.datums[key].quantity
-        else:
-            raise AttributeError("%r object has no attribute %r" %
-                                 (self.__class__, key))
+        if not isinstance(name, basestring):
+            message = 'Blob name {0!r} must be a string'.format(name)
+            raise TypeError(message)
+        self._name = name
 
-    def __setattr__(self, key, value):
-        if key != 'datums' and key in self.datums:
-            # Setting value of a serialized Datum
-            self.datums[key].quantity = value
-        else:
-            super(BlobBase, self).__setattr__(key, value)
+        # Internal Datum dictionary
+        self._datums = {}
 
-    @abc.abstractproperty
+        for key, datum in datums.items():
+            self[key] = datum
+
+    @property
     def name(self):
-        """Name of this blob (the `BlobBase` subclass's Python namespace)."""
-        pass
+        """Name of this blob (`str`)."""
+        return self._name
 
     @property
     def identifier(self):
@@ -68,11 +66,16 @@ class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
 
         Returns
         -------
-        blob : `BlobBase`-type
+        blob : `Blob`-type
             Blob from JSON.
         """
         datums = {k: Datum.from_json(v) for k, v in json_data['data'].items()}
-        return cls(json_data['name'], json_data['identifier'], datums)
+        instance = cls(json_data['name'], **datums)
+
+        # Insert the unique identifier to match the serialized blob
+        instance._id = json_data['identifier']
+
+        return instance
 
     @property
     def json(self):
@@ -80,58 +83,38 @@ class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
         json_doc = JsonSerializationMixin.jsonify_dict({
             'identifier': self.identifier,
             'name': self.name,
-            'data': self.datums})
+            'data': self._datums})
         return json_doc
 
-    def register_datum(self, name, quantity=None, label=None,
-                       description=None, datum=None):
-        """Register a new `Datum` to be contained by, and serialized via,
-        this blob.
+    def __setitem__(self, key, value):
+        if not isinstance(key, basestring):
+            message = 'Key {0!r} is not a string.'.format(key)
+            raise KeyError(message)
 
-        The value of the `Datum` can either be set at registration time (with
-        the ``quantity`` or ``datum`` arguments) or later by setting the
-        instance attribute named ``name``.
+        if not isinstance(value, Datum):
+            message = '{0} is not a Datum-type'.format(value)
+            raise TypeError(message)
 
-        Values of `Datum`\ s can always be accessed or updated through instance
-        attributes.
+        self._datums[key] = value
 
-        The full `Datum` object can be accessed as items of the `datums`
-        dictionary attached to this class. This method is useful for accessing
-        or updating metadata about a `Datum`, such as: `~Datum.unit`,
-        `~Datum.label`, or `~Datum.description`.
+    def __getitem__(self, key):
+        return self._datums[key]
 
-        Parameters
-        ----------
-        name : `str`
-            Name of the `Datum`; used as the key in the `datums` attribute of
-            this object.
-        value : obj
-            Value of the `Datum`.
-        label : `str`, optional
-            Label suitable for plot axes (without units). By default the
-            `name` is used as the ``label``. Setting this label argument
-            overrides this default.
-        description : `str`, optional
-            Extended description.
-        datum : `Datum`, optional
-            If a `Datum` is provided, its value, units and label will be
-            used unless overriden by other arguments to `register_datum`.
-        """
-        self._register_datum_attribute(self.datums, name,
-                                       quantity=quantity, label=label,
-                                       description=description, datum=datum)
+    def __delitem__(self, key):
+        del self._datums[key]
 
+    def __len__(self):
+        return len(self._datums)
 
-class DeserializedBlob(BlobBase):
-    """A concrete Blob deserialized from JSON.
+    def __contains__(self, key):
+        return key in self._datums
 
-    This class should only be used internally.
-    """
+    def __iter__(self):
+        for key in self._datums:
+            yield key
 
-    name = None
+    def __eq__(self, other):
+        return other.identifier == self.identifier
 
-    def __init__(self, name, id_, datums):
-        BlobBase.__init__(self)
-        self.name = name
-        self._id = id_
-        self.datums = datums
+    def __hash__(self):
+        return hash(self.identifier)
