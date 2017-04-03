@@ -71,6 +71,13 @@ class TestSpecificationSet(unittest.TestCase):
         with self.assertRaises(KeyError):
             self.spec_set['validate_drp.PA1']
 
+    def test_iter(self):
+        """Test SpecificationSet key iteration."""
+        names = [n for n in self.spec_set]
+        self.assertEqual(len(names), len(self.spec_set))
+        for name in names:
+            self.assertTrue(isinstance(name, Name))
+
     def test_resolve_document(self):
         """Test specification document inheritance resolution."""
         new_spec_doc = OrderedDict([

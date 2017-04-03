@@ -477,6 +477,10 @@ class SpecificationSet(object):
 
             return self._specs[name]
 
+    def __iter__(self):
+        for key in self._specs:
+            yield key
+
     def resolve_document(self, spec_doc):
         """Resolve inherited properties in a specification document using
         specifications available in the repo.
