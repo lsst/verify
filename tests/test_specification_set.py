@@ -114,6 +114,48 @@ class TestSpecificationSet(unittest.TestCase):
             self.spec_set.resolve_document(new_spec_doc)
 
 
+class TestSpecificationSetGetterSetter(unittest.TestCase):
+    """Test __setitem__, __getitem__ and __delitem__."""
+
+    def test_mapping(self):
+        spec_PA1_design = ThresholdSpecification(
+            'validate_drp.PA1.design', 5. * u.mmag, '<')
+        spec_PA1_stretch = ThresholdSpecification(
+            'validate_drp.PA1.stretch', 3. * u.mmag, '<')
+
+        spec_set = SpecificationSet()
+        self.assertEqual(len(spec_set), 0)
+
+        # This syntax is slightly awkward, which is why we have `insert()` too
+        spec_set[spec_PA1_design.name] = spec_PA1_design
+        self.assertEqual(len(spec_set), 1)
+        self.assertTrue('validate_drp.PA1.design' in spec_set)
+
+        # Insert
+        spec_set.insert(spec_PA1_stretch)
+        self.assertEqual(len(spec_set), 2)
+        self.assertTrue('validate_drp.PA1.stretch' in spec_set)
+
+        # Delete
+        del spec_set['validate_drp.PA1.stretch']
+        self.assertEqual(len(spec_set), 1)
+        self.assertFalse('validate_drp.PA1.stretch' in spec_set)
+
+        # Insert duplicate
+        spec_set[spec_PA1_design.name] = spec_PA1_design
+        self.assertEqual(len(spec_set), 1)
+        self.assertTrue('validate_drp.PA1.design' in spec_set)
+
+        # Insert weird value
+        with self.assertRaises(TypeError):
+            spec_set['validate_drp.PAX.design'] = 10
+
+        # __setitem__ insert with a conflicting key.
+        # This is why insert() is preferred.
+        with self.assertRaises(KeyError):
+            spec_set['validate_drp.hello.world'] = spec_PA1_design
+
+
 class TestSpeciationSetLoadYamlFile(unittest.TestCase):
     """Test Specificationset._load_yaml_file() and sub-functions."""
 

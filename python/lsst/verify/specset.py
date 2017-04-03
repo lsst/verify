@@ -477,9 +477,71 @@ class SpecificationSet(object):
 
             return self._specs[name]
 
+    def __setitem__(self, key, value):
+        if isinstance(key, basestring) and '#' in key:
+            # must be a partial's name
+            if not isinstance(value, SpecificationPartial):
+                message = ('Expected {0!s}={1!r} to be a '
+                           'SpecificationPartial-type')
+                raise TypeError(message.format(key, value))
+
+            # Ensure key and value.name are consistent
+            if key != value.name:
+                message = ("Key {0!s} does not match the "
+                           "SpecificationPartial's name {1!s})")
+                raise KeyError(message.format(key, value.name))
+            self._partials[key] = value
+
+        else:
+            # must be a specification.
+            if not isinstance(key, Name):
+                key = Name(spec=key)
+
+            if not key.is_spec:
+                message = 'Expected key {0!r} to resolve a specification'
+                raise KeyError(message.format(key))
+
+            if not isinstance(value, Specification):
+                message = ('Expected {0!s}={1!r} to be a '
+                           'Specification-type')
+                raise TypeError(message.format(key, value))
+
+            # Ensure key and value.name are consistent
+            if key != value.name:
+                message = ("Key {0!s} does not match the "
+                           "Specification's name {1!s})")
+                raise KeyError(message.format(key, value.name))
+
+            self._specs[key] = value
+
+    def __delitem__(self, key):
+        if isinstance(key, basestring) and '#' in key:
+            # must be a partial's name
+            del self._partials[key]
+
+        else:
+            # must be a specification
+            if not isinstance(key, Name):
+                key = Name(spec=key)
+
+            del self._specs[key]
+
     def __iter__(self):
         for key in self._specs:
             yield key
+
+    def insert(self, spec):
+        """Insert a Specification into the set.
+
+        A pre-existing specification with the same name is replaced.
+
+        Parameters
+        ----------
+        spec : `Specification`-type
+            A specification.
+        """
+        key = spec.name
+        self[key] = spec
 
     def resolve_document(self, spec_doc):
         """Resolve inherited properties in a specification document using
