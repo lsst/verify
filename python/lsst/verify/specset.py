@@ -569,6 +569,43 @@ class SpecificationSet(object):
             # No inheritance to resolve
             return spec_doc
 
+    def subset(self, name):
+        """Create a new `SpecificationSet` with specifications belonging to
+        a single package or metric.
+
+        Parameters
+        ----------
+        name : `str` or `lsst.validate.base.Name`
+            Name to subset specifications by. If this is the name of a package,
+            then all specifications for that package are included in the
+            subset. If this is a metric name, then only specifications
+            for that metric are included in the subset. The metric name
+            must be fully-qualified (that is, it includes a package component).
+
+        Returns
+        -------
+        spec_subset : `SpecificationSet`
+            Subset of this `SpecificationSet` containing only specifications
+            belonging to the indicated package or metric. Any partials in
+            the SpecificationSet are also included in ``spec_subset``.
+        """
+        if not isinstance(name, Name):
+            name = Name(name)
+
+        if not name.is_fq:
+            message = '{0!s} is not a fully-qualified name'.format(name)
+            raise RuntimeError(message)
+
+        specs = [spec for spec_name, spec in self._specs.items()
+                 if spec_name in name]
+
+        all_partials = [partial
+                        for partial_name, partial in self._partials.items()]
+
+        spec_subset = SpecificationSet(specifications=specs,
+                                       partials=all_partials)
+        return spec_subset
+
 
 class SpecificationPartial(object):
     """A specification definition partial, used when parsing specification

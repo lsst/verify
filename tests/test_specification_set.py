@@ -265,5 +265,33 @@ class TestSpecificationSetLoadMetricsPackage(unittest.TestCase):
         self.assertTrue('validate_drp:cfht_gri#base' in self.spec_set)
 
 
+class TestSpecificationSetSubset(unittest.TestCase):
+    """Test creating subsets from a SpecificationSet."""
+
+    def setUp(self):
+        # defaults to validate_metrics
+        self.spec_set = SpecificationSet.load_metrics_package()
+
+    def test_validate_drp_subset(self):
+        package = Name('validate_drp')
+        subset = self.spec_set.subset('validate_drp')
+
+        self.assertTrue(isinstance(subset, type(self.spec_set)))
+        self.assertTrue(len(subset) > 0)
+
+        for spec_name, spec in subset._specs.items():
+            self.assertTrue(spec_name in package)
+
+    def test_PA1_subset(self):
+        metric = Name('validate_drp.PA1')
+        subset = self.spec_set.subset('validate_drp.PA1')
+
+        self.assertTrue(isinstance(subset, type(self.spec_set)))
+        self.assertTrue(len(subset) > 0)
+
+        for spec_name, spec in subset._specs.items():
+            self.assertTrue(spec_name in metric)
+
+
 if __name__ == "__main__":
     unittest.main()
