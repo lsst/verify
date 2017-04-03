@@ -253,5 +253,17 @@ class TestSpecificationSetLoadSinglePackage(unittest.TestCase):
         self.assertTrue('validate_drp:cfht_gri#base' in spec_set)
 
 
+class TestSpecificationSetLoadMetricsPackage(unittest.TestCase):
+    """Test SpecificationSet.load_metrics_package()."""
+
+    def setUp(self):
+        # defaults to verify_metrics
+        self.spec_set = SpecificationSet.load_metrics_package()
+
+    def test_contains(self):
+        self.assertTrue('validate_drp.PA1.design_gri' in self.spec_set)
+        self.assertTrue('validate_drp:cfht_gri#base' in self.spec_set)
+
+
 if __name__ == "__main__":
     unittest.main()

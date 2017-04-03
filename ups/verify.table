@@ -3,10 +3,11 @@ setupRequired(pyyaml)
 setupRequired(numpy)
 setupRequired(astropy)
 setupRequired(sconsUtils)
+setupRequired(utils)
+setupRequired(pex_exceptions)
 
-# bin/validate_metrics_repo.py uses these
-setupOptional(utils)
-setupOptional(pex_exceptions)
+# verify_metrics is the default metrics repo and is used in tests
+setupRequired(verify_metrics)
 
 envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
 envPrepend(PATH, ${PRODUCT_DIR}/bin)

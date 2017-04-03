@@ -7,6 +7,9 @@ from collections import OrderedDict
 import os
 import re
 
+import lsst.pex.exceptions
+from lsst.utils import getPackageDir
+
 from .spec.base import Specification
 from .spec.threshold import ThresholdSpecification
 from .naming import Name
@@ -59,6 +62,66 @@ class SpecificationSet(object):
                 self._partials[partial.name] = partial
 
     @classmethod
+    def load_metrics_package(cls, package_name_or_path='verify_metrics'):
+        """Create a SpecificationSet from an Verification Framework metrics
+        package.
+
+        Parameters
+        ----------
+        package_name_or_path : `str`, optional
+            Name of an EUPS package that hosts metric and specification
+            definition YAML files **or** the file path to a metrics package.
+            ``verify_metrics`` is the default package, and is where metrics
+            and specifications are defined for most packages.
+
+        Returns
+        -------
+        spec_set : `SpecificationSet`
+            A `SpecificationSet` containing `Specification` instances.
+
+        See also
+        --------
+        `SpecificationSet.load_single_package`
+
+        Notes
+        -----
+        EUPS packages that host metrics and specification definitions for the
+        Verification Framework have top-level directories named ``'metrics'``
+        and ``'specs'``.
+
+        Within ``'specs/'``, directories are named after *packages* that
+        have defined metrics. Contained within these directories are YAML files
+        defining specifications for those metrics.
+
+        To make a `SpecificationSet` from a single package's specifications,
+        use `load_single_package` instead.
+        """
+        try:
+            # Try an EUPS package name
+            package_dir = getPackageDir(package_name_or_path)
+        except lsst.pex.exceptions.NotFoundError:
+            # Try as a filesystem path instead
+            package_dir = package_name_or_path
+        finally:
+            package_dir = os.path.abspath(package_dir)
+
+        specs_dirname = os.path.join(package_dir, 'specs')
+        if not os.path.isdir(specs_dirname):
+            message = 'Specifications directory {0} not found'
+            raise OSError(message.format(specs_dirname))
+
+        instance = cls()
+
+        # Load specifications for each 'package' within specs/
+        for name in os.listdir(specs_dirname):
+            package_specs_dirname = os.path.join(specs_dirname, name)
+            if not os.path.isdir(package_specs_dirname):
+                continue
+            instance._load_package_dir(package_specs_dirname)
+
+        return instance
+
+    @classmethod
     def load_single_package(cls, package_specs_dirname):
         """Create a SpecificationSet from a filesystem directory containing
         specification YAML files for a single package.
@@ -87,7 +150,7 @@ class SpecificationSet(object):
         for fully-qualified metric and specification names.
 
         To load a Verification Framework metrics package, like
-        ``validate_metrics``, with specifications for multple packages,
+        ``verify_metrics``, with specifications for multple packages,
         use `load_metrics_packge` instead.
         """
         instance = cls()
