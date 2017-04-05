@@ -131,11 +131,12 @@ class MetricTestCase(unittest.TestCase):
     def test_str(self):
         m1 = Metric('test', 'test docs', 'arcsec', reference_url='example.com',
                     reference_doc='Doc', reference_page=1)
-        self.assertEqual(str(m1), 'test (arcsec): "test docs"')
+        self.assertEqual(str(m1), 'test (arcsec): test docs')
+
         m2 = Metric('test2', 'some words', '')
         self.assertEqual(
             str(m2),
-            'test2 (dimensionless_unscaled): "some words"')
+            'test2 (dimensionless_unscaled): some words')
 
     def test_check_unit(self):
         m = Metric('test', '', 'marcsec')

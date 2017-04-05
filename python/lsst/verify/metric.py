@@ -125,10 +125,12 @@ class Metric(JsonSerializationMixin):
         Name of the metric (e.g., ``'PA1'``).
     description : `str`
         Short description about the metric.
-    unit : astropy.units.Unit
+    unit : `str` or `astropy.units.Unit`
         Units of the metric. `Measurements` of this metric must be in an
-        equivalent (i.e. convertable) unit.
-        Use `dimensionless_unscaled` for a unitless quantity.
+        equivalent (i.e. convertable) unit. Argument can either be a
+        `~astropy.unit.Unit` instance, or a an astropy.unit.Unit-compatible
+        string representation. Use an empty string, ``''``, or
+        ``astropy.units.dimensionless_unscaled`` for a unitless quantity.
     tags : `list` of `str`
         Tags asssociated with this metric, to group it with similar metrics.
     reference_doc : `str`, optional
@@ -142,9 +144,6 @@ class Metric(JsonSerializationMixin):
 
     description = None
     """Short description of the metric (`str`)."""
-
-    unit = None
-    """Units of the metric (`Astropy.Quantity.Unit`)."""
 
     tags = None
     """Tag labels to group the metric (`list` of `str`)."""
@@ -162,7 +161,7 @@ class Metric(JsonSerializationMixin):
                  reference_doc=None, reference_url=None, reference_page=None):
         self.name = name
         self.description = description
-        self.unit = unit
+        self.unit = u.Unit(unit)
         if tags is None:
             self.tags = []
         else:
@@ -254,7 +253,16 @@ class Metric(JsonSerializationMixin):
         return not self.__eq__(other)
 
     def __str__(self):
-        return '{0.name} ({0.unit_str}): "{0.description}"'.format(self)
+        # self.unit_str provides the astropy.unit.Unit's string representation
+        # that can be used to create a new Unit. But for readability,
+        # we use 'dimensionless_unscaled' (an member of astropy.unit) rather
+        # than an empty string for the Metric's string representation.
+        if self.unit_str == '':
+            unit_str = 'dimensionless_unscaled'
+        else:
+            unit_str = self.unit_str
+        return '{self.name!s} ({unit_str}): {self.description}'.format(
+            self=self, unit_str=unit_str)
 
     @property
     def name(self):
@@ -266,13 +274,31 @@ class Metric(JsonSerializationMixin):
         self._name = Name(metric=value)
 
     @property
+    def unit(self):
+        """The metric's unit (`astropy.units.Unit`)."""
+        return self._unit
+
+    @unit.setter
+    def unit(self, value):
+        if not isinstance(value, (u.UnitBase, u.FunctionUnitBase)):
+            message = ('unit attribute must be an astropy.units.Unit-type. '
+                       ' Currently type {0!s}.'.format(type(value)))
+            if isinstance(value, basestring):
+                message += (' Set the `unit_str` attribute instead for '
+                            'assigning the unit as a string')
+            raise ValueError(message)
+        self._unit = value
+
+    @property
     def unit_str(self):
-        """The string representation of the `Unit` of this metric."""
-        if self.unit == '':
-            unit = 'dimensionless_unscaled'
-        else:
-            unit = self.unit
-        return unit
+        """The string representation of the metric's unit
+        (`~astropy.unit.Unit`-compatible `str`).
+        """
+        return str(self.unit)
+
+    @unit_str.setter
+    def unit_str(self, value):
+        self.unit = u.Unit(value)
 
     @property
     def reference(self):
@@ -307,7 +333,7 @@ class Metric(JsonSerializationMixin):
         return JsonSerializationMixin.jsonify_dict({
             'name': str(self.name),
             'description': self.description,
-            'unit': self.unit,
+            'unit': self.unit_str,
             'reference': ref_doc})
 
     def check_unit(self, quantity):
