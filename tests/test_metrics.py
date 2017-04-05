@@ -121,12 +121,7 @@ class MetricTestCase(unittest.TestCase):
 
         # rebuild from json
         m2 = Metric.from_json(j)
-        self.assertEqual(m.name, m2.name)
-        self.assertEqual(m.description, m2.description)
-        self.assertEqual(m.unit, m2.unit)
-        self.assertEqual(m.reference_doc, m2.reference_doc)
-        self.assertEqual(m.reference_page, m2.reference_page)
-        self.assertEqual(m.reference_url, m2.reference_url)
+        self.assertEqual(m, m2)
 
     def test_str(self):
         m1 = Metric('test', 'test docs', 'arcsec', reference_url='example.com',
