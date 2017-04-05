@@ -7,61 +7,48 @@ import unittest
 import yaml
 import astropy.units as u
 
-from lsst.verify import Metric, MetricSet, MetricRepo
+from lsst.verify import Metric, MetricSet
 
 
-class MetricRepoTestCase(unittest.TestCase):
+class MetricsPackageTestCase(unittest.TestCase):
+    """Test creating a MetricSet from a mock verification framework
+    metric package located at data/ relative test modules.
+
+    These tests are coupled to the data/metrics/*.yaml files.
+    """
+
     def setUp(self):
-        self.yaml_path = os.path.join(
-            os.path.dirname(__file__),
-            'data',
-            'metrics')
+        self.metrics_yaml_dirname = os.path.join(
+            os.path.dirname(__file__), 'data')
 
-    def test_from_metrics_dir(self):
-        metric_repo = MetricRepo.from_metrics_dir(self.yaml_path)
-        self.assertEqual(len(metric_repo), 1)
-        self.assertIn('testing', metric_repo)
-        self.assertEqual(metric_repo['testing'].name, 'testing')
+        self.metric_set = MetricSet.load_metrics_package(
+            self.metrics_yaml_dirname)
 
-    def test_str(self):
-        m1 = Metric('m1', 'm1 docs', u.arcsec)
-        m2 = Metric('m2', 'm2 docs', u.mag)
-        metric_set = MetricSet(
-            'some_metrics',
-            metric_dict={'m1': m1, 'm2': m2})
-        metric_repo = MetricRepo(
-            'some/path/test',
-            {metric_set.name: metric_set})
-        expect = 'some/path/test: {\nsome_metrics: ' \
-                 '{\nm1 (arcsec): "m1 docs",\nm2 (mag): "m2 docs"\n}}'
-        self.assertEqual(str(metric_repo), expect)
+    def test_len(self):
+        self.assertEqual(len(self.metric_set), 4)
 
-
-class MetricSetTestCase(unittest.TestCase):
-    def setUp(self):
-        yaml_path = os.path.join(os.path.dirname(__file__),
-                                 'data', 'metrics', 'testing.yaml')
-        with open(yaml_path) as f:
-            self.metric_doc = yaml.load(f)
-
-    def test_from_yaml(self):
-        metric_set = MetricSet.from_yaml('testing', self.metric_doc)
-        self.assertEqual(len(metric_set), 4)
+    def test_contains(self):
         for key in ['testing.PA1',
                     'testing.PF1',
                     'testing.PA2',
                     'testing.AM1']:
-            self.assertIn(key, metric_set, msg=key)
-            self.assertEqual(metric_set[key].name, key.split('.')[1])
+            self.assertIn(key, self.metric_set, msg=key)
 
-    def test_str(self):
-        m1 = Metric('m1', 'm1 docs', u.arcsec)
-        m2 = Metric('m2', 'm2 docs', u.mag)
-        metric_set = MetricSet('some_metrics',
-                               metric_dict={'m1': m1, 'm2': m2})
-        expect = 'some_metrics: {\nm1 (arcsec): "m1 docs",\n' \
-                 'm2 (mag): "m2 docs"\n}'
-        self.assertEqual(str(metric_set), expect)
+
+class VerifyMetricsParsingTestCase(unittest.TestCase):
+    """Test parsing metrics from verify_metrics (an EUPS package)."""
+
+    def setUp(self):
+        self.metric_set = MetricSet.load_metrics_package('verify_metrics')
+
+    def test_len(self):
+        """Just verify that we got metrics without raising an exception"""
+        self.assertTrue(len(self.metric_set) > 0)
+
+    def test_nonexistent_package(self):
+        """Test handling of non-existing metrics packages/directories."""
+        with self.assertRaises(OSError):
+            MetricSet.load_metrics_package('nonexistent_metrics')
 
 
 class MetricTestCase(unittest.TestCase):
@@ -76,7 +63,7 @@ class MetricTestCase(unittest.TestCase):
     def test_load_all_yaml_metrics(self):
         """Verify that all metrics from testing.yaml can be loaded."""
         for metric_name in self.metric_doc:
-            m = Metric.from_yaml(metric_name, yaml_doc=self.metric_doc)
+            m = Metric.deserialize(metric_name, **self.metric_doc[metric_name])
             self.assertIsInstance(m, Metric)
 
     def test_reference_string(self):
@@ -120,7 +107,7 @@ class MetricTestCase(unittest.TestCase):
         self.assertEqual(j['reference']['url'], reference_url)
 
         # rebuild from json
-        m2 = Metric.from_json(j)
+        m2 = Metric.deserialize(**j)
         self.assertEqual(m, m2)
 
     def test_str(self):

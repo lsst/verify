@@ -1,112 +1,155 @@
 # See COPYRIGHT file at the top of the source tree.
 from __future__ import print_function, division
 
+from past.builtins import basestring
+
 import os
 import glob
-from collections import OrderedDict
-import yaml
 
 import astropy.units as u
 
+import lsst.pex.exceptions
+from lsst.utils import getPackageDir
 from .jsonmixin import JsonSerializationMixin
 from .naming import Name
 from .yamlutils import load_ordered_yaml
 
-__all__ = ['Metric', 'MetricSet', 'MetricRepo', 'load_metrics']
-
-
-class MetricRepo(object):
-    """A collection of MetricSets, each identified by name.
-
-    Parameters
-    ----------
-    path : `str`
-        Path to the directory defining this MetricRepo.
-    metric_sets : `dict`
-        Dictionary of ``name: MetricSet`` key-value pairs.
-    """
-    path = None
-    """Path of the directory defining this MetricRepo (`str`)."""
-
-    metric_sets = None
-    """`dict` of all the MetricSets defined in this repo, identified by name.
-    """
-
-    def __init__(self, path, metric_sets):
-        self.path = path
-        self.metric_sets = metric_sets
-
-    @classmethod
-    def from_metrics_dir(cls, path):
-        metric_sets = {}
-        for path in glob.glob(os.path.join(path, '*.yaml')):
-            name = os.path.splitext(os.path.basename(path))[0]
-            with open(path) as f:
-                metric_sets[name] = MetricSet.from_yaml(name, yaml.load(f))
-        return cls(path, metric_sets)
-
-    def __getitem__(self, key):
-        return self.metric_sets[key]
-
-    def __len__(self):
-        return len(self.metric_sets)
-
-    def __contains__(self, key):
-        return key in self.metric_sets
-
-    def __str__(self):
-        items = ",\n".join(str(self.metric_sets[k])
-                           for k in sorted(self.metric_sets))
-        return "{0.path}: {{\n{1}}}".format(self, items)
+__all__ = ['Metric', 'MetricSet']
 
 
 class MetricSet(object):
-    """A collection of metrics, each identified by name.
+    """A collection of `Metric`\ s.
 
     Parameters
     ----------
-    name : `str`
-        The name of this metric set, usually the name of an LSST package
-    metrics : `dict` of `str`: `Metric`
-        A `dict` of names and their associated `Metric`\ s.
+    metrics : sequence of `Metric` instances, optional
+        `Metric`\ s to be contained within the ``MetricSet``.
     """
 
-    name = None
-    """Name of the MetricSet, usually the name of a package (`str`)."""
+    def __init__(self, metrics=None):
+        # Internal dict of Metrics. The MetricSet manages access through its
+        # own mapping API.
+        self._metrics = {}
 
-    metrics = None
-    """``{name: metric}`` dict of the `Metric` instances"""
-
-    def __init__(self, package_name, metric_list=None, metric_dict=None):
-        self.name = package_name
-        if metric_dict is None:
-            self.metrics = {}
-            for metric in metric_list:
-                self.metrics[metric.name] = metric
-        else:
-            self.metrics = metric_dict
+        if metrics is not None:
+            for metric in metrics:
+                if not isinstance(metric, Metric):
+                    message = '{0!r} is not a Metric-type'.format(metric)
+                    raise TypeError(message)
+                self._metrics[metric.name] = metric
 
     @classmethod
-    def from_yaml(cls, name, yaml):
-        metrics = {}
-        for subname in yaml:
-            metric_name = "{}.{}".format(name, subname)
-            m = Metric.from_yaml(subname, yaml_doc=yaml)
-            metrics[metric_name] = m
-        return cls(name, metric_dict=metrics)
+    def load_metrics_package(cls, package_name_or_path='verify_metrics'):
+        """Create a MetricSet from a Verification Framework metrics package.
+
+        Parameters
+        ----------
+        package_name_or_path : `str`, optional
+            Name of an EUPS package that hosts metric and specification
+            definition YAML files **or** the file path to a metrics package.
+            ``verify_metrics`` is the default package, and is where metrics
+            and specifications are defined for most packages.
+
+        Returns
+        -------
+        metric_set : `MetricSet`
+            A `MetricSet` containing `Metric` instances.
+
+        See also
+        --------
+        `MetricSet.load_single_package`
+
+        Notes
+        -----
+        EUPS packages that host metrics and specification definitions for the
+        Verification Framework have top-level directories named ``'metrics'``
+        and ``'specs'``.
+
+        Within ``'metrics/'``, YAML files are named after *packages* that
+        have defined metrics.
+
+        To make a `MetricSet` from a single package's metric definitions,
+        use `load_single_package` instead.
+        """
+        try:
+            # Try an EUPS package name
+            package_dir = getPackageDir(package_name_or_path)
+        except lsst.pex.exceptions.NotFoundError:
+            # Try as a filesystem path instead
+            package_dir = package_name_or_path
+        finally:
+            package_dir = os.path.abspath(package_dir)
+
+        metrics_dirname = os.path.join(package_dir, 'metrics')
+        if not os.path.isdir(metrics_dirname):
+            message = 'Metrics directory {0} not found'
+            raise OSError(message.format(metrics_dirname))
+
+        metrics = []
+
+        metrics_yaml_paths = glob.glob(os.path.join(metrics_dirname, '*.yaml'))
+        for metrics_yaml_path in metrics_yaml_paths:
+            new_metrics = MetricSet._load_metrics_yaml(metrics_yaml_path)
+            metrics.extend(new_metrics)
+
+        return cls(metrics)
+
+    @classmethod
+    def load_single_package(cls, metrics_yaml_path):
+        """Create a MetricSet from a single YAML file containing metric
+        definitions for a single package.
+
+        Returns
+        -------
+        metric_set : `MetricSet`
+            A `MetricSet` containing `Metric` instances found in the YAML
+            file.
+
+        See also
+        --------
+        `MetricSet.load_metrics_package`
+
+        Notes
+        -----
+        The YAML file's name, without extension, is taken as the package
+        name for all metrics.
+
+        For example, ``validate_drp.yaml`` contains metrics that are
+        identified as belonging to the ``validate_drp`` package.
+        """
+        metrics = MetricSet._load_metrics_yaml(metrics_yaml_path)
+        return cls(metrics)
+
+    @staticmethod
+    def _load_metrics_yaml(metrics_yaml_path):
+        # package name is inferred from YAML file name (by definition)
+        metrics_yaml_path = os.path.abspath(metrics_yaml_path)
+        package_name = os.path.splitext(os.path.basename(metrics_yaml_path))[0]
+
+        metrics = []
+        with open(metrics_yaml_path) as f:
+            yaml_doc = load_ordered_yaml(f)
+            for metric_name, metric_doc in yaml_doc.items():
+                name = Name(package=package_name, metric=metric_name)
+                # throw away a 'name' field if there happens to be one
+                metric_doc.pop('name', None)
+                # Create metric instance
+                metric = Metric.deserialize(name=name, **metric_doc)
+                metrics.append(metric)
+        return metrics
 
     def __getitem__(self, key):
-        return self.metrics[key]
+        if not isinstance(key, Name):
+            key = Name(metric=key)
+        return self._metrics[key]
 
     def __len__(self):
-        return len(self.metrics)
+        return len(self._metrics)
 
     def __contains__(self, key):
-        return key in self.metrics
-
-    def __str__(self):
-        items = ",\n".join(str(self.metrics[k]) for k in sorted(self.metrics))
-        return "{0.name}: {{\n{1}\n}}".format(self, items)
+        if not isinstance(key, Name):
+            key = Name(metric=key)
+        return key in self._metrics
 
 
 class Metric(JsonSerializationMixin):
@@ -171,57 +214,36 @@ class Metric(JsonSerializationMixin):
         self.reference_page = reference_page
 
     @classmethod
-    def from_yaml(cls, metric_name, yaml_doc=None, yaml_path=None,
-                  resolve_dependencies=True):
-        """Create a `Metric` instance from a YAML document that defines
-        metrics.
-
-        .. seealso::
-
-           See :ref:`verify-metric-yaml` for details on the metric YAML
-           schema.
+    def deserialize(cls, name=None, description=None, unit=None,
+                    tags=None, reference=None):
+        """Create a Metric instance from a parsed YAML/JSON document.
 
         Parameters
         ----------
-        metric_name : `str`
-            Name of the metric (e.g., ``'PA1'``).
-        yaml_doc : `dict`, optional
-            A full metric YAML document loaded as a `dict`. Use this option
-            to increase performance by eliminating redundant reads of a
-            common metric YAML file. Alternatively, set ``yaml_path``.
-        yaml_path : `str`, optional
-            The full file path to a metric YAML file. Alternatively, set
-            ``yaml_doc``.
-        resolve_dependencies : `bool`, optional
-            API users should always set this to `True`. The opposite is used
-            only used internally.
+        kwargs : `dict`
+            Keyword arguments that match fields from the `Metric.json`
+            serialization.
 
-        Raises
-        ------
-        RuntimeError
-            Raised when neither ``yaml_doc`` or ``yaml_path`` are set.
+        Returns
+        -------
+        metric : `Metric`
+            A Metric instance.
         """
-        if yaml_doc is None and yaml_path is not None:
-            with open(yaml_path) as f:
-                yaml_doc = yaml.load(f)
-        elif yaml_doc is None and yaml_path is None:
-            raise RuntimeError('Set either yaml_doc or yaml_path argument')
-        metric_doc = yaml_doc[metric_name]
+        # keyword args for Metric __init__
+        args = {
+            'unit': unit,
+            # Remove trailing newline from folded block description field.
+            # This isn't necessary if the field is trimmed with `>-` in YAML,
+            # but won't hurt either.
+            'description': description.rstrip('\n')
+        }
 
-        # NOTE: description is a folded block, which gets an appended '\n'.
-        # NOTE: Fix would be to denote the block with '>-' in the .yaml.
-        description = metric_doc['description'].rstrip('\n')
-        unit = u.Unit(metric_doc['unit'])
-        if 'reference' not in metric_doc:
-            m = cls(metric_name, description=description, unit=unit)
-        else:
-            m = cls(metric_name,
-                    description=description,
-                    unit=unit,
-                    reference_doc=metric_doc['reference'].get('doc', None),
-                    reference_url=metric_doc['reference'].get('url', None),
-                    reference_page=metric_doc['reference'].get('page', None))
-        return m
+        if reference is not None:
+            args['reference_doc'] = reference.get('doc', None)
+            args['reference_page'] = reference.get('page', None)
+            args['reference_url'] = reference.get('url', None)
+
+        return cls(name, **args)
 
     @classmethod
     def from_json(cls, json_data):
@@ -237,13 +259,7 @@ class Metric(JsonSerializationMixin):
         metric : `Metric`
             Metric from JSON.
         """
-        m = cls(json_data['name'],
-                json_data['description'],
-                u.Unit(json_data['unit']),
-                reference_doc=json_data['reference']['doc'],
-                reference_page=json_data['reference']['page'],
-                reference_url=json_data['reference']['url'])
-        return m
+        return cls.deserialize(**json_data)
 
     def __eq__(self, other):
         return ((self.name == other.name) and
@@ -357,35 +373,3 @@ class Metric(JsonSerializationMixin):
             return False
         else:
             return True
-
-
-def load_metrics(yaml_path):
-    """Load metric from a YAML document into an ordered dictionary of
-    `Metric`\ s.
-
-    .. seealso::
-
-       :ref:`verify-metric-yaml`.
-
-    Parameters
-    ----------
-    yaml_path : `str`
-        The full file path to a metric YAML file.
-
-    Returns
-    -------
-    metrics : `collections.OrderedDict`
-        A dictionary of `Metric` instances, ordered to matched layout of YAML
-        document at YAML path. Keys are names of metrics (`str`).
-
-    See also
-    --------
-    Metric.from_yaml
-        Make a single `Metric` instance from a YAML document.
-    """
-    with open(yaml_path) as f:
-        metrics_doc = load_ordered_yaml(f)
-    metrics = []
-    for key in metrics_doc:
-        metrics.append((key, Metric.from_yaml(key, metrics_doc)))
-    return OrderedDict(metrics)
