@@ -246,12 +246,6 @@ class Metric(JsonSerializationMixin):
                 reference_url=json_data['reference']['url'])
         return m
 
-    def check_unit(self, quantity):
-        """Check that quantity has equivalent units to this metric."""
-        if not quantity.unit.is_equivalent(self.unit):
-            return False
-        return True
-
     def __eq__(self, other):
         return ((self.name == other.name) and
                 (self.reference == other.reference))
@@ -315,6 +309,26 @@ class Metric(JsonSerializationMixin):
             'description': self.description,
             'unit': self.unit,
             'reference': ref_doc})
+
+    def check_unit(self, quantity):
+        """Check that a `~astropy.units.Quantity` has equivalent units to
+        this metric.
+
+        Parameters
+        ----------
+        quantity : `astropy.units.Quantity`
+            Quantity to be tested.
+
+        Returns
+        -------
+        is_equivalent : `bool`
+            `True` if the units are equivalent, meaning that the quantity
+            can be presented in the units of this metric. `False` if not.
+        """
+        if not quantity.unit.is_equivalent(self.unit):
+            return False
+        else:
+            return True
 
 
 def load_metrics(yaml_path):

@@ -137,6 +137,12 @@ class MetricTestCase(unittest.TestCase):
             str(m2),
             'test2 (dimensionless_unscaled): "some words"')
 
+    def test_check_unit(self):
+        m = Metric('test', '', 'marcsec')
+        self.assertTrue(m.check_unit(5. * u.arcsec))
+        self.assertTrue(m.check_unit(5. * u.marcsec))
+        self.assertFalse(m.check_unit(5. * u.mag))
+
 
 if __name__ == "__main__":
     unittest.main()
