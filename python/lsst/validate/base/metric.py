@@ -1,21 +1,112 @@
 # See COPYRIGHT file at the top of the source tree.
 from __future__ import print_function, division
-from past.builtins import basestring
 
-import operator
+import os
+import glob
 from collections import OrderedDict
 import yaml
 
+import astropy.units as u
+
 from .jsonmixin import JsonSerializationMixin
-from .datum import Datum
-from .spec import Specification
+
+__all__ = ['Metric', 'MetricSet', 'MetricRepo', 'load_metrics']
 
 
-__all__ = ['Metric', 'load_metrics']
+class MetricRepo(object):
+    """A collection of MetricSets, each identified by name.
+
+    Parameters
+    ----------
+    path : `str`
+        Path to the directory defining this MetricRepo.
+    metric_sets : `dict`
+        Dictionary of ``name: MetricSet`` key-value pairs.
+    """
+    path = None
+    """Path of the directory defining this MetricRepo (`str`)."""
+
+    metric_sets = None
+    """`dict` of all the MetricSets defined in this repo, identified by name."""
+
+    def __init__(self, path, metric_sets):
+        self.path = path
+        self.metric_sets = metric_sets
+
+    @classmethod
+    def from_metrics_dir(cls, path):
+        metric_sets = {}
+        for path in glob.glob(os.path.join(path, '*.yaml')):
+            name = os.path.splitext(os.path.basename(path))[0]
+            with open(path) as f:
+                metric_sets[name] = MetricSet.from_yaml(name, yaml.load(f))
+        return cls(path, metric_sets)
+
+    def __getitem__(self, key):
+        return self.metric_sets[key]
+
+    def __len__(self):
+        return len(self.metric_sets)
+
+    def __contains__(self, key):
+        return key in self.metric_sets
+
+    def __str__(self):
+        items = ",\n".join(str(self.metric_sets[k]) for k in sorted(self.metric_sets))
+        return "{0.path}: {{\n{1}}}".format(self, items)
+
+
+class MetricSet(object):
+    """A collection of metrics, each identified by name.
+
+    Parameters
+    ----------
+    name : `str`
+        The name of this metric set, usually the name of an LSST package
+    metrics : `dict` of `str`: `Metric`
+        A `dict` of names and their associated `Metric`\ s.
+    """
+
+    name = None
+    """Name of the MetricSet, usually the name of a package (`str`)."""
+
+    metrics = None
+    """``{name: metric}`` dict of the `Metric` instances"""
+
+    def __init__(self, package_name, metric_list=None, metric_dict=None):
+        self.name = package_name
+        if metric_dict is None:
+            self.metrics = {}
+            for metric in metric_list:
+                self.metrics[metric.name] = metric
+        else:
+            self.metrics = metric_dict
+
+    @classmethod
+    def from_yaml(cls, name, yaml):
+        metrics = {}
+        for subname in yaml:
+            metric_name = "{}.{}".format(name, subname)
+            m = Metric.from_yaml(subname, yaml_doc=yaml)
+            metrics[metric_name] = m
+        return cls(name, metric_dict=metrics)
+
+    def __getitem__(self, key):
+        return self.metrics[key]
+
+    def __len__(self):
+        return len(self.metrics)
+
+    def __contains__(self, key):
+        return key in self.metrics
+
+    def __str__(self):
+        items = ",\n".join(str(self.metrics[k]) for k in sorted(self.metrics))
+        return "{0.name}: {{\n{1}\n}}".format(self, items)
 
 
 class Metric(JsonSerializationMixin):
-    """Container for the definition of a metric and its specification levels.
+    """Container for the definition of a metric.
 
     Metrics can either be instantiated programatically, or from a :ref:`metric
     YAML file <validate-base-metric-yaml>` with the `from_yaml` class method.
@@ -30,16 +121,12 @@ class Metric(JsonSerializationMixin):
         Name of the metric (e.g., ``'PA1'``).
     description : `str`
         Short description about the metric.
-    operator_str : `str`
-        A string, such as ``'<='``, that defines a success test for a
-        measurement (on the left hand side) against the metric specification
-        level (right hand side).
-    specs : `list`, optional
-        A `list` of `Specification` objects that define various specification
-        levels for this metric.
-    parameters : `dict`, optional
-        A `dict` of named `Datum` values that must be known when measuring
-        a metric.
+    unit : astropy.units.Unit
+        Units of the metric. `Measurements` of this metric must be in an
+        equivalent (i.e. convertable) unit.
+        Use `dimensionless_unscaled` for a unitless quantity.
+    tags : `list` of `str`
+        Tags asssociated with this metric, to group it with similar metrics.
     reference_doc : `str`, optional
         The document handle that originally defined the metric
         (e.g., ``'LPM-17'``).
@@ -55,6 +142,12 @@ class Metric(JsonSerializationMixin):
     description = None
     """Short description of the metric (`str`)."""
 
+    unit = None
+    """Units of the metric (`Astropy.Quantity.Unit`)."""
+
+    tags = None
+    """Tag labels to group the metric (`list` of `str`)."""
+
     reference_doc = None
     """Name of the document that specifies this metric (`str`)."""
 
@@ -64,38 +157,18 @@ class Metric(JsonSerializationMixin):
     reference_page = None
     """Page number in the document that specifies this metric (`int`)."""
 
-    parameters = dict()
-    """`dict` of named :class:`Datum` values that must be known when measuring
-    a metric.
-
-    Parameters can also be accessed as attributes of the metric. Attribute
-    names are the same as key names in `parameters`.
-    """
-
-    def __init__(self, name, description, operator_str,
-                 specs=None, parameters=None,
+    def __init__(self, name, description, unit, tags=None,
                  reference_doc=None, reference_url=None, reference_page=None):
         self.name = name
         self.description = description
+        self.unit = unit
+        if tags is None:
+            self.tags = []
+        else:
+            self.tags = tags
         self.reference_doc = reference_doc
         self.reference_url = reference_url
         self.reference_page = reference_page
-
-        self.operator_str = operator_str
-
-        if specs is None:
-            self.specs = []
-        else:
-            self.specs = specs
-
-        if parameters is None:
-            self.parameters = {}
-        else:
-            assert isinstance(parameters, dict)
-            for key, value in parameters.items():
-                assert isinstance(key, basestring)
-                assert isinstance(value, Datum)
-            self.parameters = parameters
 
     @classmethod
     def from_yaml(cls, metric_name, yaml_doc=None, yaml_path=None,
@@ -135,55 +208,19 @@ class Metric(JsonSerializationMixin):
             raise RuntimeError('Set either yaml_doc or yaml_path argument')
         metric_doc = yaml_doc[metric_name]
 
-        metric_params = {}
-        if 'parameters' in metric_doc:
-            for param_name, param_data in metric_doc['parameters'].items():
-                d = Datum(param_data['value'],
-                          param_data.get('unit', ''),
-                          label=param_data.get('label', None),
-                          description=param_data.get('description', None))
-                metric_params[param_name] = d
-
-        m = cls(
-            metric_name,
-            description=metric_doc.get('description', None),
-            operator_str=metric_doc['operator'],
-            reference_doc=metric_doc['reference'].get('doc', None),
-            reference_url=metric_doc['reference'].get('url', None),
-            reference_page=metric_doc['reference'].get('page', None),
-            parameters=metric_params)
-
-        for spec_doc in metric_doc['specs']:
-            deps = None
-            if 'dependencies' in spec_doc and resolve_dependencies:
-                deps = {}
-                for dep_item in spec_doc['dependencies']:
-                    if isinstance(dep_item, basestring):
-                        # This is a metric
-                        name = dep_item
-                        d = Metric.from_yaml(name, yaml_doc=yaml_doc,
-                                             resolve_dependencies=False)
-                    elif isinstance(dep_item, dict):
-                        # Likely a Datum
-                        # in yaml, wrapper object is dict with single key-val
-                        name = list(dep_item.keys())[0]
-                        dep_item = dict(dep_item[name])
-                        v = dep_item['value']
-                        unit = dep_item['unit']
-                        d = Datum(v, unit,
-                                  label=dep_item.get('label', None),
-                                  description=dep_item.get('description', None))
-                    else:
-                        raise RuntimeError(
-                            'Cannot process dependency %r' % dep_item)
-                    deps[name] = d
-            spec = Specification(name=spec_doc['level'],
-                                 quantity=spec_doc['value'],
-                                 unit=spec_doc['unit'],
-                                 filter_names=spec_doc.get('filter_names', None),
-                                 dependencies=deps)
-            m.specs.append(spec)
-
+        # NOTE: description is a folded block, which gets an appended '\n'.
+        # NOTE: a fix for this would be to denote the block with '>-' in the .yaml.
+        description = metric_doc['description'].rstrip('\n')
+        unit = u.Unit(metric_doc['unit'])
+        if 'reference' not in metric_doc:
+            m = cls(metric_name, description=description, unit=unit)
+        else:
+            m = cls(metric_name,
+                    description=description,
+                    unit=unit,
+                    reference_doc=metric_doc['reference'].get('doc', None),
+                    reference_url=metric_doc['reference'].get('url', None),
+                    reference_page=metric_doc['reference'].get('page', None))
         return m
 
     @classmethod
@@ -200,26 +237,35 @@ class Metric(JsonSerializationMixin):
         metric : `Metric`
             Metric from JSON.
         """
-        specs = [Specification.from_json(v)
-                 for v in json_data['specifications']]
-        params = {k: Datum.from_json(v)
-                  for k, v in json_data['parameters'].items()}
         m = cls(json_data['name'],
                 json_data['description'],
-                json_data['operator_str'],
-                specs=specs,
-                parameters=params,
+                u.Unit(json_data['unit']),
                 reference_doc=json_data['reference']['doc'],
                 reference_page=json_data['reference']['page'],
                 reference_url=json_data['reference']['url'])
         return m
 
-    def __getattr__(self, key):
-        if key in self.parameters:
-            return self.parameters[key]
+    def check_unit(self, quantity):
+        """Check that quantity has equivalent units to this metric."""
+        if not quantity.unit.is_equivalent(self.unit):
+            return False
+        return True
+
+    def __eq__(self, other):
+        return ((self.name == other.name) and
+                (self.reference == other.reference))
+
+    def __str__(self):
+        return '{0.name} ({0.unit_str}): "{0.description}"'.format(self)
+
+    @property
+    def unit_str(self):
+        """The string representation of the `Unit` of this metric."""
+        if self.unit == '':
+            unit = 'dimensionless_unscaled'
         else:
-            raise AttributeError("%r object has no attribute %r" %
-                                 (self.__class__, key))
+            unit = self.unit
+        return unit
 
     @property
     def reference(self):
@@ -243,187 +289,6 @@ class Metric(JsonSerializationMixin):
         return ref_str
 
     @property
-    def operator_str(self):
-        """String representation of comparison operator.
-
-        The comparison is oriented with the measurement on the left-hand side
-        and the specification level on the right-hand side.
-        """
-        return self._operator_str
-
-    @operator_str.setter
-    def operator_str(self, v):
-        # Cache the operator function as a means of validating the input too
-        self._operator = Metric.convert_operator_str(v)
-        self._operator_str = v
-
-    @property
-    def operator(self):
-        """Binary comparision operator that tests success of a measurement
-        fulfilling a specification of this metric.
-
-        Measured value is on left side of comparison and specification level
-        is on right side.
-        """
-        return self._operator
-
-    @staticmethod
-    def convert_operator_str(op_str):
-        """Convert a string representing a binary comparison operator to
-        the operator function itself.
-
-        Operators are oriented so that the measurement is on the left-hand
-        side, and specification level on the right hand side.
-
-        The following operators are permitted:
-
-        ========== =============
-        ``op_str`` Function
-        ========== =============
-        ``>=``     `operator.ge`
-        ``>``      `operator.gt`
-        ``<``      `operator.lt`
-        ``<=``     `operator.le`
-        ``==``     `operator.eq`
-        ``!=``     `operator.ne`
-        ========== =============
-
-        Parameters
-        ----------
-        op_str : `str`
-            A string representing a binary operator.
-
-        Returns
-        -------
-        op_func : obj
-            An operator function from the `operator` standard library
-            module.
-        """
-        operators = {'>=': operator.ge,
-                     '>': operator.gt,
-                     '<': operator.lt,
-                     '<=': operator.le,
-                     '==': operator.eq,
-                     '!=': operator.ne}
-        return operators[op_str]
-
-    def get_spec(self, name, filter_name=None):
-        """Get a specification by name and other qualifications.
-
-        Parameters
-        ----------
-        name : `str`
-            Name of a specification level (e.g., ``'design'``, ``'minimum'``,
-            ``'stretch'``).
-        filter_name : `str`, optional
-            The name of the optical filter to qualify a filter-dependent
-            specification level.
-
-        Returns
-        -------
-        spec : `Specification`
-            The `Specification` that matches the name and other qualifications.
-
-        Raises
-        ------
-        RuntimeError
-           If a specification cannot be found.
-        """
-        # First collect candidate specifications by name
-        candidates = [s for s in self.specs if s.name == name]
-        if len(candidates) == 1:
-            return candidates[0]
-
-        # Filter down by optical filter
-        if filter_name is not None:
-            candidates = [s for s in candidates
-                          if filter_name in s.filter_names]
-        if len(candidates) == 1:
-            return candidates[0]
-
-        raise RuntimeError(
-            'No {2} spec found for name={0} filter_name={1}'.format(
-                name, filter_name, self.name))
-
-    def get_spec_dependency(self, spec_name, dep_name, filter_name=None):
-        """Get the `Datum` of a specification's dependency.
-
-        If the dependency is a metric, this method resolves the value of the
-        dependent metric's specification level ``spec_name``. In other words,
-        ``spec_name`` refers to the specification level of both *this* metric
-        and of the dependency metric.
-
-        Parameters
-        ----------
-        spec_name : `str`
-            `Specification` name.
-        dep_name : `str`
-            Name of the dependency.
-        filter_name : `str`, optional
-            Name of the optical filter, if this metric's specifications are
-            optical filter dependent.
-
-        Returns
-        -------
-        datum : `Datum`
-            The dependency resolved for the metric's specification.
-        """
-        spec = self.get_spec(spec_name, filter_name=filter_name)
-        dep = spec.dependencies[dep_name]
-        if isinstance(dep, Metric):
-            dep_spec = dep.get_spec(spec_name, filter_name=filter_name)
-            return dep_spec.datum
-        else:
-            # The dependency should be a straight Datum
-            assert isinstance(dep, Datum) is True
-            return dep
-
-    def get_spec_names(self, filter_name=None):
-        """List names of all specification levels defined for this metric;
-        optionally filtering by attributes such as filter name.
-
-        Parameters
-        ----------
-        filter_name : `str`, optional
-            Name of the applicable filter, if needed.
-
-        Returns
-        -------
-        spec_names : `list`
-            Specification names as a list of strings,
-            e.g. ``['design', 'minimum', 'stretch']``.
-        """
-        spec_names = []
-
-        for spec in self.specs:
-            if (filter_name is not None) and (spec.filter_names is not None) \
-                    and (filter_name not in spec.filter_names):
-                continue
-            spec_names.append(spec.name)
-
-        return list(set(spec_names))
-
-    def check_spec(self, quantity, spec_name, filter_name=None):
-        """Compare a measurement against a named specification level.
-
-        Parameters
-        ----------
-        value : `astropy.units.Quantity`
-            The measurement value.
-        spec_name : `str`
-            Name of a `Specification` associated with this metric.
-        filter_name : `str`, optional
-            Name of the applicable filter, if needed.
-
-        Returns
-        -------
-        passed : `bool`
-            `True` if the value meets the specification, `False` otherwise.
-        """
-        spec = self.get_spec(spec_name, filter_name=filter_name)
-        return self.operator(quantity, spec.quantity)
-
-    @property
     def json(self):
         """`dict` that can be serialized as semantic JSON, compatible with
         the SQUASH metric service.
@@ -434,11 +299,9 @@ class Metric(JsonSerializationMixin):
             'url': self.reference_url}
         return JsonSerializationMixin.jsonify_dict({
             'name': self.name,
-            'operator_str': self.operator_str,
-            'reference': ref_doc,
             'description': self.description,
-            'specifications': self.specs,
-            'parameters': self.parameters})
+            'unit': self.unit,
+            'reference': ref_doc})
 
 
 def load_metrics(yaml_path):

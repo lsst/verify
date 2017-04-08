@@ -1,0 +1,32 @@
+# Sample of metrics from LPM-17 (the Science Requirements Document) for testing
+
+PA1:
+  reference:
+    doc: LPM-17
+    url: http://ls.st/lpm-17
+    page: 21
+  unit: mmag
+  description: >
+    The maximum rms of the unresolved source magnitude distribution around the
+    mean value (repeatability).
+
+PF1:
+  reference:
+    doc: LPM-17
+    url: http://ls.st/lpm-17
+    page: 21
+  unit: ''
+  description: >
+    The maximum fraction of magnitudes deviating by more than PA2 from mean (%).
+
+PA2:
+  unit: mmag
+  description: >
+    At most PF1 % of magnitudes may deviate by more than this from the mean
+    (millimag).
+
+AM1:
+  unit: milliarcsecond
+  description: >
+    The maximum rms of the astrometric distance distribution for stellar pairs
+    with separations of D=5 arcmin (repeatability) (milliarcsec).
