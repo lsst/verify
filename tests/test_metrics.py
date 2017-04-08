@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # See COPYRIGHT file at the top of the source tree.
 from __future__ import print_function
 
@@ -13,7 +12,10 @@ from lsst.validate.base import Metric, MetricSet, MetricRepo
 
 class MetricRepoTestCase(unittest.TestCase):
     def setUp(self):
-        self.yaml_path = os.path.join(os.path.dirname(__file__), 'data', 'metrics')
+        self.yaml_path = os.path.join(
+            os.path.dirname(__file__),
+            'data',
+            'metrics')
 
     def test_from_metrics_dir(self):
         metric_repo = MetricRepo.from_metrics_dir(self.yaml_path)
@@ -24,9 +26,14 @@ class MetricRepoTestCase(unittest.TestCase):
     def test_str(self):
         m1 = Metric('m1', 'm1 docs', u.arcsec)
         m2 = Metric('m2', 'm2 docs', u.mag)
-        metric_set = MetricSet('some_metrics', metric_dict={'m1': m1, 'm2': m2})
-        metric_repo = MetricRepo('some/path/test', {metric_set.name: metric_set})
-        expect = 'some/path/test: {\nsome_metrics: {\nm1 (arcsec): "m1 docs",\nm2 (mag): "m2 docs"\n}}'
+        metric_set = MetricSet(
+            'some_metrics',
+            metric_dict={'m1': m1, 'm2': m2})
+        metric_repo = MetricRepo(
+            'some/path/test',
+            {metric_set.name: metric_set})
+        expect = 'some/path/test: {\nsome_metrics: ' \
+                 '{\nm1 (arcsec): "m1 docs",\nm2 (mag): "m2 docs"\n}}'
         self.assertEqual(str(metric_repo), expect)
 
 
@@ -40,15 +47,20 @@ class MetricSetTestCase(unittest.TestCase):
     def test_from_yaml(self):
         metric_set = MetricSet.from_yaml('testing', self.metric_doc)
         self.assertEqual(len(metric_set), 4)
-        for key in ['testing.PA1', 'testing.PF1', 'testing.PA2', 'testing.AM1']:
+        for key in ['testing.PA1',
+                    'testing.PF1',
+                    'testing.PA2',
+                    'testing.AM1']:
             self.assertIn(key, metric_set, msg=key)
             self.assertEqual(metric_set[key].name, key.split('.')[1])
 
     def test_str(self):
         m1 = Metric('m1', 'm1 docs', u.arcsec)
         m2 = Metric('m2', 'm2 docs', u.mag)
-        metric_set = MetricSet('some_metrics', metric_dict={'m1': m1, 'm2': m2})
-        expect = 'some_metrics: {\nm1 (arcsec): "m1 docs",\nm2 (mag): "m2 docs"\n}'
+        metric_set = MetricSet('some_metrics',
+                               metric_dict={'m1': m1, 'm2': m2})
+        expect = 'some_metrics: {\nm1 (arcsec): "m1 docs",\n' \
+                 'm2 (mag): "m2 docs"\n}'
         self.assertEqual(str(metric_set), expect)
 
 
@@ -121,7 +133,10 @@ class MetricTestCase(unittest.TestCase):
                     reference_doc='Doc', reference_page=1)
         self.assertEqual(str(m1), 'test (arcsec): "test docs"')
         m2 = Metric('test2', 'some words', '')
-        self.assertEqual(str(m2), 'test2 (dimensionless_unscaled): "some words"')
+        self.assertEqual(
+            str(m2),
+            'test2 (dimensionless_unscaled): "some words"')
+
 
 if __name__ == "__main__":
     unittest.main()

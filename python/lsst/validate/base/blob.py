@@ -89,8 +89,8 @@ class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
         this blob.
 
         The value of the `Datum` can either be set at registration time (with
-        the ``quantity`` or ``datum`` arguments) or later by setting the instance
-        attribute named ``name``.
+        the ``quantity`` or ``datum`` arguments) or later by setting the
+        instance attribute named ``name``.
 
         Values of `Datum`\ s can always be accessed or updated through instance
         attributes.

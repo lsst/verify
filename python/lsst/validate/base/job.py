@@ -2,7 +2,7 @@
 from __future__ import print_function, division
 
 from .jsonmixin import JsonSerializationMixin
-from .blob import BlobBase, DeserializedBlob
+from .blob import BlobBase
 
 
 __all__ = ['Job']
@@ -158,13 +158,15 @@ class Job(JsonSerializationMixin):
         job : `Job`-type
             Job from JSON.
         """
-        blobs = [DeserializedBlob.from_json(doc) for doc in json_data['blobs']]
-        measurements = [
-            DeserializedMeasurement.from_json(doc,
-                                              blobs_json=json_data['blobs'])
-            for doc in json_data['measurements']]
-        job = cls(measurements=measurements, blobs=blobs)
-        return job
+        raise NotImplementedError('Deserialization not yet supported')
+        # blobs = [DeserializedBlob.from_json(doc)
+        #          for doc in json_data['blobs']]
+        # measurements = [
+        #     DeserializedMeasurement.from_json(doc,
+        #                                       blobs_json=json_data['blobs'])
+        #     for doc in json_data['measurements']]
+        # job = cls(measurements=measurements, blobs=blobs)
+        # return job
 
     @property
     def json(self):

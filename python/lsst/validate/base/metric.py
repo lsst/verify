@@ -27,7 +27,8 @@ class MetricRepo(object):
     """Path of the directory defining this MetricRepo (`str`)."""
 
     metric_sets = None
-    """`dict` of all the MetricSets defined in this repo, identified by name."""
+    """`dict` of all the MetricSets defined in this repo, identified by name.
+    """
 
     def __init__(self, path, metric_sets):
         self.path = path
@@ -52,7 +53,8 @@ class MetricRepo(object):
         return key in self.metric_sets
 
     def __str__(self):
-        items = ",\n".join(str(self.metric_sets[k]) for k in sorted(self.metric_sets))
+        items = ",\n".join(str(self.metric_sets[k])
+                           for k in sorted(self.metric_sets))
         return "{0.path}: {{\n{1}}}".format(self, items)
 
 
@@ -209,7 +211,7 @@ class Metric(JsonSerializationMixin):
         metric_doc = yaml_doc[metric_name]
 
         # NOTE: description is a folded block, which gets an appended '\n'.
-        # NOTE: a fix for this would be to denote the block with '>-' in the .yaml.
+        # NOTE: Fix would be to denote the block with '>-' in the .yaml.
         description = metric_doc['description'].rstrip('\n')
         unit = u.Unit(metric_doc['unit'])
         if 'reference' not in metric_doc:
