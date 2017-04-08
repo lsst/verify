@@ -1,16 +1,8 @@
-# lsst.validate.base
+# lsst.verify
 
-**Measurement framework for performance metrics.**
+**LSST Science Pipelines Verification Framework.**
 
-Packages can use `lsst.validate.base` to report metric measurements to LSST Data Management's [SQUASH](https://squash.lsst.codes) dashboard.
-This package is part of the [LSST Science Pipelines](https://pipelines.lsst.io).
-
-`lsst.validate.base` provides:
-
-- A schema for defining performance **metrics** (things that *can* be measured) and **specifications** (threshold values of a metric). The `lsst.validate.base.Metric` and `lsst.validate.base.Specification` classes provide Python access to metrics and specifications.
-- An `lsst.validate.base.MeasurementBase` base class that can be inherited to make **measurement** classes. Measurement classes create well-structured self-describing datasets that track units, input datasets, and even measurement code parameters.
-- An `lsst.validate.base.BlobBase` base class that can be inherited to make **blobs**: containers for semantically rich data.
-- An `lsst.validate.base.Job` class that collects multiple measurements, their metrics, and blob datasets, and provides a JSON file that can be submitted to [SQUASH](https://squash.lsst.codes).
+Packages can use `lsst.verify` to report metric measurements to LSST Data Management's [SQUASH](https://squash.lsst.codes) dashboard.
 
 ## Installation
 
@@ -19,12 +11,12 @@ You can learn how to install the Pipelines at https://pipelines.lsst.io/install.
 
 ## Installation for developers
 
-To develop this package, you can clone `validate_base` and install it into your *existing* Pipelines stack:
+To develop this package, you can clone `verify` and install it into your *existing* Pipelines stack:
 
 ```
-git clone https://github.com/lsst/validate_base
-cd validate_base
-eups declare -r . -t $USER validate_base git
+git clone https://github.com/lsst/verify
+cd verify
+eups declare -r . -t $USER verify git
 setup -r . -t $USER
 scons
 ```

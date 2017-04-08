@@ -1,6 +1,6 @@
-.. currentmodule:: lsst.validate.base
+.. currentmodule:: lsst.verify
 
-.. _validate-base-metric-yaml:
+.. _verify-metric-yaml:
 
 ###########################################
 Defining metrics and specifications in YAML
@@ -19,9 +19,9 @@ This page describes the schema describing for metrics and specifications in YAML
 
 .. seealso::
 
-   :ref:`validate-base-using-metrics`.
+   :ref:`verify-using-metrics`.
 
-.. _validate-base-metric-objects-yaml:
+.. _verify-metric-objects-yaml:
 
 Metric objects in YAML
 ======================
@@ -99,7 +99,7 @@ Allowed fields are:
 - ``url``: Web URL to the documentation where the metric is defined. If possible, this should be a deep link directly to the metric's definition.
 
 parameters field (optional)
------------------------------
+---------------------------
 
 Some metrics have specific quantities that measurement code must use.
 *Parameters* are a way of specifying these quantities in a way that measurement classes can easily use.
@@ -130,7 +130,7 @@ This field contains a list of *specification* objects, keyed by the name of the 
 In the ``AM1`` example above, specifications are defined for 'design,' 'minimum' and 'stretch' specification levels.
 The next section describes the schema for these specification YAML objects.
 
-.. _validate-base-specifications-yaml:
+.. _verify-specifications-yaml:
 
 Defining specifications in YAML
 ===============================
@@ -160,7 +160,7 @@ See the `astropy.units` documentation for what units are available.
 
 If a value is *unitless*, such as a fraction or percent, the unit should be an empty string, ``''``.
 
-.. _validate-base-filter-specific-specs:
+.. _verify-filter-specific-specs:
 
 filter\_names field (optional)
 ------------------------------
@@ -171,7 +171,7 @@ This situation is accommodated by creating two separate specification objects fo
 Then each specification object defines what filters it applies to through a ``filter_names`` field.
 ``filter_names`` should be an array (list) type, where each value is a string with the filter's name.
 
-.. _validate-base-metric-spec-dependencies:
+.. _verify-metric-spec-dependencies:
 
 dependencies field (optional)
 -----------------------------

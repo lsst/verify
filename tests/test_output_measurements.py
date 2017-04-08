@@ -5,8 +5,8 @@ import json
 import unittest
 import astropy.units as u
 
-from lsst.validate.base import Metric, MetricSet
-import lsst.validate.base
+from lsst.verify import Metric, MetricSet
+import lsst.verify
 
 
 def read_log(filename):
@@ -25,7 +25,7 @@ class OutputTestCase(unittest.TestCase):
     @unittest.skip('FIXME DM-8477 Likely to be removed.')
     def test_output_measurements_example(self):
         data = {'thing1': 10, 'thing2': 5.2}
-        self.outfile = lsst.validate.base.output_measurements(
+        self.outfile = lsst.verify.output_measurements(
             self._testMethodName, data)
         result = read_log(self.outfile)
         self.assertEqual(data, result)

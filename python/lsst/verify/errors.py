@@ -1,15 +1,15 @@
 # See COPYRIGHT file at the top of the source tree.
-"""Exceptions for the lsst.validate namespace."""
+"""Exceptions for the lsst.verify namespace."""
 
-__all__ = ['ValidateError',
-           'ValidateSpecificationError']
+__all__ = ['VerifyError',
+           'VerifySpecificationError']
 
 
-class ValidateError(Exception):
-    """Base error for validate_base."""
+class VerifyError(Exception):
+    """Base error for verify."""
     pass
 
 
-class ValidateSpecificationError(ValidateError):
+class VerifySpecificationError(VerifyError):
     """Error accessing or using requirement specifications."""
     pass

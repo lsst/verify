@@ -7,7 +7,7 @@ import unittest
 import yaml
 import astropy.units as u
 
-from lsst.validate.base import Metric, MetricSet, MetricRepo
+from lsst.verify import Metric, MetricSet, MetricRepo
 
 
 class MetricRepoTestCase(unittest.TestCase):

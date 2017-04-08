@@ -9,13 +9,13 @@ import argparse
 
 import lsst.pex.exceptions
 from lsst.utils import getPackageDir
-from lsst.validate.base import MetricRepo
+from lsst.verify import MetricRepo
 
 
 def main():
     try:
         default_metrics_dir = os.path.join(
-            getPackageDir('validate_metrics'),
+            getPackageDir('verify_metrics'),
             'metrics')
     except lsst.pex.exceptions.NotFoundError:
         default_metrics_dir = None

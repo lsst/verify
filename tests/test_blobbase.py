@@ -4,8 +4,8 @@ from __future__ import print_function
 import unittest
 import astropy.units as u
 
-from lsst.validate.base import BlobBase
-from lsst.validate.base.blob import DeserializedBlob
+from lsst.verify import BlobBase
+from lsst.verify.blob import DeserializedBlob
 
 
 class DemoBlob(BlobBase):

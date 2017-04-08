@@ -4,7 +4,7 @@ from builtins import zip
 
 import unittest
 
-from lsst.validate.base import Job
+from lsst.verify import Job
 
 
 @unittest.skip("FIXME DM-8477 re-instance when Job is working again")

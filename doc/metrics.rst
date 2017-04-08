@@ -1,17 +1,17 @@
-.. currentmodule:: lsst.validate.base
+.. currentmodule:: lsst.verify
 
-.. _validate-base-using-metrics:
+.. _verify-using-metrics:
 
 ##########################################
 Using metrics and specifications in Python
 ##########################################
 
-Metrics and their specifications are typically :ref:`defined in YAML files <validate-base-metric-yaml>`.
-This page describes how to work with those metrics and specifications within Python using the `lsst.validate.base.Metric` and `lsst.validate.base.Specification` classes.
+Metrics and their specifications are typically :ref:`defined in YAML files <verify-metric-yaml>`.
+This page describes how to work with those metrics and specifications within Python using the `lsst.verify.Metric` and `lsst.verify.Specification` classes.
 
 .. seealso::
 
-   :ref:`validate-base-metric-yaml`.
+   :ref:`verify-metric-yaml`.
 
 Creating Metric objects in Python
 =================================
@@ -26,7 +26,7 @@ For example:
    import os
    import astropy.units as u
    from lsst.utils import getPackageDir
-   from lsst.validate.base import Metric
+   from lsst.verify import Metric
    yaml_path = os.path.join(getPackageDir('validate_drp'),
                             'metrics.yaml')
    am1 = Metric.from_yaml('AM1', yaml_path=yaml_path)
@@ -49,7 +49,7 @@ For this, use the `Metric.check_spec` method:
 The last statement returns `True` if the measured value fulfills the 'design' specification.
 If a specification is filter-dependent, the filter's name needs to be passed to the ``filter_name`` keyword argument of `Metric.check_spec`.
 
-See :doc:`measurements` for details on how to make measurements with the ``lsst.validate.base`` API.
+See :doc:`measurements` for details on how to make measurements with the ``lsst.verify`` API.
 
 Accessing Specification objects of a Metric
 ===========================================
@@ -73,7 +73,7 @@ The properties of a specification are retrieved through attributes:
    design_spec.filter_names
    design_spec.latex_unit  # units marked up as LaTeX math
 
-:ref:`Dependencies of specification levels <validate-base-metric-spec-dependencies>` can be obtained as attributes corresponding to their labels.
+:ref:`Dependencies of specification levels <verify-metric-spec-dependencies>` can be obtained as attributes corresponding to their labels.
 Dependencies themselves are `Datum` objects, with a value and units.
 For example,
 
