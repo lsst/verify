@@ -8,10 +8,10 @@ __all__ = ['Name']
 
 
 class Name(object):
-    """Semantic name of a package, `lsst.verify.Metric` or
-    `lsst.verify.Specification` in the `lsst.verify` framework.
+    """Semantic name of a package, `~lsst.verify.Metric` or
+    `~lsst.verify.Specification` in the `lsst.verify` framework.
 
-    ``Name``\ s are immutable.
+    ``Name`` instances are immutable and can be used as keys in mappings.
 
     Parameters
     ----------
@@ -40,6 +40,92 @@ class Name(object):
     TypeError
        Raised when arguments cannot be parsed or conflict (for example, if two
        different package names are specified through two different fields).
+
+    Notes
+    -----
+    Names in the Verification Framework are formatted as::
+
+        package.metric.specification
+
+    A **fully-qualified name** is one that has all components included. For
+    example, a fully specified metric name is::
+
+        validate_drp.PA1
+
+    This means: "the ``PA1`` metric in the ``validate_drp`` package.
+
+    An example of a fully-specificed *specification* name::
+
+        validate_drp.PA1.design
+
+    This means: "the ``design`` specification of the ``PA1`` metric in the
+    ``validate_drp`` package.
+
+    A **relative name** is one that's missing a component. For example::
+
+        PA1.design
+
+    Asserting this is a relative specification name, the package is not known.
+
+    Examples
+    --------
+
+    Creation
+    ^^^^^^^^
+    There are many patterns for creating Name instances. Different patterns
+    are useful in different circumstances.
+
+    You can create a metric name from its components:
+
+    >>> Name(package='validate_drp', metric='PA1')
+    Name('validate_drp', 'PA1')
+
+    Or a specification name from components:
+
+    >>> Name(package='validate_drp', metric='PA1', spec='design')
+    Name('validate_drp', 'PA1', 'design')
+
+    You can equivalently create ``Name``\ s from fully-qualified strings:
+
+    >>> Name('validate_drp.PA1')
+    Name('validate_drp', 'PA1')
+
+    >>> Name('validate_drp.PA1.design')
+    Name('validate_drp', 'PA1', 'design')
+
+    You can also use an existing name to specify some components of the name:
+
+    >>> metric_name = Name('validate_drp.PA1')
+    >>> Name(metric=metric_name, spec='design')
+    Name('validate_drp', 'PA1', 'design')
+
+    A `TypeError` is raised if any components of the input names conflict.
+
+    Fully-specified metric names can be mixed with a ``spec`` component:
+
+    >>> Name(metric='validate_drp.PA1', spec='design')
+    Name('validate_drp', 'PA1', 'design')
+
+    String representation
+    ^^^^^^^^^^^^^^^^^^^^^
+    Converting a ``Name`` into a `str` gives you the canonical string
+    representation, as fully-specified as possible:
+
+    >>> str(Name('validate_drp', 'PA1', 'design'))
+    'validate_drp.PA1.design'
+
+    Alternatively, obtain the fully-qualified metric name from the
+    `Name.fqn` property:
+
+    >>> name = Name('validate_drp', 'PA1', 'design')
+    >>> name.fqn
+    'validate_drp.PA1.design'
+
+    The relative name of a specification omits the package component:
+
+    >>> name = Name('validate_drp.PA1.design')
+    >>> name.relative_name
+    'PA1.design'
     """
 
     def __init__(self, package=None, metric=None, spec=None):
@@ -198,20 +284,44 @@ class Name(object):
 
     @property
     def package(self):
-        """Package name (`str`)."""
+        """Package name (`str`).
+
+        >>> name = Name('validate_drp.PA1.design')
+        >>> name.package
+        'validate_drp'
+        """
         return self._package
 
     @property
     def metric(self):
-        """Metric name (`str`)."""
+        """Metric name (`str`).
+
+        >>> name = Name('validate_drp.PA1.design')
+        >>> name.metric
+        'PA1'
+        """
         return self._metric
 
     @property
     def spec(self):
-        """Specification name (`str`)."""
+        """Specification name (`str`).
+
+        >>> name = Name('validate_drp.PA1.design')
+        >>> name.spec
+        'design'
+        """
         return self._spec
 
     def __eq__(self, other):
+        """Test equality of two specifications.
+
+        Examples
+        --------
+        >>> name1 = Name('validate_drp.PA1.design')
+        >>> name2 = Name('validate_drp', 'PA1', 'design')
+        >>> name1 == name2
+        True
+        """
         return (self.package == other.package) and \
             (self.metric == other.metric) and \
             (self.spec == other.spec)
@@ -220,7 +330,21 @@ class Name(object):
         return hash((self.package, self.metric, self.spec))
 
     def __contains__(self, name):
-        """Test if another Name is contained by this Name."""
+        """Test if another Name is contained by this Name.
+
+        A specification can be in a metric and a package. A metric can be in
+        a package.
+
+        Examples
+        --------
+        >>> spec_name = Name('validate_drp.PA1.design')
+        >>> metric_name = Name('validate_drp.PA1')
+        >>> package_name = Name('validate_drp')
+        >>> spec_name in metric_name
+        True
+        >>> package_name in metric_name
+        False
+        """
         contains = True  # tests will disprove membership
 
         if self.is_package:
@@ -246,7 +370,13 @@ class Name(object):
 
     @property
     def has_package(self):
-        """`True` if this object contains a package name (`bool`)."""
+        """`True` if this object contains a package name (`bool`).
+
+        >>> Name('validate_drp.PA1').has_package
+        True
+        >>> Name(spec='design').has_package
+        False
+        """
         if self.package is not None:
             return True
         else:
@@ -256,6 +386,11 @@ class Name(object):
     def has_spec(self):
         """`True` if this object contains a specification name, either
         relative or fully-qualified (`bool`).
+
+        >>> Name(spec='design').has_spec
+        True
+        >>> Name('validate_drp.PA1').has_spec
+        False
         """
         if self.spec is not None:
             return True
@@ -266,6 +401,11 @@ class Name(object):
     def has_metric(self):
         """`True` if this object contains a metric name, either
         relative or fully-qualified (`bool`).
+
+        >>> Name('validate_drp.PA1').has_metric
+        True
+        >>> Name(spec='design').has_metric
+        False
         """
         if self.metric is not None:
             return True
@@ -284,7 +424,13 @@ class Name(object):
 
     @property
     def is_package(self):
-        """`True` if this object is a package name (`bool`)."""
+        """`True` if this object is a package name (`bool`).
+
+        >>> Name('validate_drp').is_package
+        True
+        >>> Name('validate_drp.PA1').is_package
+        False
+        """
         if self.has_package and \
                 self.is_metric is False and \
                 self.is_spec is False:
@@ -296,6 +442,11 @@ class Name(object):
     def is_metric(self):
         """`True` if this object is a metric name, either relative or
         fully-qualified (`bool`).
+
+        >>> Name('validate_drp.PA1').is_metric
+        True
+        >>> Name('validate_drp.PA1.design').is_metric
+        False
         """
         if self.has_metric is True and self.has_spec is False:
             return True
@@ -306,6 +457,11 @@ class Name(object):
     def is_spec(self):
         """`True` if this object is a specification name, either relative or
         fully-qualified (`bool`).
+
+        >>> Name('validate_drp.PA1').is_spec
+        False
+        >>> Name('validate_drp.PA1.design').is_spec
+        True
         """
         if self.has_spec is True:
             return True
@@ -317,12 +473,22 @@ class Name(object):
         """`True` if this object is a fully-qualified name of either a
         package, metric or specification (`bool`).
 
-        Examples:
+        Examples
+        --------
+        A fully-qualified package name:
 
-        - ``'validate_drp'`` is a fully-qualified package name.
-        - ``'validate_drp.PA1'`` is a fully-qualified metric name.
-        - ``'validate_drp.PA1.design_gri'`` is a fully-qualified specification
-          name.
+        >>> Name('validate_drp').is_fq
+        True
+
+        A fully-qualified metric name:
+
+        >>> Name('validate_drp.PA1').is_fq
+        True
+
+        A fully-qualified specification name:
+
+        >>> Name('validate_drp.PA1.design_gri').is_fq
+        True
         """
         if self.is_package:
             # package names are by definition fully qualified
@@ -342,9 +508,17 @@ class Name(object):
         fully-qualified, but is relative to a metric name (`bool`).
         relative to a base name. (`bool`).
 
-        For example, ``PA1.design_gri`` is a relative specification name.
-
         Package and metric names are never relative.
+
+        A relative specification name:
+
+        >>> Name(spec='PA1.design_gri').is_relative
+        True
+
+        But not:
+
+        >>> Name('validate_drp.PA1.design_gri').is_relative
+        False
         """
         if self.is_spec and \
                 self.has_metric is True and \
@@ -373,6 +547,19 @@ class Name(object):
             return template.format(self=self)
 
     def __str__(self):
+        """Canonical string representation of a Name (`str`).
+
+        Examples:
+
+        >>> str(Name(package='validate_drp'))
+        'validate_drp'
+        >>> str(Name(package='validate_drp', metric='PA1'))
+        'validate_drp.PA1'
+        >>> str(Name(package='validate_drp', metric='PA1', spec='design'))
+        'validate_drp.PA1.design'
+        >>> str(Name(metric='PA1', spec='design'))
+        'PA1.design'
+        """
         if self.is_package:
             return self.package
         elif self.is_metric and not self.is_fq:
@@ -396,6 +583,13 @@ class Name(object):
         ------
         AttributeError
            If the name is not a fully-qualified name (check `is_fq`)
+
+        Examples
+        --------
+        >>> Name('validate_drp', 'PA1').fqn
+        'validate_drp.PA1'
+        >>> Name('validate_drp', 'PA1', 'design').fqn
+        'validate_drp.PA1.design'
         """
         if self.is_fq:
             return str(self)
@@ -412,6 +606,11 @@ class Name(object):
         AttributeError
            If the object does not represent a specification, or if a relative
            name cannot be formed because the `metric` is None.
+
+        Examples
+        --------
+        >>> Name('validate_drp.PA1.design').relative_name
+        'PA1.design'
         """
         if self.has_relative:
             return '{self.metric}.{self.spec}'.format(self=self)
