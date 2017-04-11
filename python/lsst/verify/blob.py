@@ -18,7 +18,7 @@ class BlobBase(JsonSerializationMixin, DatumAttributeMixin):
 
     .. seealso::
 
-       The page :ref:`validate-base-creating-blobs` describes how to create
+       The page :ref:`verify-creating-blobs` describes how to create
        blob classes.
     """
 

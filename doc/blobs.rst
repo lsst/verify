@@ -1,14 +1,14 @@
-.. currentmodule:: lsst.validate.base
+.. currentmodule:: lsst.verify
 
-.. _validate-base-creating-blobs:
+.. _verify-creating-blobs:
 
 ################################################
 Providing datasets to measurements through blobs
 ################################################
 
 A common pattern is to reduce a raw dataset and share that dataset between several measurements.
-`lsst.validate.base` expresses such datasets as **blobs.**
-In the context of the `lsst.validate.base` framework, a blob is an object that contains `Datum` objects.
+`lsst.verify` expresses such datasets as **blobs.**
+In the context of the `lsst.verify` framework, a blob is an object that contains `Datum` objects.
 
 There are several advantages of storing input datasets in blob objects:
 
@@ -25,7 +25,7 @@ Blobs are subclasses of `BlobBase` that register one or more `Datum` objects.
 .. code-block:: python
 
    import astropy.units as u
-   from lsst.validate.base import BlobBase
+   from lsst.verify import BlobBase
 
 
    class SimpleBlob(BlobBase):

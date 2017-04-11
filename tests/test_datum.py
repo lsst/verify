@@ -5,7 +5,7 @@ import unittest
 
 import astropy.units as u
 
-from lsst.validate.base import Datum
+from lsst.verify import Datum
 
 
 class DatumTestCase(unittest.TestCase):

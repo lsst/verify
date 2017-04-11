@@ -28,7 +28,7 @@ class MeasurementSet(object):
         provenance and other metadata.
     metric_set : MetricSet, optional
         A `MetricSet` to extract the metric definitions from. If None, use
-        name from the validate_metrics package.
+        name from the verify_metrics package.
     """
     name = None
     """`str` the name of the `MetricSet` these `Measurement`s are of."""
@@ -41,7 +41,7 @@ class MeasurementSet(object):
 
     def __init__(self, name, measurements, job=None, metric_set=None):
         if metric_set is None:
-            raise NotImplementedError('Cannot autoload validate_metrics yet')
+            raise NotImplementedError('Cannot autoload verify_metrics yet')
         self.name = name
         self.measurements = {}
         self.job = job
@@ -108,7 +108,7 @@ class Measurement(QuantityAttributeMixin, JsonSerializationMixin):
         if metric_set is not None:
             self._metric = metric_set[name]
         else:
-            raise NotImplementedError('Cannot autoload validate_metrics yet')
+            raise NotImplementedError('Cannot autoload verify_metrics yet')
 
         if not self._metric.check_unit(value):
             raise u.UnitTypeError

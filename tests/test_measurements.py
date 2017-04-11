@@ -5,7 +5,7 @@ import unittest
 
 import astropy.units as u
 
-from lsst.validate.base import Measurement, MeasurementSet, Metric, MetricSet
+from lsst.verify import Measurement, MeasurementSet, Metric, MetricSet
 
 
 class MeasurementSetTestCase(unittest.TestCase):

@@ -111,11 +111,11 @@ class Metric(JsonSerializationMixin):
     """Container for the definition of a metric.
 
     Metrics can either be instantiated programatically, or from a :ref:`metric
-    YAML file <validate-base-metric-yaml>` with the `from_yaml` class method.
+    YAML file <verify-metric-yaml>` with the `from_yaml` class method.
 
     .. seealso::
 
-       See the :ref:`validate-base-using-metrics` page for usage details.
+       See the :ref:`verify-using-metrics` page for usage details.
 
     Parameters
     ----------
@@ -180,7 +180,7 @@ class Metric(JsonSerializationMixin):
 
         .. seealso::
 
-           See :ref:`validate-base-metric-yaml` for details on the metric YAML
+           See :ref:`verify-metric-yaml` for details on the metric YAML
            schema.
 
         Parameters
@@ -312,7 +312,7 @@ def load_metrics(yaml_path):
 
     .. seealso::
 
-       :ref:`validate-base-metric-yaml`.
+       :ref:`verify-metric-yaml`.
 
     Parameters
     ----------

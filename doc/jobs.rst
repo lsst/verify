@@ -1,13 +1,13 @@
-.. currentmodule:: lsst.validate.base
+.. currentmodule:: lsst.verify
 
-.. _validate-base-jobs:
+.. _verify-jobs:
 
 ################################################
 Using Jobs to collect and serialize measurements
 ################################################
 
-The `lsst.validate.base` framework works in tandem with the SQUASH_ metric monitoring service.
-This page describes how to use the `lsst.validate.base.Job` class to collect :doc:`measurements <measurements>` and :doc:`blobs <blobs>`, and build a JSON document that is accepted by SQUASH's RESTful API.
+The `lsst.verify` framework works in tandem with the SQUASH_ metric monitoring service.
+This page describes how to use the `lsst.verify.Job` class to collect :doc:`measurements <measurements>` and :doc:`blobs <blobs>`, and build a JSON document that is accepted by SQUASH's RESTful API.
 
 Collecting measurements in a Job
 ================================
@@ -18,7 +18,7 @@ You can add multiple measurements to a `Job` when you create it:
 
 .. code-block:: python
 
-   from lsst.validate.base import Job
+   from lsst.verify import Job
 
    # ...create measurements meas1, meas2, ...
 
@@ -28,7 +28,7 @@ Alternatively, you can add measurements one at a time with the `Job.register_mea
 
 .. code-block:: python
 
-   from lsst.validate.base import Job
+   from lsst.verify import Job
 
    # ...create measurements meas1, meas2, ...
 
@@ -43,7 +43,7 @@ A convenient way of adding measurements to a `Job` is in a measurement's ``__ini
    import os
    import astropy.units as u
    from lsst.utils import getPackageDir
-   from lsst.validate.base import MeasurementBase, Job
+   from lsst.verify import MeasurementBase, Job
 
 
    class PA1Measurement(MeasurementBase):
@@ -99,7 +99,7 @@ Once all :doc:`measurements <measurements>` and :doc:`blobs <blobs>` are registe
 
 .. code-block:: python
 
-   from lsst.validate.base import Job
+   from lsst.verify import Job
 
    job = Job()
    # .. register measurements and blobs
@@ -109,7 +109,7 @@ Once all :doc:`measurements <measurements>` and :doc:`blobs <blobs>` are registe
 
 .. note::
 
-   All `lsst.validate.base` classes (`Datum`, `MeasurementBase`, `BlobBase`, `Metric`, `Specification` and `Job`) have a ``json`` property.
+   All `lsst.verify` classes (`Datum`, `MeasurementBase`, `BlobBase`, `Metric`, `Specification` and `Job`) have a ``json`` property.
    That property lets you get a :py:mod:`json`-serializable object for a specific object.
    `Job.json` simply calls the ``json`` properties of every object it contains.
 
@@ -120,15 +120,15 @@ Writing a JSON file
 
 .. code-block:: python
 
-   from lsst.validate.base import Job
+   from lsst.verify import Job
 
    job = Job()
    # .. register measurements and blobs
    job.write_json('measurements.json')
 
 
-Uploading lsst.validate.base's JSON to SQUASH
-=============================================
+Uploading lsst.verify's JSON to SQUASH
+======================================
 
 At the moment the SQUASH_ API does not directly accept the JSON produced `Job.json`.
 Instead, it's shimmed with a package called `post-qa`_.

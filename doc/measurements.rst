@@ -1,6 +1,6 @@
-.. currentmodule:: lsst.validate.base
+.. currentmodule:: lsst.verify
 
-.. _validate-base-measurement-class: 
+.. _verify-measurement-class: 
 
 ############################
 Creating measurement classes
@@ -22,7 +22,7 @@ This is a basic template for a measurement class:
    import os
    import astropy.units as u
    from lsst.utils import getPackageDir
-   from lsst.validate.base import MeasurementBase
+   from lsst.verify import MeasurementBase
 
 
    class PA1Measurement(MeasurementBase):
@@ -43,7 +43,7 @@ This is a basic template for a measurement class:
                             'metrics.yaml')
    pa1_measurement = PA1Measurement(yaml_path)
 
-In a measurement class, the `MeasurementBase.metric` attribute must be set with a `Metric` instance (this is required by the :class:`~lsst.validate.base.MeasurementBase` abstract base class).
+In a measurement class, the `MeasurementBase.metric` attribute must be set with a `Metric` instance (this is required by the :class:`~lsst.verify.MeasurementBase` abstract base class).
 In this example, the `Metric.from_yaml` class method constructs a `Metric` instance for PA1 from the :file:`metrics.yaml` file built into ``validate_drp``.
 
 Storing a measurement quantity
@@ -101,7 +101,7 @@ Accessing parameters as Datum objects
 -------------------------------------
 
 Although the values of parameters can be accessed through object attributes, they are stored internally as `Datum` objects.
-You can access these `Datum`\ s as items of the :attr:`~lsst.validate.base.MeasurementBase.parameters` attribute:
+You can access these `Datum`\ s as items of the :attr:`~lsst.verify.MeasurementBase.parameters` attribute:
 
 .. code-block:: python
 
@@ -113,7 +113,7 @@ You can access these `Datum`\ s as items of the :attr:`~lsst.validate.base.Measu
 Alternative ways of registering parameters
 ------------------------------------------
 
-The :meth:`~lsst.validate.base.MeasurementBase.register_parameter` method is flexible in terms of its arguments.
+The :meth:`~lsst.verify.MeasurementBase.register_parameter` method is flexible in terms of its arguments.
 For example, it's possible to first register a parameter and set its value later:
 
 .. code-block:: python
@@ -133,9 +133,9 @@ It's also possible to provide a `Datum` to `MeasurementBase.register_parameter`:
                           datum=Datum(50, '', label='shuffles',
                                       description='Number of random shuffles'))
 
-This can be useful when copying a parameter already available as a :class:`~lsst.validate.base.Datum`.
+This can be useful when copying a parameter already available as a :class:`~lsst.verify.Datum`.
 
-.. _validate-base-measurement-extras:
+.. _verify-measurement-extras:
 
 Storing extra measurement outputs
 =================================
@@ -183,7 +183,7 @@ As an example, the PA1 measurement code (``lsst.validate.drp.calcsrd.PA1Measurem
 
 `MeasurementBase.register_extra` works just like the :meth:`MeasurementBase.register_parameter` method.
 Specifically, the value of the extra can be set at registration time, or afterwards by setting an instance attribute (shown above).
-An extra can also be registered with a pre-made :class:`~lsst.validate.base.Datum` object.
+An extra can also be registered with a pre-made :class:`~lsst.verify.Datum` object.
 
 Accessing and updating the values and Datum objects of measurement extras
 -------------------------------------------------------------------------
