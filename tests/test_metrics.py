@@ -50,6 +50,26 @@ class MetricsPackageTestCase(unittest.TestCase):
             self.assertIsInstance(value, Metric)
         self.assertEqual(count, 4)
 
+    def test_tags(self):
+        """Both single string and tag lists are present in YAML."""
+        # Parsing this metric required putting the single tag inside a list
+        self.assertEqual(
+            len(self.metric_set['testing.PA1'].tags),
+            1)
+        self.assertIn(
+            'photometric',
+            self.metric_set['testing.PA1'].tags)
+
+        self.assertEqual(
+            len(self.metric_set['testing.AM1'].tags),
+            2)
+        self.assertIn(
+            'astrometric',
+            self.metric_set['testing.AM1'].tags)
+        self.assertIn(
+            'random-tag',
+            self.metric_set['testing.AM1'].tags)
+
     def test_setitem_delitem(self):
         """Test adding and deleting metrics."""
         m1 = Metric('validate_drp.test',
@@ -171,6 +191,7 @@ class MetricTestCase(unittest.TestCase):
         reference_page = 1
         reference_url = 'example.com'
         m = Metric(name, description, unit,
+                   tags=['tagA', 'tagB'],
                    reference_doc=reference_doc,
                    reference_url=reference_url,
                    reference_page=reference_page)
@@ -182,6 +203,9 @@ class MetricTestCase(unittest.TestCase):
         self.assertEqual(j['reference']['doc'], reference_doc)
         self.assertEqual(j['reference']['page'], reference_page)
         self.assertEqual(j['reference']['url'], reference_url)
+        self.assertIn('tagA', j['tags'])
+        self.assertIn('tagB', j['tags'])
+        self.assertNotIn('tagC', j['tags'])
 
         # rebuild from json
         m2 = Metric.deserialize(**j)

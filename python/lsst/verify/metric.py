@@ -257,7 +257,8 @@ class Metric(JsonSerializationMixin):
         string representation. Use an empty string, ``''``, or
         ``astropy.units.dimensionless_unscaled`` for a unitless quantity.
     tags : `list` of `str`
-        Tags asssociated with this metric, to group it with similar metrics.
+        Tags associated with this metric. Tags are user-submitted string
+        tokens that are used to group metrics.
     reference_doc : `str`, optional
         The document handle that originally defined the metric
         (e.g., ``'LPM-17'``).
@@ -289,7 +290,11 @@ class Metric(JsonSerializationMixin):
         self.unit = u.Unit(unit)
         if tags is None:
             self.tags = []
+        elif isinstance(tags, basestring):
+            self.tags = [tags]
         else:
+            # FIXME DM-8477 Need type checking that tags are actually strings
+            # and are a set.
             self.tags = tags
         self.reference_doc = reference_doc
         self.reference_url = reference_url
@@ -314,6 +319,7 @@ class Metric(JsonSerializationMixin):
         # keyword args for Metric __init__
         args = {
             'unit': unit,
+            'tags': tags,
             # Remove trailing newline from folded block description field.
             # This isn't necessary if the field is trimmed with `>-` in YAML,
             # but won't hurt either.
@@ -346,6 +352,7 @@ class Metric(JsonSerializationMixin):
     def __eq__(self, other):
         return ((self.name == other.name) and
                 (self.unit == other.unit) and
+                (self.tags == other.tags) and
                 (self.description == other.description) and
                 (self.reference == other.reference))
 
@@ -434,6 +441,7 @@ class Metric(JsonSerializationMixin):
             'name': str(self.name),
             'description': self.description,
             'unit': self.unit_str,
+            'tags': self.tags,
             'reference': ref_doc})
 
     def check_unit(self, quantity):

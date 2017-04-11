@@ -9,6 +9,7 @@ PA1:
   description: >
     The maximum rms of the unresolved source magnitude distribution around the
     mean value (repeatability).
+  tags: photometric
 
 PF1:
   reference:
@@ -18,15 +19,20 @@ PF1:
   unit: ''
   description: >
     The maximum fraction of magnitudes deviating by more than PA2 from mean (%).
+  tags: photometric
 
 PA2:
   unit: mmag
   description: >
     At most PF1 % of magnitudes may deviate by more than this from the mean
     (millimag).
+  tags: photometric
 
 AM1:
   unit: milliarcsecond
   description: >
     The maximum rms of the astrometric distance distribution for stellar pairs
     with separations of D=5 arcmin (repeatability) (milliarcsec).
+  tags:
+    - astrometric
+    - random-tag
