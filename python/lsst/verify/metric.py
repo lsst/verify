@@ -143,6 +143,33 @@ class MetricSet(object):
             key = Name(metric=key)
         return self._metrics[key]
 
+    def __setitem__(self, key, value):
+        if not isinstance(key, Name):
+            key = Name(metric=key)
+
+        # Key name must be for a metric
+        if not key.is_metric:
+            message = 'Key {0!r} is not a metric name'.format(key)
+            raise KeyError(message)
+
+        # value must be a metric type
+        if not isinstance(value, Metric):
+            message = 'Expected {0!s}={1!r} to be a Metric-type'.format(
+                key, value)
+            raise TypeError(message)
+
+        # Metric name and key name must be consistent
+        if value.name != key:
+            message = 'Key {0!s} inconsistent with Metric {0!s}'
+            raise KeyError(message.format(key, value))
+
+        self._metrics[key] = value
+
+    def __delitem__(self, key):
+        if not isinstance(key, Name):
+            key = Name(metric=key)
+        del self._metrics[key]
+
     def __len__(self):
         return len(self._metrics)
 
@@ -150,6 +177,36 @@ class MetricSet(object):
         if not isinstance(key, Name):
             key = Name(metric=key)
         return key in self._metrics
+
+    def __iter__(self):
+        for key in self._metrics:
+            yield key
+
+    def insert(self, metric):
+        """Insert a `Metric` into the set.
+
+        Any pre-existing metric with the same name is replaced
+
+        Parameters
+        ----------
+        metric : `Metric`
+            A metric.
+        """
+        self[metric.name] = metric
+
+    def items(self):
+        """Iterate over ``(name, metric)`` pairs in the set.
+
+        Yields
+        ------
+        item : tuple
+            Tuple containing:
+
+            - `Name` of the `Metric`
+            - `Metric` instance
+        """
+        for item in self._metrics.items():
+            yield item
 
 
 class Metric(JsonSerializationMixin):

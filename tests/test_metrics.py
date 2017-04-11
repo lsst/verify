@@ -7,7 +7,7 @@ import unittest
 import yaml
 import astropy.units as u
 
-from lsst.verify import Metric, MetricSet
+from lsst.verify import Metric, MetricSet, Name
 
 
 class MetricsPackageTestCase(unittest.TestCase):
@@ -33,6 +33,59 @@ class MetricsPackageTestCase(unittest.TestCase):
                     'testing.PA2',
                     'testing.AM1']:
             self.assertIn(key, self.metric_set, msg=key)
+
+    def test_iter(self):
+        """Test __iter__ over keys (Name instances of metrics)."""
+        keys = [k for k in self.metric_set]
+        self.assertEqual(len(keys), 4)
+        for k in keys:
+            self.assertIsInstance(k, Name)
+
+    def test_items(self):
+        """Test the items iterator."""
+        count = 0
+        for key, value in self.metric_set.items():
+            count += 1
+            self.assertIsInstance(key, Name)
+            self.assertIsInstance(value, Metric)
+        self.assertEqual(count, 4)
+
+    def test_setitem_delitem(self):
+        """Test adding and deleting metrics."""
+        m1 = Metric('validate_drp.test',
+                    'test', '',
+                    reference_url='example.com',
+                    reference_doc='Doc', reference_page=1)
+        metric_set = MetricSet()
+        self.assertEqual(len(metric_set), 0)
+
+        metric_set['validate_drp.test'] = m1
+        self.assertEqual(len(metric_set), 1)
+        self.assertEqual(metric_set['validate_drp.test'], m1)
+
+        with self.assertRaises(KeyError):
+            # inconsistent metric names
+            metric_set['validate_drp.new_test'] = m1
+
+        with self.assertRaises(TypeError):
+            # Not a metric name
+            n = Name('validate_drp')
+            m2 = Metric(n, 'test', '')
+            metric_set[n] = m2
+
+        del metric_set['validate_drp.test']
+        self.assertEqual(len(metric_set), 0)
+
+    def test_insert(self):
+        """Test MetricSet.insert."""
+        m1 = Metric('validate_drp.test',
+                    'test', '',
+                    reference_url='example.com',
+                    reference_doc='Doc', reference_page=1)
+        metric_set = MetricSet()
+
+        metric_set.insert(m1)
+        self.assertEqual(m1, metric_set['validate_drp.test'])
 
 
 class VerifyMetricsParsingTestCase(unittest.TestCase):
