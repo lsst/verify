@@ -1,0 +1,59 @@
+# PF1 specifications as defined in LPM-17, the Science Requirements
+# Document (SRD), http://ls.st/lpm-17
+# These specifications don't query against provenance; sub-specifications
+# *can* inherit these, though, to concretely test against a certain dataset.
+
+---
+# Specification partial
+id: 'PF1-base'
+threshold:
+  unit: ''
+  operator: '<='
+
+---
+# validate_drp.PF1_minimum_gri.srd
+metric: 'PF1_minimum_gri'
+name: 'srd'
+base: '#PF1-base'
+threshold:
+  value: 20.0
+
+---
+# validate_drp.PF1_design_gri.srd
+metric: 'PF1_design_gri'
+name: 'srd'
+base: '#PF1-base'
+threshold:
+  value: 10.0
+
+---
+# validate_drp.PF1_stretch_gri.srd
+metric: 'PF1_stretch_gri'
+name: 'srd'
+base: '#PF1-base'
+threshold:
+  value: 5.0
+
+---
+# validate_drp.PF1_minimum_uzy.srd
+metric: 'PF1_minimum_uzy'
+name: 'srd'
+base: '#PF1-base'
+threshold:
+  value: 20.0
+
+---
+# validate_drp.PF1_design_uzy.srd
+metric: 'PF1_design_uzy'
+name: 'srd'
+base: '#PF1-base'
+threshold:
+  value: 10.0
+
+---
+# validate_drp.PF1_stretch_uzy.srd
+metric: 'PF1_stretch_uzy'
+name: 'srd'
+base: '#PF1-base'
+threshold:
+  value: 5.0

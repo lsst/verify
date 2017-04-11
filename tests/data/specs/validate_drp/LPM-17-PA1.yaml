@@ -1,0 +1,48 @@
+# PA1 specifications as defined in LPM-17, the Science Requirements
+# Document (SRD), http://ls.st/lpm-17
+# These specifications don't query against provenance; sub-specifications
+# *can* inherit these, though, to concretely test against a certain dataset.
+
+---
+# Specification partial
+id: 'PA1-base'
+metric: 'PA1'
+threshold:
+  unit: 'mmag'
+  operator: "<="
+
+---
+name: "minimum_gri"
+base: "#PA1-base"
+threshold:
+  value: 8.0
+
+---
+name: "design_gri"
+base: "#PA1-base"
+threshold:
+  value: 5.0
+
+---
+name: "stretch_gri"
+base: "#PA1-base"
+threshold:
+  value: 3.0
+
+---
+name: "minimum_uzy"
+base: "#PA1-base"
+threshold:
+  value: 12.0
+
+---
+name: "design_uzy"
+base: "#PA1-base"
+threshold:
+  value: 7.5
+
+---
+name: "stretch_uzy"
+base: "#PA1-base"
+threshold:
+  value: 4.5

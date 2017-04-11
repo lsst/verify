@@ -9,6 +9,7 @@ import yaml
 import astropy.units as u
 
 from .jsonmixin import JsonSerializationMixin
+from .yamlutils import load_ordered_yaml
 
 __all__ = ['Metric', 'MetricSet', 'MetricRepo', 'load_metrics']
 
@@ -331,28 +332,8 @@ def load_metrics(yaml_path):
         Make a single `Metric` instance from a YAML document.
     """
     with open(yaml_path) as f:
-        metrics_doc = _load_ordered_yaml(f)
+        metrics_doc = load_ordered_yaml(f)
     metrics = []
     for key in metrics_doc:
         metrics.append((key, Metric.from_yaml(key, metrics_doc)))
     return OrderedDict(metrics)
-
-
-def _load_ordered_yaml(stream, Loader=yaml.Loader,
-                       object_pairs_hook=OrderedDict):
-    """Load a YAML document into an OrderedDict
-
-    Solution from http://stackoverflow.com/a/21912744
-    """
-    class OrderedLoader(Loader):
-        pass
-
-    def construct_mapping(loader, node):
-        loader.flatten_mapping(node)
-        return object_pairs_hook(loader.construct_pairs(node))
-
-    OrderedLoader.add_constructor(
-        yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-        construct_mapping)
-
-    return yaml.load(stream, OrderedLoader)

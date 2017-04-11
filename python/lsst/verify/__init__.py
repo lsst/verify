@@ -11,6 +11,7 @@ from .errors import *
 from .datum import *
 from .naming import *
 from .spec import *
+from .specset import *
 from .metric import *
 from .measurement import *
 from .blob import *

@@ -1,0 +1,59 @@
+# PA2 specifications as defined in LPM-17, the Science Requirements
+# Document (SRD), http://ls.st/lpm-17
+# These specifications don't query against provenance; sub-specifications
+# *can* inherit these, though, to concretely test against a certain dataset.
+
+---
+# Specification partial
+id: 'PA2-base'
+threshold:
+  unit: 'mmag'
+  operator: '<='
+
+---
+# validate_drp.PA2_minimum_gri.srd
+metric: 'PA2_minimum_gri'
+name: 'srd'
+base: '#PA2-base'
+threshold:
+  value: 15.0
+
+---
+# validate_drp.PA2_design_gri.srd
+metric: 'PA2_design_gri'
+name: 'srd'
+base: '#PA2-base'
+threshold:
+  value: 15.0
+
+---
+# validate_drp.PA2_stretch_gri.srd
+metric: 'PA2_stretch_gri'
+name: 'srd'
+base: '#PA2-base'
+threshold:
+  value: 10.0
+
+---
+# validate_drp.PA2_minimum_uzy.srd
+metric: 'PA2_minimum_uzy'
+name: 'srd'
+base: '#PA2-base'
+threshold:
+  value: 22.5
+
+---
+# validate_drp.PA2_design_uzy.srd
+metric: 'PA2_design_uzy'
+name: 'srd'
+base: '#PA2-base'
+threshold:
+  value: 22.5
+
+---
+# validate_drp.PA2_stretch_uzy.srd
+metric: 'PA2_stretch_uzy'
+name: 'srd'
+base: '#PA2-base'
+threshold:
+  value: 15.0

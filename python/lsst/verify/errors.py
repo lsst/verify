@@ -2,7 +2,8 @@
 """Exceptions for the lsst.verify namespace."""
 
 __all__ = ['VerifyError',
-           'VerifySpecificationError']
+           'VerifySpecificationError',
+           'SpecificationResolutionError']
 
 
 class VerifyError(Exception):
@@ -12,4 +13,9 @@ class VerifyError(Exception):
 
 class VerifySpecificationError(VerifyError):
     """Error accessing or using requirement specifications."""
+    pass
+
+
+class SpecificationResolutionError(Exception):
+    """Error resolving a specification document's stated inheritance."""
     pass
