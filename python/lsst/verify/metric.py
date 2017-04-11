@@ -208,6 +208,31 @@ class MetricSet(object):
         for item in self._metrics.items():
             yield item
 
+    def subset(self, package_name):
+        """Create a new `MetricSet` with metrics belonging to a single
+        package.
+
+        Parameters
+        ----------
+        package_name : `str` or `lsst.verify.Name`
+            Name of the package to subset metrics by. If the package name
+            is ``'pkg_a'``, then metric ``'pkg_a.metric_1'`` would be
+            **included** in the subset, while ``'pkg_b.metric_2'`` would be
+            **excluded**.
+
+        Returns
+        -------
+        metric_subset : `MetricSet`
+            Subset of this metric set containing only metrics belonging
+            to the specified package.
+        """
+        if not isinstance(package_name, Name):
+            package_name = Name(package=package_name)
+
+        metrics = [metric for metric_name, metric in self._metrics.items()
+                   if metric_name in package_name]
+        return MetricSet(metrics)
+
 
 class Metric(JsonSerializationMixin):
     """Container for the definition of a metric.

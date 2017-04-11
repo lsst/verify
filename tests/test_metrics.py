@@ -104,6 +104,30 @@ class VerifyMetricsParsingTestCase(unittest.TestCase):
             MetricSet.load_metrics_package('nonexistent_metrics')
 
 
+class MetricSetSubsetTestCase(unittest.TestCase):
+    """Test case for MetricSet.subset."""
+
+    def setUp(self):
+        self.m1 = Metric('pkgA.m1', 'In pkgA', '')
+        self.m2 = Metric('pkgA.m2', 'In pkgA', '')
+        self.m3 = Metric('pkgB.m3', 'In pkgB', '')
+        self.metric_set = MetricSet([self.m1, self.m2, self.m3])
+
+    def test_subset_A(self):
+        subset = self.metric_set.subset('pkgA')
+        self.assertEqual(len(subset), 2)
+        self.assertIn(self.m1.name, subset)
+        self.assertIn(self.m2.name, subset)
+        self.assertNotIn(self.m3.name, subset)
+
+    def test_subset_B(self):
+        subset = self.metric_set.subset('pkgB')
+        self.assertEqual(len(subset), 1)
+        self.assertNotIn(self.m1.name, subset)
+        self.assertNotIn(self.m2.name, subset)
+        self.assertIn(self.m3.name, subset)
+
+
 class MetricTestCase(unittest.TestCase):
     """Test Metrics and metrics.yaml functionality."""
 
