@@ -326,6 +326,9 @@ class Name(object):
             (self.metric == other.metric) and \
             (self.spec == other.spec)
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __hash__(self):
         return hash((self.package, self.metric, self.spec))
 

@@ -258,6 +258,9 @@ class Metric(JsonSerializationMixin):
         return ((self.name == other.name) and
                 (self.reference == other.reference))
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __str__(self):
         return '{0.name} ({0.unit_str}): "{0.description}"'.format(self)
 

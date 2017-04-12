@@ -124,6 +124,31 @@ class NameConstructors(unittest.TestCase):
         )
 
 
+class NameComparisonTestCase(unittest.TestCase):
+    """Test cases for name equality/comparison testing."""
+
+    def setUp(self):
+        self.validate_drp_PA1 = Name('validate_drp.PA1')
+        self.validate_drp_PA1v2 = Name('validate_drp.PA1')
+        self.validate_drp_PA2 = Name('validate_drp.PA2')
+
+    def test_metric_equality(self):
+        self.assertTrue(
+            self.validate_drp_PA1 == self.validate_drp_PA1v2
+        )
+        self.assertFalse(
+            self.validate_drp_PA1 == self.validate_drp_PA2
+        )
+
+    def test_metric_inequality(self):
+        self.assertFalse(
+            self.validate_drp_PA1 != self.validate_drp_PA1v2
+        )
+        self.assertTrue(
+            self.validate_drp_PA1 != self.validate_drp_PA2
+        )
+
+
 class FullyQualifiedMetricName(unittest.TestCase):
     """Simple fully-qualified metric name."""
 
