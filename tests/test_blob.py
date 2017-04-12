@@ -50,11 +50,6 @@ class BlobTestCase(unittest.TestCase):
         new_blob = Blob('demo')
         self.assertNotEqual(new_blob.identifier, self.blob.identifier)
 
-    def test_eq(self):
-        new_blob = Blob('demo')
-        self.assertNotEqual(new_blob, self.blob)
-        self.assertEqual(self.blob, self.blob)
-
     def test_json(self):
         j = self.blob.json
 
@@ -67,7 +62,7 @@ class BlobTestCase(unittest.TestCase):
 
         # Rebuild from blob
         b2 = Blob.from_json(j)
-        self.assertEqual(self.blob, b2)
+        self.assertEqual(self.blob.identifier, b2.identifier)
 
     def test_mutation(self):
         blob = Blob('mutable')
