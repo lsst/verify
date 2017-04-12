@@ -208,29 +208,52 @@ class MetricSet(object):
         for item in self._metrics.items():
             yield item
 
-    def subset(self, package_name):
+    def subset(self, package=None, tag=None):
         """Create a new `MetricSet` with metrics belonging to a single
-        package.
+        package and/or tag.
 
         Parameters
         ----------
-        package_name : `str` or `lsst.verify.Name`
+        package : `str` or `lsst.verify.Name`, optional
             Name of the package to subset metrics by. If the package name
             is ``'pkg_a'``, then metric ``'pkg_a.metric_1'`` would be
             **included** in the subset, while ``'pkg_b.metric_2'`` would be
             **excluded**.
+        tag : `str`, optional
+            Tag to select metrics by.
 
         Returns
         -------
         metric_subset : `MetricSet`
             Subset of this metric set containing only metrics belonging
-            to the specified package.
-        """
-        if not isinstance(package_name, Name):
-            package_name = Name(package=package_name)
+            to the specified package and/or tag.
 
-        metrics = [metric for metric_name, metric in self._metrics.items()
-                   if metric_name in package_name]
+        Notes
+        -----
+        If both ``package`` and ``tag`` are provided then the resulting
+        `MetricSet` contains the **intersection** of the package-based and
+        tag-based selections. That is, metrics will belong to ``package``
+        and posess the tag ``tag``.
+        """
+        if package is not None and not isinstance(package, Name):
+            package = Name(package=package)
+
+        if package is not None and tag is None:
+            metrics = [metric for metric_name, metric in self._metrics.items()
+                       if metric_name in package]
+
+        elif package is not None and tag is not None:
+            metrics = [metric for metric_name, metric in self._metrics.items()
+                       if metric_name in package
+                       if tag in metric.tags]
+
+        elif package is None and tag is not None:
+            metrics = [metric for metric_name, metric in self._metrics.items()
+                       if tag in metric.tags]
+
+        else:
+            metrics = []
+
         return MetricSet(metrics)
 
 
