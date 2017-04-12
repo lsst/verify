@@ -132,6 +132,13 @@ class NameComparisonTestCase(unittest.TestCase):
         self.validate_drp_PA1v2 = Name('validate_drp.PA1')
         self.validate_drp_PA2 = Name('validate_drp.PA2')
 
+        self.a_a_a = Name('a.a.a')
+        self.a_b_a = Name('a.b.a')
+        self.a_a_b = Name('a.a.b')
+        self.b_a_a = Name('b.a.a')
+        self.b_b_a = Name('b.b.a')
+        self.b_b_b = Name('b.b.b')
+
     def test_metric_equality(self):
         self.assertTrue(
             self.validate_drp_PA1 == self.validate_drp_PA1v2
@@ -147,6 +154,89 @@ class NameComparisonTestCase(unittest.TestCase):
         self.assertTrue(
             self.validate_drp_PA1 != self.validate_drp_PA2
         )
+
+    def test_lt(self):
+        self.assertTrue(self.a_a_a < self.b_a_a)
+        self.assertTrue(self.a_a_a < self.b_b_a)
+        self.assertTrue(self.a_a_a < self.b_b_b)
+
+        self.assertFalse(self.b_a_a < self.a_a_a)
+        self.assertFalse(self.b_b_a < self.a_a_a)
+        self.assertFalse(self.b_b_b < self.a_a_a)
+
+        self.assertTrue(self.a_a_a < self.a_b_a)
+        self.assertTrue(self.b_a_a < self.b_b_a)
+        self.assertTrue(self.b_b_a < self.b_b_b)
+
+        self.assertFalse(self.a_b_a < self.a_a_a)
+        self.assertFalse(self.b_b_a < self.b_a_a)
+        self.assertFalse(self.b_b_b < self.b_b_a)
+
+        self.assertFalse(self.a_a_a < self.a_a_a)
+
+    def test_gt(self):
+        self.assertFalse(self.a_a_a > self.b_a_a)
+        self.assertFalse(self.a_a_a > self.b_b_a)
+        self.assertFalse(self.a_a_a > self.b_b_b)
+
+        self.assertTrue(self.b_a_a > self.a_a_a)
+        self.assertTrue(self.b_b_a > self.a_a_a)
+        self.assertTrue(self.b_b_b > self.a_a_a)
+
+        self.assertFalse(self.a_a_a > self.a_b_a)
+        self.assertFalse(self.b_a_a > self.b_b_a)
+        self.assertFalse(self.b_b_a > self.b_b_b)
+
+        self.assertTrue(self.a_b_a > self.a_a_a)
+        self.assertTrue(self.b_b_a > self.b_a_a)
+        self.assertTrue(self.b_b_b > self.b_b_a)
+
+        self.assertFalse(self.a_a_a > self.a_a_a)
+
+    def test_le(self):
+        self.assertTrue(self.a_a_a <= self.b_a_a)
+        self.assertTrue(self.a_a_a <= self.b_b_a)
+        self.assertTrue(self.a_a_a <= self.b_b_b)
+
+        self.assertFalse(self.b_a_a <= self.a_a_a)
+        self.assertFalse(self.b_b_a <= self.a_a_a)
+        self.assertFalse(self.b_b_b <= self.a_a_a)
+
+        self.assertTrue(self.a_a_a <= self.a_b_a)
+        self.assertTrue(self.b_a_a <= self.b_b_a)
+        self.assertTrue(self.b_b_a <= self.b_b_b)
+
+        self.assertFalse(self.a_b_a <= self.a_a_a)
+        self.assertFalse(self.b_b_a <= self.b_a_a)
+        self.assertFalse(self.b_b_b <= self.b_b_a)
+
+        self.assertTrue(self.a_a_a <= self.a_a_a)
+
+    def test_ge(self):
+        self.assertFalse(self.a_a_a >= self.b_a_a)
+        self.assertFalse(self.a_a_a >= self.b_b_a)
+        self.assertFalse(self.a_a_a >= self.b_b_b)
+
+        self.assertTrue(self.b_a_a >= self.a_a_a)
+        self.assertTrue(self.b_b_a >= self.a_a_a)
+        self.assertTrue(self.b_b_b >= self.a_a_a)
+
+        self.assertFalse(self.a_a_a >= self.a_b_a)
+        self.assertFalse(self.b_a_a >= self.b_b_a)
+        self.assertFalse(self.b_b_a >= self.b_b_b)
+
+        self.assertTrue(self.a_b_a >= self.a_a_a)
+        self.assertTrue(self.b_b_a >= self.b_a_a)
+        self.assertTrue(self.b_b_b >= self.b_b_a)
+
+        self.assertTrue(self.a_a_a >= self.a_a_a)
+
+    def test_sort(self):
+        alist = [self.b_a_a, self.a_a_a, self.a_b_a]
+        alist.sort()
+        self.assertIs(alist[0], self.a_a_a)
+        self.assertIs(alist[1], self.a_b_a)
+        self.assertIs(alist[2], self.b_a_a)
 
 
 class FullyQualifiedMetricName(unittest.TestCase):
