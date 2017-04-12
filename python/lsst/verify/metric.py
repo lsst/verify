@@ -182,6 +182,16 @@ class MetricSet(object):
         for key in self._metrics:
             yield key
 
+    def __str__(self):
+        count = len(self)
+        if count == 0:
+            count_str = 'empty'
+        elif count == 1:
+            count_str = '1 Metric'
+        else:
+            count_str = '{count:d} Metrics'.format(count=count)
+        return '<MetricSet: {0}>'.format(count_str)
+
     def insert(self, metric):
         """Insert a `Metric` into the set.
 
