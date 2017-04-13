@@ -112,9 +112,3 @@ class Blob(JsonSerializationMixin):
     def __iter__(self):
         for key in self._datums:
             yield key
-
-    def __eq__(self, other):
-        return other.identifier == self.identifier
-
-    def __hash__(self):
-        return hash(self.identifier)

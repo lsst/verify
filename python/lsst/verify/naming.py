@@ -326,6 +326,69 @@ class Name(object):
             (self.metric == other.metric) and \
             (self.spec == other.spec)
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __lt__(self, other):
+        """Test self < other to support name ordering."""
+        # test package component first
+        if self.package < other.package:
+            return True
+        elif self.package > other.package:
+            return False
+
+        # test metric component second if packages equal
+        if self.metric < other.metric:
+            return True
+        elif self.metric > other.metric:
+            return False
+
+        # test spec component lastly if everything else equal
+        if self.spec < other.spec:
+            return True
+        elif self.spec > other.spec:
+            return False
+
+        # They're equal
+        return False
+
+    def __gt__(self, other):
+        """Test self > other to support name ordering."""
+        # test package component first
+        if self.package > other.package:
+            return True
+        elif self.package < other.package:
+            return False
+
+        # test metric component second if packages equal
+        if self.metric > other.metric:
+            return True
+        elif self.metric < other.metric:
+            return False
+
+        # test spec component lastly if everything else equal
+        if self.spec > other.spec:
+            return True
+        elif self.spec < other.spec:
+            return False
+
+        # They're equal
+        return False
+
+    def __le__(self, other):
+        """Test self <= other to support name ordering."""
+        if self.__eq__(other):
+            return True
+        else:
+            return self.__lt__(other)
+
+    def __ge__(self, other):
+        """Test self >= other to support name ordering."""
+        if self.__eq__(other):
+            return True
+        else:
+            return self.__gt__(other)
+
     def __hash__(self):
         return hash((self.package, self.metric, self.spec))
 

@@ -73,6 +73,9 @@ class ThresholdSpecification(Specification):
             quantity_allclose(self.threshold, other.threshold) and \
             (self.operator_str == other.operator_str)
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __repr__(self):
         return "ThresholdSpecification({0!r}, {1!r}, {2!r})".format(
             self.name,
