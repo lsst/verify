@@ -3,7 +3,8 @@ from __future__ import absolute_import, division, print_function
 
 import json
 
-from .measurement import MeasurementSet, Measurement
+from .measurement import Measurement
+from .measurementset import MeasurementSet
 
 
 def output_measurements(package_name, measurement_dict):

@@ -14,6 +14,7 @@ from .spec import *
 from .specset import *
 from .metric import *
 from .measurement import *
+from .measurementset import *
 from .blob import *
 from .job import *
 from .output import *
