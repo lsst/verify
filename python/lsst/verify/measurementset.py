@@ -4,50 +4,91 @@ from __future__ import print_function, division
 __all__ = ['MeasurementSet']
 
 from .measurement import Measurement
+from .naming import Name
 
 
 class MeasurementSet(object):
-    """A collection of Measurements of Metrics, associated with a MetricSet.
+    """A collection of measurements of metrics.
 
     Parameters
     ----------
-    name : `str`
-        The name of this `MetricSet` (usually the name of a package).
-    measurements : `dict` of `str`: `astropy.Quantity`
-        The measurements (astropy.Quantities) of each metric, keyed on the
-        metric name, to be looked up in metric_set.
-    job : `Job`, optional
-        The Job that produced these `Measurements`, linking them to their
-        provenance and other metadata.
-    metric_set : MetricSet, optional
-        A `MetricSet` to extract the metric definitions from. If None, use
-        name from the verify_metrics package.
+    measurements : `list` of `lsst.verify.Measurement`\ s
+        Measurements to include in the set.
     """
-    name = None
-    """`str` the name of the `MetricSet` these `Measurement`s are of."""
 
-    measurements = None
-    """`dict` of all `Measurement` names to `Measurement`s."""
-
-    job = None
-    """`Job` that this MeasurementSet was produced by."""
-
-    def __init__(self, name, measurements, job=None, metric_set=None):
-        if metric_set is None:
-            raise NotImplementedError('Cannot autoload verify_metrics yet')
-        self.name = name
-        self.measurements = {}
-        self.job = job
-        for m, v in measurements.items():
-            self.measurements[m] = Measurement(m, v, metric_set=metric_set)
+    def __init__(self, measurements=None):
+        self._items = {}
+        for measurement in measurements:
+            self[measurement.metric_name] = measurement
 
     def __getitem__(self, key):
-        return self.measurements[key]
+        if not isinstance(key, Name):
+            key = Name(metric=key)
+
+        return self._items[key]
+
+    def __setitem__(self, key, value):
+        if not isinstance(key, Name):
+            key = Name(metric=key)
+
+        if not key.is_metric:
+            raise KeyError('Key {0} is not a metric name'.format(key))
+
+        if not isinstance(value, Measurement):
+            message = ('Measurement {0} is not a '
+                       'lsst.verify.Measurement-type')
+            raise TypeError(message.format(value))
+
+        if key != value.metric_name:
+            message = ("Key {0} is inconsistent with the measurement's "
+                       "metric name, {1}")
+            raise KeyError(message.format(key, value.metric_name))
+
+        self._items[key] = value
 
     def __len__(self):
-        return len(self.measurements)
+        return len(self._items)
+
+    def __contains__(self, key):
+        if not isinstance(key, Name):
+            key = Name(metric=key)
+
+        return key in self._items
+
+    def __delitem__(self, key):
+        if not isinstance(key, Name):
+            key = Name(metric=key)
+
+        del self._items[key]
+
+    def __iter__(self):
+        for key in self._items:
+            yield key
 
     def __str__(self):
-        items = ",\n".join(str(self.measurements[k])
-                           for k in sorted(self.measurements))
-        return "{0.name}: {{\n{1}\n}}".format(self, items)
+        count = len(self)
+        if count == 0:
+            count_str = 'empty'
+        elif count == 1:
+            count_str = '1 Measurement'
+        else:
+            count_str = '{count:d} Measurements'.format(count=count)
+        return '<MeasurementSet: {0}>'.format(count_str)
+
+    def items(self):
+        """Iterete over (`Name`, `Measurement`) pairs in the set.
+
+        Yields
+        ------
+        item : tuple
+            Tuple containing:
+
+            - `Name` of the measurement's `Metric`
+            - `Measurement` instance
+        """
+        for item in self._items.items():
+            yield item
+
+    def insert(self, measurement):
+        """Insert a measurement into the set."""
+        self[measurement.metric_name] = measurement

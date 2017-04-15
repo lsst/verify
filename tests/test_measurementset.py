@@ -1,47 +1,71 @@
 # See COPYRIGHT file at the top of the source tree.
 from __future__ import print_function
 
+import os
 import unittest
 
 import astropy.units as u
 
-from lsst.verify import MeasurementSet, Metric, MetricSet
+from lsst.verify import MeasurementSet, Measurement, MetricSet, Name
 
 
-@unittest.skip('DM-10199: skip while in development')
 class MeasurementSetTestCase(unittest.TestCase):
 
     def setUp(self):
-        package = 'test'
-        self.package = package
-        metric1 = Metric("{}.radius".format(package), "some radius", u.arcsec)
-        metric2 = Metric("{}.cmodel_mag".format(package), "a magnitude", u.mag)
-        metric3 = Metric("{}.unitless".format(package), "no units!", '')
-        self.metric_set = MetricSet([metric1, metric2, metric3])
+        """Use YAML in data/metrics for metric definitions."""
+        self.metrics_yaml_dirname = os.path.join(
+            os.path.dirname(__file__), 'data')
+        self.metric_set = MetricSet.load_metrics_package(
+            self.metrics_yaml_dirname)
 
-        self.good = {
-            "{}.radius".format(package): .5*u.arcmin,
-            "{}.cmodel_mag".format(package): 22*u.mag,
-            "{}.unitless".format(package): 22*u.dimensionless_unscaled,
-        }
+        self.pa1_meas = Measurement(
+            self.metric_set['testing.PA1'],
+            4. * u.mmag
+        )
+        self.am1_meas = Measurement(
+            self.metric_set['testing.AM1'],
+            2. * u.marcsec
+        )
+        self.pa2_meas = Measurement(
+            self.metric_set['testing.PA2'],
+            10. * u.mmag
+        )
 
-    def test_create_measurement_set(self):
-        ms = MeasurementSet(self.package, self.good,
-                            metric_set=self.metric_set)
-        self.assertEqual(len(ms), 3)
-        for name in self.good:
-            self.assertEqual(ms[name].value, self.good[name])
+    def test_measurement_set(self):
+        meas_set = MeasurementSet([self.pa1_meas])
+        self.assertEqual(len(meas_set), 1)
+        self.assertIn('testing.PA1', meas_set)
+        self.assertIs(self.pa1_meas, meas_set['testing.PA1'])
+        self.assertNotIn('testing.AM1', meas_set)
 
-    def test_create_using_validate_metrics(self):
-        with self.assertRaises(NotImplementedError):
-            MeasurementSet(self.package, self.good)
+        # add an inconsistently labelled measurement
+        with self.assertRaises(KeyError):
+            meas_set['testing.AMx'] = self.am1_meas
 
-    def test_str(self):
-        ms = MeasurementSet(self.package, self.good,
-                            metric_set=self.metric_set)
-        expect = "test: {\ntest.cmodel_mag: 22.0 mag," \
-                 "\ntest.radius: 0.5 arcmin,\ntest.unitless: 22.0\n}"
-        self.assertEqual(str(ms), expect)
+        # Add measurement by key
+        meas_set[self.am1_meas.metric_name] = self.am1_meas
+        self.assertEqual(len(meas_set), 2)
+        self.assertIn('testing.AM1', meas_set)
+        self.assertIs(self.am1_meas, meas_set['testing.AM1'])
+
+        # Insert measurement
+        meas_set.insert(self.pa2_meas)
+        self.assertEqual(len(meas_set), 3)
+        self.assertIn('testing.PA2', meas_set)
+        self.assertIs(self.pa2_meas, meas_set['testing.PA2'])
+
+        # Delete measurement
+        del meas_set['testing.PA2']
+        self.assertNotIn('testing.PA2', meas_set)
+
+        # Iterate
+        items = {k: v for k, v in meas_set.items()}
+        self.assertEqual(len(items), len(meas_set))
+
+        names = [n for n in meas_set]
+        self.assertEqual(len(names), 2)
+        for n in names:
+            self.assertIsInstance(n, Name)
 
 
 if __name__ == "__main__":
