@@ -5,9 +5,10 @@ __all__ = ['MeasurementSet']
 
 from .measurement import Measurement
 from .naming import Name
+from .jsonmixin import JsonSerializationMixin
 
 
-class MeasurementSet(object):
+class MeasurementSet(JsonSerializationMixin):
     """A collection of measurements of metrics.
 
     Parameters
@@ -18,8 +19,47 @@ class MeasurementSet(object):
 
     def __init__(self, measurements=None):
         self._items = {}
-        for measurement in measurements:
-            self[measurement.metric_name] = measurement
+        if measurements is not None:
+            for measurement in measurements:
+                self[measurement.metric_name] = measurement
+
+    @classmethod
+    def deserialize(cls, measurements=None, blob_set=None, metric_set=None):
+        """Create a measurement set from a parsed JSON dataset.
+
+        Parameters
+        ----------
+        measurements : list, optional
+            A list of measurement JSON serializations.
+        blob_set : `BlobSet`, optional
+            A `BlobSet` instance that support measurement deserialization.
+        metric_set : `MetricSet`, optional
+            A `MetricSet` that supports measurement deserialization. If
+            provided, measurements are validated for unit consistency
+            with metric definitions. `Measurement` instances also gain a
+            `Measurement.metric` attribute.
+
+        Returns
+        -------
+        instance : `MeasurementSet`
+            A `MeasurementSet` instance.
+        """
+        instance = cls()
+
+        if measurements is None:
+            measurements = []
+
+        if len(metric_set) == 0:
+            # Job.deserialize may pass an empty MetricSet, so ignore that
+            metric_set = None
+
+        for meas_doc in measurements:
+            if metric_set is not None:
+                metric = metric_set[meas_doc['metric']]
+                meas_doc['metric'] = metric
+            meas = Measurement.deserialize(blobs=blob_set, **meas_doc)
+            instance.insert(meas)
+        return instance
 
     def __getitem__(self, key):
         if not isinstance(key, Name):
@@ -65,6 +105,12 @@ class MeasurementSet(object):
         for key in self._items:
             yield key
 
+    def __eq__(self, other):
+        return self._items == other._items
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __str__(self):
         count = len(self)
         if count == 0:
@@ -92,3 +138,11 @@ class MeasurementSet(object):
     def insert(self, measurement):
         """Insert a measurement into the set."""
         self[measurement.metric_name] = measurement
+
+    @property
+    def json(self):
+        """A `dict` that can be serialized as JSON."""
+        json_doc = JsonSerializationMixin._jsonify_list(
+            [meas for name, meas in self.items()]
+        )
+        return json_doc

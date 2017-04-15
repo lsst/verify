@@ -67,6 +67,19 @@ class MeasurementSetTestCase(unittest.TestCase):
         for n in names:
             self.assertIsInstance(n, Name)
 
+        # Serialize
+        json_doc = meas_set.json
+        self.assertIsInstance(json_doc, list)
+        self.assertEqual(len(json_doc), 2)
+        for meas in json_doc:
+            self.assertIn('metric', meas)
+
+        # Deserialize (no blobs/BlobSet to propagate)
+        new_meas_set = MeasurementSet.deserialize(
+            measurements=json_doc,
+            metric_set=self.metric_set)
+        self.assertEqual(meas_set, new_meas_set)
+
 
 if __name__ == "__main__":
     unittest.main()
