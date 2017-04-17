@@ -16,5 +16,6 @@ from .metric import *
 from .measurement import *
 from .measurementset import *
 from .blob import *
+from .blobset import *
 from .job import *
 from .output import *

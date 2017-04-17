@@ -7,7 +7,7 @@ import astropy.units as u
 from astropy.tests.helper import quantity_allclose
 
 from lsst.utils.tests import TestCase
-from lsst.verify import Measurement, Metric, Name, Blob, Datum
+from lsst.verify import Measurement, Metric, Name, Blob, BlobSet, Datum
 
 
 class MeasurementTestCase(TestCase):
@@ -68,7 +68,7 @@ class MeasurementTestCase(TestCase):
 
         # Test deserialization
         new_measurement = Measurement.deserialize(
-            blobs=[self.blob1, self.blob2],
+            blobs=BlobSet([self.blob1, self.blob2]),
             **json_doc)
         self.assertEqual(measurement, new_measurement)
         self.assertIn('Blob1', measurement.blobs)
@@ -133,7 +133,7 @@ class MeasurementTestCase(TestCase):
         json_doc = measurement.json
         self.assertIn(measurement.extras.identifier, json_doc['blob_refs'])
 
-        blobs = [b for k, b in measurement.blobs.items()]
+        blobs = BlobSet([b for k, b in measurement.blobs.items()])
         new_measurement = Measurement.deserialize(blobs=blobs, **json_doc)
         self.assertIn('extra1', new_measurement.extras)
         self.assertEqual(measurement, new_measurement)

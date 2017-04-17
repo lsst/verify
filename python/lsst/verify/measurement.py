@@ -202,7 +202,24 @@ class Measurement(JsonSerializationMixin):
 
     @property
     def json(self):
-        """A `dict` that can be serialized as semantic SQUASH JSON."""
+        """A `dict` that can be serialized as semantic SQUASH JSON.
+
+        Fields:
+
+        - ``metric`` (`str`) Name of the metric the measurement measures.
+        - ``identifier`` (`str`) Unique identifier for this measurement.
+        - ``value`` (`float`) Value of the measurement.
+        - ``unit`` (`str`) Units of the ``value``, as an
+          `astropy.units`-compatible string.
+        - ``blob_refs`` (`list` of `str`) List of `Blob.identifier`\ s for
+          Blobs associated with this measurement.
+
+        .. note::
+
+           `Blob`\ s are not serialized with a measurement, only their
+           identifiers. The `lsst.verify.Job` class handles serialization of
+           blobs alongside measurements.
+        """
         if self.quantity is None:
             _normalized_value = None
             _normalized_unit_str = None
@@ -231,11 +248,35 @@ class Measurement(JsonSerializationMixin):
     def deserialize(cls, metric=None, identifier=None, value=None, unit=None,
                     blob_refs=None, blobs=None, **kwargs):
         """Create a Measurement instance from a parsed YAML/JSON document.
+
+        Parameters
+        ----------
+        metric : `str`
+            Name of the metric the measurement measures.
+        identifier : `str`
+            Unique identifier for this measurement.
+        value : `float`
+            Value of the measurement.
+        unit : `str`
+            Units of the ``value``, as an `astropy.units`-compatible string.
+        blob_refs : `list` of `str`
+            List of `Blob.identifier`\ s for Blob associated with this
+            measurement.
+        blobs : `BlobSet`
+            `BlobSet` containing all `Blob`\ s referenced by the measurement's
+            ``blob_refs`` field. Note that the `BlobSet` must be created
+            separately, prior to deserializing measurement objects.
+
+        Returns
+        -------
+        measurement : `Measurement`
+            Measurement instance.
         """
         # Resolve blobs from references:
         if blob_refs is not None and blobs is not None:
             # get only referenced blobs
-            _blobs = [blob for blob in blobs if blob.identifier in blob_refs]
+            _blobs = [blob for blob_identifier, blob in blobs.items()
+                      if blob_identifier in blob_refs]
         elif blobs is not None:
             # use all the blobs if none were specifically referenced
             _blobs = blobs
