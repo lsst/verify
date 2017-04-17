@@ -61,8 +61,8 @@ class BlobTestCase(unittest.TestCase):
         self.assertEqual(j['data']['mag1']['description'], 'Magnitude')
 
         # Rebuild from blob
-        b2 = Blob.from_json(j)
-        self.assertEqual(self.blob.identifier, b2.identifier)
+        b2 = Blob.deserialize(**j)
+        self.assertEqual(self.blob, b2)
 
     def test_mutation(self):
         blob = Blob('mutable')

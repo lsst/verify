@@ -56,6 +56,44 @@ class Blob(JsonSerializationMixin):
         return self._id
 
     @classmethod
+    def deserialize(cls, identifier=None, name=None, data=None):
+        """Deserialize fields from a blob JSON object into a `Blob` instance.
+
+        Parameters
+        ----------
+        identifier : `str`
+            Blob identifier.
+        name : `str`
+            Name of the blob type.
+        data : `dict`
+            Dictionary of named ``name: datum object`` key-value pairs.
+
+        Returns
+        -------
+        blob : `Blob`
+            The `Blob` instance deserialied from a blob JSON object.
+
+        Example
+        -------
+        This class method is designed to roundtrip JSON objects created a
+        Blob instance. For example:
+
+        >>> import astropy.units as u
+        >>> blob = Blob('demo')
+        >>> blob['a_mag'] = Datum(28 * u.mag, label='i')
+        >>> json_data = blob.json
+        >>> new_blob = Blob.deserialize(**json_data)
+        """
+        datums = {}
+        if data is not None:
+            for datum_key, datum_doc in data.items():
+                datum = Datum.deserialize(**datum_doc)
+                datums[datum_key] = datum
+        instance = cls(name, **datums)
+        instance._id = identifier
+        return instance
+
+    @classmethod
     def from_json(cls, json_data):
         """Construct a Blob from a JSON dataset.
 
@@ -112,3 +150,11 @@ class Blob(JsonSerializationMixin):
     def __iter__(self):
         for key in self._datums:
             yield key
+
+    def __eq__(self, other):
+        return (self.identifier == other.identifier) \
+            and (self.name == other.name) \
+            and (self._datums == other._datums)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
