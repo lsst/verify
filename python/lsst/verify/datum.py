@@ -4,6 +4,7 @@ from builtins import object
 from past.builtins import basestring
 
 import numpy as np
+from astropy.tests.helper import quantity_allclose
 import astropy.units as u
 
 from .jsonmixin import JsonSerializationMixin
@@ -140,6 +141,46 @@ class Datum(QuantityAttributeMixin, JsonSerializationMixin):
                              'str, bool, int or None.')
 
     @classmethod
+    def deserialize(cls, label=None, description=None, value=None, unit=None):
+        """Deserialize fields from a Datum JSON object into a `Datum` instance.
+
+        Parameters
+        ----------
+        value : `float`, `int`, `bool`, `str`, or `list`
+            Values, which may be scalars or lists of scalars.
+        unit : `str` or `None`
+            An `astropy.units`-compatible string with units of ``value``,
+            or `None` if the value does not have physical units.
+        label : `str`, optional
+            Label suitable for plot axes (without units).
+        description : `str`, optional
+            Extended description of the `Datum`.
+
+        Returns
+        -------
+        datum : `Datum`
+            Datum instantiated from provided JSON fields.
+
+        Examples
+        --------
+        With this class method, a `Datum` may be round-tripped from its
+        JSON serialized form.
+
+        >>> datum = Datum(50. * u.mmag, label='sigma',
+        ...               description="Photometric uncertainty.")
+        >>> print(datum)
+        sigma = 50.0 mmag
+        Photometric uncertainty.
+        >>> json_data = datum.json
+        >>> new_datum = datum.deserialize(**json_data)
+        >>> print(new_datum)
+        sigma = 50.0 mmag
+        Photometric uncertainty.
+        """
+        return cls(quantity=value, unit=unit, label=label,
+                   description=description)
+
+    @classmethod
     def from_json(cls, json_data):
         """Construct a Datum from a JSON dataset.
 
@@ -195,3 +236,31 @@ class Datum(QuantityAttributeMixin, JsonSerializationMixin):
     def description(self, value):
         assert isinstance(value, basestring) or value is None
         self._description = value
+
+    def __eq__(self, other):
+        if self.label != other.label:
+            return False
+
+        if self.description != other.description:
+            return False
+
+        if isinstance(self.quantity, u.Quantity):
+            if not quantity_allclose(self.quantity, other.quantity):
+                return False
+        else:
+            if self.quantity != other.quantity:
+                return False
+
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        template = ''
+        if self.label is not None:
+            template += '{self.label} = '
+        template += '{self.quantity}'
+        if self.description is not None:
+            template += '\n{self.description}'
+        return template.format(self=self)

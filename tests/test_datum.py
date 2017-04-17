@@ -11,12 +11,6 @@ from lsst.verify import Datum
 class DatumTestCase(unittest.TestCase):
     """Test Datum functionality"""
 
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
-
     def test_properties(self):
         """Validate basic setters and getters."""
         d = Datum(5., 'mmag', label='millimag', description='Hello world')
@@ -155,7 +149,7 @@ class DatumTestCase(unittest.TestCase):
         self.assertEqual(d.description, d2.description)
 
     def test_json_output(self):
-        """Verify content from json property."""
+        """Verify content from json property and deserialization."""
         d = Datum(5., 'mmag', label='millimag', description='Hello world')
         dj = d.json
 
@@ -163,6 +157,9 @@ class DatumTestCase(unittest.TestCase):
         self.assertEqual(d.unit_str, dj['unit'])
         self.assertEqual(d.label, dj['label'])
         self.assertEqual(d.description, dj['description'])
+
+        new_datum = Datum.deserialize(**dj)
+        self.assertEqual(d, new_datum)
 
 
 if __name__ == "__main__":
