@@ -392,10 +392,10 @@ class SpecificationSet(object):
         """Normalize a partial's identifier.
 
         >>> SpecificationSet._normalize_partial_name(
-                '#base',
-                current_yaml_id='custom/bases',
-                package='validate_drp')
-        'validate.drp:custom/bases#base'
+        ...     '#base',
+        ...     current_yaml_id='custom/bases',
+        ...     package='validate_drp')
+        'validate_drp:custom/bases#base'
         """
         if '#' not in name:
             # Name is probably coming from a partial's own `id` field
@@ -427,7 +427,7 @@ class SpecificationSet(object):
         name.
 
         >>> SpecificationSet._normalize_spec_name('PA1.design',
-                                                  package='validate_drp')
+        ...                                       package='validate_drp')
         'validate_drp.PA1.design'
         """
         name = Name(package=package, metric=metric, spec=name)
