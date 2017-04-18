@@ -1,6 +1,8 @@
 # See COPYRIGHT file at the top of the source tree.
 from __future__ import print_function, division
 
+__all__ = ['ThresholdSpecification']
+
 import operator
 
 import astropy.units as u
@@ -10,9 +12,6 @@ from ..jsonmixin import JsonSerializationMixin
 from ..datum import Datum
 from ..naming import Name
 from .base import Specification
-
-
-__all__ = ['ThresholdSpecification']
 
 
 class ThresholdSpecification(Specification):

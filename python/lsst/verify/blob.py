@@ -1,15 +1,14 @@
 # See COPYRIGHT file at the top of the source tree.
 from __future__ import print_function, division
 
+__all__ = ['Blob']
+
 from past.builtins import basestring
 
 import uuid
 
 from .jsonmixin import JsonSerializationMixin
 from .datum import Datum
-
-
-__all__ = ['Blob']
 
 
 class Blob(JsonSerializationMixin):

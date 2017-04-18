@@ -1,13 +1,13 @@
 # See COPYRIGHT file at the top of the source tree.
 from __future__ import print_function, division
+
+__all__ = ['JsonSerializationMixin']
+
 from builtins import object
+from future.utils import with_metaclass
 
 import abc
 import json
-from future.utils import with_metaclass
-
-
-__all__ = ['JsonSerializationMixin']
 
 
 class JsonSerializationMixin(with_metaclass(abc.ABCMeta, object)):

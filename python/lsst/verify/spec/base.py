@@ -1,13 +1,13 @@
 # See COPYRIGHT file at the top of the source tree.
 from __future__ import print_function, division
 
+__all__ = ["Specification"]
+
 import abc
 from future.utils import with_metaclass
 
 from ..jsonmixin import JsonSerializationMixin
 from ..naming import Name
-
-__all__ = ["Specification"]
 
 
 class Specification(with_metaclass(abc.ABCMeta, JsonSerializationMixin)):

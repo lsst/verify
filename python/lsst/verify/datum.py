@@ -1,5 +1,8 @@
 # See COPYRIGHT file at the top of the source tree.
 from __future__ import print_function, division
+
+__all__ = ['Datum']
+
 from builtins import object
 from past.builtins import basestring
 
@@ -8,9 +11,6 @@ from astropy.tests.helper import quantity_allclose
 import astropy.units as u
 
 from .jsonmixin import JsonSerializationMixin
-
-
-__all__ = ['Datum', 'QuantityAttributeMixin']
 
 
 class QuantityAttributeMixin(object):

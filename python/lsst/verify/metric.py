@@ -1,6 +1,8 @@
 # See COPYRIGHT file at the top of the source tree.
 from __future__ import print_function, division
 
+__all__ = ['Metric', 'MetricSet']
+
 from past.builtins import basestring
 
 import os
@@ -13,8 +15,6 @@ from lsst.utils import getPackageDir
 from .jsonmixin import JsonSerializationMixin
 from .naming import Name
 from .yamlutils import load_ordered_yaml
-
-__all__ = ['Metric', 'MetricSet']
 
 
 class MetricSet(JsonSerializationMixin):
