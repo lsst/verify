@@ -39,7 +39,8 @@ class MetricSet(JsonSerializationMixin):
                 self._metrics[metric.name] = metric
 
     @classmethod
-    def load_metrics_package(cls, package_name_or_path='verify_metrics'):
+    def load_metrics_package(cls, package_name_or_path='verify_metrics',
+                             subset=None):
         """Create a MetricSet from a Verification Framework metrics package.
 
         Parameters
@@ -49,6 +50,11 @@ class MetricSet(JsonSerializationMixin):
             definition YAML files **or** the file path to a metrics package.
             ``verify_metrics`` is the default package, and is where metrics
             and specifications are defined for most packages.
+        subset : `str`, optional
+            If set, only metrics for this package are loaded. For example, if
+            ``subset='validate_drp'``, only ``validate_drp`` metrics are
+            included in the `MetricSet`. This argument is equivalent to the
+            `MetricSet.subset` method. Default is `None`.
 
         Returns
         -------
@@ -63,12 +69,12 @@ class MetricSet(JsonSerializationMixin):
         -----
         EUPS packages that host metrics and specification definitions for the
         Verification Framework have top-level directories named ``'metrics'``
-        and ``'specs'``.
+        and ``'specs'``. The metrics package chosen with the
+        ``package_name_or_path`` argument. The default metric package for
+        LSST Science Pipelines is ``verify_metrics``.
 
-        Within ``'metrics/'``, YAML files are named after *packages* that
-        have defined metrics.
-
-        To make a `MetricSet` from a single package's metric definitions,
+        To make a `MetricSet` from a single package's YAML metric definition
+        file that **is not** contained in a metrics package,
         use `load_single_package` instead.
         """
         try:
@@ -87,7 +93,15 @@ class MetricSet(JsonSerializationMixin):
 
         metrics = []
 
-        metrics_yaml_paths = glob.glob(os.path.join(metrics_dirname, '*.yaml'))
+        if subset is not None:
+            # Load only a single package's YAML file
+            metrics_yaml_paths = [os.path.join(metrics_dirname,
+                                               '{0}.yaml'.format(subset))]
+        else:
+            # Load all package's YAML files
+            metrics_yaml_paths = glob.glob(os.path.join(metrics_dirname,
+                                                        '*.yaml'))
+
         for metrics_yaml_path in metrics_yaml_paths:
             new_metrics = MetricSet._load_metrics_yaml(metrics_yaml_path)
             metrics.extend(new_metrics)

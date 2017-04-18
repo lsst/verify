@@ -41,6 +41,41 @@ class Job(JsonSerializationMixin):
             self._spec_set = SpecificationSet(specs)
 
     @classmethod
+    def load_metrics_package(cls, package_name_or_path='verify_metrics',
+                             subset=None, measurements=None):
+        """Create a Job with metrics and specifications pre-loaded from a
+        Verification Framework metrics package.
+
+        Parameters
+        ----------
+        package_name_or_path : `str`, optional
+            Name of an EUPS package that hosts metric and specification
+            definition YAML files **or** the file path to a metrics package.
+            ``'verify_metrics'`` is the default package, and is where metrics
+            and specifications are defined for most packages.
+        subset : `str`, optional
+            If set, only metrics and specification for this package are loaded.
+            For example, if ``subset='validate_drp'``, only ``validate_drp``
+            metrics are included in the `MetricSet`. This argument is
+            equivalent to the `MetricSet.subset` method. Default is `None`.
+        measurements : `MeasurementSet` or `list` of `Measurement`\ s, optional
+            Measurements to report in the Job.
+
+        Returns
+        -------
+        job : `Job`
+            `Job` instance.
+        """
+        metrics = MetricSet.load_metrics_package(
+            package_name_or_path=package_name_or_path,
+            subset=subset)
+        specs = SpecificationSet.load_metrics_package(
+            package_name_or_path=package_name_or_path,
+            subset=subset)
+        instance = cls(measurements=measurements, metrics=metrics, specs=specs)
+        return instance
+
+    @classmethod
     def deserialize(cls, measurements=None, blobs=None,
                     metrics=None, specs=None):
         """Deserialize a Verification Framework Job from a JSON serialization.

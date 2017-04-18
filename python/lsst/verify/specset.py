@@ -94,7 +94,8 @@ class SpecificationSet(JsonSerializationMixin):
         return instance
 
     @classmethod
-    def load_metrics_package(cls, package_name_or_path='verify_metrics'):
+    def load_metrics_package(cls, package_name_or_path='verify_metrics',
+                             subset=None):
         """Create a SpecificationSet from an Verification Framework metrics
         package.
 
@@ -105,6 +106,12 @@ class SpecificationSet(JsonSerializationMixin):
             definition YAML files **or** the file path to a metrics package.
             ``verify_metrics`` is the default package, and is where metrics
             and specifications are defined for most packages.
+        subset : `str`, optional
+            If set, only specifications defined for this package are loaded.
+            For example, if ``subset='validate_drp'``, only ``validate_drp``
+            specifications are included in the SpecificationSet. This argument
+            is equivalent to the `SpecificationSet.subset` method. Default
+            is `None`.
 
         Returns
         -------
@@ -127,6 +134,9 @@ class SpecificationSet(JsonSerializationMixin):
 
         To make a `SpecificationSet` from a single package's specifications,
         use `load_single_package` instead.
+        To make a `SpecificationSet` from a single package's YAML definition
+        directory that **is not** contained in a metrics package, use
+        `load_single_package` instead.
         """
         try:
             # Try an EUPS package name
@@ -144,8 +154,14 @@ class SpecificationSet(JsonSerializationMixin):
 
         instance = cls()
 
-        # Load specifications for each 'package' within specs/
-        for name in os.listdir(specs_dirname):
+        if subset is not None:
+            # Load specifications only for the package given by `subset`
+            package_names = [subset]
+        else:
+            # Load specifications for each 'package' within specs/
+            package_names = os.listdir(specs_dirname)
+
+        for name in package_names:
             package_specs_dirname = os.path.join(specs_dirname, name)
             if not os.path.isdir(package_specs_dirname):
                 continue
