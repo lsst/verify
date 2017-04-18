@@ -48,7 +48,7 @@ class MetricSet(JsonSerializationMixin):
         package_name_or_path : `str`, optional
             Name of an EUPS package that hosts metric and specification
             definition YAML files **or** the file path to a metrics package.
-            ``verify_metrics`` is the default package, and is where metrics
+            ``'verify_metrics'`` is the default package, and is where metrics
             and specifications are defined for most packages.
         subset : `str`, optional
             If set, only metrics for this package are loaded. For example, if
@@ -424,22 +424,6 @@ class Metric(JsonSerializationMixin):
             args['reference_url'] = reference.get('url', None)
 
         return cls(name, **args)
-
-    @classmethod
-    def from_json(cls, json_data):
-        """Construct a Metric from a JSON dataset.
-
-        Parameters
-        ----------
-        json_data : `dict`
-            Metric JSON object.
-
-        Returns
-        -------
-        metric : `Metric`
-            Metric from JSON.
-        """
-        return cls.deserialize(**json_data)
 
     def __eq__(self, other):
         return ((self.name == other.name) and

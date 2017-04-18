@@ -123,11 +123,6 @@ class ThresholdSpecificationTestCase(unittest.TestCase):
         self.assertEqual(json_data['threshold']['operator'], '<')
 
         # rebuild from json
-        s2 = ThresholdSpecification.from_json(json_data)
-        self.assertEqual(s.name, s2.name)
-        self.assertEqual(s.threshold, s2.threshold)
-        self.assertEqual(s.operator_str, s2.operator_str)
-
         s3 = ThresholdSpecification.deserialize(**json_data)
         self.assertEqual(s, s3)
 

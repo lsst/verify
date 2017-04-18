@@ -180,25 +180,6 @@ class Datum(QuantityAttributeMixin, JsonSerializationMixin):
         return cls(quantity=value, unit=unit, label=label,
                    description=description)
 
-    @classmethod
-    def from_json(cls, json_data):
-        """Construct a Datum from a JSON dataset.
-
-        Parameters
-        ----------
-        json_data : `dict`
-            Datum JSON object.
-
-        Returns
-        -------
-        datum : `Datum`
-            Datum from JSON.
-        """
-        q = Datum._rebuild_quantity(json_data['value'], json_data['unit'])
-        d = cls(quantity=q, label=json_data['label'],
-                description=json_data['description'])
-        return d
-
     @property
     def json(self):
         """Datum as a `dict` compatible with overall `Job` JSON schema."""

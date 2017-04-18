@@ -93,28 +93,6 @@ class Blob(JsonSerializationMixin):
         instance._id = identifier
         return instance
 
-    @classmethod
-    def from_json(cls, json_data):
-        """Construct a Blob from a JSON dataset.
-
-        Parameters
-        ----------
-        json_data : `dict`
-            Blob JSON object.
-
-        Returns
-        -------
-        blob : `Blob`-type
-            Blob from JSON.
-        """
-        datums = {k: Datum.from_json(v) for k, v in json_data['data'].items()}
-        instance = cls(json_data['name'], **datums)
-
-        # Insert the unique identifier to match the serialized blob
-        instance._id = json_data['identifier']
-
-        return instance
-
     @property
     def json(self):
         """Job data as a JSON-serializable `dict`."""

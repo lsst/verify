@@ -74,7 +74,7 @@ class DatumTestCase(unittest.TestCase):
         self.assertEqual(d.unit, u.dimensionless_unscaled)
 
         json_data = d.json
-        d2 = Datum.from_json(json_data)
+        d2 = Datum.deserialize(**json_data)
         self.assertEqual(d.quantity, d2.quantity)
         self.assertEqual(d.unit, d2.unit)
         self.assertEqual(d.label, d2.label)
@@ -91,7 +91,7 @@ class DatumTestCase(unittest.TestCase):
         self.assertEqual(d.description, 'Test description.')
 
         json_data = d.json
-        d2 = Datum.from_json(json_data)
+        d2 = Datum.deserialize(**json_data)
         self.assertEqual(d.quantity, d2.quantity)
         self.assertEqual(d.unit, d2.unit)
         self.assertEqual(d.label, d2.label)
@@ -108,7 +108,7 @@ class DatumTestCase(unittest.TestCase):
         self.assertEqual(d.description, 'Test description.')
 
         json_data = d.json
-        d2 = Datum.from_json(json_data)
+        d2 = Datum.deserialize(**json_data)
         self.assertEqual(d.quantity, d2.quantity)
         self.assertEqual(d.unit, d2.unit)
         self.assertEqual(d.label, d2.label)
@@ -125,7 +125,7 @@ class DatumTestCase(unittest.TestCase):
         self.assertEqual(d.description, 'Test description.')
 
         json_data = d.json
-        d2 = Datum.from_json(json_data)
+        d2 = Datum.deserialize(**json_data)
         self.assertEqual(d.quantity, d2.quantity)
         self.assertEqual(d.unit, d2.unit)
         self.assertEqual(d.label, d2.label)
@@ -142,7 +142,7 @@ class DatumTestCase(unittest.TestCase):
         self.assertEqual(d.description, 'Test description.')
 
         json_data = d.json
-        d2 = Datum.from_json(json_data)
+        d2 = Datum.deserialize(**json_data)
         self.assertEqual(d.quantity, d2.quantity)
         self.assertEqual(d.unit, d2.unit)
         self.assertEqual(d.label, d2.label)

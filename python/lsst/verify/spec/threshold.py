@@ -90,28 +90,6 @@ class ThresholdSpecification(Specification):
         return Datum(self.threshold, label=str(self.name))
 
     @classmethod
-    def from_json(cls, json_data):
-        """Construct a `ThresholdSpecification` from a JSON document.
-
-        Parameters
-        ----------
-        json_data : `dict`
-            ThresholdSpecification JSON object.
-
-        Returns
-        -------
-        specification : `ThresholdSpecification`
-            ThresholdSpecification from JSON.
-        """
-        q = Datum._rebuild_quantity(
-            json_data['threshold']['value'],
-            json_data['threshold']['unit'])
-        s = cls(name=json_data['name'],
-                threshold=q,
-                operator_str=json_data['threshold']['operator'])
-        return s
-
-    @classmethod
     def deserialize(cls, name=None, threshold=None,
                     metric=None, package=None, **kwargs):
         """Deserialize from keys in a specification YAML document or a

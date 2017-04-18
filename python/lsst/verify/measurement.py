@@ -290,33 +290,6 @@ class Measurement(JsonSerializationMixin):
         instance._identifer = identifier  # re-wire id from serialization
         return instance
 
-    @classmethod
-    def from_json(cls, json_data, blobs_json=None):
-        """Construct a measurement from a JSON dataset.
-
-        Parameters
-        ----------
-        json_data : `dict`
-            Measurement JSON object.
-        blobs_json : `list`
-            JSON serialization of blobs. This is the ``blobs`` object
-            produced by `Job.json`.
-
-        Returns
-        -------
-        measurement : `MeasurementBase`-type
-            Measurement from JSON.
-        """
-        blobs = []
-        if blobs_json is not None:
-            for id_ in json_data['blob_refs']:
-                for blob_doc in blobs_json:
-                    if blob_doc['identifier'] == id_:
-                        blob = Blob.from_json(blob_doc)
-                        blobs.append(blob)
-
-        return cls(blobs=blobs, **json_data)
-
     def __eq__(self, other):
         return quantity_allclose(self.quantity, other.quantity) and \
             (self.metric_name == other.metric_name)
