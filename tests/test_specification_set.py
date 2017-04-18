@@ -113,6 +113,12 @@ class TestSpecificationSet(unittest.TestCase):
         with self.assertRaises(SpecificationResolutionError):
             self.spec_set.resolve_document(new_spec_doc)
 
+    def test_serialization(self):
+        """Test json and deserialize."""
+        json_doc = self.spec_set.json
+        new_spec_set = SpecificationSet.deserialize(json_doc)
+        self.assertEqual(self.spec_set, new_spec_set)
+
 
 class TestSpecificationSetGetterSetter(unittest.TestCase):
     """Test __setitem__, __getitem__ and __delitem__."""
@@ -156,8 +162,8 @@ class TestSpecificationSetGetterSetter(unittest.TestCase):
             spec_set['validate_drp.hello.world'] = spec_PA1_design
 
 
-class TestSpeciationSetLoadYamlFile(unittest.TestCase):
-    """Test Specificationset._load_yaml_file() and sub-functions."""
+class TestSpecificationSetLoadYamlFile(unittest.TestCase):
+    """Test SpecificationSet._load_yaml_file() and sub-functions."""
 
     def setUp(self):
         self.test_specs_dir = os.path.join(

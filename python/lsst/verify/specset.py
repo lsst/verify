@@ -1,6 +1,8 @@
 # See COPYRIGHT file at the top of the source tree.
 from __future__ import print_function, division
 
+__all__ = ['SpecificationSet']
+
 from past.builtins import basestring
 
 from collections import OrderedDict
@@ -10,13 +12,12 @@ import re
 import lsst.pex.exceptions
 from lsst.utils import getPackageDir
 
+from .errors import SpecificationResolutionError
+from .jsonmixin import JsonSerializationMixin
+from .naming import Name
 from .spec.base import Specification
 from .spec.threshold import ThresholdSpecification
-from .naming import Name
-from .errors import SpecificationResolutionError
 from .yamlutils import merge_documents, load_all_ordered_yaml
-
-__all__ = ['SpecificationSet']
 
 
 # Pattern for SpecificationPartial names
@@ -25,7 +26,7 @@ PARTIAL_PATTERN = re.compile('^(?:(?P<package>\S+):)'
                              '?(?P<path>\S+)?#(?P<name>\S+)$')
 
 
-class SpecificationSet(object):
+class SpecificationSet(JsonSerializationMixin):
     """A collection of Specifications.
 
     Parameters
@@ -60,6 +61,37 @@ class SpecificationSet(object):
                     raise TypeError(message.format(partial))
 
                 self._partials[partial.name] = partial
+
+    @classmethod
+    def deserialize(cls, specifications=None):
+        """Deserialize a specification set from a JSON serialization.
+
+        Parameters
+        ----------
+        specifications : `list`, optional
+            List of specification JSON objects.
+
+        Returns
+        -------
+        spec_set : `SpecificationSet`
+            SpecificationSet instance.
+        """
+        instance = cls()
+
+        if specifications is not None:
+            for spec_doc in specifications:
+                # FIXME DM-8477 Need a registry to support multiple types
+                # check type
+                if 'threshold' in spec_doc:
+                    spec = ThresholdSpecification.deserialize(**spec_doc)
+                else:
+                    message = ("We only support threshold-type "
+                               "specifications\n"
+                               "{0!r}".format(spec_doc))
+                    raise NotImplementedError(message)
+                instance.insert(spec)
+
+        return instance
 
     @classmethod
     def load_metrics_package(cls, package_name_or_path='verify_metrics'):
@@ -433,6 +465,13 @@ class SpecificationSet(object):
         name = Name(package=package, metric=metric, spec=name)
         return name.fqn
 
+    @property
+    def json(self):
+        doc = JsonSerializationMixin._jsonify_list(
+            [spec for name, spec in self.items()]
+        )
+        return doc
+
     def __str__(self):
         count = len(self)
         if count == 0:
@@ -529,6 +568,36 @@ class SpecificationSet(object):
     def __iter__(self):
         for key in self._specs:
             yield key
+
+    def __eq__(self, other):
+        if len(self) != len(other):
+            return False
+
+        for name, spec in self.items():
+            try:
+                if spec != other[name]:
+                    return False
+            except KeyError:
+                return False
+
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def items(self):
+        """Iterate over name, specification pairs.
+
+        Yields
+        ------
+        item : `tuple`
+            Tuple containing:
+
+            - `Name` of the specification.
+            - `Specification`-type object.
+        """
+        for name, spec in self._specs.items():
+            yield name, spec
 
     def insert(self, spec):
         """Insert a Specification into the set.
