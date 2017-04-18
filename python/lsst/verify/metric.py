@@ -17,7 +17,7 @@ from .yamlutils import load_ordered_yaml
 __all__ = ['Metric', 'MetricSet']
 
 
-class MetricSet(object):
+class MetricSet(JsonSerializationMixin):
     """A collection of `Metric`\ s.
 
     Parameters
@@ -138,6 +138,35 @@ class MetricSet(object):
                 metrics.append(metric)
         return metrics
 
+    @classmethod
+    def deserialize(cls, metrics=None):
+        """Deserialize metric JSON objects into a MetricSet instance.
+
+        Parameters
+        ----------
+        metrics : `list`
+            List of metric JSON serializations (typically created by
+            `MetricSet.json`).
+
+        Returns
+        -------
+        metric_set : `MetricSet`
+            `MetricSet` instance.
+        """
+        instance = cls()
+        for metric_doc in metrics:
+            metric = Metric.deserialize(**metric_doc)
+            instance.insert(metric)
+        return instance
+
+    @property
+    def json(self):
+        """A JSON-serializable object (`list`)."""
+        doc = JsonSerializationMixin._jsonify_list(
+            [metric for name, metric in self.items()]
+        )
+        return doc
+
     def __getitem__(self, key):
         if not isinstance(key, Name):
             key = Name(metric=key)
@@ -191,6 +220,22 @@ class MetricSet(object):
         else:
             count_str = '{count:d} Metrics'.format(count=count)
         return '<MetricSet: {0}>'.format(count_str)
+
+    def __eq__(self, other):
+        if len(self) != len(other):
+            return False
+
+        for name, metric in self.items():
+            try:
+                if metric != other[name]:
+                    return False
+            except KeyError:
+                return False
+
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def insert(self, metric):
         """Insert a `Metric` into the set.

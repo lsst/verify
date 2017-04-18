@@ -162,6 +162,21 @@ class MetricSetSubsetTestCase(unittest.TestCase):
         self.assertNotIn(self.m3.name, subset)
 
 
+class MetricSetSerializationTestCase(unittest.TestCase):
+    """Test JSON serialization and deserialization for MetricSets."""
+
+    def setUp(self):
+        self.m1 = Metric('pkgA.m1', 'In pkgA', '', tags='testing')
+        self.m2 = Metric('pkgA.m2', 'In pkgA', '', tags='other')
+        self.m3 = Metric('pkgB.m3', 'In pkgB', '', tags='testing')
+        self.metric_set = MetricSet([self.m1, self.m2, self.m3])
+
+    def test_serialization(self):
+        json_doc = self.metric_set.json
+        new_metric_set = MetricSet.deserialize(json_doc)
+        self.assertEqual(self.metric_set, new_metric_set)
+
+
 class MetricTestCase(unittest.TestCase):
     """Test Metrics and metrics.yaml functionality."""
 
