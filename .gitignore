@@ -17,3 +17,5 @@ tests/.tests
 version.py
 bin/*.py
 examples/*.list
+.coverage
+htmlcov
