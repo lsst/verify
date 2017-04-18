@@ -3,6 +3,9 @@ from __future__ import print_function, division
 
 __all__ = ['Job']
 
+import json
+import os
+
 from .blobset import BlobSet
 from .jsonmixin import JsonSerializationMixin
 from .measurementset import MeasurementSet
@@ -174,3 +177,23 @@ class Job(JsonSerializationMixin):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    def write(self, filename):
+        """Write a JSON serialization to the filesystem.
+
+        Parameters
+        ----------
+        filename : `str`
+            Name of the JSON file (including directories). This name
+            should be unique among all task executions in a pipeline. The
+            recommended extension is ``'.verify.json'``. This convention is
+            used by post-processing tools to discover verification framework
+            outputs.
+        """
+        dirname = os.path.dirname(filename)
+        if len(dirname) > 0:
+            if not os.path.isdir(dirname):
+                os.makedirs(dirname)
+
+        with open(filename, 'w') as f:
+            json.dump(self.json, f)
