@@ -12,12 +12,11 @@ A metrics package contains, minimally, two root directories:
    sub-directories.
 """
 
-import os
 import argparse
 
 import lsst.pex.exceptions
 from lsst.utils import getPackageDir
-from lsst.verify import MetricRepo, SpecificationSet
+from lsst.verify import MetricSet, SpecificationSet
 
 
 def main():
@@ -39,8 +38,7 @@ def main():
 
     print('Linting {}.'.format(args.package_dir))
 
-    metric_repo = MetricRepo.from_metrics_dir(
-        os.path.join(args.package_dir, 'metrics'))
+    metric_repo = MetricSet.load_metrics_package(args.package_dir)
     print('Passed: metrics/')
     print('\tParsed {0:d} metric sets.'.format(len(metric_repo)))
 
