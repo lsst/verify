@@ -13,6 +13,7 @@ from .naming import *
 from .spec import *
 from .specset import *
 from .metric import *
+from .metricset import *
 from .measurement import *
 from .measurementset import *
 from .blob import *

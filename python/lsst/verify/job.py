@@ -9,7 +9,7 @@ import os
 from .blobset import BlobSet
 from .jsonmixin import JsonSerializationMixin
 from .measurementset import MeasurementSet
-from .metric import MetricSet
+from .metricset import MetricSet
 from .specset import SpecificationSet
 
 
