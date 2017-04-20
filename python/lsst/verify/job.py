@@ -33,6 +33,7 @@ from .jsonmixin import JsonSerializationMixin
 from .measurementset import MeasurementSet
 from .metricset import MetricSet
 from .specset import SpecificationSet
+from . import squash
 
 
 class Job(JsonSerializationMixin):
@@ -241,3 +242,27 @@ class Job(JsonSerializationMixin):
 
         with open(filename, 'w') as f:
             json.dump(self.json, f)
+
+    def dispatch(self, api_user=None, api_password=None,
+                 api_url='https://squash.lsst.codes/dashboard/api/',
+                 **kwargs):
+        """POST the job to SQUASH, LSST Data Management's metric dashboard.
+
+        Parameters
+        ----------
+        api_url : `str`, optional
+            Root URL of the SQUASH API server.
+        api_user : `str`, optional
+            API username.
+        api_password : `str`, optional
+            API password.
+        **kwargs : optional
+            Additional keyword arguments passed to `lsst.verify.squash.post`.
+        """
+        full_json_doc = self.json
+        # subset JSON to just the 'job' fields; no metrics and specs
+        job_json = {k: full_json_doc[k]
+                    for k in ('measurements', 'blobs', 'meta')}
+        squash.post(api_url, 'jobs', json_doc=job_json,
+                    api_user=api_user, api_password=api_password,
+                    **kwargs)
