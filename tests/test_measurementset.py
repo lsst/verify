@@ -122,5 +122,48 @@ class MeasurementSetTestCase(unittest.TestCase):
         self.assertIs(meas_set['testing.AM1'], self.am1_meas)
 
 
+class MeasurementSetMetricReloadTestCase(unittest.TestCase):
+    """Use YAML in data/metrics for metric definitions."""
+
+    def setUp(self):
+        self.metrics_yaml_dirname = os.path.join(
+            os.path.dirname(__file__), 'data')
+        self.metric_set = MetricSet.load_metrics_package(
+            self.metrics_yaml_dirname)
+
+    def test_reload(self):
+        # Has Metric instance
+        pa1_meas = Measurement(
+            self.metric_set['testing.PA1'],
+            4. * u.mmag
+        )
+
+        # Don't have metric instances
+        am1_meas = Measurement(
+            'testing.AM1',
+            2. * u.marcsec
+        )
+        pa2_meas = Measurement(
+            'testing.PA2',
+            10. * u.mmag
+        )
+
+        measurements = MeasurementSet([pa1_meas, am1_meas, pa2_meas])
+        measurements.refresh_metrics(self.metric_set)
+
+        self.assertIs(
+            measurements['testing.PA1'].metric,
+            self.metric_set['testing.PA1']
+        )
+        self.assertIs(
+            measurements['testing.AM1'].metric,
+            self.metric_set['testing.AM1']
+        )
+        self.assertIs(
+            measurements['testing.PA2'].metric,
+            self.metric_set['testing.PA2']
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

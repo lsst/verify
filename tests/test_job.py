@@ -180,6 +180,22 @@ class JobTestCase(unittest.TestCase):
             'test2_blob',
             job_1.measurements['test2.SourceCount'].blobs)
 
+    def test_metric_package_reload(self):
+        # Create a Job without Metric definitions
+        meas = Measurement('validate_drp.PA1', 15 * u.mmag)
+        measurement_set = MeasurementSet([meas])
+
+        job = Job(measurements=measurement_set)
+        job.reload_metrics_package('verify_metrics')
+
+        # Should now have metrics and specs
+        self.assertTrue(len(job.specs) > 0)
+        self.assertTrue(len(job.metrics) > 0)
+        self.assertIsInstance(
+            job.measurements['validate_drp.PA1'].metric,
+
+            Metric)
+
 
 if __name__ == "__main__":
     unittest.main()
