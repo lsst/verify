@@ -101,6 +101,26 @@ class MeasurementSetTestCase(unittest.TestCase):
             metric_set=self.metric_set)
         self.assertEqual(meas_set, new_meas_set)
 
+    def test_measurement_set_update(self):
+        meas_set = MeasurementSet([self.pa1_meas, self.am1_meas])
+        meas_set_2 = MeasurementSet([self.am1_meas, self.pa2_meas])
+
+        meas_set.update(meas_set_2)
+
+        self.assertIs(meas_set['testing.PA1'], self.pa1_meas)
+        self.assertIs(meas_set['testing.PA2'], self.pa2_meas)
+        self.assertIs(meas_set['testing.AM1'], self.am1_meas)
+
+    def test_measurement_iadd(self):
+        meas_set = MeasurementSet([self.pa1_meas, self.am1_meas])
+        meas_set_2 = MeasurementSet([self.am1_meas, self.pa2_meas])
+
+        meas_set += meas_set_2
+
+        self.assertIs(meas_set['testing.PA1'], self.pa1_meas)
+        self.assertIs(meas_set['testing.PA2'], self.pa2_meas)
+        self.assertIs(meas_set['testing.AM1'], self.am1_meas)
+
 
 if __name__ == "__main__":
     unittest.main()

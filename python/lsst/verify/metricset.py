@@ -269,6 +269,28 @@ class MetricSet(JsonSerializationMixin):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __iadd__(self, other):
+        """Merge another `MetricSet` into this one.
+
+        Parameters
+        ---------
+        other : `MetricSet`
+            Another `MetricSet`. Metrics in ``other`` that do exist in this
+            set are added to this one. Metrics in ``other`` replace metrics of
+            the same name in this one.
+
+        Returns
+        -------
+        self : `MetricSet`
+            This `MetricSet`.
+
+        Notes
+        -----
+        Equivalent to `update`.
+        """
+        self.update(other)
+        return self
+
     def insert(self, metric):
         """Insert a `Metric` into the set.
 
@@ -342,3 +364,16 @@ class MetricSet(JsonSerializationMixin):
             metrics = []
 
         return MetricSet(metrics)
+
+    def update(self, other):
+        """Merge another `MetricSet` into this one.
+
+        Parameters
+        ---------
+        other : `MetricSet`
+            Another `MetricSet`. Metrics in ``other`` that do exist in this
+            set are added to this one. Metrics in ``other`` replace metrics of
+            the same name in this one.
+        """
+        for _, metric in other.items():
+            self.insert(metric)

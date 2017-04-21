@@ -223,6 +223,24 @@ class Job(JsonSerializationMixin):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __iadd__(self, other):
+        """Merge another Job into this one.
+
+        Parameters
+        ----------
+        other : `Job`
+            Job instance to be merged into this one.
+
+        Returns
+        -------
+        self : `Job`
+            This `Job` instance.
+        """
+        self.measurements.update(other.measurements)
+        self.metrics.update(other.metrics)
+        self.specs.update(other.specs)
+        self.meta.update(other.meta)
+        return self
     def write(self, filename):
         """Write a JSON serialization to the filesystem.
 

@@ -136,6 +136,28 @@ class MeasurementSet(JsonSerializationMixin):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __iadd__(self, other):
+        """Merge another `MeasurementSet` into this one.
+
+        Parameters
+        ---------
+        other : `MeasurementSet`
+            Another `MeasurementSet`. Measurements in ``other`` that do
+            exist in this set are added to this one. Measurements in
+            ``other`` replace measurements of the same metric in this one.
+
+        Returns
+        -------
+        self : `MeasurementSet`
+            This `MeasurementSet`.
+
+        Notes
+        -----
+        Equivalent to `update`.
+        """
+        self.update(other)
+        return self
+
     def __str__(self):
         count = len(self)
         if count == 0:
@@ -163,6 +185,19 @@ class MeasurementSet(JsonSerializationMixin):
     def insert(self, measurement):
         """Insert a measurement into the set."""
         self[measurement.metric_name] = measurement
+
+    def update(self, other):
+        """Merge another `MeasurementSet` into this one.
+
+        Parameters
+        ---------
+        other : `MeasurementSet`
+            Another `MeasurementSet`. Measurements in ``other`` that do
+            exist in this set are added to this one. Measurements in
+            ``other`` replace measurements of the same metric in this one.
+        """
+        for _, measurement in other.items():
+            self.insert(measurement)
 
     @property
     def json(self):
