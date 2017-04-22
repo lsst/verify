@@ -28,6 +28,7 @@ import abc
 from future.utils import with_metaclass
 
 from ..jsonmixin import JsonSerializationMixin
+from ..metaquery import MetadataQuery
 from ..naming import Name
 
 
@@ -54,6 +55,11 @@ class Specification(with_metaclass(abc.ABCMeta, JsonSerializationMixin)):
         if not self._name.is_spec:
             message = 'name {0!r} does not represent a specification'
             raise TypeError(message.format(self._name))
+
+        if 'metadata_query' in kwargs:
+            self.metadata_query = MetadataQuery(kwargs['metadata_query'])
+        else:
+            self.metadata_query = MetadataQuery()
 
     @property
     def name(self):
@@ -84,7 +90,8 @@ class Specification(with_metaclass(abc.ABCMeta, JsonSerializationMixin)):
             {
                 'name': str(self.name),
                 'type': self.type,
-                self.type: self._serialize_type()
+                self.type: self._serialize_type(),
+                'metadata_query': self.metadata_query
             }
         )
 
@@ -105,3 +112,20 @@ class Specification(with_metaclass(abc.ABCMeta, JsonSerializationMixin)):
             `False` otherwise.
         """
         pass
+
+    def query_metadata(self, metadata):
+        """Query a Job's metadata to determine if this specification applies.
+
+        Parameters
+        ----------
+        metadata : `lsst.verify.Metadata` or `dict`-type
+            Metadata mapping. Typically this is the `lsst.verify.Job.meta`
+            attribute.
+
+        Returns
+        -------
+        applies : `bool`
+            `True` if this specification applies to a Job's measurement, or
+            `False` otherwise.
+        """
+        return self.metadata_query(metadata)

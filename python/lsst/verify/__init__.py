@@ -31,6 +31,7 @@ except:
 from .errors import *
 from .datum import *
 from .naming import *
+from .metaquery import *
 from .spec import *
 from .specset import *
 from .metric import *

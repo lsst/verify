@@ -27,7 +27,7 @@ import operator
 
 import astropy.units as u
 
-from lsst.verify import Name
+from lsst.verify import Name, Job
 from lsst.verify.spec import ThresholdSpecification
 
 
@@ -180,6 +180,26 @@ class ThresholdSpecificationTestCase(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             ThresholdSpecification.convert_operator_str('<<'),
+
+    def test_query_metadata(self):
+        job = Job(meta={'filter_name': 'r',
+                        'camera': 'MegaCam'})
+        s1 = ThresholdSpecification(
+            Name('validate_drp.AM1.design_r'),
+            5. * u.marcsec, '<',
+            metadata_query={'filter_name': 'r'})
+        s2 = ThresholdSpecification(
+            Name('validate_drp.AM1.design_i'),
+            5. * u.marcsec, '<',
+            metadata_query={'filter_name': 'i'})
+        s3 = ThresholdSpecification(
+            Name('validate_drp.AM1.design_HSC_r'),
+            5. * u.marcsec, '<',
+            metadata_query={'filter_name': 'r', 'camera': 'HSC'})
+
+        self.assertTrue(s1.query_metadata(job.meta))
+        self.assertFalse(s2.query_metadata(job.meta))
+        self.assertFalse(s3.query_metadata(job.meta))
 
 
 if __name__ == "__main__":
