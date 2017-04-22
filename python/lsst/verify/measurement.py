@@ -22,7 +22,7 @@
 #
 from __future__ import print_function, division
 
-__all__ = ['Measurement']
+__all__ = ['Measurement', 'MeasurementNotes']
 
 import uuid
 
@@ -58,6 +58,12 @@ class Measurement(JsonSerializationMixin):
     extras : `dict` of `lsst.verify.Datum` instances, optional
         `~lsst.verify.Datum` instances can be attached to a measurement.
         Extras can be accessed from the `Measurement.extras` attribute.
+    notes : `dict`, optional
+        Measurement annotations. These key-value pairs are automatically
+        available from `Job.meta`, though keys are prefixed with the
+        metric's name. This metadata can be queried by specifications,
+        so that specifications can be written to test only certain types
+        of measurements.
 
     Raises
     ------
@@ -74,7 +80,8 @@ class Measurement(JsonSerializationMixin):
     this measurement.
     """
 
-    def __init__(self, metric, quantity=None, blobs=None, extras=None):
+    def __init__(self, metric, quantity=None, blobs=None, extras=None,
+                 notes=None):
         # Internal attributes
         self._quantity = None
         # every instance gets a unique identifier, useful for serialization
@@ -112,6 +119,10 @@ class Measurement(JsonSerializationMixin):
                     message = 'Extra {0} is not a Datum-type'
                     raise TypeError(message.format(extra))
                 self.extras[key] = extra
+
+        self._notes = MeasurementNotes(self.metric_name)
+        if notes is not None:
+            self.notes.update(notes)
 
     @property
     def metric(self):
@@ -222,6 +233,10 @@ class Measurement(JsonSerializationMixin):
         self.blobs[blob.name] = blob
 
     @property
+    def notes(self):
+        return self._notes
+
+    @property
     def json(self):
         """A `dict` that can be serialized as semantic SQUASH JSON.
 
@@ -240,6 +255,10 @@ class Measurement(JsonSerializationMixin):
            `Blob`\ s are not serialized with a measurement, only their
            identifiers. The `lsst.verify.Job` class handles serialization of
            blobs alongside measurements.
+
+           Likewise, `Measurement.notes` are not serialized with the
+           measurement. They are included with `lsst.verify.Job`\ 's
+           serialization, alongside job-level metadata.
         """
         if self.quantity is None:
             _normalized_value = None
@@ -313,7 +332,98 @@ class Measurement(JsonSerializationMixin):
 
     def __eq__(self, other):
         return quantity_allclose(self.quantity, other.quantity) and \
-            (self.metric_name == other.metric_name)
+            (self.metric_name == other.metric_name) and \
+            (self.notes == other.notes)
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+
+class MeasurementNotes(object):
+    """Container for annotations (notes) associated with a single measurement.
+
+    Parameters
+    ----------
+    metric_name : `Name` or `str`
+        Fully qualified name of the measurement's metric. The metric's name
+        is used as a prefix for key names.
+
+    Examples
+    --------
+    ``MeasurementNotes`` implements a `dict`-like interface. The only
+    difference is that internally keys are always prefixed with the name of
+    a metric. This allows measument annotations to mesh with reduced key
+    collision likelihood with Job metadata keys (`lsst.verify.Metadata`).
+
+    Users of `MeasurementNotes`, typically though `Measurement.notes`, do
+    not need to use this prefix. Keys are prefixed behind the scenes.
+
+    >>> notes = MeasurementNotes('validate_drp')
+    >>> notes['filter_name'] = 'r'
+    >>> notes['filter_name']
+    'r'
+    >>> notes['validate_drp.filter_name']
+    'r'
+    >>> print(notes)
+    {'validate_drp.filter_name': 'r'}
+    """
+
+    def __init__(self, metric_name):
+        # cast Name to str form to deal with prefixes
+        self._metric_name = str(metric_name)
+        # Enforced key prefix for all notes
+        self._prefix = '{self._metric_name}.'.format(self=self)
+        self._data = {}
+
+    def _format_key(self, key):
+        """Ensures the key includes the metric name prefix."""
+        if not key.startswith(self._prefix):
+            key = self._prefix + key
+        return key
+
+    def __getitem__(self, key):
+        key = self._format_key(key)
+        return self._data[key]
+
+    def __setitem__(self, key, value):
+        key = self._format_key(key)
+        self._data[key] = value
+
+    def __delitem__(self, key):
+        key = self._format_key(key)
+        del self._data[key]
+
+    def __contains__(self, key):
+        key = self._format_key(key)
+        return key in self._data
+
+    def __len__(self):
+        return len(self._data)
+
+    def __eq__(self, other):
+        return (self._metric_name == other._metric_name) and \
+            (self._data == other._data)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __iter__(self):
+        for key in self._data:
+            yield key
+
+    def __str__(self):
+        return str(self._data)
+
+    def __repr__(self):
+        return repr(self._data)
+
+    def keys(self):
+        return [key for key in self]
+
+    def items(self):
+        for item in self._data.items():
+            yield item
+
+    def update(self, data):
+        for key, value in data.items():
+            self[key] = value
