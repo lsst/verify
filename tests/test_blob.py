@@ -1,4 +1,25 @@
+#
+# LSST Data Management System
+#
+# This product includes software developed by the
+# LSST Project (http://www.lsst.org/).
+#
 # See COPYRIGHT file at the top of the source tree.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
+# see <https://www.lsstcorp.org/LegalNotices/>.
+#
 from __future__ import print_function
 
 import unittest
@@ -61,8 +82,8 @@ class BlobTestCase(unittest.TestCase):
         self.assertEqual(j['data']['mag1']['description'], 'Magnitude')
 
         # Rebuild from blob
-        b2 = Blob.from_json(j)
-        self.assertEqual(self.blob.identifier, b2.identifier)
+        b2 = Blob.deserialize(**j)
+        self.assertEqual(self.blob, b2)
 
     def test_mutation(self):
         blob = Blob('mutable')

@@ -1,5 +1,28 @@
+#
+# LSST Data Management System
+#
+# This product includes software developed by the
+# LSST Project (http://www.lsst.org/).
+#
 # See COPYRIGHT file at the top of the source tree.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
+# see <https://www.lsstcorp.org/LegalNotices/>.
+#
 from __future__ import print_function, division
+
+__all__ = ['Blob']
 
 from past.builtins import basestring
 
@@ -7,9 +30,6 @@ import uuid
 
 from .jsonmixin import JsonSerializationMixin
 from .datum import Datum
-
-
-__all__ = ['Blob']
 
 
 class Blob(JsonSerializationMixin):
@@ -56,25 +76,41 @@ class Blob(JsonSerializationMixin):
         return self._id
 
     @classmethod
-    def from_json(cls, json_data):
-        """Construct a Blob from a JSON dataset.
+    def deserialize(cls, identifier=None, name=None, data=None):
+        """Deserialize fields from a blob JSON object into a `Blob` instance.
 
         Parameters
         ----------
-        json_data : `dict`
-            Blob JSON object.
+        identifier : `str`
+            Blob identifier.
+        name : `str`
+            Name of the blob type.
+        data : `dict`
+            Dictionary of named ``name: datum object`` key-value pairs.
 
         Returns
         -------
-        blob : `Blob`-type
-            Blob from JSON.
+        blob : `Blob`
+            The `Blob` instance deserialied from a blob JSON object.
+
+        Example
+        -------
+        This class method is designed to roundtrip JSON objects created a
+        Blob instance. For example:
+
+        >>> import astropy.units as u
+        >>> blob = Blob('demo')
+        >>> blob['a_mag'] = Datum(28 * u.mag, label='i')
+        >>> json_data = blob.json
+        >>> new_blob = Blob.deserialize(**json_data)
         """
-        datums = {k: Datum.from_json(v) for k, v in json_data['data'].items()}
-        instance = cls(json_data['name'], **datums)
-
-        # Insert the unique identifier to match the serialized blob
-        instance._id = json_data['identifier']
-
+        datums = {}
+        if data is not None:
+            for datum_key, datum_doc in data.items():
+                datum = Datum.deserialize(**datum_doc)
+                datums[datum_key] = datum
+        instance = cls(name, **datums)
+        instance._id = identifier
         return instance
 
     @property
@@ -112,3 +148,11 @@ class Blob(JsonSerializationMixin):
     def __iter__(self):
         for key in self._datums:
             yield key
+
+    def __eq__(self, other):
+        return (self.identifier == other.identifier) \
+            and (self.name == other.name) \
+            and (self._datums == other._datums)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)

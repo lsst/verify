@@ -1,199 +1,220 @@
+#
+# LSST Data Management System
+#
+# This product includes software developed by the
+# LSST Project (http://www.lsst.org/).
+#
 # See COPYRIGHT file at the top of the source tree.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
+# see <https://www.lsstcorp.org/LegalNotices/>.
+#
 from __future__ import print_function, division
-
-from .jsonmixin import JsonSerializationMixin
-from .blob import Blob
-
 
 __all__ = ['Job']
 
+import json
+import os
+
+from .blobset import BlobSet
+from .jsonmixin import JsonSerializationMixin
+from .measurementset import MeasurementSet
+from .metricset import MetricSet
+from .specset import SpecificationSet
+
 
 class Job(JsonSerializationMixin):
-    """A `Job` wraps all measurements and blob metadata associated with a
-    validation run.
-
-    Measurements and blobs can be added both during initialization, or anytime
-    afterwards with the `register_measurement` and `register_blob` methods.
-
-    The `get_measurement` method lets you search for a stored measurement
-    based on the `Metric` name (and filter or specification name, if the
-    measurement is dependent on those).
-
-    Use the `Job.json` attribute to access a json-serializable `dict` of all
-    measurements and blobs associated with the `Job`.
-
-    A `Job` can only contain measurements against one dataset at a time.
-    Typically, `Job`\ s are uploaded to SQUASH separately for each tested
-    dataset.
+    """Container for measurements, blobs, and provenance associated with a
+    pipeline run.
 
     Parameters
     ----------
-    measurements : `list`, optional
-        List of `MeasurementBase`-derived objects. Additional measurements can
-        be added with the `register_measurement` method.
-    blobs : `list`, optional
-        List of `Blob`-type objects. Additional blobs can be added
-        with the `register_blob` method.
+    measurements : `MeasurementSet` or `list` of `Measurement`\ s, optional
+        Measurements to report in the Job.
+    metrics : `list` of `Metric`\ s or a `MetricSet`, optional
+        Optional list of metrics, or a `MetricSet`.
+    specs : `SpecificationSet` or `list` of `Specification`\ s, optional
+        Optional specification information.
     """
-    def __init__(self, measurements=None, blobs=None):
-        self._measurements = []
-        self._measurement_ids = set()
-        self._blobs = []
-        self._blob_ids = set()
 
-        if measurements:
-            for m in measurements:
-                self.register_measurement(m)
+    def __init__(self, measurements=None, metrics=None, specs=None):
+        if isinstance(measurements, MeasurementSet):
+            self._meas_set = measurements
+        else:
+            self._meas_set = MeasurementSet(measurements)
 
-        if blobs:
-            for b in blobs:
-                self.register_blob(b)
+        if isinstance(metrics, MetricSet):
+            self._metric_set = metrics
+        else:
+            self._metric_set = MetricSet(metrics)
 
-    def register_measurement(self, m):
-        """Add a measurement object to the `Job`.
+        if isinstance(specs, SpecificationSet):
+            self._spec_set = specs
+        else:
+            self._spec_set = SpecificationSet(specs)
 
-        Registering a measurement also automatically registers all
-        linked blobs.
+    @classmethod
+    def load_metrics_package(cls, package_name_or_path='verify_metrics',
+                             subset=None, measurements=None):
+        """Create a Job with metrics and specifications pre-loaded from a
+        Verification Framework metrics package.
 
         Parameters
         ----------
-        m : `Measurement`-type object
-            A measurement object.
+        package_name_or_path : `str`, optional
+            Name of an EUPS package that hosts metric and specification
+            definition YAML files **or** the file path to a metrics package.
+            ``'verify_metrics'`` is the default package, and is where metrics
+            and specifications are defined for most packages.
+        subset : `str`, optional
+            If set, only metrics and specification for this package are loaded.
+            For example, if ``subset='validate_drp'``, only ``validate_drp``
+            metrics are included in the `MetricSet`. This argument is
+            equivalent to the `MetricSet.subset` method. Default is `None`.
+        measurements : `MeasurementSet` or `list` of `Measurement`\ s, optional
+            Measurements to report in the Job.
+
+        Returns
+        -------
+        job : `Job`
+            `Job` instance.
         """
-        if m.identifier not in self._measurement_ids:
-            self._measurements.append(m)
-            self._measurement_ids.add(m.identifier)
-            for name, b in m.blobs.items():
-                self.register_blob(b)
+        metrics = MetricSet.load_metrics_package(
+            package_name_or_path=package_name_or_path,
+            subset=subset)
+        specs = SpecificationSet.load_metrics_package(
+            package_name_or_path=package_name_or_path,
+            subset=subset)
+        instance = cls(measurements=measurements, metrics=metrics, specs=specs)
+        return instance
+
+    @classmethod
+    def deserialize(cls, measurements=None, blobs=None,
+                    metrics=None, specs=None):
+        """Deserialize a Verification Framework Job from a JSON serialization.
+
+        Parameters
+        ----------
+        measurements : `list`, optional
+            List of serialized measurement objects.
+        blobs : `list`, optional
+            List of serialized blob objects.
+        metrics : `list`, optional
+            List of serialized metric objects.
+        specs : `list`, optional
+            List of serialized specification objects.
+
+        Returns
+        -------
+        job : `Job`
+            `Job` instance built from serialized data.
+
+        Examples
+        --------
+        Together, `Job.json` and `Job.deserialize` allow a verification job to
+        be serialized and later re-instantiated.
+
+        >>> import json
+        >>> job = Job()
+        >>> json_str = json.dumps(job.json)
+        >>> json_obj = json.loads(json_str)
+        >>> new_job = Job.deserialize(**json_obj)
+        """
+        blob_set = BlobSet.deserialize(blobs)
+        metric_set = MetricSet.deserialize(metrics)
+        spec_set = SpecificationSet.deserialize(specs)
+        meas_set = MeasurementSet.deserialize(
+            measurements=measurements,
+            blob_set=blob_set,
+            metric_set=metric_set)
+
+        instance = cls(measurements=meas_set,
+                       metrics=metric_set,
+                       specs=spec_set)
+        return instance
 
     @property
     def measurements(self):
-        """Measurement iterator."""
-        for m in self._measurements:
-            yield m
-
-    def get_measurement(self, metric_name, spec_name=None, filter_name=None):
-        """Get a measurement corresponding to the given criteria.
-
-        Parameters
-        ----------
-        metric_name : `str`
-            Name of the `Metric` for the requested measurement.
-        spec_name : `str`, optional
-            Name of the specification level if the measurement algorithm is
-            dependent on the specification level of a metric.
-        filter_name : `str`, optional
-            Name of the optical filter if the measurement is specific to a
-            filter.
-
-        Returns
-        -------
-        measurement : `MeasurementBase`-type object
-            The single measurement instance that fulfills the search criteria.
-
-        Raises
-        ------
-        RuntimeError
-            Raised when a measurement cannot be found, either because no such
-            measurement exists or because the request is ambiguous
-            (``spec_name`` or ``filter_name`` need to be set).
+        """Measurements associated with the pipeline verification job
+        (`MeasurementSet`).
         """
-        candidates = [m for m in self._measurements if m.label == metric_name]
-        if len(candidates) == 1:
-            candidate = candidates[0]
-            if spec_name is not None and candidate.spec_name is not None:
-                assert candidate.spec_name == spec_name
-            if filter_name is not None and candidate.filter_name is not None:
-                assert candidate.filter_name == filter_name
-            return candidate
-
-        # Filter by spec_name
-        if spec_name is not None:
-            candidates = [m for m in candidates if m.spec_name == spec_name]
-        if len(candidates) == 1:
-            candidate = candidates[0]
-            if filter_name is not None and candidate.filter_name is not None:
-                assert candidate.filter_name == filter_name
-            return candidate
-
-        # Filter by filter_name
-        if filter_name is not None:
-            candidates = [m for m in candidates
-                          if m.filter_name == filter_name]
-        if len(candidates) == 1:
-            return candidates[0]
-
-        raise RuntimeError('Measurement not found', metric_name, spec_name)
-
-    def register_blob(self, b):
-        """Add a blob object to the `Job`.
-
-        Parameters
-        ----------
-        b : `Blob`-type object
-            A blob object.
-        """
-        assert isinstance(b, Blob)
-        if b.identifier not in self._blob_ids:
-            self._blobs.append(b)
-            self._blob_ids.add(b.identifier)
+        return self._meas_set
 
     @property
-    def blobs(self):
-        """Blob iterator."""
-        for b in self._blobs:
-            yield b
-
-    @classmethod
-    def from_json(cls, json_data):
-        """Construct a Job and constituent objects from a JSON dataset.
-
-        Parameters
-        ----------
-        json_data : `dict`
-            Job JSON object (as produced by `json`).
-
-        Returns
-        -------
-        job : `Job`-type
-            Job from JSON.
+    def metrics(self):
+        """Metrics associated with the pipeline verification job (`MetricSet`).
         """
-        raise NotImplementedError('Deserialization not yet supported')
-        # blobs = [DeserializedBlob.from_json(doc)
-        #          for doc in json_data['blobs']]
-        # measurements = [
-        #     DeserializedMeasurement.from_json(doc,
-        #                                       blobs_json=json_data['blobs'])
-        #     for doc in json_data['measurements']]
-        # job = cls(measurements=measurements, blobs=blobs)
-        # return job
+        return self._metric_set
+
+    @property
+    def specs(self):
+        """Specifications associated with the pipeline verifification job
+        (`SpecificationSet`).
+        """
+        return self._spec_set
 
     @property
     def json(self):
         """`Job` data as a JSON-serialiable `dict`."""
+        # Gather blobs from all measurements
+        blob_set = BlobSet()
+        for name, measurement in self._meas_set.items():
+            for blob_name, blob in measurement.blobs.items():
+                if (str(name) == blob_name) and (len(blob) == 0):
+                    # Don't serialize empty 'extras' blobs
+                    continue
+                blob_set.insert(blob)
+
         doc = JsonSerializationMixin.jsonify_dict({
-            'measurements': self._measurements,
-            'blobs': self._blobs})
+            'measurements': self._meas_set,
+            'blobs': blob_set,
+            'metrics': self._metric_set,
+            'specs': self._spec_set
+        })
         return doc
 
-    @property
-    def metric_names(self):
-        """Names of `Metric`\ s measured in this `Job` (`list`)."""
-        metric_names = []
-        for m in self._measurements:
-            if m.value is not None:
-                if m.metric.name not in metric_names:
-                    metric_names.append(m.metric.name)
-        return metric_names
+    def __eq__(self, other):
+        if self.measurements != other.measurements:
+            return False
 
-    @property
-    def spec_levels(self):
-        """`list` of names of specification levels that are available for
-        `Metric`\ s measured in this `Job`.
+        if self.metrics != other.metrics:
+            return False
+
+        if self.specs != other.specs:
+            return False
+
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def write(self, filename):
+        """Write a JSON serialization to the filesystem.
+
+        Parameters
+        ----------
+        filename : `str`
+            Name of the JSON file (including directories). This name
+            should be unique among all task executions in a pipeline. The
+            recommended extension is ``'.verify.json'``. This convention is
+            used by post-processing tools to discover verification framework
+            outputs.
         """
-        spec_names = []
-        for m in self._measurements:
-            for spec in m.metric.specs:
-                if spec.name not in spec_names:
-                    spec_names.append(spec.name)
-        return spec_names
+        dirname = os.path.dirname(filename)
+        if len(dirname) > 0:
+            if not os.path.isdir(dirname):
+                os.makedirs(dirname)
+
+        with open(filename, 'w') as f:
+            json.dump(self.json, f)

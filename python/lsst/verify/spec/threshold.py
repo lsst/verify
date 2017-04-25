@@ -1,5 +1,28 @@
+#
+# LSST Data Management System
+#
+# This product includes software developed by the
+# LSST Project (http://www.lsst.org/).
+#
 # See COPYRIGHT file at the top of the source tree.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
+# see <https://www.lsstcorp.org/LegalNotices/>.
+#
 from __future__ import print_function, division
+
+__all__ = ['ThresholdSpecification']
 
 import operator
 
@@ -10,9 +33,6 @@ from ..jsonmixin import JsonSerializationMixin
 from ..datum import Datum
 from ..naming import Name
 from .base import Specification
-
-
-__all__ = ['ThresholdSpecification']
 
 
 class ThresholdSpecification(Specification):
@@ -88,28 +108,6 @@ class ThresholdSpecification(Specification):
         a `Datum`.
         """
         return Datum(self.threshold, label=str(self.name))
-
-    @classmethod
-    def from_json(cls, json_data):
-        """Construct a `ThresholdSpecification` from a JSON document.
-
-        Parameters
-        ----------
-        json_data : `dict`
-            ThresholdSpecification JSON object.
-
-        Returns
-        -------
-        specification : `ThresholdSpecification`
-            ThresholdSpecification from JSON.
-        """
-        q = Datum._rebuild_quantity(
-            json_data['threshold']['value'],
-            json_data['threshold']['unit'])
-        s = cls(name=json_data['name'],
-                threshold=q,
-                operator_str=json_data['threshold']['operator'])
-        return s
 
     @classmethod
     def deserialize(cls, name=None, threshold=None,

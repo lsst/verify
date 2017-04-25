@@ -1,15 +1,37 @@
+#
+# LSST Data Management System
+#
+# This product includes software developed by the
+# LSST Project (http://www.lsst.org/).
+#
 # See COPYRIGHT file at the top of the source tree.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
+# see <https://www.lsstcorp.org/LegalNotices/>.
+#
 from __future__ import print_function, division
+
+__all__ = ['Datum']
+
 from builtins import object
 from past.builtins import basestring
 
 import numpy as np
+from astropy.tests.helper import quantity_allclose
 import astropy.units as u
 
 from .jsonmixin import JsonSerializationMixin
-
-
-__all__ = ['Datum', 'QuantityAttributeMixin']
 
 
 class QuantityAttributeMixin(object):
@@ -140,23 +162,44 @@ class Datum(QuantityAttributeMixin, JsonSerializationMixin):
                              'str, bool, int or None.')
 
     @classmethod
-    def from_json(cls, json_data):
-        """Construct a Datum from a JSON dataset.
+    def deserialize(cls, label=None, description=None, value=None, unit=None):
+        """Deserialize fields from a Datum JSON object into a `Datum` instance.
 
         Parameters
         ----------
-        json_data : `dict`
-            Datum JSON object.
+        value : `float`, `int`, `bool`, `str`, or `list`
+            Values, which may be scalars or lists of scalars.
+        unit : `str` or `None`
+            An `astropy.units`-compatible string with units of ``value``,
+            or `None` if the value does not have physical units.
+        label : `str`, optional
+            Label suitable for plot axes (without units).
+        description : `str`, optional
+            Extended description of the `Datum`.
 
         Returns
         -------
         datum : `Datum`
-            Datum from JSON.
+            Datum instantiated from provided JSON fields.
+
+        Examples
+        --------
+        With this class method, a `Datum` may be round-tripped from its
+        JSON serialized form.
+
+        >>> datum = Datum(50. * u.mmag, label='sigma',
+        ...               description="Photometric uncertainty.")
+        >>> print(datum)
+        sigma = 50.0 mmag
+        Photometric uncertainty.
+        >>> json_data = datum.json
+        >>> new_datum = datum.deserialize(**json_data)
+        >>> print(new_datum)
+        sigma = 50.0 mmag
+        Photometric uncertainty.
         """
-        q = Datum._rebuild_quantity(json_data['value'], json_data['unit'])
-        d = cls(quantity=q, label=json_data['label'],
-                description=json_data['description'])
-        return d
+        return cls(quantity=value, unit=unit, label=label,
+                   description=description)
 
     @property
     def json(self):
@@ -195,3 +238,31 @@ class Datum(QuantityAttributeMixin, JsonSerializationMixin):
     def description(self, value):
         assert isinstance(value, basestring) or value is None
         self._description = value
+
+    def __eq__(self, other):
+        if self.label != other.label:
+            return False
+
+        if self.description != other.description:
+            return False
+
+        if isinstance(self.quantity, u.Quantity):
+            if not quantity_allclose(self.quantity, other.quantity):
+                return False
+        else:
+            if self.quantity != other.quantity:
+                return False
+
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        template = ''
+        if self.label is not None:
+            template += '{self.label} = '
+        template += '{self.quantity}'
+        if self.description is not None:
+            template += '\n{self.description}'
+        return template.format(self=self)

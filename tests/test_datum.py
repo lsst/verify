@@ -1,4 +1,25 @@
+#
+# LSST Data Management System
+#
+# This product includes software developed by the
+# LSST Project (http://www.lsst.org/).
+#
 # See COPYRIGHT file at the top of the source tree.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
+# see <https://www.lsstcorp.org/LegalNotices/>.
+#
 from __future__ import print_function
 
 import unittest
@@ -10,12 +31,6 @@ from lsst.verify import Datum
 
 class DatumTestCase(unittest.TestCase):
     """Test Datum functionality"""
-
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
 
     def test_properties(self):
         """Validate basic setters and getters."""
@@ -80,7 +95,7 @@ class DatumTestCase(unittest.TestCase):
         self.assertEqual(d.unit, u.dimensionless_unscaled)
 
         json_data = d.json
-        d2 = Datum.from_json(json_data)
+        d2 = Datum.deserialize(**json_data)
         self.assertEqual(d.quantity, d2.quantity)
         self.assertEqual(d.unit, d2.unit)
         self.assertEqual(d.label, d2.label)
@@ -97,7 +112,7 @@ class DatumTestCase(unittest.TestCase):
         self.assertEqual(d.description, 'Test description.')
 
         json_data = d.json
-        d2 = Datum.from_json(json_data)
+        d2 = Datum.deserialize(**json_data)
         self.assertEqual(d.quantity, d2.quantity)
         self.assertEqual(d.unit, d2.unit)
         self.assertEqual(d.label, d2.label)
@@ -114,7 +129,7 @@ class DatumTestCase(unittest.TestCase):
         self.assertEqual(d.description, 'Test description.')
 
         json_data = d.json
-        d2 = Datum.from_json(json_data)
+        d2 = Datum.deserialize(**json_data)
         self.assertEqual(d.quantity, d2.quantity)
         self.assertEqual(d.unit, d2.unit)
         self.assertEqual(d.label, d2.label)
@@ -131,7 +146,7 @@ class DatumTestCase(unittest.TestCase):
         self.assertEqual(d.description, 'Test description.')
 
         json_data = d.json
-        d2 = Datum.from_json(json_data)
+        d2 = Datum.deserialize(**json_data)
         self.assertEqual(d.quantity, d2.quantity)
         self.assertEqual(d.unit, d2.unit)
         self.assertEqual(d.label, d2.label)
@@ -148,14 +163,14 @@ class DatumTestCase(unittest.TestCase):
         self.assertEqual(d.description, 'Test description.')
 
         json_data = d.json
-        d2 = Datum.from_json(json_data)
+        d2 = Datum.deserialize(**json_data)
         self.assertEqual(d.quantity, d2.quantity)
         self.assertEqual(d.unit, d2.unit)
         self.assertEqual(d.label, d2.label)
         self.assertEqual(d.description, d2.description)
 
     def test_json_output(self):
-        """Verify content from json property."""
+        """Verify content from json property and deserialization."""
         d = Datum(5., 'mmag', label='millimag', description='Hello world')
         dj = d.json
 
@@ -163,6 +178,9 @@ class DatumTestCase(unittest.TestCase):
         self.assertEqual(d.unit_str, dj['unit'])
         self.assertEqual(d.label, dj['label'])
         self.assertEqual(d.description, dj['description'])
+
+        new_datum = Datum.deserialize(**dj)
+        self.assertEqual(d, new_datum)
 
 
 if __name__ == "__main__":

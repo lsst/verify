@@ -1,5 +1,28 @@
+#
+# LSST Data Management System
+#
+# This product includes software developed by the
+# LSST Project (http://www.lsst.org/).
+#
 # See COPYRIGHT file at the top of the source tree.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
+# see <https://www.lsstcorp.org/LegalNotices/>.
+#
 from __future__ import print_function, division
+
+__all__ = ['SpecificationSet']
 
 from past.builtins import basestring
 
@@ -10,13 +33,12 @@ import re
 import lsst.pex.exceptions
 from lsst.utils import getPackageDir
 
+from .errors import SpecificationResolutionError
+from .jsonmixin import JsonSerializationMixin
+from .naming import Name
 from .spec.base import Specification
 from .spec.threshold import ThresholdSpecification
-from .naming import Name
-from .errors import SpecificationResolutionError
 from .yamlutils import merge_documents, load_all_ordered_yaml
-
-__all__ = ['SpecificationSet']
 
 
 # Pattern for SpecificationPartial names
@@ -25,7 +47,7 @@ PARTIAL_PATTERN = re.compile('^(?:(?P<package>\S+):)'
                              '?(?P<path>\S+)?#(?P<name>\S+)$')
 
 
-class SpecificationSet(object):
+class SpecificationSet(JsonSerializationMixin):
     """A collection of Specifications.
 
     Parameters
@@ -62,7 +84,39 @@ class SpecificationSet(object):
                 self._partials[partial.name] = partial
 
     @classmethod
-    def load_metrics_package(cls, package_name_or_path='verify_metrics'):
+    def deserialize(cls, specifications=None):
+        """Deserialize a specification set from a JSON serialization.
+
+        Parameters
+        ----------
+        specifications : `list`, optional
+            List of specification JSON objects.
+
+        Returns
+        -------
+        spec_set : `SpecificationSet`
+            SpecificationSet instance.
+        """
+        instance = cls()
+
+        if specifications is not None:
+            for spec_doc in specifications:
+                # FIXME DM-8477 Need a registry to support multiple types
+                # check type
+                if 'threshold' in spec_doc:
+                    spec = ThresholdSpecification.deserialize(**spec_doc)
+                else:
+                    message = ("We only support threshold-type "
+                               "specifications\n"
+                               "{0!r}".format(spec_doc))
+                    raise NotImplementedError(message)
+                instance.insert(spec)
+
+        return instance
+
+    @classmethod
+    def load_metrics_package(cls, package_name_or_path='verify_metrics',
+                             subset=None):
         """Create a SpecificationSet from an Verification Framework metrics
         package.
 
@@ -73,6 +127,12 @@ class SpecificationSet(object):
             definition YAML files **or** the file path to a metrics package.
             ``verify_metrics`` is the default package, and is where metrics
             and specifications are defined for most packages.
+        subset : `str`, optional
+            If set, only specifications defined for this package are loaded.
+            For example, if ``subset='validate_drp'``, only ``validate_drp``
+            specifications are included in the SpecificationSet. This argument
+            is equivalent to the `SpecificationSet.subset` method. Default
+            is `None`.
 
         Returns
         -------
@@ -95,6 +155,9 @@ class SpecificationSet(object):
 
         To make a `SpecificationSet` from a single package's specifications,
         use `load_single_package` instead.
+        To make a `SpecificationSet` from a single package's YAML definition
+        directory that **is not** contained in a metrics package, use
+        `load_single_package` instead.
         """
         try:
             # Try an EUPS package name
@@ -112,8 +175,14 @@ class SpecificationSet(object):
 
         instance = cls()
 
-        # Load specifications for each 'package' within specs/
-        for name in os.listdir(specs_dirname):
+        if subset is not None:
+            # Load specifications only for the package given by `subset`
+            package_names = [subset]
+        else:
+            # Load specifications for each 'package' within specs/
+            package_names = os.listdir(specs_dirname)
+
+        for name in package_names:
             package_specs_dirname = os.path.join(specs_dirname, name)
             if not os.path.isdir(package_specs_dirname):
                 continue
@@ -392,10 +461,10 @@ class SpecificationSet(object):
         """Normalize a partial's identifier.
 
         >>> SpecificationSet._normalize_partial_name(
-                '#base',
-                current_yaml_id='custom/bases',
-                package='validate_drp')
-        'validate.drp:custom/bases#base'
+        ...     '#base',
+        ...     current_yaml_id='custom/bases',
+        ...     package='validate_drp')
+        'validate_drp:custom/bases#base'
         """
         if '#' not in name:
             # Name is probably coming from a partial's own `id` field
@@ -427,11 +496,18 @@ class SpecificationSet(object):
         name.
 
         >>> SpecificationSet._normalize_spec_name('PA1.design',
-                                                  package='validate_drp')
+        ...                                       package='validate_drp')
         'validate_drp.PA1.design'
         """
         name = Name(package=package, metric=metric, spec=name)
         return name.fqn
+
+    @property
+    def json(self):
+        doc = JsonSerializationMixin._jsonify_list(
+            [spec for name, spec in self.items()]
+        )
+        return doc
 
     def __str__(self):
         count = len(self)
@@ -529,6 +605,36 @@ class SpecificationSet(object):
     def __iter__(self):
         for key in self._specs:
             yield key
+
+    def __eq__(self, other):
+        if len(self) != len(other):
+            return False
+
+        for name, spec in self.items():
+            try:
+                if spec != other[name]:
+                    return False
+            except KeyError:
+                return False
+
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def items(self):
+        """Iterate over name, specification pairs.
+
+        Yields
+        ------
+        item : `tuple`
+            Tuple containing:
+
+            - `Name` of the specification.
+            - `Specification`-type object.
+        """
+        for name, spec in self._specs.items():
+            yield name, spec
 
     def insert(self, spec):
         """Insert a Specification into the set.
