@@ -76,8 +76,12 @@ class MeasurementSet(JsonSerializationMixin):
 
         for meas_doc in measurements:
             if metric_set is not None:
-                metric = metric_set[meas_doc['metric']]
-                meas_doc['metric'] = metric
+                try:
+                    metric = metric_set[meas_doc['metric']]
+                    meas_doc['metric'] = metric
+                except KeyError:
+                    # metric not in the MetricSet, but it's optional
+                    pass
             meas = Measurement.deserialize(blobs=blob_set, **meas_doc)
             instance.insert(meas)
         return instance
