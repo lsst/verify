@@ -39,6 +39,7 @@ from .naming import Name
 from .spec.base import Specification
 from .spec.threshold import ThresholdSpecification
 from .yamlutils import merge_documents, load_all_ordered_yaml
+from .report import Report
 
 
 # Pattern for SpecificationPartial names
@@ -840,6 +841,29 @@ class SpecificationSet(JsonSerializationMixin):
                                            partials=all_partials)
 
         return spec_subset
+
+    def report(self, measurements, name=None, meta=None):
+        """Create a report that details specification tests against the given
+        measurements.
+
+        Parameters
+        ----------
+        measurements : `lsst.verify.MeasurementSet`
+            Measurements to test.
+        name : `str` or `lsst.verify.Name`, optional
+            Package or metric name to limit the report to.
+        meta : `lsst.verifify.Metadata`, optional
+            Job metadata to ensure the specifications are relevant to the
+            measurements. Typically accessed as `Job.meta`.
+
+        Returns
+        -------
+        report : `lsst.verify.Report`
+            Report instance. In a Jupyter notebook, you can view the report
+            by calling `Report.show`.
+        """
+        spec_subset = self.subset(name=name, meta=meta)
+        return Report(measurements, spec_subset)
 
 
 class SpecificationPartial(object):
