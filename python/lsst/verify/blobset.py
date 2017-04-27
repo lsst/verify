@@ -133,6 +133,16 @@ class BlobSet(JsonSerializationMixin):
             count_str = '{count:d} Blobs'.format(count=count)
         return '<BlobSet: {0}>'.format(count_str)
 
+    def keys(self):
+        """Get a sequence of blob identifiers, which are keys to the BlobSet.
+
+        Returns
+        -------
+        keys : sequence
+            Sequence of `Blob` identifiers.
+        """
+        return self._items.keys()
+
     def items(self):
         """Iterate over (identifier, `Blob`) pairs in the set.
 

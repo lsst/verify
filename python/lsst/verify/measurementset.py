@@ -168,6 +168,16 @@ class MeasurementSet(JsonSerializationMixin):
             count_str = '{count:d} Measurements'.format(count=count)
         return '<MeasurementSet: {0}>'.format(count_str)
 
+    def keys(self):
+        """Get a sequence of metric names contained in the measurement set.
+
+        Returns
+        -------
+        keys : sequence of `Name`
+            Sequence of names of metrics for measurements in the set.
+        """
+        return self._items.keys()
+
     def items(self):
         """Iterete over (`Name`, `Measurement`) pairs in the set.
 

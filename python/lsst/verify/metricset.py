@@ -303,6 +303,9 @@ class MetricSet(JsonSerializationMixin):
         """
         self[metric.name] = metric
 
+    def keys(self):
+        return self._metrics.keys()
+
     def items(self):
         """Iterate over ``(name, metric)`` pairs in the set.
 

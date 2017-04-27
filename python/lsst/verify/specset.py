@@ -644,6 +644,16 @@ class SpecificationSet(JsonSerializationMixin):
         self.update(other)
         return self
 
+    def keys(self):
+        """Get a sequence of specification names, which are keys to the set.
+
+        Returns
+        -------
+        keys : sequence of `Name`
+            Keys to the specification set.
+        """
+        return self._specs.keys()
+
     def items(self):
         """Iterate over name, specification pairs.
 
