@@ -102,6 +102,23 @@ class ThresholdSpecification(Specification):
             self.threshold,
             self.operator_str)
 
+    def __str__(self):
+        return '{self.operator_str} {self.threshold}'.format(self=self)
+
+    def _repr_latex_(self):
+        """Get a LaTeX-formatted string representation of the threshold
+        specification test.
+
+        Returns
+        -------
+        rep : `str`
+            String representation.
+        """
+        template = ('$x$ {self.operator_str} '
+                    '{self.threshold.value} '
+                    '{self.threshold.unit:latex_inline}')
+        return template.format(self=self)
+
     @property
     def datum(self):
         """Representation of this `ThresholdSpecification`\ 's threshold as
