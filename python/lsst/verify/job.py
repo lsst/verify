@@ -28,6 +28,7 @@ import json
 import os
 
 from .blobset import BlobSet
+from .jobmetadata import Metadata
 from .jsonmixin import JsonSerializationMixin
 from .measurementset import MeasurementSet
 from .metricset import MetricSet
@@ -35,7 +36,7 @@ from .specset import SpecificationSet
 
 
 class Job(JsonSerializationMixin):
-    """Container for measurements, blobs, and provenance associated with a
+    """Container for measurements, blobs, and metadata associated with a
     pipeline run.
 
     Parameters
@@ -46,9 +47,12 @@ class Job(JsonSerializationMixin):
         Optional list of metrics, or a `MetricSet`.
     specs : `SpecificationSet` or `list` of `Specification`\ s, optional
         Optional specification information.
+    meta : `dict`, optional
+        Optional dictionary of metadata key-value entries.
     """
 
-    def __init__(self, measurements=None, metrics=None, specs=None):
+    def __init__(self, measurements=None, metrics=None, specs=None,
+                 meta=None):
         if isinstance(measurements, MeasurementSet):
             self._meas_set = measurements
         else:
@@ -64,9 +68,12 @@ class Job(JsonSerializationMixin):
         else:
             self._spec_set = SpecificationSet(specs)
 
+        # Create metadata last so it has access to the measurement set
+        self._meta = Metadata(self._meas_set, data=meta)
+
     @classmethod
     def load_metrics_package(cls, package_name_or_path='verify_metrics',
-                             subset=None, measurements=None):
+                             subset=None, measurements=None, meta=None):
         """Create a Job with metrics and specifications pre-loaded from a
         Verification Framework metrics package.
 
@@ -84,6 +91,9 @@ class Job(JsonSerializationMixin):
             equivalent to the `MetricSet.subset` method. Default is `None`.
         measurements : `MeasurementSet` or `list` of `Measurement`\ s, optional
             Measurements to report in the Job.
+        meta : `dict`, optional
+            Optional dictionary of metadata key-value entries to include
+            in the Job.
 
         Returns
         -------
@@ -96,12 +106,13 @@ class Job(JsonSerializationMixin):
         specs = SpecificationSet.load_metrics_package(
             package_name_or_path=package_name_or_path,
             subset=subset)
-        instance = cls(measurements=measurements, metrics=metrics, specs=specs)
+        instance = cls(measurements=measurements, metrics=metrics, specs=specs,
+                       meta=meta)
         return instance
 
     @classmethod
     def deserialize(cls, measurements=None, blobs=None,
-                    metrics=None, specs=None):
+                    metrics=None, specs=None, meta=None):
         """Deserialize a Verification Framework Job from a JSON serialization.
 
         Parameters
@@ -114,6 +125,8 @@ class Job(JsonSerializationMixin):
             List of serialized metric objects.
         specs : `list`, optional
             List of serialized specification objects.
+        meta : `dict`, optional
+            Dictionary of key-value metadata entires.
 
         Returns
         -------
@@ -141,7 +154,8 @@ class Job(JsonSerializationMixin):
 
         instance = cls(measurements=meas_set,
                        metrics=metric_set,
-                       specs=spec_set)
+                       specs=spec_set,
+                       meta=meta)
         return instance
 
     @property
@@ -165,6 +179,11 @@ class Job(JsonSerializationMixin):
         return self._spec_set
 
     @property
+    def meta(self):
+        """Metadata mapping (`Metadata`)."""
+        return self._meta
+
+    @property
     def json(self):
         """`Job` data as a JSON-serialiable `dict`."""
         # Gather blobs from all measurements
@@ -180,7 +199,8 @@ class Job(JsonSerializationMixin):
             'measurements': self._meas_set,
             'blobs': blob_set,
             'metrics': self._metric_set,
-            'specs': self._spec_set
+            'specs': self._spec_set,
+            'meta': self._meta
         })
         return doc
 
@@ -192,6 +212,9 @@ class Job(JsonSerializationMixin):
             return False
 
         if self.specs != other.specs:
+            return False
+
+        if self.meta != other.meta:
             return False
 
         return True

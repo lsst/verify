@@ -54,7 +54,8 @@ class MeasurementTestCase(TestCase):
 
     def test_PA1_measurement_with_metric(self):
         """Standard metric with a given Metric instance."""
-        measurement = Measurement(self.pa1, 0.002 * u.mag, blobs=[self.blob1])
+        measurement = Measurement(self.pa1, 0.002 * u.mag, blobs=[self.blob1],
+                                  notes={'filter_name': 'r'})
         measurement.link_blob(self.blob2)
 
         measurement2 = Measurement(self.pa1, 0.002 * u.mag)
@@ -75,6 +76,32 @@ class MeasurementTestCase(TestCase):
         self.assertEqual(datum.label, str(self.pa1.name))
         self.assertEqual(datum.description, str(self.pa1.description))
 
+        # Test notes (MeasurementNotes)
+        self.assertEqual(measurement.notes['filter_name'], 'r')
+        # Add a note
+        measurement.notes['camera'] = 'MegaCam'
+        self.assertEqual(measurement.notes['camera'], 'MegaCam')
+        self.assertEqual(len(measurement.notes), 2)
+        self.assertIn('camera', measurement.notes)
+        self.assertIn('filter_name', measurement.notes)
+        # Prefixed keys
+        self.assertIn('validate_drp.PA1.camera', measurement.notes)
+        # test iteration
+        iterkeys = set([key for key in measurement.notes])
+        self.assertEqual(len(iterkeys), 2)
+        self.assertEqual(set(iterkeys), set(measurement.notes.keys()))
+        itemkeys = set()
+        for key, value in measurement.notes.items():
+            self.assertEqual(measurement.notes[key], value)
+            itemkeys.add(key)
+        self.assertEqual(itemkeys, iterkeys)
+        # Test update
+        measurement.notes.update({'photometric': True, 'facility': 'CFHT'})
+        self.assertIn('photometric', measurement.notes)
+        # Test delete
+        del measurement.notes['photometric']
+        self.assertNotIn('photometric', measurement.notes)
+
         # Test serialization
         json_doc = measurement.json
         # Units should be cast to those of the metric
@@ -91,6 +118,9 @@ class MeasurementTestCase(TestCase):
         new_measurement = Measurement.deserialize(
             blobs=BlobSet([self.blob1, self.blob2]),
             **json_doc)
+        # shim in original notes; normally these are deserialized via the
+        # Job object.
+        new_measurement.notes.update(measurement.notes)
         self.assertEqual(measurement, new_measurement)
         self.assertIn('Blob1', measurement.blobs)
         self.assertIn('Blob2', measurement.blobs)

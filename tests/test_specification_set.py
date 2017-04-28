@@ -338,11 +338,11 @@ class TestSpecificationSetLoadMetricsPackage(unittest.TestCase):
 
     def test_contains(self):
         self.assertTrue('validate_drp.PA1.design_gri' in self.spec_set)
-        self.assertTrue('validate_drp:cfht_gri#base' in self.spec_set)
+        self.assertTrue('validate_drp:cfht_gri/base#base' in self.spec_set)
 
 
-class TestSpecificationSetSubset(unittest.TestCase):
-    """Test creating subsets from a SpecificationSet."""
+class TestSpecificationSetNameSubset(unittest.TestCase):
+    """Test creating name-based subsets from a SpecificationSet."""
 
     def setUp(self):
         # defaults to validate_metrics
@@ -350,7 +350,7 @@ class TestSpecificationSetSubset(unittest.TestCase):
 
     def test_validate_drp_subset(self):
         package = Name('validate_drp')
-        subset = self.spec_set.subset('validate_drp')
+        subset = self.spec_set.subset(name='validate_drp')
 
         self.assertTrue(isinstance(subset, type(self.spec_set)))
         self.assertTrue(len(subset) > 0)
@@ -360,13 +360,66 @@ class TestSpecificationSetSubset(unittest.TestCase):
 
     def test_PA1_subset(self):
         metric = Name('validate_drp.PA1')
-        subset = self.spec_set.subset('validate_drp.PA1')
+        subset = self.spec_set.subset(name='validate_drp.PA1')
 
         self.assertTrue(isinstance(subset, type(self.spec_set)))
         self.assertTrue(len(subset) > 0)
 
         for spec_name, spec in subset._specs.items():
             self.assertTrue(spec_name in metric)
+
+
+class TestSpecificationSetMetadataSubset(unittest.TestCase):
+    """Test creating metadata-based or name and metadata-based subsets
+    from a SpecificationSet.
+    """
+
+    def setUp(self):
+        s1 = ThresholdSpecification(
+            Name('validate_drp.AM1.design_r'),
+            5. * u.marcsec, '<',
+            metadata_query={'filter_name': 'r'})
+        s2 = ThresholdSpecification(
+            Name('validate_drp.AM1.design_i'),
+            5. * u.marcsec, '<',
+            metadata_query={'filter_name': 'i'})
+        s3 = ThresholdSpecification(
+            Name('validate_drp.AM1.design_HSC_r'),
+            5. * u.marcsec, '<',
+            metadata_query={'filter_name': 'r', 'camera': 'HSC'})
+        s4 = ThresholdSpecification(
+            Name('validate_drp.PA1.design_r'),
+            10 * u.mmag, '<',
+            metadata_query={'filter_name': 'r'})
+        self.spec_set = SpecificationSet([s1, s2, s3, s4])
+
+    def test_metadata_subset(self):
+        """Subset by metadata only."""
+        subset = self.spec_set.subset(meta={'filter_name': 'r'})
+
+        self.assertIn('validate_drp.AM1.design_r', subset)
+        self.assertNotIn('validate_drp.AM1.design_i', subset)
+        self.assertNotIn('validate_drp.AM1.design_HSC_r', subset)
+        self.assertNotIn('validate_drp.PA1.design_HSC_r', subset)
+
+    def test_name_and_metadata_subset(self):
+        """Subset by name and metadata."""
+        subset = self.spec_set.subset(name='validate_drp.AM1',
+                                      meta={'filter_name': 'r'})
+
+        self.assertIn('validate_drp.AM1.design_r', subset)
+        self.assertNotIn('validate_drp.AM1.design_i', subset)
+        self.assertNotIn('validate_drp.AM1.design_HSC_r', subset)
+        self.assertNotIn('validate_drp.PA1.design_HSC_r', subset)
+
+    def test_name_subset(self):
+        """Subset by name."""
+        subset = self.spec_set.subset(name='validate_drp.AM1')
+
+        self.assertIn('validate_drp.AM1.design_r', subset)
+        self.assertIn('validate_drp.AM1.design_i', subset)
+        self.assertIn('validate_drp.AM1.design_HSC_r', subset)
+        self.assertNotIn('validate_drp.PA1.design_HSC_r', subset)
 
 
 if __name__ == "__main__":
