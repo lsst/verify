@@ -329,3 +329,57 @@ class Job(JsonSerializationMixin):
         squash.post(api_url, 'jobs', json_doc=job_json,
                     api_user=api_user, api_password=api_password,
                     **kwargs)
+
+    def report(self, name=None, spec_tags=None, metric_tags=None):
+        """Create a verification report that lists the pass/fail status of
+        measurements against specifications in this job.
+
+        In a Jupyter notebook, this report can be shown as an inline table.
+
+        Parameters
+        ----------
+        name : `str` or `lsst.verify.Name`, optional
+            A package or metric name to subset specifications by. When set,
+            only measurement and specification combinations belonging to that
+            package or metric are included in the report.
+        spec_tags : sequence of `str`, optional
+            A set of specification tag strings. when given, only
+            specifications that have all the given tags are included in the
+            report. For example, ``spec_tags=['LPM-17', 'minimum']``.
+        metric_tags : sequence of `str`, optional
+            A set of metric tag strings. When given, only specifications
+            belonging to metrics that posess **all** given tags are included
+            in the report. For example,
+            ``metric_tags=['LPM-17', 'photometry']`` selects sepifications
+            that have both the ``'LPM-17'`` and ``'photometry'`` tags.
+
+        Returns
+        -------
+        report : `lsst.verify.Report`
+            Report instance. In a Jupyter notebook, you can view the report
+            by calling `Report.show`.
+
+        See also
+        --------
+        `lsst.verify.SpecificationSet.report`
+
+        Notes
+        -----
+        This method uses the `lsst.verify.SpecificationSet.report` API to
+        create the `lsst.verify.Report`, automatically inserting the `Job`\ 's
+        measurements and metadata for filtering specifiation tests.
+
+        In a Jupyter notebook environment, use the `lsst.verify.Report.show`
+        method to view an interactive HTML table.
+
+        .. code-block:: python
+
+           job = lsst.verify.Job()
+           # ...
+           report = job.report()
+           report.show()
+        """
+        report = self.specs.report(self.measurements, meta=self.meta,
+                                   name=name, metric_tags=metric_tags,
+                                   spec_tags=spec_tags, metrics=self.metrics)
+        return report

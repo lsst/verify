@@ -51,6 +51,11 @@ class ThresholdSpecification(Specification):
         so that ``measurement {{ operator }} threshold quantity`` is the
         specification test. Can be one of: ``'<'``, ``'<='``, ``'>'``,
         ``'>='``, ``'=='``, or ``'!='``.
+    metadata_query : `dict`, optional
+        Dictionary of key-value term's that the measurement's metadata must
+        have for this specification to apply.
+    tags : sequence of `str`, optional
+        Sequence of tags that group this specification with others.
     kwargs : `dict`
         Keyword arguments passed directly to the
         `lsst.validate.base.Specification` constructor.
