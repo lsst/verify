@@ -198,14 +198,14 @@ class MetricSetSubsetTestCase(unittest.TestCase):
         self.assertIn(self.m3.name, subset)
 
     def test_subset_testing_tag(self):
-        subset = self.metric_set.subset(tag='testing')
+        subset = self.metric_set.subset(tags=['testing'])
         self.assertEqual(len(subset), 2)
         self.assertIn(self.m1.name, subset)
         self.assertNotIn(self.m2.name, subset)
         self.assertIn(self.m3.name, subset)
 
     def test_subset_A_testing_tag(self):
-        subset = self.metric_set.subset(package='pkgA', tag='testing')
+        subset = self.metric_set.subset(package='pkgA', tags=['testing'])
         self.assertEqual(len(subset), 1)
         self.assertIn(self.m1.name, subset)
         self.assertNotIn(self.m2.name, subset)
@@ -216,9 +216,9 @@ class MetricSetSerializationTestCase(unittest.TestCase):
     """Test JSON serialization and deserialization for MetricSets."""
 
     def setUp(self):
-        self.m1 = Metric('pkgA.m1', 'In pkgA', '', tags='testing')
-        self.m2 = Metric('pkgA.m2', 'In pkgA', '', tags='other')
-        self.m3 = Metric('pkgB.m3', 'In pkgB', '', tags='testing')
+        self.m1 = Metric('pkgA.m1', 'In pkgA', '', tags=['testing'])
+        self.m2 = Metric('pkgA.m2', 'In pkgA', '', tags=['other'])
+        self.m3 = Metric('pkgB.m3', 'In pkgB', '', tags=['testing'])
         self.metric_set = MetricSet([self.m1, self.m2, self.m3])
 
     def test_serialization(self):

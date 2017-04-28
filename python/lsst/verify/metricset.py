@@ -320,7 +320,7 @@ class MetricSet(JsonSerializationMixin):
         for item in self._metrics.items():
             yield item
 
-    def subset(self, package=None, tag=None):
+    def subset(self, package=None, tags=None):
         """Create a new `MetricSet` with metrics belonging to a single
         package and/or tag.
 
@@ -331,8 +331,9 @@ class MetricSet(JsonSerializationMixin):
             is ``'pkg_a'``, then metric ``'pkg_a.metric_1'`` would be
             **included** in the subset, while ``'pkg_b.metric_2'`` would be
             **excluded**.
-        tag : `str`, optional
-            Tag to select metrics by.
+        tags : sequence of `str`, optional
+            Tags to select metrics by. These tags must be a subset (``<=``)
+            of the `Metric.tags` for the metric to be selected.
 
         Returns
         -------
@@ -350,18 +351,21 @@ class MetricSet(JsonSerializationMixin):
         if package is not None and not isinstance(package, Name):
             package = Name(package=package)
 
-        if package is not None and tag is None:
+        if tags is not None:
+            tags = set(tags)
+
+        if package is not None and tags is None:
             metrics = [metric for metric_name, metric in self._metrics.items()
                        if metric_name in package]
 
-        elif package is not None and tag is not None:
+        elif package is not None and tags is not None:
             metrics = [metric for metric_name, metric in self._metrics.items()
                        if metric_name in package
-                       if tag in metric.tags]
+                       if tags <= metric.tags]
 
-        elif package is None and tag is not None:
+        elif package is None and tags is not None:
             metrics = [metric for metric_name, metric in self._metrics.items()
-                       if tag in metric.tags]
+                       if tags <= metric.tags]
 
         else:
             metrics = []
