@@ -33,6 +33,7 @@ from .jsonmixin import JsonSerializationMixin
 from .measurementset import MeasurementSet
 from .metricset import MetricSet
 from .specset import SpecificationSet
+from . import squash
 
 
 class Job(JsonSerializationMixin):
@@ -222,6 +223,69 @@ class Job(JsonSerializationMixin):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __iadd__(self, other):
+        """Merge another Job into this one.
+
+        Parameters
+        ----------
+        other : `Job`
+            Job instance to be merged into this one.
+
+        Returns
+        -------
+        self : `Job`
+            This `Job` instance.
+        """
+        self.measurements.update(other.measurements)
+        self.metrics.update(other.metrics)
+        self.specs.update(other.specs)
+        self.meta.update(other.meta)
+        return self
+
+    def reload_metrics_package(self, package_name_or_path='verify_metrics',
+                               subset=None):
+        """Load a metrics package and add metric and specification definitions
+        to the Job, as well as the collected measurements.
+
+        Parameters
+        ----------
+        package_name_or_path : `str`, optional
+            Name of an EUPS package that hosts metric and specification
+            definition YAML files **or** the file path to a metrics package.
+            ``'verify_metrics'`` is the default package, and is where metrics
+            and specifications are defined for most packages.
+        subset : `str`, optional
+            If set, only metrics and specification for this package are loaded.
+            For example, if ``subset='validate_drp'``, only ``validate_drp``
+            metrics are included in the `MetricSet`. This argument is
+            equivalent to the `MetricSet.subset` method. Default is `None`.
+
+        Notes
+        -----
+        This method is useful for loading metric and specification definitions
+        into a job that was created without this information. In addition
+        to being added to `Job.metrics`, metrics are also attached to
+        `Job.measurements` items. This ensures that measurement values are
+        normalized into the units of the metric definition when a Job is
+        serialized.
+
+        See also
+        --------
+        MeasurementSet.refresh_metrics
+        """
+        metrics = MetricSet.load_metrics_package(
+            package_name_or_path=package_name_or_path,
+            subset=subset)
+        specs = SpecificationSet.load_metrics_package(
+            package_name_or_path=package_name_or_path,
+            subset=subset)
+
+        self.metrics.update(metrics)
+        self.specs.update(specs)
+
+        # Insert mertics into measurements
+        self.measurements.refresh_metrics(metrics)
+
     def write(self, filename):
         """Write a JSON serialization to the filesystem.
 
@@ -241,3 +305,27 @@ class Job(JsonSerializationMixin):
 
         with open(filename, 'w') as f:
             json.dump(self.json, f)
+
+    def dispatch(self, api_user=None, api_password=None,
+                 api_url='https://squash.lsst.codes/dashboard/api/',
+                 **kwargs):
+        """POST the job to SQUASH, LSST Data Management's metric dashboard.
+
+        Parameters
+        ----------
+        api_url : `str`, optional
+            Root URL of the SQUASH API server.
+        api_user : `str`, optional
+            API username.
+        api_password : `str`, optional
+            API password.
+        **kwargs : optional
+            Additional keyword arguments passed to `lsst.verify.squash.post`.
+        """
+        full_json_doc = self.json
+        # subset JSON to just the 'job' fields; no metrics and specs
+        job_json = {k: full_json_doc[k]
+                    for k in ('measurements', 'blobs', 'meta')}
+        squash.post(api_url, 'jobs', json_doc=job_json,
+                    api_user=api_user, api_password=api_password,
+                    **kwargs)

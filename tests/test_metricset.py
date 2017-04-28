@@ -125,6 +125,38 @@ class MetricsPackageTestCase(unittest.TestCase):
         metric_set.insert(m1)
         self.assertEqual(m1, metric_set['validate_drp.test'])
 
+    def test_update(self):
+        """Test MetricSet.update."""
+        m1 = Metric('validate_drp.test',
+                    'test', '',
+                    reference_url='example.com',
+                    reference_doc='Doc', reference_page=1)
+        new_metric_set = MetricSet([m1])
+
+        self.metric_set.update(new_metric_set)
+
+        self.assertIn('validate_drp.test', self.metric_set)
+        self.assertIn('testing.PA1', self.metric_set)
+        self.assertIn('testing.PF1', self.metric_set)
+        self.assertIn('testing.PA2', self.metric_set)
+        self.assertIn('testing.AM1', self.metric_set)
+
+    def test_iadd(self):
+        """Test __iadd__ to merging metric sets."""
+        m1 = Metric('validate_drp.test',
+                    'test', '',
+                    reference_url='example.com',
+                    reference_doc='Doc', reference_page=1)
+        new_metric_set = MetricSet([m1])
+
+        self.metric_set += new_metric_set
+
+        self.assertIn('validate_drp.test', self.metric_set)
+        self.assertIn('testing.PA1', self.metric_set)
+        self.assertIn('testing.PF1', self.metric_set)
+        self.assertIn('testing.PA2', self.metric_set)
+        self.assertIn('testing.AM1', self.metric_set)
+
 
 class VerifyMetricsParsingTestCase(unittest.TestCase):
     """Test parsing metrics from verify_metrics (an EUPS package)."""

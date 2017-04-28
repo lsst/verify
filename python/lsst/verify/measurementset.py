@@ -136,6 +136,28 @@ class MeasurementSet(JsonSerializationMixin):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __iadd__(self, other):
+        """Merge another `MeasurementSet` into this one.
+
+        Parameters
+        ---------
+        other : `MeasurementSet`
+            Another `MeasurementSet`. Measurements in ``other`` that do
+            exist in this set are added to this one. Measurements in
+            ``other`` replace measurements of the same metric in this one.
+
+        Returns
+        -------
+        self : `MeasurementSet`
+            This `MeasurementSet`.
+
+        Notes
+        -----
+        Equivalent to `update`.
+        """
+        self.update(other)
+        return self
+
     def __str__(self):
         count = len(self)
         if count == 0:
@@ -163,6 +185,44 @@ class MeasurementSet(JsonSerializationMixin):
     def insert(self, measurement):
         """Insert a measurement into the set."""
         self[measurement.metric_name] = measurement
+
+    def update(self, other):
+        """Merge another `MeasurementSet` into this one.
+
+        Parameters
+        ---------
+        other : `MeasurementSet`
+            Another `MeasurementSet`. Measurements in ``other`` that do
+            exist in this set are added to this one. Measurements in
+            ``other`` replace measurements of the same metric in this one.
+        """
+        for _, measurement in other.items():
+            self.insert(measurement)
+
+    def refresh_metrics(self, metric_set):
+        """Refresh `Measurement.metric` attributes in measurements contained
+        by this set.
+
+        Parameters
+        ----------
+        metric_set : `MetricSet`
+            Metrics from this set are inserted into corresponding
+            `Measurement`\ s contained in this `MeasurementSet`.
+
+        Notes
+        -----
+        This method is especially useful for inserting `Metric` instances into
+        `Measurement`\ s that weren't originally created with `Metric`
+        instances. By including a `Metric` in a `Measurement`, the serialized
+        units of a measurment are normalized to the metric's definition.
+
+        See also
+        --------
+        Job.reload_metrics_package
+        """
+        for metric_name, measurement in self.items():
+            if metric_name in metric_set:
+                measurement.metric = metric_set[metric_name]
 
     @property
     def json(self):

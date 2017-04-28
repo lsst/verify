@@ -26,7 +26,8 @@ import astropy.units as u
 import unittest
 
 from lsst.verify import (Job, Metric, ThresholdSpecification, Measurement,
-                         MeasurementSet, MetricSet, SpecificationSet, Datum)
+                         MeasurementSet, MetricSet, SpecificationSet, Datum,
+                         Blob)
 
 
 class JobTestCase(unittest.TestCase):
@@ -54,6 +55,24 @@ class JobTestCase(unittest.TestCase):
             label='N stars',
             description='Number of stars included in RMS estimate')
         self.measurement_set = MeasurementSet([self.meas_photrms])
+
+        # Metrics for Job 2
+        self.metric_test_2 = Metric('test2.SourceCount', 'Source Count', '')
+        self.blob_test_2 = Blob(
+            'test2_blob',
+            sn=Datum(50 * u.dimensionless_unscaled, label='S/N'))
+        self.metric_set_2 = MetricSet([self.metric_test_2])
+
+        # Specifications for Job 2
+        self.spec_test_2 = ThresholdSpecification(
+            'test2.SourceCount.design', 100 * u.dimensionless_unscaled, '>=')
+        self.spec_set_2 = SpecificationSet([self.spec_test_2])
+
+        # Measurements for Job 2
+        self.meas_test_2_SourceCount = Measurement(
+            self.metric_test_2, 200 * u.dimensionless_unscaled)
+        self.meas_test_2_SourceCount.link_blob(self.blob_test_2)
+        self.measurement_set_2 = MeasurementSet([self.meas_test_2_SourceCount])
 
     def test_job(self):
         """Create a Job from object sets."""
@@ -141,6 +160,41 @@ class JobTestCase(unittest.TestCase):
         self.assertEqual(
             new_job.meta['job-level-key'],
             'yes')
+
+    def test_job_iadd(self):
+        job_1 = Job(metrics=self.metric_set, specs=self.spec_set,
+                    measurements=self.measurement_set)
+        job_2 = Job(metrics=self.metric_set_2, specs=self.spec_set_2,
+                    measurements=self.measurement_set_2)
+
+        job_1 += job_2
+
+        self.assertIn(self.metric_photrms.name, job_1.metrics)
+        self.assertIn(self.metric_test_2.name, job_1.metrics)
+        self.assertIn('test.PhotRms.design', job_1.specs)
+        self.assertIn('test2.SourceCount.design', job_1.specs)
+        self.assertIn('test.PhotRms', job_1.measurements)
+        self.assertIn('test2.SourceCount', job_1.measurements)
+        self.assertIn('test.PhotRms', job_1.measurements['test.PhotRms'].blobs)
+        self.assertIn(
+            'test2_blob',
+            job_1.measurements['test2.SourceCount'].blobs)
+
+    def test_metric_package_reload(self):
+        # Create a Job without Metric definitions
+        meas = Measurement('validate_drp.PA1', 15 * u.mmag)
+        measurement_set = MeasurementSet([meas])
+
+        job = Job(measurements=measurement_set)
+        job.reload_metrics_package('verify_metrics')
+
+        # Should now have metrics and specs
+        self.assertTrue(len(job.specs) > 0)
+        self.assertTrue(len(job.metrics) > 0)
+        self.assertIsInstance(
+            job.measurements['validate_drp.PA1'].metric,
+
+            Metric)
 
 
 if __name__ == "__main__":

@@ -99,6 +99,30 @@ class TestSpecificationSet(unittest.TestCase):
         for name in names:
             self.assertTrue(isinstance(name, Name))
 
+    def test_iadd(self):
+        """Test SpecifcationSet.__iadd__."""
+        set1 = SpecificationSet([self.spec_PA1_design, self.spec_PA1_stretch])
+        set2 = SpecificationSet([self.spec_PA1_design, self.spec_PA2_design])
+
+        set1 += set2
+
+        self.assertIn('validate_drp.PA1.design', set1)
+        self.assertIn('validate_drp.PA1.stretch', set1)
+        self.assertIn('validate_drp.PA2_design_gri.srd', set1)
+        self.assertEqual(len(set1), 3)
+
+    def test_update(self):
+        """Test SpecificationSet.update()."""
+        set1 = SpecificationSet([self.spec_PA1_design, self.spec_PA1_stretch])
+        set2 = SpecificationSet([self.spec_PA1_design, self.spec_PA2_design])
+
+        set1.update(set2)
+
+        self.assertIn('validate_drp.PA1.design', set1)
+        self.assertIn('validate_drp.PA1.stretch', set1)
+        self.assertIn('validate_drp.PA2_design_gri.srd', set1)
+        self.assertEqual(len(set1), 3)
+
     def test_resolve_document(self):
         """Test specification document inheritance resolution."""
         new_spec_doc = OrderedDict([

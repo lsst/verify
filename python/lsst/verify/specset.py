@@ -622,6 +622,28 @@ class SpecificationSet(JsonSerializationMixin):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __iadd__(self, other):
+        """Merge another `SpecificationSet` into this one.
+
+        Parameters
+        ---------
+        other : `SpecificationSet`
+            Another `SpecificationSet`. Specification in ``other`` that do
+            exist in this set are added to this one. Specification in ``other``
+            replace specifications of the same name in this one.
+
+        Returns
+        -------
+        self : `SpecificationSet`
+            This `SpecificationSet`.
+
+        Notes
+        -----
+        Equivalent to `update`.
+        """
+        self.update(other)
+        return self
+
     def items(self):
         """Iterate over name, specification pairs.
 
@@ -648,6 +670,19 @@ class SpecificationSet(JsonSerializationMixin):
         """
         key = spec.name
         self[key] = spec
+
+    def update(self, other):
+        """Merge another `SpecificationSet` into this one.
+
+        Parameters
+        ---------
+        other : `SpecificationSet`
+            Another `SpecificationSet`. Specification in ``other`` that do
+            exist in this set are added to this one. Specification in ``other``
+            replace specifications of the same name in this one.
+        """
+        for _, spec in other.items():
+            self.insert(spec)
 
     def resolve_document(self, spec_doc):
         """Resolve inherited properties in a specification document using
