@@ -66,6 +66,12 @@ class Specification(with_metaclass(abc.ABCMeta, JsonSerializationMixin)):
         """Specification name (`lsst.verify.Name`)."""
         return self._name
 
+    @property
+    def metric_name(self):
+        """Name of the metric this specification corresponds to
+        (`lsst.verify.Name`)."""
+        return Name(package=self.name.package, metric=self.name.metric)
+
     @abc.abstractproperty
     def type(self):
         """Specification type (`str`)."""
