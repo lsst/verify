@@ -112,6 +112,8 @@ class GetTestCase(unittest.TestCase):
     def tearDown(self):
         squash.reset_endpoint_cache()
 
+    @unittest.skipIf(responses is None,
+                     'Requires `responses` PyPI package')
     def test_get(self):
         with responses.RequestsMock() as reqmock:
             reqmock.add(responses.GET,
@@ -133,6 +135,8 @@ class GetTestCase(unittest.TestCase):
                 'application/json; version=' + squash._API_VERSION
             )
 
+    @unittest.skipIf(responses is None,
+                     'Requires `responses` PyPI package')
     def test_versioned_get(self):
         with responses.RequestsMock() as reqmock:
             reqmock.add(responses.GET,
@@ -148,6 +152,8 @@ class GetTestCase(unittest.TestCase):
                 'application/json; version=1.2'
             )
 
+    @unittest.skipIf(responses is None,
+                     'Requires `responses` PyPI package')
     def test_raises(self):
         with responses.RequestsMock() as reqmock:
             reqmock.add(responses.GET,
@@ -172,6 +178,8 @@ class PostTestCase(unittest.TestCase):
     def tearDown(self):
         squash.reset_endpoint_cache()
 
+    @unittest.skipIf(responses is None,
+                     'Requires `responses` PyPI package')
     def test_json_post(self):
         with responses.RequestsMock() as reqmock:
             reqmock.add(responses.POST,
@@ -199,6 +207,8 @@ class PostTestCase(unittest.TestCase):
                 {'key': 'value'}
             )
 
+    @unittest.skipIf(responses is None,
+                     'Requires `responses` PyPI package')
     def test_raises(self):
         with responses.RequestsMock() as reqmock:
             reqmock.add(responses.POST,
