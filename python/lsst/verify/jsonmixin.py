@@ -95,7 +95,7 @@ class JsonSerializationMixin(with_metaclass(abc.ABCMeta, object)):
             return v.json
         elif isinstance(v, dict):
             return JsonSerializationMixin.jsonify_dict(v)
-        elif isinstance(v, (list, tuple)):
+        elif isinstance(v, (list, tuple, set)):
             return JsonSerializationMixin._jsonify_list(v)
         else:
             return v
