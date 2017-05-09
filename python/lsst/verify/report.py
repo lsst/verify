@@ -59,12 +59,16 @@ class Report(object):
             - **Specification**
             - **Measurement**
             - **Test**
+            - **Metric Tags**
+            - **Spec. Tags**
         """
         # Columns for the table
         statuses = []
         spec_name_items = []
         measurements = []
         tests = []
+        metric_tags = []
+        spec_tags = []
 
         spec_names = list(self._spec_set.keys())
         spec_names.sort()
@@ -97,8 +101,23 @@ class Report(object):
 
             tests.append(spec._repr_latex_())
 
-        table = Table([statuses, spec_name_items, measurements, tests],
-                      names=['Status', 'Specification', 'Measurement', 'Test'])
+            tags = list(spec.tags)
+            tags.sort()
+            spec_tags.append(', '.join(tags))
+
+            metric = meas.metric
+            if metric is None:
+                # no metric is available, this is the default
+                metric_tags.append('N/A')
+            else:
+                tags = list(metric.tags)
+                tags.sort()
+                metric_tags.append(', '.join(tags))
+
+        table = Table([statuses, spec_name_items, measurements, tests,
+                       metric_tags, spec_tags],
+                      names=['Status', 'Specification', 'Measurement', 'Test',
+                             'Metric Tags', 'Spec. Tags'])
         return table
 
     def _repr_html_(self):
