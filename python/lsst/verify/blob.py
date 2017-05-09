@@ -156,3 +156,27 @@ class Blob(JsonSerializationMixin):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    def keys(self):
+        """Get keys of blob items.
+
+        Returns
+        -------
+        keys : sequence of `str`
+            Sequence of keys to items in the Blob.
+        """
+        return self._datums.keys()
+
+    def items(self):
+        """Get pairs of keys and values in the Blob.
+
+        Yields
+        ------
+        keyval : tuple
+            Tuple of:
+
+            - key (`str`)
+            - datum (`lsst.verify.Datum`)
+        """
+        for key, val in self._datums.items():
+            yield key, val
