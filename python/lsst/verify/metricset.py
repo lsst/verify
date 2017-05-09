@@ -27,6 +27,8 @@ __all__ = ['MetricSet']
 import os
 import glob
 
+from astropy.table import Table
+
 import lsst.pex.exceptions
 from lsst.utils import getPackageDir
 from .jsonmixin import JsonSerializationMixin
@@ -384,3 +386,36 @@ class MetricSet(JsonSerializationMixin):
         """
         for _, metric in other.items():
             self.insert(metric)
+
+    def _repr_html_(self):
+        """Make an HTML representation of metrics for Jupyter notebooks.
+        """
+        name_col = []
+        tags_col = []
+        units_col = []
+        description_col = []
+        reference_col = []
+
+        metric_names = list(self.keys())
+        metric_names.sort()
+
+        for metric_name in metric_names:
+            metric = self[metric_name]
+
+            name_col.append(str(metric_name))
+
+            tags = list(metric.tags)
+            tags.sort()
+            tags_col.append(', '.join(tags))
+
+            units_col.append("{0:latex}".format(metric.unit))
+
+            description_col.append(metric.description)
+
+            reference_col.append(metric.reference)
+
+        table = Table([name_col, description_col, units_col, reference_col,
+                       tags_col],
+                      names=['Name', 'Description', 'Units', 'Reference',
+                             'Tags'])
+        return table._repr_html_()
