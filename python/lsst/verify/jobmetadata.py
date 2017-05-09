@@ -34,6 +34,7 @@ except ImportError:
     # future 0.16.0 doesn't do the import right; this will be fixed in 0.16.1
     # https://github.com/PythonCharmers/python-future/issues/226
     from future.backports.misc import ChainMap
+import json
 import re
 
 from .jsonmixin import JsonSerializationMixin
@@ -169,10 +170,14 @@ class Metadata(JsonSerializationMixin):
         return not self.__eq__(other)
 
     def __str__(self):
-        return str(self._chain)
+        json_data = self.json
+        return json.dumps(json_data, sort_keys=True, indent=4)
 
     def __repr__(self):
         return repr(self._chain)
+
+    def _repr_html_(self):
+        return self.__str__()
 
     def keys(self):
         return [key for key in self]
