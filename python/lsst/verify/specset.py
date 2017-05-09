@@ -30,6 +30,8 @@ from collections import OrderedDict
 import os
 import re
 
+from astropy.table import Table
+
 import lsst.pex.exceptions
 from lsst.utils import getPackageDir
 
@@ -924,6 +926,32 @@ class SpecificationSet(JsonSerializationMixin):
                                   spec_tags=spec_tags,
                                   metric_tags=metric_tags, metrics=metrics)
         return Report(measurements, spec_subset)
+
+    def _repr_html_(self):
+        """Make an HTML representation of the SpecificationSet for Jupyter
+        notebooks.
+        """
+        name_col = []
+        tags_col = []
+        test_col = []
+
+        names = list(self.keys())
+        names.sort()
+
+        for name in names:
+            spec = self[name]
+
+            name_col.append(str(name))
+
+            test_col.append(spec._repr_latex_())
+
+            tags = list(spec.tags)
+            tags.sort()
+            tags_col.append(', '.join(tags))
+
+        table = Table([name_col, test_col, tags_col],
+                      names=['Name', 'Test', 'Tags'])
+        return table._repr_html_()
 
 
 class SpecificationPartial(object):
