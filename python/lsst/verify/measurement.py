@@ -193,6 +193,17 @@ class Measurement(JsonSerializationMixin):
     def __str__(self):
         return "{self.metric_name!s}: {self.quantity!s}".format(self=self)
 
+    def _repr_latex_(self):
+        """Get a LaTeX-formatted string representation of the measurement
+        quantity (used in Jupyter notebooks).
+
+        Returns
+        -------
+        rep : `str`
+            String representation.
+        """
+        return '{0.value:0.1f} {0.unit:latex_inline}'.format(self.quantity)
+
     @property
     def description(self):
         """Description of the metric (`str`, or `None` if

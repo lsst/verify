@@ -30,6 +30,8 @@ from collections import OrderedDict
 import os
 import re
 
+from astropy.table import Table
+
 import lsst.pex.exceptions
 from lsst.utils import getPackageDir
 
@@ -39,6 +41,7 @@ from .naming import Name
 from .spec.base import Specification
 from .spec.threshold import ThresholdSpecification
 from .yamlutils import merge_documents, load_all_ordered_yaml
+from .report import Report
 
 
 # Pattern for SpecificationPartial names
@@ -644,6 +647,16 @@ class SpecificationSet(JsonSerializationMixin):
         self.update(other)
         return self
 
+    def keys(self):
+        """Get a sequence of specification names, which are keys to the set.
+
+        Returns
+        -------
+        keys : sequence of `Name`
+            Keys to the specification set.
+        """
+        return self._specs.keys()
+
     def items(self):
         """Iterate over name, specification pairs.
 
@@ -776,7 +789,8 @@ class SpecificationSet(JsonSerializationMixin):
             # No inheritance to resolve
             return spec_doc
 
-    def subset(self, name=None, meta=None):
+    def subset(self, name=None, meta=None, spec_tags=None, metric_tags=None,
+               metrics=None):
         """Create a new `SpecificationSet` with specifications belonging to
         a single package or metric, and that apply to the given metadata.
 
@@ -792,6 +806,21 @@ class SpecificationSet(JsonSerializationMixin):
             If supplied, only specifications that apply to the given metadata
             are included in the subset. Metadata is usually obtained from
             the `Job.meta` attribute of a `Job` instance.
+        spec_tags : sequence of `str`, optional
+            A set of specification tag strings. when given, only
+            specifications that have all the given tags are included in the
+            report. For example, ``spec_tags=['LPM-17', 'minimum']``.
+        metric_tags : sequence of `str`, optional
+            A set of metric tag strings. When given, only specifications
+            belonging to metrics that posess **all** given tags are included
+            in the report. For example,
+            ``metric_tags=['LPM-17', 'photometry']`` selects sepifications
+            that have both the ``'LPM-17'`` and ``'photometry'`` tags. If
+            set, also provide a `lsst.verify.MetricSet` with the ``metrics``
+            argument.
+        metrics : `lsst.verify.MetricSet`
+            `~lsst.verify.MetricSet` with metric definitions. This is only
+            needed if a ``metric_tags`` argument is provided.
 
         Returns
         -------
@@ -801,6 +830,11 @@ class SpecificationSet(JsonSerializationMixin):
             compatible with the job metadata.. Any partials in
             the SpecificationSet are also included in ``spec_subset``.
         """
+        if metric_tags is not None and metrics is None:
+            message = ('A MetricSet must be provided through the metrics '
+                       'argument when subsetting ith metric_tags.')
+            raise ValueError(message)
+
         all_partials = [partial
                         for partial_name, partial in self._partials.items()]
 
@@ -829,7 +863,95 @@ class SpecificationSet(JsonSerializationMixin):
             spec_subset = SpecificationSet(specifications=specs,
                                            partials=all_partials)
 
+        # Filter by specifiation tags
+        if spec_tags is not None:
+            spec_tags = set(spec_tags)
+            specs = [spec for spec_name, spec in spec_subset.items()
+                     if spec_tags <= spec.tags]
+
+            spec_subset = SpecificationSet(specifications=specs,
+                                           partials=all_partials)
+
+        # Filter by metric tags
+        if metric_tags is not None:
+            metric_tags = set(metric_tags)
+            specs = [spec for spec_name, spec in spec_subset.items()
+                     if metric_tags <= metrics[spec.metric_name].tags]
+
         return spec_subset
+
+    def report(self, measurements, name=None, meta=None, spec_tags=None,
+               metric_tags=None, metrics=None):
+        """Create a report that details specification tests against the given
+        measurements.
+
+        Parameters
+        ----------
+        measurements : `lsst.verify.MeasurementSet`
+            Measurements to test.
+        name : `str` or `lsst.verify.Name`, optional
+            A package or metric name to subset specifications by. When set,
+            only measurement and specification combinations belonging to that
+            package or metric are included in the report.
+        meta : `lsst.verifify.Metadata`, optional
+            Job metadata to ensure the specifications are relevant to the
+            measurements. Typically accessed as `Job.meta`.
+        spec_tags : sequence of `str`, optional
+            A set of specification tag strings. when given, only
+            specifications that have all the given tags are included in the
+            report. For example, ``spec_tags=['LPM-17', 'minimum']``.
+        metric_tags : sequence of `str`, optional
+            A set of metric tag strings. When given, only specifications
+            belonging to metrics that posess **all** given tags are included
+            in the report. For example,
+            ``metric_tags=['LPM-17', 'photometry']`` selects sepifications
+            that have both the ``'LPM-17'`` and ``'photometry'`` tags. If
+            set, also provide a `lsst.verify.MetricSet` with the ``metrics``
+            argument.
+        metrics : `lsst.verify.MetricSet`
+            `~lsst.verify.MetricSet` with metric definitions. This is only
+            needed if a ``metric_tags`` argument is provided.
+
+        Returns
+        -------
+        report : `lsst.verify.Report`
+            Report instance. In a Jupyter notebook, you can view the report
+            by calling `Report.show`.
+
+        See also
+        --------
+        `lsst.verify.Job.report`
+        """
+        spec_subset = self.subset(name=name, meta=meta,
+                                  spec_tags=spec_tags,
+                                  metric_tags=metric_tags, metrics=metrics)
+        return Report(measurements, spec_subset)
+
+    def _repr_html_(self):
+        """Make an HTML representation of the SpecificationSet for Jupyter
+        notebooks.
+        """
+        name_col = []
+        tags_col = []
+        test_col = []
+
+        names = list(self.keys())
+        names.sort()
+
+        for name in names:
+            spec = self[name]
+
+            name_col.append(str(name))
+
+            test_col.append(spec._repr_latex_())
+
+            tags = list(spec.tags)
+            tags.sort()
+            tags_col.append(', '.join(tags))
+
+        table = Table([name_col, test_col, tags_col],
+                      names=['Name', 'Test', 'Tags'])
+        return table._repr_html_()
 
 
 class SpecificationPartial(object):

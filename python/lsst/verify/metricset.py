@@ -27,6 +27,8 @@ __all__ = ['MetricSet']
 import os
 import glob
 
+from astropy.table import Table
+
 import lsst.pex.exceptions
 from lsst.utils import getPackageDir
 from .jsonmixin import JsonSerializationMixin
@@ -303,6 +305,9 @@ class MetricSet(JsonSerializationMixin):
         """
         self[metric.name] = metric
 
+    def keys(self):
+        return self._metrics.keys()
+
     def items(self):
         """Iterate over ``(name, metric)`` pairs in the set.
 
@@ -317,7 +322,7 @@ class MetricSet(JsonSerializationMixin):
         for item in self._metrics.items():
             yield item
 
-    def subset(self, package=None, tag=None):
+    def subset(self, package=None, tags=None):
         """Create a new `MetricSet` with metrics belonging to a single
         package and/or tag.
 
@@ -328,8 +333,9 @@ class MetricSet(JsonSerializationMixin):
             is ``'pkg_a'``, then metric ``'pkg_a.metric_1'`` would be
             **included** in the subset, while ``'pkg_b.metric_2'`` would be
             **excluded**.
-        tag : `str`, optional
-            Tag to select metrics by.
+        tags : sequence of `str`, optional
+            Tags to select metrics by. These tags must be a subset (``<=``)
+            of the `Metric.tags` for the metric to be selected.
 
         Returns
         -------
@@ -347,18 +353,21 @@ class MetricSet(JsonSerializationMixin):
         if package is not None and not isinstance(package, Name):
             package = Name(package=package)
 
-        if package is not None and tag is None:
+        if tags is not None:
+            tags = set(tags)
+
+        if package is not None and tags is None:
             metrics = [metric for metric_name, metric in self._metrics.items()
                        if metric_name in package]
 
-        elif package is not None and tag is not None:
+        elif package is not None and tags is not None:
             metrics = [metric for metric_name, metric in self._metrics.items()
                        if metric_name in package
-                       if tag in metric.tags]
+                       if tags <= metric.tags]
 
-        elif package is None and tag is not None:
+        elif package is None and tags is not None:
             metrics = [metric for metric_name, metric in self._metrics.items()
-                       if tag in metric.tags]
+                       if tags <= metric.tags]
 
         else:
             metrics = []
@@ -377,3 +386,36 @@ class MetricSet(JsonSerializationMixin):
         """
         for _, metric in other.items():
             self.insert(metric)
+
+    def _repr_html_(self):
+        """Make an HTML representation of metrics for Jupyter notebooks.
+        """
+        name_col = []
+        tags_col = []
+        units_col = []
+        description_col = []
+        reference_col = []
+
+        metric_names = list(self.keys())
+        metric_names.sort()
+
+        for metric_name in metric_names:
+            metric = self[metric_name]
+
+            name_col.append(str(metric_name))
+
+            tags = list(metric.tags)
+            tags.sort()
+            tags_col.append(', '.join(tags))
+
+            units_col.append("{0:latex}".format(metric.unit))
+
+            description_col.append(metric.description)
+
+            reference_col.append(metric.reference)
+
+        table = Table([name_col, description_col, units_col, reference_col,
+                       tags_col],
+                      names=['Name', 'Description', 'Units', 'Reference',
+                             'Tags'])
+        return table._repr_html_()

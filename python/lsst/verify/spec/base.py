@@ -26,6 +26,7 @@ __all__ = ["Specification"]
 
 import abc
 from future.utils import with_metaclass
+from past.builtins import basestring
 
 from ..jsonmixin import JsonSerializationMixin
 from ..metaquery import MetadataQuery
@@ -47,6 +48,9 @@ class Specification(with_metaclass(abc.ABCMeta, JsonSerializationMixin)):
     """
 
     def __init__(self, name, **kwargs):
+        # interal object behind self.tags
+        self._tags = set()
+
         # name attibute must be a Name instance representing a specification
         if not isinstance(name, Name):
             self._name = Name(spec=name)
@@ -61,10 +65,31 @@ class Specification(with_metaclass(abc.ABCMeta, JsonSerializationMixin)):
         else:
             self.metadata_query = MetadataQuery()
 
+        if 'tags' in kwargs:
+            self.tags = kwargs['tags']
+
     @property
     def name(self):
         """Specification name (`lsst.verify.Name`)."""
         return self._name
+
+    @property
+    def metric_name(self):
+        """Name of the metric this specification corresponds to
+        (`lsst.verify.Name`)."""
+        return Name(package=self.name.package, metric=self.name.metric)
+
+    @property
+    def tags(self):
+        """Tag labels (`set` of `str`)."""
+        return self._tags
+
+    @tags.setter
+    def tags(self, t):
+        # Ensure that tags is always a set.
+        if isinstance(t, basestring):
+            t = [t]
+        self._tags = set(t)
 
     @abc.abstractproperty
     def type(self):
@@ -91,7 +116,8 @@ class Specification(with_metaclass(abc.ABCMeta, JsonSerializationMixin)):
                 'name': str(self.name),
                 'type': self.type,
                 self.type: self._serialize_type(),
-                'metadata_query': self.metadata_query
+                'metadata_query': self.metadata_query,
+                'tags': self.tags
             }
         )
 

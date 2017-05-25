@@ -51,6 +51,11 @@ class ThresholdSpecification(Specification):
         so that ``measurement {{ operator }} threshold quantity`` is the
         specification test. Can be one of: ``'<'``, ``'<='``, ``'>'``,
         ``'>='``, ``'=='``, or ``'!='``.
+    metadata_query : `dict`, optional
+        Dictionary of key-value term's that the measurement's metadata must
+        have for this specification to apply.
+    tags : sequence of `str`, optional
+        Sequence of tags that group this specification with others.
     kwargs : `dict`
         Keyword arguments passed directly to the
         `lsst.validate.base.Specification` constructor.
@@ -101,6 +106,23 @@ class ThresholdSpecification(Specification):
             self.name,
             self.threshold,
             self.operator_str)
+
+    def __str__(self):
+        return '{self.operator_str} {self.threshold}'.format(self=self)
+
+    def _repr_latex_(self):
+        """Get a LaTeX-formatted string representation of the threshold
+        specification test.
+
+        Returns
+        -------
+        rep : `str`
+            String representation.
+        """
+        template = ('$x$ {self.operator_str} '
+                    '{self.threshold.value} '
+                    '{self.threshold.unit:latex_inline}')
+        return template.format(self=self)
 
     @property
     def datum(self):

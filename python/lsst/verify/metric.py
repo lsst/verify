@@ -69,9 +69,6 @@ class Metric(JsonSerializationMixin):
     description = None
     """Short description of the metric (`str`)."""
 
-    tags = None
-    """Tag labels to group the metric (`list` of `str`)."""
-
     reference_doc = None
     """Name of the document that specifies this metric (`str`)."""
 
@@ -87,9 +84,7 @@ class Metric(JsonSerializationMixin):
         self.description = description
         self.unit = u.Unit(unit)
         if tags is None:
-            self.tags = []
-        elif isinstance(tags, basestring):
-            self.tags = [tags]
+            self.tags = set()
         else:
             # FIXME DM-8477 Need type checking that tags are actually strings
             # and are a set.
@@ -188,6 +183,18 @@ class Metric(JsonSerializationMixin):
     @unit_str.setter
     def unit_str(self, value):
         self.unit = u.Unit(value)
+
+    @property
+    def tags(self):
+        """Tag labels (`set` of `str`)."""
+        return self._tags
+
+    @tags.setter
+    def tags(self, t):
+        # Ensure that tags is always a set.
+        if isinstance(t, basestring):
+            t = [t]
+        self._tags = set(t)
 
     @property
     def reference(self):
