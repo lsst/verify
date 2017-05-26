@@ -27,6 +27,7 @@ __all__ = ['SpecificationSet']
 from past.builtins import basestring
 
 from collections import OrderedDict
+import copy
 import os
 import re
 
@@ -720,6 +721,10 @@ class SpecificationSet(JsonSerializationMixin):
            Raised when a document's bases cannot be resolved (an inherited
            `~lsst.validate.base.Specification` cannot be found in the repo).
         """
+        # Create a copy of the spec_doc so that if the resolution is aborted
+        # we haven't modified the original document
+        spec_doc = copy.deepcopy(spec_doc)
+
         # Goal is to process all specifications and partials mentioned in
         # the 'base' field (first in, first out) and merge their information
         # to the spec_doc.
