@@ -3,10 +3,14 @@
 **LSST Science Pipelines Verification Framework.**
 
 Packages can use `lsst.verify` to report metric measurements to LSST Data Management's [SQUASH](https://squash.lsst.codes) dashboard.
+The [verify_metrics](https://github.com/lsst/verify_metrics) package supplies metric and specification definitions.
+
+For background on the Verification Framework, see the [SQR-017](https://sqr-017.lsst.io) (design) and [SQR-019](https://sqr-019.lsst.io) (API demo) technotes.
 
 ## Installation
 
-This package is part of the [LSST Science Pipelines](https://pipelines.lsst.io).
+This package is part of the [LSST Science Pipelines](https://pipelines.lsst.io) and included in the `lsst_distrib` distribution.
+
 You can learn how to install the Pipelines at https://pipelines.lsst.io/install.
 
 ## Installation for developers
@@ -29,7 +33,7 @@ It's easy to create a Community forum account.
 *We don't use GitHub Issues.*
 
 If you're part of the LSST Project, please create a [JIRA ticket](https://jira.lsstcorp.org/).
-Use the `QA` component.
+Use the [Verification component](https://jira.lsstcorp.org/browse/DM/component/14170) and [verify label](https://jira.lsstcorp.org/issues/?jql=labels%20%3D%20verify).
 
 ## Contributing code
 
