@@ -33,21 +33,19 @@ from .datum import Datum
 
 
 class Blob(JsonSerializationMixin):
-    """Blobs is a flexible container of data, as Datums, that are serializable
-    to JSON.
-
-    .. seealso::
-
-       The page :ref:`verify-creating-blobs` describes how to create
-       blob classes.
+    """Blob is a flexible container of data, as `lsst.verify.Datum` \s, that
+    are serializable to JSON.
 
     Parameters
     ----------
     name : `str`
-        Name of this type of blob. Blobs that share the same name generally
-        share the same schema of Datums.
-    datums : `dict` of `Datum`-types, optional
-        Datum-types. Each `Datum` can be later retrived from the Blob by key.
+        Name of this type of blob. Blobs from one pipeline Job execution to
+        another that share the same name generally share the same schema of
+        `lsst.verify.Datum`\ s.
+    datums : `dict` of `lsst.verify.Datum`-types, optional
+        Keys are names of datums. Values are `~lsst.verify.Datum`\ -types.
+        Each `~lsst.verify.Datum` can be later retrived from the Blob instance
+        by key.
     """
 
     def __init__(self, name, **datums):

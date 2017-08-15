@@ -29,7 +29,7 @@ from .jsonmixin import JsonSerializationMixin
 
 
 class BlobSet(JsonSerializationMixin):
-    """A collection of Blobs.
+    """A collection of `~lsst.verify.Blob`\ s.
 
     Parameters
     ----------
@@ -138,8 +138,8 @@ class BlobSet(JsonSerializationMixin):
 
         Returns
         -------
-        keys : sequence
-            Sequence of `Blob` identifiers.
+        keys : sequence of `str`
+            Sequence of `Blob.identifier`.
         """
         return self._items.keys()
 
@@ -148,17 +148,24 @@ class BlobSet(JsonSerializationMixin):
 
         Yields
         ------
-        item : tuple
+        item : `tuple`
             Tuple containing:
 
-            - ``identifier`` of the Blob (`str`)
+            - `Blob.identifier` of the `Blob` (`str`)
             - `Blob` instance
         """
         for item in self._items.items():
             yield item
 
     def insert(self, blob):
-        """Insert a blob into the set."""
+        """Insert a blob into the set.
+
+        Parameters
+        ----------
+        blob : `Blob`
+            `Blob` to insert into the set. It can be accessed by key from
+            the BlobSet through its `Blob.identifier` string.
+        """
         self[blob.identifier] = blob
 
     @property

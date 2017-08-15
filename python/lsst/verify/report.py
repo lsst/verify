@@ -31,7 +31,7 @@ from .naming import Name
 
 class Report(object):
     """Report tabulating specification pass/fail status for a set of
-    measurements.
+    `lsst.verify.Measurement`\ s.
 
     Parameters
     ----------
@@ -39,8 +39,9 @@ class Report(object):
         Measurements to be tested.
     specs : `lsst.verify.SpecificationSet`
         Specifications to test measurements against. These specifications
-        are assumed to be relevant to the measurements. Using
-        `SpecificationSet.subset`, passing in job metadata, to ensure this.
+        are assumed to be relevant to the measurements. Use
+        `lsst.verify.SpecificationSet.subset`, passing in job metadata
+        (`lsst.verify.Job.meta`), to ensure this.
     """
 
     def __init__(self, measurements, specs):

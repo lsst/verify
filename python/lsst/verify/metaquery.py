@@ -28,7 +28,7 @@ from .jsonmixin import JsonSerializationMixin
 
 
 class MetadataQuery(JsonSerializationMixin):
-    """Query of Job metadata.
+    """Query of `lsst.verify.Job.meta` metadata.
 
     Parameters
     ----------
@@ -108,4 +108,9 @@ class MetadataQuery(JsonSerializationMixin):
 
     @property
     def json(self):
+        """A JSON-serializable dict.
+
+        Keys are metadata keys. Values are the associated metadata values
+        of the query term.
+        """
         return self.jsonify_dict(self.terms)

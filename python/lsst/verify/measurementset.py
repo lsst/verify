@@ -30,7 +30,11 @@ from .jsonmixin import JsonSerializationMixin
 
 
 class MeasurementSet(JsonSerializationMixin):
-    """A collection of measurements of metrics.
+    """A collection of `~lsst.verify.Measurement`\ s of
+    `~lsst.verify.Metric`\ s.
+
+    ``MeasurementSet`` provides a dict-like interface for getting, setting,
+    and iterating over `Measurement`\ s.
 
     Parameters
     ----------
@@ -50,8 +54,8 @@ class MeasurementSet(JsonSerializationMixin):
 
         Parameters
         ----------
-        measurements : list, optional
-            A list of measurement JSON serializations.
+        measurements : `list`, optional
+            A list of `Measurement` JSON serializations.
         blob_set : `BlobSet`, optional
             A `BlobSet` instance that support measurement deserialization.
         metric_set : `MetricSet`, optional
@@ -140,7 +144,7 @@ class MeasurementSet(JsonSerializationMixin):
         """Merge another `MeasurementSet` into this one.
 
         Parameters
-        ---------
+        ----------
         other : `MeasurementSet`
             Another `MeasurementSet`. Measurements in ``other`` that do
             exist in this set are added to this one. Measurements in
@@ -183,11 +187,11 @@ class MeasurementSet(JsonSerializationMixin):
 
         Yields
         ------
-        item : tuple
+        item : `tuple`
             Tuple containing:
 
-            - `Name` of the measurement's `Metric`
-            - `Measurement` instance
+            - `Name` of the measurement's `Metric`.
+            - `Measurement` instance.
         """
         for item in self._items.items():
             yield item
@@ -200,7 +204,7 @@ class MeasurementSet(JsonSerializationMixin):
         """Merge another `MeasurementSet` into this one.
 
         Parameters
-        ---------
+        ----------
         other : `MeasurementSet`
             Another `MeasurementSet`. Measurements in ``other`` that do
             exist in this set are added to this one. Measurements in
@@ -210,13 +214,13 @@ class MeasurementSet(JsonSerializationMixin):
             self.insert(measurement)
 
     def refresh_metrics(self, metric_set):
-        """Refresh `Measurement.metric` attributes in measurements contained
-        by this set.
+        """Refresh `Measurement.metric` attributes in `Measurement`\ s
+        contained by this set.
 
         Parameters
         ----------
         metric_set : `MetricSet`
-            Metrics from this set are inserted into corresponding
+            `Metric`\ s from this set are inserted into corresponding
             `Measurement`\ s contained in this `MeasurementSet`.
 
         Notes
@@ -228,7 +232,7 @@ class MeasurementSet(JsonSerializationMixin):
 
         See also
         --------
-        Job.reload_metrics_package
+        lsst.verify.Job.reload_metrics_package
         """
         for metric_name, measurement in self.items():
             if metric_name in metric_set:

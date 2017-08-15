@@ -54,7 +54,7 @@ class JsonSerializationMixin(with_metaclass(abc.ABCMeta, object)):
         Parameters
         ----------
         d : `dict`
-            Dictionary ito convert into a JSON-serializable object. Values
+            Dictionary to convert into a JSON-serializable object. Values
             are recursively JSON-ified.
 
         Returns
@@ -69,7 +69,7 @@ class JsonSerializationMixin(with_metaclass(abc.ABCMeta, object)):
 
           def json(self):
               return JsonSerializationMixin.jsonify_dict({
-              'value': self.value,
+                  'value': self.value,
               })
         """
         json_dict = {}

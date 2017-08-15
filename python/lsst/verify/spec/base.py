@@ -39,7 +39,7 @@ class Specification(with_metaclass(abc.ABCMeta, JsonSerializationMixin)):
     Specification classes must implement:
 
     - `type`
-    - `serialize_type`
+    - `_serialize_type`
     - `check`
 
     Subclasses should also call ``Specification.__init__`` to initialize
@@ -129,7 +129,7 @@ class Specification(with_metaclass(abc.ABCMeta, JsonSerializationMixin)):
         ----------
         measurement : `astropy.units.Quantity`
             The measurement value. The measurement `~astropy.units.Quantity`
-            must have units *compatible* with `threshold`.
+            must have units *compatible* with the specification.
 
         Returns
         -------

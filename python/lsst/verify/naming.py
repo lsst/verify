@@ -38,19 +38,23 @@ class Name(object):
     ----------
     package : `str` or `Name`
        Name of the package, either as a string (``'validate_drp'``,
-       for example) or as a Name object (``Name(package='validate_drp')``
-       for example).
+       for example) or as a `~lsst.verify.Name` object
+       (``Name(package='validate_drp')`` for example).
 
-       The ``package`` field can also be fully specified::
+       The ``package`` field can also be fully specified:
 
-           Name(package='validate_drp.PA1.design_gri')
+           >>> Name(package='validate_drp.PA1.design_gri')
+           Name('validate_drp', 'PA1', 'design_gri')
 
-       or used as the sole positional argument::
+       Or the ``package`` field can be used as the sole positional argument:
 
-           Name('validate_drp.PA1.design_gri')
+           >>> Name('validate_drp.PA1.design_gri')
+           Name('validate_drp', 'PA1', 'design_gri')
+
     metric : `str` or `Name`
        Name of the metric. The name can be relative (``'PA'``) or
        fully-specified (``'validate_drp.PA1'``).
+
     spec : `str` or `Name`
        Name of the specification. The name can be bare (``'design_gri'``),
        metric-relative (``'PA1.design_gri'``) or fully-specified
@@ -91,8 +95,8 @@ class Name(object):
     Examples
     --------
 
-    Creation
-    ^^^^^^^^
+    **Creation**
+
     There are many patterns for creating Name instances. Different patterns
     are useful in different circumstances.
 
@@ -127,8 +131,8 @@ class Name(object):
     >>> Name(metric='validate_drp.PA1', spec='design')
     Name('validate_drp', 'PA1', 'design')
 
-    String representation
-    ^^^^^^^^^^^^^^^^^^^^^
+    **String representation**
+
     Converting a ``Name`` into a `str` gives you the canonical string
     representation, as fully-specified as possible:
 

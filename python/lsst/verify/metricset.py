@@ -83,7 +83,7 @@ class MetricSet(JsonSerializationMixin):
 
         See also
         --------
-        `MetricSet.load_single_package`
+        lsst.verify.MetricSet.load_single_package
 
         Notes
         -----
@@ -141,7 +141,7 @@ class MetricSet(JsonSerializationMixin):
 
         See also
         --------
-        `MetricSet.load_metrics_package`
+        lsst.verify.MetricSet.load_metrics_package
 
         Notes
         -----
@@ -306,6 +306,13 @@ class MetricSet(JsonSerializationMixin):
         self[metric.name] = metric
 
     def keys(self):
+        """Get a list of metric names included in the set
+
+        Returns
+        -------
+        keys : `list` of `Name`
+            List of `Name`\ s included in the set.
+        """
         return self._metrics.keys()
 
     def items(self):
@@ -378,7 +385,7 @@ class MetricSet(JsonSerializationMixin):
         """Merge another `MetricSet` into this one.
 
         Parameters
-        ---------
+        ----------
         other : `MetricSet`
             Another `MetricSet`. Metrics in ``other`` that do exist in this
             set are added to this one. Metrics in ``other`` replace metrics of

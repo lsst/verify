@@ -51,9 +51,9 @@ class Metadata(JsonSerializationMixin):
     measurement_set : `lsst.verify.MeasurementSet`, optional
         When provided, metadata with keys prefixed by metric names are
         deferred to `Metadata` instances attached to measurements
-        (`lsst.verify.Measurement.meta`).
+        (`lsst.verify.Measurement.notes`).
     data : `dict`, optional
-        Dictionary to seed metadata with.
+        Dictionary to seed metadata.
     """
 
     # Pattern for detecting metric name prefixes in names
@@ -180,18 +180,51 @@ class Metadata(JsonSerializationMixin):
         return self.__str__()
 
     def keys(self):
+        """Get a `list` of metadata keys.
+
+        Returns
+        -------
+        keys : `list` of `str`
+            These keys keys can be used to access metadata values (like a
+            `dict`).
+        """
         return [key for key in self]
 
     def items(self):
+        """Iterate over key-value metadata pairs.
+
+        Yields
+        ------
+        item : `tuple`
+            A metadata item is a tuple of:
+
+            - Key (`str`).
+            - Value (object).
+        """
         self._refresh_chainmap()
         for item in self._chain.items():
             yield item
 
     def update(self, data):
+        """Update metadata with key-value pairs from a `dict`-like object.
+
+        Parameters
+        ----------
+        data : `dict`-like
+            The ``data`` object needs to provide an ``items`` method to
+            iterate over its key-value pairs. If this ``Metadata`` instance
+            already has a key, the value will be overwritten with the value
+            from ``data``.
+        """
         for key, value in data.items():
             self[key] = value
 
     @property
     def json(self):
+        """A `dict` that can be serialized as semantic SQUASH JSON.
+
+        Keys in the `dict` are metadata keys (see `Metadata.keys`). Values
+        are the associated metadata values as JSON-serializable objects.
+        """
         self._refresh_chainmap()
         return self.jsonify_dict(self._chain)

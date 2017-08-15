@@ -20,25 +20,23 @@
 # the GNU General Public License along with this program.  If not,
 # see <https://www.lsstcorp.org/LegalNotices/>.
 #
-"""Upload LSST Science Pipelines Verification Job datasets to the SQUASH
-dashboard.
+"""Upload LSST Science Pipelines Verification `~lsst.verify.Job` datasets to
+the SQUASH dashboard.
 
-Job JSON files can be created by `lsst.verify.Job.write()` or
-`lsst.verify.job.output_quantities()`. A Job dataset consists of metric
-measurements, associated blobs, and pipeline execution metadata. Individual
-LSST Science Pipelines tasks typically write separate JSON datasets. This
-command can collect and combine multiple Job JSON datasets into a single
+Job JSON files can be created by `lsst.verify.Job.write` or
+`lsst.verify.output_quantities`. A `~lsst.verify.Job` dataset consists of
+metric measurements, associated blobs, and pipeline execution metadata.
+Individual LSST Science Pipelines tasks typically write separate JSON datasets.
+This command can collect and combine multiple Job JSON datasets into a single
 Job upload.
 
-Configuration
-=============
+**Configuration**
 
 dispatch_verify.py is configurable from both the command line and environment
 variables. See the argument documenation for environment variable equivalents.
 Command line settings override environment variable configuration.
 
-Metadata and environment
-========================
+**Metadata and environment**
 
 dispatch_verify.py can enrich Verification Job metadata with information
 from the environment. In a Jenkins CI execution environment (``--env=ci``) the
@@ -54,6 +52,11 @@ If lsstsw is used, additional Git branch information is included with
 Science Pipelines package metadata.
 """
 from __future__ import print_function
+
+# For determining what is documented in Sphinx
+__all__ = ['parse_args', 'main', 'insert_lsstsw_metadata',
+           'insert_extra_package_metadata', 'insert_jenkins_metadata',
+           'Configuration']
 
 import argparse
 import os
