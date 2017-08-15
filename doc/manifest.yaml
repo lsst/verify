@@ -1,0 +1,9 @@
+# Documentation manifest.
+
+package: "verify"
+
+modules:
+  - "lsst.verify"
+
+statics:
+  - "_static/verify"
