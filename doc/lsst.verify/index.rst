@@ -10,6 +10,10 @@ lsst.verify
 A metric can be any measurable scalar quantity; some examples are in the  LSST Science Requirements Document (:lpm:`17`), though packages can also define ad hoc metrics.
 Measurements made through `lsst.verify` can be uploaded to LSST's SQUASH_ monitoring dashboard to help you see how code development affects performance.
 
+.. seealso::
+
+   `SQR-019: LSST Verification Framework API Demonstration <https://sqr-019.lsst.io>`_.
+
 Python API reference
 ====================
 
