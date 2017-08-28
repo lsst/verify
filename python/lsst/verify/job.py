@@ -37,15 +37,15 @@ from . import squash
 
 
 class Job(JsonSerializationMixin):
-    """Container for measurements, blobs, and metadata associated with a
-    pipeline run.
+    """Container for `~lsst.verify.Measurement`\ s, `~lsst.verify.Blob` \s,
+    and `~lsst.verify.Metadata` associated with a pipeline run.
 
     Parameters
     ----------
     measurements : `MeasurementSet` or `list` of `Measurement`\ s, optional
-        Measurements to report in the Job.
+        `Measurement`\ s to report in the Job.
     metrics : `list` of `Metric`\ s or a `MetricSet`, optional
-        Optional list of metrics, or a `MetricSet`.
+        Optional list of `Metric`\ s, or a `MetricSet`.
     specs : `SpecificationSet` or `list` of `Specification`\ s, optional
         Optional specification information.
     meta : `dict`, optional
@@ -76,7 +76,8 @@ class Job(JsonSerializationMixin):
     def load_metrics_package(cls, package_name_or_path='verify_metrics',
                              subset=None, measurements=None, meta=None):
         """Create a Job with metrics and specifications pre-loaded from a
-        Verification Framework metrics package.
+        Verification Framework metrics package, such as
+        :ref:`verify_metrics <verify-metrics-package>`.
 
         Parameters
         ----------
@@ -84,12 +85,13 @@ class Job(JsonSerializationMixin):
             Name of an EUPS package that hosts metric and specification
             definition YAML files **or** the file path to a metrics package.
             ``'verify_metrics'`` is the default package, and is where metrics
-            and specifications are defined for most packages.
+            and specifications are defined for most LSST Science Pipelines
+            packages.
         subset : `str`, optional
             If set, only metrics and specification for this package are loaded.
             For example, if ``subset='validate_drp'``, only ``validate_drp``
-            metrics are included in the `MetricSet`. This argument is
-            equivalent to the `MetricSet.subset` method. Default is `None`.
+            metrics are loaded. This argument is equivalent to the
+            `MetricSet.subset` method. Default is `None`.
         measurements : `MeasurementSet` or `list` of `Measurement`\ s, optional
             Measurements to report in the Job.
         meta : `dict`, optional
@@ -119,15 +121,15 @@ class Job(JsonSerializationMixin):
         Parameters
         ----------
         measurements : `list`, optional
-            List of serialized measurement objects.
+            List of serialized `Measurement` objects.
         blobs : `list`, optional
-            List of serialized blob objects.
+            List of serialized `Blob` objects.
         metrics : `list`, optional
-            List of serialized metric objects.
+            List of serialized `Metric` objects.
         specs : `list`, optional
             List of serialized specification objects.
         meta : `dict`, optional
-            Dictionary of key-value metadata entires.
+            Dictionary of key-value metadata entries.
 
         Returns
         -------
@@ -271,7 +273,7 @@ class Job(JsonSerializationMixin):
 
         See also
         --------
-        MeasurementSet.refresh_metrics
+        lsst.verify.MeasurementSet.refresh_metrics
         """
         metrics = MetricSet.load_metrics_package(
             package_name_or_path=package_name_or_path,
@@ -361,7 +363,7 @@ class Job(JsonSerializationMixin):
 
         See also
         --------
-        `lsst.verify.SpecificationSet.report`
+        lsst.verify.SpecificationSet.report
 
         Notes
         -----

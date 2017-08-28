@@ -52,12 +52,12 @@ PARTIAL_PATTERN = re.compile('^(?:(?P<package>\S+):)'
 
 
 class SpecificationSet(JsonSerializationMixin):
-    """A collection of Specifications.
+    """A collection of `Specification`\ s.
 
     Parameters
     ----------
     specifications : `list` or `tuple` of `Specification` instances
-        A sequence of `Specification` instances.
+        A sequence of `Specification`-type instances.
     partials : `list` or `tuple` of `SpecificationPartial` instances
         A sequence of `SpecificationPartial` instances. These partials
         can be used as bases for specification definitions.
@@ -99,7 +99,7 @@ class SpecificationSet(JsonSerializationMixin):
         Returns
         -------
         spec_set : `SpecificationSet`
-            SpecificationSet instance.
+            `SpecificationSet` instance.
         """
         instance = cls()
 
@@ -121,7 +121,7 @@ class SpecificationSet(JsonSerializationMixin):
     @classmethod
     def load_metrics_package(cls, package_name_or_path='verify_metrics',
                              subset=None):
-        """Create a SpecificationSet from an Verification Framework metrics
+        """Create a `SpecificationSet` from an Verification Framework metrics
         package.
 
         Parameters
@@ -145,7 +145,7 @@ class SpecificationSet(JsonSerializationMixin):
 
         See also
         --------
-        `SpecificationSet.load_single_package`
+        lsst.verify.SpecificationSet.load_single_package
 
         Notes
         -----
@@ -157,8 +157,6 @@ class SpecificationSet(JsonSerializationMixin):
         have defined metrics. Contained within these directories are YAML files
         defining specifications for those metrics.
 
-        To make a `SpecificationSet` from a single package's specifications,
-        use `load_single_package` instead.
         To make a `SpecificationSet` from a single package's YAML definition
         directory that **is not** contained in a metrics package, use
         `load_single_package` instead.
@@ -196,7 +194,7 @@ class SpecificationSet(JsonSerializationMixin):
 
     @classmethod
     def load_single_package(cls, package_specs_dirname):
-        """Create a SpecificationSet from a filesystem directory containing
+        """Create a `SpecificationSet` from a filesystem directory containing
         specification YAML files for a single package.
 
         Parameters
@@ -213,7 +211,7 @@ class SpecificationSet(JsonSerializationMixin):
 
         See also
         --------
-        SpecificationSet.load_metrics_package
+        lsst.verify.SpecificationSet.load_metrics_package
 
         Notes
         -----
@@ -673,7 +671,7 @@ class SpecificationSet(JsonSerializationMixin):
             yield name, spec
 
     def insert(self, spec):
-        """Insert a Specification into the set.
+        """Insert a `Specification` into the set.
 
         A pre-existing specification with the same name is replaced.
 
@@ -689,11 +687,11 @@ class SpecificationSet(JsonSerializationMixin):
         """Merge another `SpecificationSet` into this one.
 
         Parameters
-        ---------
+        ----------
         other : `SpecificationSet`
-            Another `SpecificationSet`. Specification in ``other`` that do
-            exist in this set are added to this one. Specification in ``other``
-            replace specifications of the same name in this one.
+            Another `SpecificationSet`. `Specification`\ s in ``other`` that do
+            not exist in this set are added to this one. `Specification`\ s in
+            ``other`` replace specifications of the same name in this one.
         """
         for _, spec in other.items():
             self.insert(spec)
@@ -925,7 +923,7 @@ class SpecificationSet(JsonSerializationMixin):
 
         See also
         --------
-        `lsst.verify.Job.report`
+        lsst.verify.Job.report
         """
         spec_subset = self.subset(name=name, meta=meta,
                                   spec_tags=spec_tags,

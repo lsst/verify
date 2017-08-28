@@ -37,20 +37,25 @@ from .naming import Name
 
 
 class Measurement(JsonSerializationMixin):
-    """A measurement of a single Metric.
+    """A measurement of a single `~lsst.verify.Metric`.
+
+    A measurement is associated with a single `Metric` and consists of
+    a `astropy.units.Quantity` value. In addition, a measurement can be
+    augmented with `Blob`\ s (either shared, or directly associated with the
+    measurement's `Measurement.extras`) and metadata (`Measurement.notes`).
 
     Parameters
     ----------
     metric : `str`, `lsst.verify.Name`, or `lsst.verify.Metric`
         The name of this metric or the corresponding `~lsst.verify.Metric`
-        instance. If a `~lsst.verify.Metric` is providing then the units of
-        the ``quantity`` are automatically validated.
+        instance. If a `~lsst.verify.Metric` is provided then the units of
+        the ``quantity`` argument are automatically validated.
     quantity : `astropy.units.Quantity`, optional
         The measured value as an Astropy `~astropy.units.Quantity`.
-        If a ``~lsst.verify.Metric`` instance is provided, the units of
-        ``quantity`` are compared to the ``~lsst.verify.Metric`\ 's units
+        If a `~lsst.verify.Metric` instance is provided, the units of
+        ``quantity`` are compared to the `~lsst.verify.Metric`\ 's units
         for compatibility. The ``quantity`` can also be set, updated, or
-        read from a Measurement instance with the `quantity` property.
+        read with the `Measurement.quantity` attribute.
     blobs : `list` of `~lsst.verify.Blob`\ s, optional
         List of `lsst.verify.Blob` instances that are associated with a
         measurement. Blobs are datasets that can be associated with many
@@ -72,12 +77,24 @@ class Measurement(JsonSerializationMixin):
     """
 
     blobs = None
-    """`dict` of `lsst.verify.Blob` instances associated with this measurement.
+    """`dict` of `lsst.verify.Blob`\ s associated with this measurement.
+
+    See also
+    --------
+    Measurement.link_blob
     """
 
     extras = None
-    """`~lsst.verify.Blob` of `lsst.verify.Datum` instances associated with
-    this measurement.
+    """`Blob` associated solely to this measurement.
+
+    Notes
+    -----
+    ``extras`` work just like `Blob`\ s, but they're automatically created with
+    each `Measurement`. Add `~lsst.verify.Datum`\ s to ``extras`` if those
+    `~lsst.verify.Datum`\ s only make sense in the context of that
+    `Measurement`. If `Datum`\ s are relevant to multiple measurements, add
+    them to an external `Blob` instance and attach them to each measurements's
+    `Measurement.blobs` attribute through the `Measurement.link_blob` method.
     """
 
     def __init__(self, metric, quantity=None, blobs=None, extras=None,
@@ -127,7 +144,7 @@ class Measurement(JsonSerializationMixin):
     @property
     def metric(self):
         """Metric associated with the measurement (`lsst.verify.Metric` or
-        `None`).
+        `None`, mutable).
         """
         return self._metric
 
@@ -151,7 +168,8 @@ class Measurement(JsonSerializationMixin):
 
     @property
     def metric_name(self):
-        """Name of the corresponding metric (`lsst.verify.Name`)."""
+        """Name of the corresponding metric (`lsst.verify.Name`, mutable).
+        """
         return self._metric_name
 
     @metric_name.setter
@@ -167,6 +185,8 @@ class Measurement(JsonSerializationMixin):
 
     @property
     def quantity(self):
+        """`astropy.units.Quantity` component of the measurement (mutable).
+        """
         return self._quantity
 
     @quantity.setter
@@ -187,7 +207,8 @@ class Measurement(JsonSerializationMixin):
 
     @property
     def identifier(self):
-        """Unique UUID4-based identifier for this measurement (`str`)."""
+        """Unique UUID4-based identifier for this measurement (`str`,
+        immutable)."""
         return self._id
 
     def __str__(self):
@@ -222,7 +243,7 @@ class Measurement(JsonSerializationMixin):
                      description=self.description)
 
     def link_blob(self, blob):
-        """Link a blob to this measurement.
+        """Link a `Blob` to this measurement.
 
         Blobs can be linked to a measurement so that they can be retrieved
         by analysis and visualization tools post-serialization. Blob data
@@ -245,6 +266,13 @@ class Measurement(JsonSerializationMixin):
 
     @property
     def notes(self):
+        """Measurement annotations as key-value pairs (`dict`).
+
+        These key-value pairs are automatically available from `Job.meta`,
+        though keys are prefixed with the `Metric`\ 's name. This metadata can
+        be queried by `Specification`\ s, so that `Specification`\ s can be
+        written to test only certain types of `Measurement`\ s.
+        """
         return self._notes
 
     @property
@@ -351,7 +379,11 @@ class Measurement(JsonSerializationMixin):
 
 
 class MeasurementNotes(object):
-    """Container for annotations (notes) associated with a single measurement.
+    """Container for annotations (notes) associated with a single
+    `lsst.verify.Measurement`.
+
+    Typically you will use pre-instantiate ``MeasurementNotes`` objects
+    through the `lsst.verify.Measurement.notes` attribute.
 
     Parameters
     ----------
@@ -359,12 +391,17 @@ class MeasurementNotes(object):
         Fully qualified name of the measurement's metric. The metric's name
         is used as a prefix for key names.
 
+    See also
+    --------
+    lsst.verify.Measurement.notes
+    lsst.verify.Metadata
+
     Examples
     --------
     ``MeasurementNotes`` implements a `dict`-like interface. The only
-    difference is that internally keys are always prefixed with the name of
-    a metric. This allows measument annotations to mesh with reduced key
-    collision likelihood with Job metadata keys (`lsst.verify.Metadata`).
+    difference is that, internally, keys are always prefixed with the name of
+    a metric. This allows measurement annotations to mesh `lsst.verify.Job`
+    metadata keys (`lsst.verify.Job.meta`).
 
     Users of `MeasurementNotes`, typically though `Measurement.notes`, do
     not need to use this prefix. Keys are prefixed behind the scenes.
@@ -429,12 +466,40 @@ class MeasurementNotes(object):
         return repr(self._data)
 
     def keys(self):
+        """Get key names.
+
+        Returns
+        -------
+        keys : `list` of `str`
+            List of key names.
+        """
         return [key for key in self]
 
     def items(self):
+        """Iterate over note key-value pairs.
+
+        Yields
+        ------
+        item : key-value pair
+            Each items is tuple of:
+
+            - Key name (`str`).
+            - Note value (object).
+        """
         for item in self._data.items():
             yield item
 
     def update(self, data):
+        """Update the notes with key-value pairs from a `dict`-like object.
+
+        Parameters
+        ----------
+        data : `dict`-like
+            `dict`-like object that has an ``items`` method for iteration.
+            The key-value pairs of ``data`` are added to the
+            ``MeasurementNotes`` instance. If key-value pairs already exist
+            in the ``MeasurementNotes`` instance, they are overwritten with
+            values from ``data``.
+        """
         for key, value in data.items():
             self[key] = value

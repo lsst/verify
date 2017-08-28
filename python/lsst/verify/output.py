@@ -46,7 +46,7 @@ def output_quantities(package_name, quantities, suffix=None,
         2. As a filename prefix for the output JSON file.
 
     quantities : `dict` of `astropy.units.Quantity` values
-        Dictionary of measurements as plain `astropy.quantity.Quantity`
+        Dictionary of measurements as plain `astropy.units.Quantity`
         instances. Each key is the name of a metric. If metric names are
         not fully-specified (in ``package.metric`` format), the package
         name can be provided with the ``package_name`` argument.
@@ -75,13 +75,17 @@ def output_quantities(package_name, quantities, suffix=None,
     filename : `str`
         Filename where the JSON file was written.
 
+    See also
+    --------
+    lsst.verify.Job.write
+
     Notes
     -----
-    This function is designed for lightweight lsst.verify framework usage.
-    Rather than maintaining a `Job`, and `Measurement` objects,
+    This function is designed for lightweight `lsst.verify` framework usage.
+    Rather than maintaining `Job` and `Measurement` objects,
     a task can simply record metric measurements as `astropy.units.Quantity`
     objects. With `output_quantities`, the task can output these measurements
-    in a standardized lsst.verify JSON format. Post-processing tools
+    in a standardized `lsst.verify` JSON format. Post-processing tools
     can load this data for local analysis, or submit it to the
     https://squash.lsst.codes dashboard service.
 

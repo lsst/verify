@@ -35,12 +35,8 @@ from .naming import Name
 class Metric(JsonSerializationMixin):
     """Container for the definition of a metric.
 
-    Metrics can either be instantiated programatically, or from a :ref:`metric
-    YAML file <verify-metric-yaml>` with the `from_yaml` class method.
-
-    .. seealso::
-
-       See the :ref:`verify-using-metrics` page for usage details.
+    Metrics can either be instantiated programatically, or from a metric YAML
+    file through `lsst.verify.MetricSet`.
 
     Parameters
     ----------
@@ -49,11 +45,11 @@ class Metric(JsonSerializationMixin):
     description : `str`
         Short description about the metric.
     unit : `str` or `astropy.units.Unit`
-        Units of the metric. `Measurements` of this metric must be in an
-        equivalent (i.e. convertable) unit. Argument can either be a
-        `~astropy.unit.Unit` instance, or a an astropy.unit.Unit-compatible
+        Units of the metric. `~lsst.verify.Measurement`\ s of this metric must
+        be in an equivalent (that is, convertable) unit. Argument can either be
+        an `astropy.unit.Unit` instance, or a `~astropy.unit.Unit`-compatible
         string representation. Use an empty string, ``''``, or
-        ``astropy.units.dimensionless_unscaled`` for a unitless quantity.
+        `astropy.units.dimensionless_unscaled` for a unitless quantity.
     tags : `list` of `str`
         Tags associated with this metric. Tags are user-submitted string
         tokens that are used to group metrics.
@@ -176,7 +172,7 @@ class Metric(JsonSerializationMixin):
     @property
     def unit_str(self):
         """The string representation of the metric's unit
-        (`~astropy.unit.Unit`-compatible `str`).
+        (`~astropy.units.Unit`-compatible `str`).
         """
         return str(self.unit)
 
