@@ -38,7 +38,7 @@ class MetadataQuery(JsonSerializationMixin):
 
     Examples
     --------
-    A MetadataQuery returns `True` if all keys-value terms found in
+    A MetadataQuery returns `True` if all key-value terms found in
     `MetadataQuery.terms` are equal to key-value metadata items.
 
     >>> metadata = {'filter': 'r', 'camera': 'MegaCam'}
