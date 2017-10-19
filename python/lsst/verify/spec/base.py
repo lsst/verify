@@ -61,9 +61,9 @@ class Specification(with_metaclass(abc.ABCMeta, JsonSerializationMixin)):
             raise TypeError(message.format(self._name))
 
         if 'metadata_query' in kwargs:
-            self.metadata_query = MetadataQuery(kwargs['metadata_query'])
+            self._metadata_query = MetadataQuery(kwargs['metadata_query'])
         else:
-            self.metadata_query = MetadataQuery()
+            self._metadata_query = MetadataQuery()
 
         if 'tags' in kwargs:
             self.tags = kwargs['tags']
@@ -116,7 +116,7 @@ class Specification(with_metaclass(abc.ABCMeta, JsonSerializationMixin)):
                 'name': str(self.name),
                 'type': self.type,
                 self.type: self._serialize_type(),
-                'metadata_query': self.metadata_query,
+                'metadata_query': self._metadata_query,
                 'tags': self.tags
             }
         )
@@ -171,4 +171,4 @@ class Specification(with_metaclass(abc.ABCMeta, JsonSerializationMixin)):
         --------
         lsst.verify.MetadataQuery
         """
-        return self.metadata_query(metadata, arg_driven=arg_driven)
+        return self._metadata_query(metadata, arg_driven=arg_driven)
