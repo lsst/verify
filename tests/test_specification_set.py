@@ -415,34 +415,83 @@ class TestSpecificationSetMetadataSubset(unittest.TestCase):
             Name('validate_drp.PA1.design_r'),
             10 * u.mmag, '<',
             metadata_query={'filter_name': 'r'})
-        self.spec_set = SpecificationSet([s1, s2, s3, s4])
+        s5 = ThresholdSpecification(
+            Name('validate_drp.AM1.design'),
+            5. * u.marcsec, '<',
+            metadata_query={})
+        self.spec_set = SpecificationSet([s1, s2, s3, s4, s5])
 
     def test_metadata_subset(self):
         """Subset by metadata only."""
         subset = self.spec_set.subset(meta={'filter_name': 'r'})
 
+        # In because filter_name: r does not conflict with spec
         self.assertIn('validate_drp.AM1.design_r', subset)
+        # In because spec has no filter_name metadata query
+        self.assertIn('validate_drp.AM1.design', subset)
+        # Not in because spec has conflicting filter_name
         self.assertNotIn('validate_drp.AM1.design_i', subset)
+        # Not in because spec requires 'camera' term
         self.assertNotIn('validate_drp.AM1.design_HSC_r', subset)
-        self.assertNotIn('validate_drp.PA1.design_HSC_r', subset)
+        # In because compatible filter_name
+        self.assertIn('validate_drp.PA1.design_r', subset)
 
     def test_name_and_metadata_subset(self):
         """Subset by name and metadata."""
         subset = self.spec_set.subset(name='validate_drp.AM1',
                                       meta={'filter_name': 'r'})
 
+        # Spec has right metric, compatible metadata query
         self.assertIn('validate_drp.AM1.design_r', subset)
+        # Spec has right metric, no metadata query
+        self.assertIn('validate_drp.AM1.design', subset)
+        # Conflicting filter_name
         self.assertNotIn('validate_drp.AM1.design_i', subset)
+        # Requires camera term
         self.assertNotIn('validate_drp.AM1.design_HSC_r', subset)
-        self.assertNotIn('validate_drp.PA1.design_HSC_r', subset)
+        # Wrong metric
+        self.assertNotIn('validate_drp.PA1.design_r', subset)
+
+    def test_required_metadata_subset(self):
+        """Subset by required_meta only."""
+        subset = self.spec_set.subset(required_meta={'filter_name': 'r'})
+
+        # In because filter_name: r does not conflict with spec
+        self.assertIn('validate_drp.AM1.design_r', subset)
+        # Not in because spec has no filter_name metadata query
+        self.assertNotIn('validate_drp.AM1.design', subset)
+        # Not in because spec has conflicting filter_name
+        self.assertNotIn('validate_drp.AM1.design_i', subset)
+        # In because spec has compatible filter_name
+        self.assertIn('validate_drp.AM1.design_HSC_r', subset)
+        # In because compatible filter_name
+        self.assertIn('validate_drp.PA1.design_r', subset)
+
+    def test_name_and_required_metadata_subset(self):
+        """Subset by name and required_meta."""
+        subset = self.spec_set.subset(name='validate_drp.AM1',
+                                      required_meta={'filter_name': 'r'})
+
+        # In because AM1.design_r has `filter_name: r`
+        self.assertIn('validate_drp.AM1.design_r', subset)
+        # This AM1.design spec doesn't have a `filter_name` term.
+        self.assertNotIn('validate_drp.AM1.design', subset)
+        # Wrong filter_name value
+        self.assertNotIn('validate_drp.AM1.design_i', subset)
+        # Has the filer_name: r term; ignores camera term.
+        self.assertIn('validate_drp.AM1.design_HSC_r', subset)
+        # Not in because PA1 metric
+        self.assertNotIn('validate_drp.PA1.design_r', subset)
 
     def test_name_subset(self):
         """Subset by name."""
         subset = self.spec_set.subset(name='validate_drp.AM1')
 
+        # In because AM1 metric
         self.assertIn('validate_drp.AM1.design_r', subset)
         self.assertIn('validate_drp.AM1.design_i', subset)
         self.assertIn('validate_drp.AM1.design_HSC_r', subset)
+        # Not in because PA1 metric
         self.assertNotIn('validate_drp.PA1.design_HSC_r', subset)
 
 

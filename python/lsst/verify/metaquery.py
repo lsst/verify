@@ -33,8 +33,9 @@ class MetadataQuery(JsonSerializationMixin):
     Parameters
     ----------
     terms : `dict`, optional
-        A mapping of key-value query terms. A job's metadata must have all
-        these keys, and matching values, to pass the query.
+        A mapping of key-value query terms. In the default query mode, the
+        user-provided job metadata must have all these terms, and matching
+        values, to pass the query.
 
     Examples
     --------
@@ -61,6 +62,14 @@ class MetadataQuery(JsonSerializationMixin):
     ...                         'photometric': True})
     >>> query3(metadata)
     False
+
+    The ``arg_driven=True`` mode reverses the matching logic so that all terms
+    in the user-provided metadata must be in the MetadataQuery:
+
+    >>> query3(metadata, arg_driven=True)
+    True
+    >>> query2(metadata, arg_driven=True)
+    False
     """
 
     terms = None
@@ -71,7 +80,7 @@ class MetadataQuery(JsonSerializationMixin):
     def __init__(self, terms=None):
         self.terms = terms or dict()
 
-    def __call__(self, metadata):
+    def __call__(self, metadata, arg_driven=False):
         """Determine if a metadata set matches the query terms.
 
         Parameters
@@ -80,19 +89,43 @@ class MetadataQuery(JsonSerializationMixin):
             Metadata mapping. Typically this is a job's
             `lsst.verify.Job.meta`.
 
+        arg_driven : `bool`, optional
+            If `False` (default), ``metadata`` matches the ``MetadataQuery``
+            if ``metadata`` has all the terms defined in ``MetadataQuery``,
+            and those terms match. If ``metadata`` has more terms than
+            ``MetadataQuery``, it can still match.
+
+            If `True`, the orientation of the matching is reversed. Now
+            ``metadata`` matches the ``MetadataQuery`` if ``MetadataQuery``
+            has all the terms defined in ``metadata`` and those terms match.
+            If ``MetadataQuery`` has more terms than ``metadata``, it can
+            still match.
+
         Returns
         -------
         match : `bool`
             `True` if the metadata matches the query terms; `False` otherwise.
         """
-        for term_key, term_value in self.terms.items():
-            if term_key not in metadata:
-                return False
+        if arg_driven:
+            # Match if self.terms has all the terms defined in metadata
+            for arg_term, arg_term_value in metadata.items():
+                if arg_term not in self.terms:
+                    return False
 
-            # If metadata can be floats, may need to do more sophisticated
-            # comparison
-            if term_value != metadata[term_key]:
-                return False
+                # If metadata can be floats, may need to do more sophisticated
+                # comparison
+                if arg_term_value != self.terms[arg_term]:
+                    return False
+        else:
+            # Match if metadata has all the terms defined in this MetadataQuery
+            for term_key, term_value in self.terms.items():
+                if term_key not in metadata:
+                    return False
+
+                # If metadata can be floats, may need to do more sophisticated
+                # comparison
+                if term_value != metadata[term_key]:
+                    return False
 
         return True
 

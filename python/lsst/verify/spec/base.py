@@ -139,7 +139,7 @@ class Specification(with_metaclass(abc.ABCMeta, JsonSerializationMixin)):
         """
         pass
 
-    def query_metadata(self, metadata):
+    def query_metadata(self, metadata, arg_driven=False):
         """Query a Job's metadata to determine if this specification applies.
 
         Parameters
@@ -147,11 +147,28 @@ class Specification(with_metaclass(abc.ABCMeta, JsonSerializationMixin)):
         metadata : `lsst.verify.Metadata` or `dict`-type
             Metadata mapping. Typically this is the `lsst.verify.Job.meta`
             attribute.
+        arg_driven : `bool`, optional
+            If `False` (default), ``metadata`` matches the ``MetadataQuery``
+            if ``metadata`` has all the terms defined in ``MetadataQuery``,
+            and those terms match. If ``metadata`` has more terms than
+            ``MetadataQuery``, it can still match. This behavior is
+            appropriate for finding if a specification applies to a Job
+            given metadata.
+
+            If `True`, the orientation of the matching is reversed. Now
+            ``metadata`` matches the ``MetadataQuery`` if ``MetadataQuery``
+            has all the terms defined in ``metadata`` and those terms match.
+            If ``MetadataQuery`` has more terms than ``metadata``, it can
+            still match. This behavior is appropriate for discovering
+            specifications.
 
         Returns
         -------
-        applies : `bool`
-            `True` if this specification applies to a Job's measurement, or
-            `False` otherwise.
+        matched : `bool`
+            `True` if this specification matches, `False` otherwise.
+
+        See also
+        --------
+        lsst.verify.MetadataQuery
         """
-        return self.metadata_query(metadata)
+        return self.metadata_query(metadata, arg_driven=arg_driven)
