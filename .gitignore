@@ -19,3 +19,4 @@ bin/*.py
 examples/*.list
 .coverage
 htmlcov
+pytest_session.txt

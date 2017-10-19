@@ -792,8 +792,8 @@ class SpecificationSet(JsonSerializationMixin):
             # No inheritance to resolve
             return spec_doc
 
-    def subset(self, name=None, meta=None, spec_tags=None, metric_tags=None,
-               metrics=None):
+    def subset(self, name=None, meta=None, required_meta=None,
+               spec_tags=None, metric_tags=None, metrics=None):
         """Create a new `SpecificationSet` with specifications belonging to
         a single package or metric, and that apply to the given metadata.
 
@@ -808,7 +808,17 @@ class SpecificationSet(JsonSerializationMixin):
         meta : `lsst.verify.Metadata`, optional
             If supplied, only specifications that apply to the given metadata
             are included in the subset. Metadata is usually obtained from
-            the `Job.meta` attribute of a `Job` instance.
+            the `Job.meta` attribute of a `Job` instance. By default,
+            specifications are selected as long as the ``meta`` argument
+            as at least all the terms defined in a specification's metadata
+            query and their term values do not conflict.
+        required_metadata : `dict` or `lsst.verify.Metadata`, optional
+            If supplied, only specifications that have **all** the terms in
+            ``required_metadata`` (and their term values match) are selected.
+            This is opposite to the logic of the ``meta`` argument where a
+            specification with an empty metadata query is always selected,
+            for example. This query is performed with the ``arg_driven=True``
+            mode of `lsst.verify.MetadataQuery`.
         spec_tags : sequence of `str`, optional
             A set of specification tag strings. when given, only
             specifications that have all the given tags are included in the
@@ -830,8 +840,12 @@ class SpecificationSet(JsonSerializationMixin):
         spec_subset : `SpecificationSet`
             Subset of this `SpecificationSet` containing only specifications
             belonging to the indicated package or metric, and/or that are
-            compatible with the job metadata.. Any partials in
+            compatible with the job metadata. Any partials in
             the SpecificationSet are also included in ``spec_subset``.
+
+        See also
+        --------
+        lsst.very.MetadataQuery
         """
         if metric_tags is not None and metrics is None:
             message = ('A MetricSet must be provided through the metrics '
@@ -862,6 +876,15 @@ class SpecificationSet(JsonSerializationMixin):
         if meta is not None:
             specs = [spec for spec_name, spec in spec_subset.items()
                      if spec.query_metadata(meta)]
+
+            spec_subset = SpecificationSet(specifications=specs,
+                                           partials=all_partials)
+
+        # Filter by required metadata terms
+        if required_meta is not None:
+            specs = [spec for spec_name, spec in spec_subset.items()
+                     if spec.query_metadata(required_meta,
+                                            arg_driven=True)]
 
             spec_subset = SpecificationSet(specifications=specs,
                                            partials=all_partials)

@@ -61,9 +61,9 @@ class Specification(with_metaclass(abc.ABCMeta, JsonSerializationMixin)):
             raise TypeError(message.format(self._name))
 
         if 'metadata_query' in kwargs:
-            self.metadata_query = MetadataQuery(kwargs['metadata_query'])
+            self._metadata_query = MetadataQuery(kwargs['metadata_query'])
         else:
-            self.metadata_query = MetadataQuery()
+            self._metadata_query = MetadataQuery()
 
         if 'tags' in kwargs:
             self.tags = kwargs['tags']
@@ -116,7 +116,7 @@ class Specification(with_metaclass(abc.ABCMeta, JsonSerializationMixin)):
                 'name': str(self.name),
                 'type': self.type,
                 self.type: self._serialize_type(),
-                'metadata_query': self.metadata_query,
+                'metadata_query': self._metadata_query,
                 'tags': self.tags
             }
         )
@@ -139,7 +139,7 @@ class Specification(with_metaclass(abc.ABCMeta, JsonSerializationMixin)):
         """
         pass
 
-    def query_metadata(self, metadata):
+    def query_metadata(self, metadata, arg_driven=False):
         """Query a Job's metadata to determine if this specification applies.
 
         Parameters
@@ -147,11 +147,28 @@ class Specification(with_metaclass(abc.ABCMeta, JsonSerializationMixin)):
         metadata : `lsst.verify.Metadata` or `dict`-type
             Metadata mapping. Typically this is the `lsst.verify.Job.meta`
             attribute.
+        arg_driven : `bool`, optional
+            If `False` (default), ``metadata`` matches the ``MetadataQuery``
+            if ``metadata`` has all the terms defined in ``MetadataQuery``,
+            and those terms match. If ``metadata`` has more terms than
+            ``MetadataQuery``, it can still match. This behavior is
+            appropriate for finding if a specification applies to a Job
+            given metadata.
+
+            If `True`, the orientation of the matching is reversed. Now
+            ``metadata`` matches the ``MetadataQuery`` if ``MetadataQuery``
+            has all the terms defined in ``metadata`` and those terms match.
+            If ``MetadataQuery`` has more terms than ``metadata``, it can
+            still match. This behavior is appropriate for discovering
+            specifications.
 
         Returns
         -------
-        applies : `bool`
-            `True` if this specification applies to a Job's measurement, or
-            `False` otherwise.
+        matched : `bool`
+            `True` if this specification matches, `False` otherwise.
+
+        See also
+        --------
+        lsst.verify.MetadataQuery
         """
-        return self.metadata_query(metadata)
+        return self._metadata_query(metadata, arg_driven=arg_driven)
