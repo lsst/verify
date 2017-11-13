@@ -25,6 +25,7 @@ from __future__ import print_function, division
 __all__ = ['Report']
 
 from astropy.table import Table
+import numpy as np
 
 from .naming import Name
 
@@ -87,7 +88,11 @@ class Report(object):
 
             spec = self._spec_set[spec_name]
 
-            if spec.check(meas.quantity):
+            if np.isnan(meas.quantity):
+                # Not measured
+                # https://emojipedia.org/heavy-minus-sign/
+                statuses.append(u'\U00002796')
+            elif spec.check(meas.quantity):
                 # Passed
                 # http://emojipedia.org/white-heavy-check-mark/
                 statuses.append(u'\U00002705')
