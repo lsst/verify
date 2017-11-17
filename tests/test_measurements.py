@@ -198,6 +198,18 @@ class MeasurementTestCase(TestCase):
         measurement.extras['extra1'] = Datum(10. * u.arcmin, 'Extra 1')
         self.assertIn('extra1', measurement.extras)
 
+    def test_quantity_coercion(self):
+        # strings can't be changed into a Quantity
+        with self.assertRaises(TypeError):
+            Measurement('test_metric', quantity='hello')
+        # objects can't be a Quantity
+        with self.assertRaises(TypeError):
+            Measurement('test_metric', quantity=int)
+        m = Measurement('test_metric', quantity=5)
+        self.assertEqual(m.quantity, 5)
+        m = Measurement('test_metric', quantity=5.1)
+        self.assertEqual(m.quantity, 5.1)
+
     def test_str(self):
         metric = 'test.cmodel_mag'
         value = 1235 * u.mag

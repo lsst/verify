@@ -193,8 +193,12 @@ class Measurement(JsonSerializationMixin):
     def quantity(self, q):
         # a quantity can be None or a Quantity
         if not isinstance(q, u.Quantity) and q is not None:
-            message = '{0} is not an astropy.units.Quantity-type'
-            raise TypeError(message.format(q))
+            try:
+                q = q*u.dimensionless_unscaled
+            except (TypeError, ValueError):
+                message = ('{0} cannot be coerced into an '
+                           'astropy.units.dimensionless_unscaled')
+                raise TypeError(message.format(q))
 
         if self.metric is not None and q is not None:
             # check unit consistency
