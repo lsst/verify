@@ -287,7 +287,6 @@ def insert_extra_package_metadata(job, config):
 def insert_env_metadata(job, env_name, metadata):
     """Insert environment metadata into the Job.
     """
-
     metadata.update({'env_name': env_name})
     job.meta['env'] = metadata
 
