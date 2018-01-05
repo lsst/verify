@@ -55,7 +55,7 @@ from __future__ import print_function
 
 # For determining what is documented in Sphinx
 __all__ = ['parse_args', 'main', 'insert_lsstsw_metadata',
-           'insert_extra_package_metadata', 'insert_jenkins_metadata',
+           'insert_extra_package_metadata', 'insert_env_metadata',
            'Configuration']
 
 import argparse
@@ -204,7 +204,8 @@ def main():
     # Add environment variable metadata from the Jenkins CI environment
     if config.env_name == 'jenkins':
         log.info('Inserting Jenkins CI environment metadata.')
-        job = insert_jenkins_metadata(job, config)
+        jenkins_metadata = get_jenkins_env()
+        job = insert_env_metadata(job, 'jenkins', jenkins_metadata)
 
     # Upload job
     if not config.test:
@@ -283,11 +284,12 @@ def insert_extra_package_metadata(job, config):
     return job
 
 
-def insert_jenkins_metadata(job, config):
-    """Insert metadata into the Job from the Jenkins environment.
+def insert_env_metadata(job, env_name, metadata):
+    """Insert environment metadata into the Job.
     """
-    jenkins_metadata = get_jenkins_env()
-    job.meta.update(jenkins_metadata)
+    metadata.update({'env_name': env_name})
+    job.meta['env'] = metadata
+
     return job
 
 
