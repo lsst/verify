@@ -140,7 +140,9 @@ def make_accept_header(version=None):
     template = 'application/json; version={0}'
     return template.format(version)
 
-def get_access_token(api_url, api_user, api_password, api_auth_endpoint='auth'):
+
+def get_access_token(api_url, api_user, api_password,
+                     api_auth_endpoint='auth'):
     """Get access token from the SQUASH API assuming the API user exists.
 
     Parameters
@@ -243,8 +245,8 @@ def post(api_url, api_endpoint, json_doc=None,
         # be pedantic about return status. requests#status_code will not error
         # on 3xx codes
         if r.status_code != 201 and r.status_code != 200:
-            message = 'Expected status = 200 (OK) or 201 (Created). Got status={0}. {1}'.format(
-                r.status_code, r.reason)
+            message = 'Expected status = 200 (OK) or 201 (Created). ' \
+                'Got status={0}. {1}'.format(r.status_code, r.reason)
             raise requests.exceptions.RequestException(message)
     except requests.exceptions.RequestException as e:
         log.error(str(e))
