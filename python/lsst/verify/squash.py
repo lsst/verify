@@ -160,7 +160,6 @@ def get_access_token(api_url, api_user, api_password, api_auth_endpoint='auth'):
     access_token: `str`
        The access token from the SQUASH API authorization endpoint.
     """
-
     json_doc = {'username': api_user, 'password': api_password}
 
     r = post(api_url, api_auth_endpoint, json_doc)
@@ -171,13 +170,12 @@ def get_access_token(api_url, api_user, api_password, api_auth_endpoint='auth'):
 
 
 def make_authorization_header(access_token):
-    """Make the ``Authorization`` HTTP header assuming a valid
-    access token returned by (`get_access_token`).
+    """Make an ``Authorization`` HTTP header using a SQUASH access token.
 
     Parameters
     ----------
     access_token : `str`
-        Access token returned by (`get_access_token`).
+        Access token returned by `get_access_token`.
 
     Returns
     -------
@@ -206,8 +204,8 @@ def post(api_url, api_endpoint, json_doc=None,
     version : `str`, optional
         API version. The value of `get_default_api_version` is used by default.
     access_token : `str`, optional
-        Access token. Not required when a POST is done to the API authorization
-        endpoint.
+        Access token (see `get_access_token`). Not required when a POST is done
+        to the API authorization endpoint.
 
     Raises
     ------
