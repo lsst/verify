@@ -309,7 +309,7 @@ class Job(JsonSerializationMixin):
             json.dump(self.json, f)
 
     def dispatch(self, api_user=None, api_password=None,
-                 api_url='https://squash.lsst.codes/dashboard/api/',
+                 api_url='https://squash-restful-api.lsst.codes',
                  **kwargs):
         """POST the job to SQUASH, LSST Data Management's metric dashboard.
 
@@ -328,9 +328,12 @@ class Job(JsonSerializationMixin):
         # subset JSON to just the 'job' fields; no metrics and specs
         job_json = {k: full_json_doc[k]
                     for k in ('measurements', 'blobs', 'meta')}
-        squash.post(api_url, 'jobs', json_doc=job_json,
-                    api_user=api_user, api_password=api_password,
-                    **kwargs)
+
+        access_token = squash.get_access_token(api_url, api_user,
+                                               api_password)
+
+        squash.post(api_url, 'job', json_doc=job_json,
+                    access_token=access_token, **kwargs)
 
     def report(self, name=None, spec_tags=None, metric_tags=None):
         """Create a verification report that lists the pass/fail status of

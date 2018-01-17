@@ -41,7 +41,7 @@ import requests
 import lsst.log
 
 # Version of the SQUASH API this client is compatible with
-_API_VERSION = '2.0'
+_API_VERSION = '1.0'
 
 # Default HTTP timeout (seconds) for all SQUASH client requests.
 _TIMEOUT = 30.0
@@ -59,7 +59,7 @@ def get_endpoint_url(api_url, api_endpoint, **kwargs):
         Root URL of the SQUASH API. For example,
         ``'https://squash.lsst.codes/dashboard/api/'``.
     api_endpoint : `str`
-        Name of the SQUASH API endpoint. For example, ``'jobs'``.
+        Name of the SQUASH API endpoint. For example, ``'job'``.
     **kwargs : optional
         Additional keyword arguments passed to `get`.
 
@@ -110,7 +110,7 @@ def get_default_api_version():
     Returns
     -------
     version : `str`
-        API version. For example, ``'2.0'``.
+        API version. For example, ``'1.0'``.
     """
     global _API_VERSION
     return _API_VERSION
@@ -133,16 +133,63 @@ def make_accept_header(version=None):
     Examples
     --------
     >>> make_accept_header()
-    'application/json; version=2.0'
+    'application/json; version=1.0'
     """
     if version is None:
         version = get_default_api_version()
     template = 'application/json; version={0}'
     return template.format(version)
 
+def get_access_token(api_url, api_user, api_password, api_auth_endpoint='auth'):
+    """Get access token from the SQUASH API assuming the API user exists.
+
+    Parameters
+    ----------
+    api_url : `str`
+        Root URL of the SQUASH API. For example,
+        ```https://squash-restful-api.lsst.codes```.
+    api_user : `str`
+        API username.
+    api_password : `str`
+        API password.
+    api_auth_endpoint : `str`
+        API authorization endpoint.
+
+    Returns
+    -------
+    access_token: `str`
+       The access token from the SQUASH API authorization endpoint.
+    """
+
+    json_doc = {'username': api_user, 'password': api_password}
+
+    r = post(api_url, api_auth_endpoint, json_doc)
+
+    json_r = r.json()
+
+    return json_r['access_token']
+
+
+def make_authorization_header(access_token):
+    """Make the ``Authorization`` HTTP header assuming a valid
+    access token returned by (`get_access_token`).
+
+    Parameters
+    ----------
+    access_token : `str`
+        Access token returned by (`get_access_token`).
+
+    Returns
+    -------
+    authorization_header : `str`
+        The Authorization header value.
+    """
+    authorization_header = 'JWT {0}'
+    return authorization_header.format(access_token)
+
 
 def post(api_url, api_endpoint, json_doc=None,
-         api_user=None, api_password=None, timeout=None, version=None):
+         timeout=None, version=None, access_token=None):
     """POST a JSON document to SQUASH.
 
     Parameters
@@ -154,14 +201,13 @@ def post(api_url, api_endpoint, json_doc=None,
         Name of the API endpoint to post to.
     json_doc : `dict`
         A JSON-serializable object.
-    api_user : `str`
-        API username.
-    api_password : `str`
-        API password.
     timeout : `float`, optional
         Request timeout. The value of `get_default_timeout` is used by default.
     version : `str`, optional
         API version. The value of `get_default_api_version` is used by default.
+    access_token : `str`, optional
+        Access token. Not required when a POST is done to the API authorization
+        endpoint.
 
     Raises
     ------
@@ -181,11 +227,13 @@ def post(api_url, api_endpoint, json_doc=None,
         'Accept': make_accept_header(version)
     }
 
+    if access_token:
+        headers['Authorization'] = make_authorization_header(access_token)
+
     try:
         # Disable redirect following for POST as requests will turn a POST into
         # a GET when following a redirect. http://ls.st/pbx
         r = requests.post(api_endpoint_url,
-                          auth=(api_user, api_password),
                           json=json_doc,
                           allow_redirects=False,
                           headers=headers,
@@ -196,8 +244,8 @@ def post(api_url, api_endpoint, json_doc=None,
 
         # be pedantic about return status. requests#status_code will not error
         # on 3xx codes
-        if r.status_code != 201:
-            message = 'Expected status=201. Got status={0}. {1}'.format(
+        if r.status_code != 201 and r.status_code != 200:
+            message = 'Expected status = 200 (OK) or 201 (Created). Got status={0}. {1}'.format(
                 r.status_code, r.reason)
             raise requests.exceptions.RequestException(message)
     except requests.exceptions.RequestException as e:
