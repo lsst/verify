@@ -34,7 +34,6 @@ __all__ = ['get', 'post', 'get_endpoint_url', 'reset_endpoint_cache',
            'get_default_timeout', 'get_default_api_version',
            'make_accept_header']
 
-import json
 
 import requests
 
@@ -44,7 +43,7 @@ import lsst.log
 _API_VERSION = '1.0'
 
 # Default HTTP timeout (seconds) for all SQUASH client requests.
-_TIMEOUT = 30.0
+_TIMEOUT = 900.0
 
 # URLs for SQUASH endpoints, cached by `get_endpoint_url()`.
 _ENDPOINT_URLS = None
@@ -244,13 +243,14 @@ def post(api_url, api_endpoint, json_doc=None,
 
         # be pedantic about return status. requests#status_code will not error
         # on 3xx codes
-        if r.status_code != 201 and r.status_code != 200:
-            message = 'Expected status = 200 (OK) or 201 (Created). ' \
-                'Got status={0}. {1}'.format(r.status_code, r.reason)
+        if r.status_code != 200 and r.status_code != 201 \
+                and r.status_code != 202:
+            message = 'Expected status = 200(OK), 201(Created) or 202' \
+                      '(Accepted). Got status={0}. {1}'.format(r.status_code,
+                                                               r.reason)
             raise requests.exceptions.RequestException(message)
     except requests.exceptions.RequestException as e:
         log.error(str(e))
-        log.error(json.dumps(json_doc))
         raise e
 
     return r
