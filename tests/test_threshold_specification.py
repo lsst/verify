@@ -113,10 +113,12 @@ class ThresholdSpecificationTestCase(unittest.TestCase):
         self.assertEqual(s.threshold.value, 5.)
         self.assertEqual(s.threshold.unit, u.mag)
         self.assertEqual(s.operator_str, '<')
-        self.assertEqual(
-            repr(s),
-            "ThresholdSpecification("
-            "Name(spec='design'), <Quantity 5.0 mag>, '<')")
+        # Sanity-check repr
+        self.assertIn('ThresholdSpecification', repr(s))
+        self.assertIn('design', repr(s))
+        self.assertIn('Quantity', repr(s))
+        self.assertIn('mag', repr(s))
+        self.assertIn('5', repr(s))
 
         # Test specification check method
         self.assertTrue(
