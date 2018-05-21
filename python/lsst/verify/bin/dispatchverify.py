@@ -39,17 +39,32 @@ Command line settings override environment variable configuration.
 **Metadata and environment**
 
 dispatch_verify.py can enrich Verification Job metadata with information
-from the environment. In a Jenkins CI execution environment (``--env=ci``) the
+from the environment. Currently dispatch_verify.py supports the Jenkins CI
+and the LSST Data Facility (LDF) execution environments.
+
+In the Jenkins CI execution environment (``--env=jenkins``) the
 following environment variables are consumed:
 
-- ``BUILD_ID`` : ID in the ci system
-- ``BUILD_URL``: ci page with information about the build
-- ``PRODUCT``: the name of the product built, in this case 'validate_drp'
-- ``dataset``: the name of the dataset processed by validate_drp
-- ``label`` : the name of the platform where it runs
+- ``BUILD_ID``: ID in the CI system
+- ``BUILD_URL``: CI page with information about the build
+- ``PRODUCT``: the name of the product built, e.g. 'validate_drp'
+- ``dataset``: the name of the dataset processed, e.g. 'validation_data_cfht'
+- ``label``: the name of the platform where it runs
 
-If lsstsw is used, additional Git branch information is included with
+If ``--lsstsw`` is used, additional Git branch information is included with
 Science Pipelines package metadata.
+
+In the LSST Data Facility execution environment (``--env=ldf`` ) the following
+environment variables are consumed:
+
+- ``DATASET``: the name of the dataset processed, e.g 'HSC RC2'
+- ``DATASET_REPO_URL``: a reference URL with information about the dataset
+- ``RUN_ID``: ID of the run in the LDF environment
+- ``RUN_ID_URL``: a reference URL with information about the run
+- ``STACK_VERSION``: the version of the LSST stack used, e.g. 'w_2018_18'
+
+Note: currently it is not possible to gather Science Pipelines package metadata
+in the LDF environment, always use ``--ignore-lsstsw`` in this environment.
 """
 from __future__ import print_function
 
@@ -73,6 +88,7 @@ from lsst.verify import Job
 from lsst.verify.metadata.lsstsw import LsstswRepos
 from lsst.verify.metadata.eupsmanifest import Manifest
 from lsst.verify.metadata.jenkinsci import get_jenkins_env
+from lsst.verify.metadata.ldf import get_ldf_env
 
 
 def parse_args():
@@ -115,7 +131,9 @@ def parse_args():
         help='Name of the environment where the verification job is being '
              'run. In some environments display_verify.py will gather '
              'additional metadata automatically. '
-             '**ci**: a ci.lsst.code (Jenkins job) environment. '
+             '**jenkins**: for the Jenkins CI (https://ci.lsst.codes)'
+             'environment.'
+             '**ldf**: for the LSST Data Facility environment. '
              'Equivalent to the $VERIFY_ENV environment variable.')
     env_group.add_argument(
         '--lsstsw',
@@ -206,6 +224,10 @@ def main():
         log.info('Inserting Jenkins CI environment metadata.')
         jenkins_metadata = get_jenkins_env()
         job = insert_env_metadata(job, 'jenkins', jenkins_metadata)
+    elif config.env_name == 'ldf':
+        log.info('Inserting LSST Data Facility environment metadata.')
+        ldf_metadata = get_ldf_env()
+        job = insert_env_metadata(job, 'ldf', ldf_metadata)
 
     # Upload job
     if not config.test:
@@ -305,7 +327,7 @@ class Configuration(object):
         Parsed command line arguments, produced by `parse_args`.
     """
 
-    allowed_env = ('jenkins',)
+    allowed_env = ('jenkins', 'ldf')
 
     def __init__(self, args):
         self.json_paths = args.json_paths
