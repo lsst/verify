@@ -121,6 +121,13 @@ def parse_args():
         action='store_true',
         default=False,
         help='Print the assembled Job JSON to standard output.')
+    parser.add_argument(
+        '--ignore-blobs',
+        dest='ignore_blobs',
+        action='store_true',
+        default=False,
+        help='Ignore data blobs even if they are available in the verification'
+             'job.')
 
     env_group = parser.add_argument_group('Environment arguments')
     env_group.add_argument(
@@ -194,6 +201,10 @@ def main():
         log.info('Loading {0}'.format(json_path))
         with open(json_path) as fp:
             json_data = json.load(fp)
+            # Ignore blobs from the verification jobs
+            if config.ignore_blobs:
+                log.info('Ignoring blobs from Job JSON {0}'.format(json_path))
+                json_data = delete_blobs(json_data)
         job = Job.deserialize(**json_data)
         jobs.append(job)
 
@@ -243,6 +254,14 @@ def main():
     if config.output_filepath is not None:
         log.info('Writing Job JSON to {0}.'.format(config.output_filepath))
         job.write(config.output_filepath)
+
+
+def delete_blobs(json_data):
+    """Delete data blobs from the Job JSON
+    """
+    if 'blobs' in json_data:
+        del json_data['blobs']
+    return json_data
 
 
 def insert_lsstsw_metadata(job, config):
@@ -342,6 +361,8 @@ class Configuration(object):
             message = '$VERIFY_ENV not one of {0!s}'.format(self.allowed_env)
             raise RuntimeError(message)
 
+        self.ignore_blobs = args.ignore_blobs
+
         self.ignore_lsstsw = args.ignore_lsstsw
 
         # Make sure --ignore-lsstw is used in the LDF environment
@@ -385,6 +406,7 @@ class Configuration(object):
             'test': self.test,
             'output_filepath': self.output_filepath,
             'show_json': self.show_json,
+            'ignore_blobs': self.ignore_blobs,
             'env': self.env_name,
             'ignore_lsstsw': self.ignore_lsstsw,
             'lsstsw': self.lsstsw,
