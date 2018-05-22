@@ -20,11 +20,9 @@
 # the GNU General Public License along with this program.  If not,
 # see <https://www.lsstcorp.org/LegalNotices/>.
 #
-from __future__ import print_function
-
 __all__ = ['get_jenkins_env']
 
-import datetime
+from datetime import datetime, timezone
 import os
 
 
@@ -54,10 +52,9 @@ def get_jenkins_env():
     >>> job = Job()
     >>> job.meta.update(get_jenkins_env())
     """
-    utc = UTC()
 
     return {
-        'date': datetime.datetime.now(utc).isoformat(),
+        'date': datetime.now(timezone.utc).isoformat(),
         'ci_id': os.getenv('BUILD_ID', 'unknown'),
         'ci_name': os.getenv('PRODUCT', 'unknown'),
         'ci_dataset': os.getenv('dataset', 'unknown'),
@@ -65,17 +62,3 @@ def get_jenkins_env():
         'ci_url': os.getenv('BUILD_URL', 'https://example.com'),
         'status': 0,
     }
-
-
-class UTC(datetime.tzinfo):
-    """UTC timezone."""
-    # http://stackoverflow.com/a/2331635
-
-    def utcoffset(self, dt):
-        return datetime.timedelta(0)
-
-    def tzname(self, dt):
-        return "UTC"
-
-    def dst(self, dt):
-        return datetime.timedelta(0)

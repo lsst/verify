@@ -54,20 +54,19 @@ following environment variables are consumed:
 If ``--lsstsw`` is used, additional Git branch information is included with
 Science Pipelines package metadata.
 
-In the LSST Data Facility execution environment (``--env=ldf`` ) the following
+In the LSST Data Facility execution environment (``--env=ldf``) the following
 environment variables are consumed:
 
 - ``DATASET``: the name of the dataset processed, e.g 'HSC RC2'
 - ``DATASET_REPO_URL``: a reference URL with information about the dataset
 - ``RUN_ID``: ID of the run in the LDF environment
 - ``RUN_ID_URL``: a reference URL with information about the run
-- ``STACK_VERSION``: the version of the LSST stack used, e.g. 'w_2018_18'
+- ``VERSION_TAG``: the version tag of the LSST software used, e.g. 'w_2018_18'
 
 Note: currently it is not possible to gather Science Pipelines package metadata
-in the LDF environment, always use ``--ignore-lsstsw`` in this environment.
+in the LDF environment, thus if ``--env=ldf`` is used ``--ignore-lsstsw`` is
+aslo used by default in this environment.
 """
-from __future__ import print_function
-
 # For determining what is documented in Sphinx
 __all__ = ['parse_args', 'main', 'insert_lsstsw_metadata',
            'insert_extra_package_metadata', 'insert_env_metadata',
@@ -345,10 +344,14 @@ class Configuration(object):
 
         self.ignore_lsstsw = args.ignore_lsstsw
 
+        # Make sure --ignore-lsstw is used in the LDF environment
+        if self.env_name == 'ldf':
+            self.ignore_lsstsw = True
+
         self.lsstsw = args.lsstsw or os.getenv('LSSTSW')
         if self.lsstsw is not None:
             self.lsstsw = os.path.abspath(self.lsstsw)
-        if not self.ignore_lsstsw and not os.path.isdir(self.lsstsw):
+        if not self.ignore_lsstsw and not self.lsstsw:
             message = 'lsstsw directory not found at {0}'.format(self.lsstsw)
             raise RuntimeError(message)
 

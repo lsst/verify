@@ -20,11 +20,9 @@
 # the GNU General Public License along with this program.  If not,
 # see <https://www.lsstcorp.org/LegalNotices/>.
 #
-from __future__ import print_function
-
 __all__ = ['get_ldf_env']
 
-import datetime
+from datetime import datetime, timezone
 import os
 
 
@@ -43,7 +41,7 @@ def get_ldf_env():
         dataset.
         - ``run_id``: ID of the run in the LDF environment.
         - ``run_id_url``: a reference URL with information about the run.
-        - ``stack_version``: the version of the LSST stack used.
+        - ``version_tag``: the version of the LSST stack used.
 
     Examples
     --------
@@ -53,28 +51,13 @@ def get_ldf_env():
     >>> job = Job()
     >>> job.meta.update(get_ldf_env())
     """
-    utc = UTC()
 
     return {
-        'date': datetime.datetime.now(utc).isoformat(),
+        'date': datetime.now(timezone.utc).isoformat(),
         'dataset': os.getenv('DATASET', 'unknown'),
         'dataset_repo_url': os.getenv('DATASET_REPO_URL',
                                       'https://example.com'),
         'run_id': os.getenv('RUN_ID', 'unknown'),
         'run_id_url': os.getenv('RUN_ID_URL', 'https://example.com'),
-        'stack_version': os.getenv('STACK_VERSION', 'unknown')
+        'version_tag': os.getenv('VERSION_TAG', 'unknown')
     }
-
-
-class UTC(datetime.tzinfo):
-    """UTC timezone."""
-    # http://stackoverflow.com/a/2331635
-
-    def utcoffset(self, dt):
-        return datetime.timedelta(0)
-
-    def tzname(self, dt):
-        return "UTC"
-
-    def dst(self, dt):
-        return datetime.timedelta(0)
