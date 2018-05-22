@@ -20,29 +20,28 @@
 # the GNU General Public License along with this program.  If not,
 # see <https://www.lsstcorp.org/LegalNotices/>.
 #
-__all__ = ['get_jenkins_env']
+__all__ = ['get_ldf_env']
 
 from datetime import datetime, timezone
 import os
 
 
-def get_jenkins_env():
-    """Gather metadata entries from LSST DM Jenkins CI environment.
+def get_ldf_env():
+    """Gather metadata entries from LSST Data Facility environment.
 
     Returns
     -------
     prov : `dict`
-        Dictionary of metadata items obtained from the Jenkins CI
-        environment. Fields are:
+        Dictionary of metadata items obtained from the LDF environment.
+        Fields are:
 
         - ``'date'``: ISO8601-formatted current datetime.
-        - ``'ci_id'``: Job ID in Jenkins CI.
-        - ``'ci_name'``: Job name in Jenkins CI.
-        - ``'ci_dataset'``: Name of the dataset being processed.
-        - ``'ci_label'``: Value of ``${label}`` environment variable in
-          Jenkins CI.
-        - ``'ci_url'``: URL to job page in Jenkins CI.
-        - ``'status'``: Job return status (always ``0``).
+        - ``'dataset'``: the name of the dataset processed.
+        - ``'dataset_repo_url'``: a reference URL with information about the
+        dataset.
+        - ``run_id``: ID of the run in the LDF environment.
+        - ``run_id_url``: a reference URL with information about the run.
+        - ``version_tag``: the version of the LSST stack used.
 
     Examples
     --------
@@ -50,15 +49,15 @@ def get_jenkins_env():
 
     >>> from lsst.verify import Job
     >>> job = Job()
-    >>> job.meta.update(get_jenkins_env())
+    >>> job.meta.update(get_ldf_env())
     """
 
     return {
         'date': datetime.now(timezone.utc).isoformat(),
-        'ci_id': os.getenv('BUILD_ID', 'unknown'),
-        'ci_name': os.getenv('PRODUCT', 'unknown'),
-        'ci_dataset': os.getenv('dataset', 'unknown'),
-        'ci_label': os.getenv('label', 'unknown'),
-        'ci_url': os.getenv('BUILD_URL', 'https://example.com'),
-        'status': 0,
+        'dataset': os.getenv('DATASET', 'unknown'),
+        'dataset_repo_url': os.getenv('DATASET_REPO_URL',
+                                      'https://example.com'),
+        'run_id': os.getenv('RUN_ID', 'unknown'),
+        'run_id_url': os.getenv('RUN_ID_URL', 'https://example.com'),
+        'version_tag': os.getenv('VERSION_TAG', 'unknown')
     }
