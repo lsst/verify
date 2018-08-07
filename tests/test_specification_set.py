@@ -362,7 +362,7 @@ class TestSpecificationSetLoadMetricsPackage(unittest.TestCase):
 
     def test_contains(self):
         self.assertTrue('validate_drp.PA1.design_gri' in self.spec_set)
-        self.assertTrue('validate_drp:cfht_gri/base#cfht' in self.spec_set)
+        self.assertTrue('validate_drp:cfht_gri/base#base' in self.spec_set)
 
 
 class TestSpecificationSetNameSubset(unittest.TestCase):
