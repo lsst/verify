@@ -33,7 +33,7 @@ from .naming import Name
 
 
 class Metric(JsonSerializationMixin):
-    """Container for the definition of a metric.
+    r"""Container for the definition of a metric.
 
     Metrics can either be instantiated programatically, or from a metric YAML
     file through `lsst.verify.MetricSet`.

@@ -37,7 +37,7 @@ from . import squash
 
 
 class Job(JsonSerializationMixin):
-    """Container for `~lsst.verify.Measurement`\ s, `~lsst.verify.Blob` \s,
+    r"""Container for `~lsst.verify.Measurement`\ s, `~lsst.verify.Blob` \s,
     and `~lsst.verify.Metadata` associated with a pipeline run.
 
     Parameters
@@ -75,7 +75,7 @@ class Job(JsonSerializationMixin):
     @classmethod
     def load_metrics_package(cls, package_name_or_path='verify_metrics',
                              subset=None, measurements=None, meta=None):
-        """Create a Job with metrics and specifications pre-loaded from a
+        r"""Create a Job with metrics and specifications pre-loaded from a
         Verification Framework metrics package, such as
         :ref:`verify_metrics <verify-metrics-package>`.
 
@@ -336,7 +336,7 @@ class Job(JsonSerializationMixin):
                     access_token=access_token, **kwargs)
 
     def report(self, name=None, spec_tags=None, metric_tags=None):
-        """Create a verification report that lists the pass/fail status of
+        r"""Create a verification report that lists the pass/fail status of
         measurements against specifications in this job.
 
         In a Jupyter notebook, this report can be shown as an inline table.

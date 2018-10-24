@@ -31,7 +31,7 @@ from .naming import Name
 
 def output_quantities(package_name, quantities, suffix=None,
                       include_metrics=False, metrics_package='verify_metrics'):
-    """Output measurements, as `astropy.units.Quantity` objects, from a
+    r"""Output measurements, as `astropy.units.Quantity` objects, from a
     pipeline task execution to a `lsst.verify`-formatted JSON file.
 
     Parameters

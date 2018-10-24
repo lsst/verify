@@ -29,7 +29,7 @@ from .jsonmixin import JsonSerializationMixin
 
 
 class BlobSet(JsonSerializationMixin):
-    """A collection of `~lsst.verify.Blob`\ s.
+    r"""A collection of `~lsst.verify.Blob`\ s.
 
     Parameters
     ----------

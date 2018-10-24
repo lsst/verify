@@ -29,7 +29,7 @@ __all__ = ['Name']
 
 
 class Name(object):
-    """Semantic name of a package, `~lsst.verify.Metric` or
+    r"""Semantic name of a package, `~lsst.verify.Metric` or
     `~lsst.verify.Specification` in the `lsst.verify` framework.
 
     ``Name`` instances are immutable and can be used as keys in mappings.

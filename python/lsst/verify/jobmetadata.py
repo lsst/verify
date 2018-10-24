@@ -57,7 +57,7 @@ class Metadata(JsonSerializationMixin):
     """
 
     # Pattern for detecting metric name prefixes in names
-    _prefix_pattern = re.compile('^(\S+\.\S+)\.')
+    _prefix_pattern = re.compile(r'^(\S+\.\S+)\.')
 
     def __init__(self, measurement_set, data=None):
 

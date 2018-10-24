@@ -33,7 +33,7 @@ from .datum import Datum
 
 
 class Blob(JsonSerializationMixin):
-    """Blob is a flexible container of data, as `lsst.verify.Datum` \s, that
+    r"""Blob is a flexible container of data, as `lsst.verify.Datum` \s, that
     are serializable to JSON.
 
     Parameters
