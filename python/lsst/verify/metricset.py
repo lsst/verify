@@ -38,7 +38,7 @@ from .yamlutils import load_ordered_yaml
 
 
 class MetricSet(JsonSerializationMixin):
-    """A collection of `Metric`\ s.
+    r"""A collection of `Metric`\ s.
 
     Parameters
     ----------
@@ -306,7 +306,7 @@ class MetricSet(JsonSerializationMixin):
         self[metric.name] = metric
 
     def keys(self):
-        """Get a list of metric names included in the set
+        r"""Get a list of metric names included in the set
 
         Returns
         -------

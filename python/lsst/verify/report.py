@@ -31,7 +31,7 @@ from .naming import Name
 
 
 class Report(object):
-    """Report tabulating specification pass/fail status for a set of
+    r"""Report tabulating specification pass/fail status for a set of
     `lsst.verify.Measurement`\ s.
 
     Parameters

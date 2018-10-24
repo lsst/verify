@@ -56,7 +56,7 @@ def load_ordered_yaml(stream, **kwargs):
 
 
 def load_all_ordered_yaml(stream, **kwargs):
-    """Load all YAML documents from a stream as a `list` of
+    r"""Load all YAML documents from a stream as a `list` of
     `~collections.OrderedDict`\ s.
 
     Parameters
@@ -98,7 +98,7 @@ def _build_ordered_loader(Loader=yaml.Loader, object_pairs_hook=OrderedDict):
 
 
 def merge_documents(base_doc, new_doc):
-    """Merge the content of a dict-like object onto a base dict-like object,
+    r"""Merge the content of a dict-like object onto a base dict-like object,
     recursively following embedded dictionaries and lists.
 
     Parameters

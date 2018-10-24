@@ -126,7 +126,7 @@ class ThresholdSpecification(Specification):
 
     @property
     def datum(self):
-        """Representation of this `ThresholdSpecification`\ 's threshold as
+        r"""Representation of this `ThresholdSpecification`\ 's threshold as
         a `Datum`.
         """
         return Datum(self.threshold, label=str(self.name))

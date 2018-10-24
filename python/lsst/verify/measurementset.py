@@ -30,7 +30,7 @@ from .jsonmixin import JsonSerializationMixin
 
 
 class MeasurementSet(JsonSerializationMixin):
-    """A collection of `~lsst.verify.Measurement`\ s of
+    r"""A collection of `~lsst.verify.Measurement`\ s of
     `~lsst.verify.Metric`\ s.
 
     ``MeasurementSet`` provides a dict-like interface for getting, setting,
@@ -214,7 +214,7 @@ class MeasurementSet(JsonSerializationMixin):
             self.insert(measurement)
 
     def refresh_metrics(self, metric_set):
-        """Refresh `Measurement.metric` attributes in `Measurement`\ s
+        r"""Refresh `Measurement.metric` attributes in `Measurement`\ s
         contained by this set.
 
         Parameters

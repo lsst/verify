@@ -37,7 +37,7 @@ from .naming import Name
 
 
 class Measurement(JsonSerializationMixin):
-    """A measurement of a single `~lsst.verify.Metric`.
+    r"""A measurement of a single `~lsst.verify.Metric`.
 
     A measurement is associated with a single `Metric` and consists of
     a `astropy.units.Quantity` value. In addition, a measurement can be
@@ -77,7 +77,7 @@ class Measurement(JsonSerializationMixin):
     """
 
     blobs = None
-    """`dict` of `lsst.verify.Blob`\ s associated with this measurement.
+    r"""`dict` of `lsst.verify.Blob`\ s associated with this measurement.
 
     See also
     --------
@@ -85,7 +85,7 @@ class Measurement(JsonSerializationMixin):
     """
 
     extras = None
-    """`Blob` associated solely to this measurement.
+    r"""`Blob` associated solely to this measurement.
 
     Notes
     -----
@@ -270,7 +270,7 @@ class Measurement(JsonSerializationMixin):
 
     @property
     def notes(self):
-        """Measurement annotations as key-value pairs (`dict`).
+        r"""Measurement annotations as key-value pairs (`dict`).
 
         These key-value pairs are automatically available from `Job.meta`,
         though keys are prefixed with the `Metric`\ 's name. This metadata can
@@ -281,7 +281,7 @@ class Measurement(JsonSerializationMixin):
 
     @property
     def json(self):
-        """A `dict` that can be serialized as semantic SQUASH JSON.
+        r"""A `dict` that can be serialized as semantic SQUASH JSON.
 
         Fields:
 
@@ -330,7 +330,7 @@ class Measurement(JsonSerializationMixin):
     @classmethod
     def deserialize(cls, metric=None, identifier=None, value=None, unit=None,
                     blob_refs=None, blobs=None, **kwargs):
-        """Create a Measurement instance from a parsed YAML/JSON document.
+        r"""Create a Measurement instance from a parsed YAML/JSON document.
 
         Parameters
         ----------

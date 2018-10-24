@@ -47,12 +47,12 @@ from .report import Report
 
 # Pattern for SpecificationPartial names
 # package:path#name
-PARTIAL_PATTERN = re.compile('^(?:(?P<package>\S+):)'
-                             '?(?P<path>\S+)?#(?P<name>\S+)$')
+PARTIAL_PATTERN = re.compile(r'^(?:(?P<package>\S+):)'
+                             r'?(?P<path>\S+)?#(?P<name>\S+)$')
 
 
 class SpecificationSet(JsonSerializationMixin):
-    """A collection of `Specification`\ s.
+    r"""A collection of `Specification`\ s.
 
     Parameters
     ----------
@@ -296,7 +296,7 @@ class SpecificationSet(JsonSerializationMixin):
 
     @staticmethod
     def _load_yaml_file(yaml_file_path, package_dirname):
-        """Ingest specifications and partials from a single YAML file.
+        r"""Ingest specifications and partials from a single YAML file.
 
         Parameters
         ----------
@@ -684,7 +684,7 @@ class SpecificationSet(JsonSerializationMixin):
         self[key] = spec
 
     def update(self, other):
-        """Merge another `SpecificationSet` into this one.
+        r"""Merge another `SpecificationSet` into this one.
 
         Parameters
         ----------
