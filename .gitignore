@@ -20,3 +20,6 @@ examples/*.list
 .coverage
 htmlcov
 pytest_session.txt
+.pytest_cache/
+_build*
+
