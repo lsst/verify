@@ -39,4 +39,7 @@ Python API reference
 .. automodapi:: lsst.verify.report
    :no-inheritance-diagram:
 
+.. automodapi:: lsst.verify.compatibility
+   :no-inheritance-diagram:
+
 .. _SQUASH: https://squash.lsst.codes
