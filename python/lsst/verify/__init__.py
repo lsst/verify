@@ -43,3 +43,4 @@ from .blobset import *
 from .jobmetadata import *
 from .job import *
 from .output import *
+from .metricTask import *
