@@ -19,9 +19,53 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = []
+__all__ = ["register"]
 
 from lsst.pex.config import Registry
+from .metricTask import MetricTask
+
+
+def register(name):
+    """A class decorator that registers a `lsst.verify.compatibility.MetricTask`
+    with a central repository.
+
+    Parameters
+    ----------
+    name : `str`
+        The name under which this decorator will register the
+        `~lsst.verify.compatibility.MetricTask`.
+
+    Raises
+    ------
+    RuntimeError
+        Raised if another class has already been registered under ``name``.
+    ValueError
+        Raised if this decorator is applied to a class that is not a
+        `lsst.verify.compatibility.MetricTask`.
+
+    Notes
+    -----
+    This decorator must be used for any `~lsst.verify.compatibility.MetricTask`
+    that is to be used with `lsst.verify.compatibility.MetricsControllerTask`.
+
+    Examples
+    --------
+    The decorator is applied at the class definition:
+
+    >>> from lsst.verify.compatibility import register, MetricTask
+    >>> @register("dummy")
+    ... class DummyMetricTask(MetricTask):
+    ...     pass
+    """
+    def wrapper(taskClass):
+        if issubclass(taskClass, MetricTask):
+            # TODO: if MetricRegistry is phased out, simply return taskClass
+            # instead of removing the decorator
+            MetricRegistry.registry.register(name, taskClass)
+            return taskClass
+        else:
+            raise ValueError("%r is not a %r" % (taskClass, MetricTask))
+    return wrapper
 
 
 class MetricRegistry:
@@ -35,6 +79,6 @@ class MetricRegistry:
     ``MetricRegistry.registry`` should be agnostic to such changes.
     """
 
-    registry = Registry()
+    registry = Registry(MetricTask.ConfigClass)
     """A unique registry of ``MetricTasks`` (`lsst.pex.config.Registry`).
     """

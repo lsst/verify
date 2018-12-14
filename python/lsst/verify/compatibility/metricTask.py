@@ -28,8 +28,7 @@ import lsst.pipe.base as pipeBase
 
 
 class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
-    """A base class for tasks that compute exactly one metric from arbitrary
-    input datasets.
+    """A base class for tasks that compute one metric from input datasets.
 
     Parameters
     ----------
