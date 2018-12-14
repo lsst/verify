@@ -19,7 +19,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .metricTask import *
-from .metricsControllerTask import *
-from .metadataTask import *
-from .metricRegistry import *
+__all__ = []
+
+from lsst.pex.config import Registry
+
+
+class MetricRegistry:
+    """Registry of all `lsst.verify.compatibility.MetricTask` subclasses known
+    to `lsst.verify`'s client.
+
+    Notes
+    -----
+    This class has a singleton-like architecture in case a custom subclass of
+    `lsst.pex.config.Registry` is needed in the future. Code that refers to
+    ``MetricRegistry.registry`` should be agnostic to such changes.
+    """
+
+    registry = Registry()
+    """A unique registry of ``MetricTasks`` (`lsst.pex.config.Registry`).
+    """
