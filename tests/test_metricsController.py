@@ -27,7 +27,7 @@ from astropy.tests.helper import assert_quantity_allclose
 import lsst.utils.tests
 from lsst.pex.config import Config
 from lsst.pipe.base import Task, Struct
-from lsst.verify import Job, MetricComputationError
+from lsst.verify import Job, Name, Measurement, MetricComputationError
 from lsst.verify.compatibility import MetricTask, MetricsControllerTask
 
 
@@ -35,6 +35,27 @@ def _metricName():
     """The metric to be hypothetically measured using the mock task.
     """
     return "misc_tasks.FancyMetric"
+
+
+class _DemoMetricTask(MetricTask):
+    """A minimal `lsst.verify.compatibility.MetricTask`.
+    """
+
+    _DefaultName = "test"
+
+    def run(self, inputs):
+        nData = len(inputs)
+        return Struct(measurement=Measurement(
+            self.getOutputMetricName(self.config),
+            nData * u.second))
+
+    @classmethod
+    def getInputDatasetTypes(cls, _config):
+        return {'inputs': "metadata"}
+
+    @classmethod
+    def getOutputMetricName(cls, _config):
+        return Name(_metricName())
 
 
 def _makeMockDataref(dataId=None):
@@ -78,19 +99,8 @@ class MetricsControllerTestSuite(lsst.utils.tests.TestCase):
         controllerConfig.metadataAdder.retarget(_TestMetadataAdder)
         self.task = MetricsControllerTask(controllerConfig)
 
-        self.metricTask = unittest.mock.create_autospec(
-            MetricTask, instance=True)
-        self.task.measurers = [self.metricTask]
-        # For some reason can't set these in create_autospec call
-        self.metricTask.config = None
-        self.metricTask.getInputDatasetTypes.return_value = \
-            {"input": "metadata"}
-
-        def returnMeasurement(inputData, _inputDataIds, _outputDataIds):
-            nData = len(inputData["input"])
-            return Struct(measurement=lsst.verify.Measurement(
-                _metricName(), nData * u.second))
-        self.metricTask.adaptArgsAndRun.side_effect = returnMeasurement
+        metricTask = _DemoMetricTask()
+        self.task.measurers = [metricTask]
 
     def _checkMetric(self, mockWriter, datarefs, unitsOfWork):
         """Standardized test battery for running a timing metric.
@@ -155,27 +165,31 @@ class MetricsControllerTestSuite(lsst.utils.tests.TestCase):
 
     def testInvalidMetricSegregation(self, _mockWriter, _mockButler,
                                      _mockMetricsLoader):
-        self.metricTask.adaptArgsAndRun.side_effect = (
-            MetricComputationError, unittest.mock.DEFAULT)
-        self.metricTask.adaptArgsAndRun.return_value = Struct(
-            measurement=lsst.verify.Measurement(_metricName(),
-                                                1.0 * u.second))
+        with unittest.mock.patch.object(_DemoMetricTask,
+                                        "adaptArgsAndRun") as mockCall:
+            # Run _DemoMetricTask twice, with one failure and one result
+            mockCall.side_effect = (MetricComputationError,
+                                    unittest.mock.DEFAULT)
+            expectedValue = 1.0 * u.second
+            mockCall.return_value = Struct(measurement=lsst.verify.Measurement(
+                _metricName(), expectedValue))
 
-        dataIds = [{"visit": 42, "ccd": 101, "filter": "k"},
-                   {"visit": 42, "ccd": 102, "filter": "k"}]
-        datarefs = [_makeMockDataref(dataId) for dataId in dataIds]
+            dataIds = [{"visit": 42, "ccd": 101, "filter": "k"},
+                       {"visit": 42, "ccd": 102, "filter": "k"}]
+            datarefs = [_makeMockDataref(dataId) for dataId in dataIds]
 
-        jobs = self.task.runDataRefs(datarefs).jobs
-        self.assertEqual(len(jobs), len(datarefs))
+            jobs = self.task.runDataRefs(datarefs).jobs
+            self.assertEqual(len(jobs), len(datarefs))
 
-        self.assertEqual(len(jobs[0].measurements), 0)
-        for job in jobs:
-            self.assertTrue(job.meta["tested"])
-        for job in jobs[1:]:
-            self.assertEqual(len(job.measurements), 1)
+            # Failed job
+            self.assertEqual(len(jobs[0].measurements), 0)
+
+            # Successful job
+            self.assertTrue(jobs[1].meta["tested"])
+            self.assertEqual(len(jobs[1].measurements), 1)
             assert_quantity_allclose(
-                job.measurements[_metricName()].quantity,
-                float(1.0) * u.second)
+                jobs[1].measurements[_metricName()].quantity,
+                expectedValue)
 
     def testNoData(self, mockWriter, _mockButler, _mockMetricsLoader):
         datarefs = []
