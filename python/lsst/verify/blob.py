@@ -91,8 +91,8 @@ class Blob(JsonSerializationMixin):
         blob : `Blob`
             The `Blob` instance deserialied from a blob JSON object.
 
-        Example
-        -------
+        Examples
+        --------
         This class method is designed to roundtrip JSON objects created a
         Blob instance. For example:
 

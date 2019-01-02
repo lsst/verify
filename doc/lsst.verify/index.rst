@@ -14,6 +14,14 @@ Measurements made through `lsst.verify` can be uploaded to LSST's SQUASH_ monito
 
    `SQR-019: LSST Verification Framework API Demonstration <https://sqr-019.lsst.io>`_.
 
+Using lsst.verify
+=================
+
+.. toctree::
+   :maxdepth: 1
+
+   inspect_job
+
 Python API reference
 ====================
 

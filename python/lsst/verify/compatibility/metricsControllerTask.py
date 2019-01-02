@@ -58,6 +58,7 @@ class MetricsControllerTask(Task):
 
     Because ``MetricsControllerTask`` cannot support the full functionality of
     the Gen 3 framework, it places several restrictions on its metrics:
+
         * no ``MetricTask`` may depend on the output of another ``MetricTask``
         * the granularity of the metrics is determined by the inputs to
           ``runDataRefs``; configuration information specifying a different
