@@ -45,8 +45,10 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
     granularity, including repository-wide.
 
     Like `lsst.pipe.base.PipelineTask`, this class should be customized by
-    overriding one of `run` or `adaptArgsAndRun`. For requirements on these
-    methods that are specific to ``MetricTask``, see `adaptArgsAndRun`.
+    overriding one of `run` or `adaptArgsAndRun` and by providing an
+    `~lsst.pipe.base.InputDatasetField` for each parameter of `run`. For
+    requirements on these methods that are specific to ``MetricTask``, see
+    `adaptArgsAndRun`.
 
     .. note::
         The API is designed to make it easy to convert all ``MetricTasks`` to
@@ -55,7 +57,8 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
         quanta, or `lsst.daf.butler`.
     """
 
-    # There may be a specialized MetricTaskConfig later, details TBD
+    # TODO: create a specialized MetricTaskConfig once metrics have
+    # Butler datasets
     ConfigClass = lsst.pex.config.Config
 
     def adaptArgsAndRun(self, inputData, inputDataIds, outputDataId):
@@ -146,7 +149,6 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
         return result
 
     @classmethod
-    @abc.abstractmethod
     def getInputDatasetTypes(cls, config):
         """Return input dataset types for this task.
 
@@ -161,7 +163,18 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
             Dictionary where the key is the name of the input dataset (must
             match a parameter to `run`) and the value is the name of its
             Butler dataset type.
+
+        Notes
+        -----
+        The default implementation searches ``config`` for
+        `~lsst.pipe.base.InputDatasetConfig` fields, much like
+        `lsst.pipe.base.PipelineTask.getInputDatasetTypes` does.
         """
+        datasets = {}
+        for key, value in config.items():
+            if isinstance(value, lsst.pipe.base.InputDatasetConfig):
+                datasets[key] = value.name
+        return datasets
 
     @classmethod
     @abc.abstractmethod
