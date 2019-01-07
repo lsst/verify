@@ -33,8 +33,8 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
 
     Parameters
     ----------
-    args
-    kwargs
+    *args
+    **kwargs
         Constructor parameters are the same as for
         `lsst.pipe.base.PipelineTask`.
 
