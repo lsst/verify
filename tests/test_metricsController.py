@@ -29,13 +29,19 @@ from lsst.pex.config import Config, FieldValidationError
 from lsst.pipe.base import Task, Struct
 from lsst.verify import Job, Name, Measurement, MetricComputationError
 from lsst.verify.compatibility import \
-    MetricTask, MetricsControllerTask, register
+    MetricTask, MetricsControllerTask, register, registerMultiple
 
 
 def _metricName():
-    """The metric to be hypothetically measured using the mock task.
-    """
     return "misc_tasks.FancyMetric"
+
+
+def _extraMetricName1():
+    return "misc_tasks.SuperfluousMetric"
+
+
+def _extraMetricName2():
+    return "misc_tasks.RedundantMetric"
 
 
 class DemoMetricConfig(MetricTask.ConfigClass):
@@ -51,6 +57,29 @@ class DemoMetricConfig(MetricTask.ConfigClass):
 
 @register("demoMetric")
 class _DemoMetricTask(MetricTask):
+    """A minimal `lsst.verify.compatibility.MetricTask`.
+    """
+
+    ConfigClass = DemoMetricConfig
+    _DefaultName = "test"
+
+    def run(self, inputs):
+        nData = len(inputs)
+        return Struct(measurement=Measurement(
+            self.getOutputMetricName(self.config),
+            self.config.multiplier * nData * u.second))
+
+    @classmethod
+    def getInputDatasetTypes(cls, _config):
+        return {'inputs': "metadata"}
+
+    @classmethod
+    def getOutputMetricName(cls, config):
+        return Name(config.metric)
+
+
+@registerMultiple("repeatedMetric")
+class _RepeatedMetricTask(MetricTask):
     """A minimal `lsst.verify.compatibility.MetricTask`.
     """
 
@@ -111,11 +140,30 @@ class MetricsControllerTestSuite(lsst.utils.tests.TestCase):
     def setUp(self):
         self.config = MetricsControllerTask.ConfigClass()
         self.config.metadataAdder.retarget(_TestMetadataAdder)
-        self.config.measurers = ["demoMetric"]
+        self.config.measurers = ["demoMetric", "repeatedMetric"]
+
+        self.config.measurers["demoMetric"].multiplier = 2.0
+        repeated = self.config.measurers["repeatedMetric"]
+        repeated.configs["first"] = DemoMetricConfig()
+        repeated.configs["first"].metric = _extraMetricName1()
+        repeated.configs["second"] = DemoMetricConfig()
+        repeated.configs["second"].metric = _extraMetricName2()
+        repeated.configs["second"].multiplier = 3.4
+
         self.task = MetricsControllerTask(self.config)
 
+    def _allMetricTaskConfigs(self):
+        configs = []
+        for name, topConfig in zip(self.config.measurers.names,
+                                   self.config.measurers.active):
+            if name != "repeatedMetric":
+                configs.append(topConfig)
+            else:
+                configs.extend(topConfig.configs.values())
+        return configs
+
     def _checkMetric(self, mockWriter, datarefs, unitsOfWork):
-        """Standardized test battery for running a timing metric.
+        """Standardized test battery for running a metric.
 
         Parameters
         ----------
@@ -134,11 +182,15 @@ class MetricsControllerTestSuite(lsst.utils.tests.TestCase):
 
         jobs = self.task.runDataRefs(datarefs).jobs
         self.assertEqual(len(jobs), len(datarefs))
-        for job, nTimings in zip(jobs, unitsOfWork):
-            self.assertEqual(len(job.measurements), 1)
-            assert_quantity_allclose(
-                job.measurements[_metricName()].quantity,
-                float(nTimings) * u.second)
+        for job, dataref, nTimings in zip(jobs, datarefs, unitsOfWork):
+            taskConfigs = self._allMetricTaskConfigs()
+            self.assertEqual(len(job.measurements), len(taskConfigs))
+            for metricName, metricConfig in zip(job.measurements, taskConfigs):
+                self.assertEqual(metricName, Name(metricConfig.metric))
+                assert_quantity_allclose(
+                    job.measurements[metricConfig.metric].quantity,
+                    metricConfig.multiplier * float(nTimings) * u.second)
+
             self.assertTrue(job.meta["tested"])
 
         # Exact arguments to Job.write are implementation detail, don't test
@@ -177,6 +229,8 @@ class MetricsControllerTestSuite(lsst.utils.tests.TestCase):
 
     def testInvalidMetricSegregation(self, _mockWriter, _mockButler,
                                      _mockMetricsLoader):
+        self.config.measurers = ["demoMetric"]
+        self.task = MetricsControllerTask(self.config)
         with unittest.mock.patch.object(_DemoMetricTask,
                                         "adaptArgsAndRun") as mockCall:
             # Run _DemoMetricTask twice, with one failure and one result

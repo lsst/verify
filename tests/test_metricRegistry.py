@@ -23,7 +23,7 @@ import unittest
 
 import lsst.utils.tests
 
-from lsst.verify.compatibility import MetricTask, register
+from lsst.verify.compatibility import MetricTask, register, registerMultiple
 from lsst.verify.compatibility.metricRegistry import MetricRegistry
 
 
@@ -45,10 +45,26 @@ class MetricRegistryTestSuite(lsst.utils.tests.TestCase):
         self.assertIn("foo", MetricRegistry.registry)
         self.assertEqual(MetricRegistry.registry["foo"], DummyMetricTask)
 
+    def testMultiRegistration(self):
+        @registerMultiple("foo")
+        class DummyMetricTask(MetricTask):
+            pass
+
+        self.assertIn("foo", MetricRegistry.registry)
+        # Type of registry entry is implementation detail; functionality better
+        # tested in test_metricsController
+
     def testInvalidRegistration(self):
         with self.assertRaises(ValueError):
             @register("bar")
             class NotAMetricTask:
+                pass
+
+    def testInvalidMultiRegistration(self):
+        with self.assertRaises(RuntimeError):
+            @register("foo")
+            @registerMultiple("foo")
+            class DummyMetricTask(MetricTask):
                 pass
 
 

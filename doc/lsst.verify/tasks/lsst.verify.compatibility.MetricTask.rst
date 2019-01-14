@@ -55,3 +55,6 @@ Registration
 
 The most common way to run ``MetricTask`` is as plugins to :lsst-task:`~lsst.verify.compatibility.MetricsControllerTask`.
 Most ``MetricTask`` classes should use the `register` decorator to assign a plugin name.
+
+Because of implementation limitations, each registered name may appear at most once in `MetricsControllerConfig`.
+If you expect to need multiple instances of the same ``MetricTask`` class (typically when the same class can compute multiple metrics), it must have the `registerMultiple` decorator instead.

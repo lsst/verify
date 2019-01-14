@@ -57,6 +57,8 @@ Each :lsst-task:`~lsst.verify.compatibility.MetricTask` in a ``MetricsController
 Examples
 ========
 
+Typically, a user of ``MetricsControllerTask`` will configure it with tasks that have `register` decorator:
+
 .. code-block:: py
 
    from lsst.verify.compatibility import register, \
@@ -84,3 +86,24 @@ Examples
                for ccd in range(1, 101)]
    struct = task.runDataRefs(datarefs)
    assert len(struct.jobs) == len(datarefs)
+
+A :lsst-task:`~lsst.verify.compatibility.MetricTask` must have the `registerMultiple` decorator to be used multiple times:
+
+.. code-block:: py
+
+   from lsst.verify.compatibility import registerMultiple, MetricTask, MetricsControllerTask
+
+   @registerMultiple("common")
+   class CommonMetric(MetricTask):
+       ...
+
+   config = MetricsControllerTask.ConfigClass()
+   config.measurers = ["common"]
+   config.measurers["common"].configs["case1"] = CommonMetric.ConfigClass()
+   config.measurers["common"].configs["case1"].metric = "misc_tasks.Case1Metric"
+   config.measurers["common"].configs["case2"] = CommonMetric.ConfigClass()
+   config.measurers["common"].configs["case2"].metric = "misc_tasks.Case2Metric"
+   task = MetricsControllerTask(config)
+
+``MetricsControllerTask`` will create and run two different ``CommonMetric`` objects, one configured with ``metric = "misc_tasks.Case1Metric"`` and one with ``metric = "misc_tasks.Case2Metric"``.
+The names ``"case1"`` and ``"case2"`` can be anything, so long as they are unique.
