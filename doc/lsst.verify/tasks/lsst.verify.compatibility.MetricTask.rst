@@ -53,5 +53,5 @@ Only the ``name`` field is used in a Gen 2 context, but use of `~lsst.pipe.base.
 Registration
 ------------
 
-The most common way to run ``MetricTask`` is as plugins to `~lsst.verify.compatibility.MetricsControllerTask`.
+The most common way to run ``MetricTask`` is as plugins to :lsst-task:`~lsst.verify.compatibility.MetricsControllerTask`.
 Most ``MetricTask`` classes should use the `register` decorator to assign a plugin name.

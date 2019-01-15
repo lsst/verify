@@ -25,10 +25,11 @@ import astropy.units as u
 from astropy.tests.helper import assert_quantity_allclose
 
 import lsst.utils.tests
-from lsst.pex.config import Config
+from lsst.pex.config import Config, FieldValidationError
 from lsst.pipe.base import Task, Struct
 from lsst.verify import Job, Name, Measurement, MetricComputationError
-from lsst.verify.compatibility import MetricTask, MetricsControllerTask
+from lsst.verify.compatibility import \
+    MetricTask, MetricsControllerTask, register
 
 
 def _metricName():
@@ -37,25 +38,38 @@ def _metricName():
     return "misc_tasks.FancyMetric"
 
 
+class DemoMetricConfig(MetricTask.ConfigClass):
+    metric = lsst.pex.config.Field(
+        dtype=str,
+        default=_metricName(),
+        doc="Metric to target")
+    multiplier = lsst.pex.config.Field(
+        dtype=float,
+        default=1.0,
+        doc="Arbitrary factor for measurement")
+
+
+@register("demoMetric")
 class _DemoMetricTask(MetricTask):
     """A minimal `lsst.verify.compatibility.MetricTask`.
     """
 
+    ConfigClass = DemoMetricConfig
     _DefaultName = "test"
 
     def run(self, inputs):
         nData = len(inputs)
         return Struct(measurement=Measurement(
             self.getOutputMetricName(self.config),
-            nData * u.second))
+            self.config.multiplier * nData * u.second))
 
     @classmethod
     def getInputDatasetTypes(cls, _config):
         return {'inputs': "metadata"}
 
     @classmethod
-    def getOutputMetricName(cls, _config):
-        return Name(_metricName())
+    def getOutputMetricName(cls, config):
+        return Name(config.metric)
 
 
 def _makeMockDataref(dataId=None):
@@ -95,12 +109,10 @@ def _butlerQuery(_butler, _datasetType, _level="", dataId=None):
 class MetricsControllerTestSuite(lsst.utils.tests.TestCase):
 
     def setUp(self):
-        controllerConfig = MetricsControllerTask.ConfigClass()
-        controllerConfig.metadataAdder.retarget(_TestMetadataAdder)
-        self.task = MetricsControllerTask(controllerConfig)
-
-        metricTask = _DemoMetricTask()
-        self.task.measurers = [metricTask]
+        self.config = MetricsControllerTask.ConfigClass()
+        self.config.metadataAdder.retarget(_TestMetadataAdder)
+        self.config.measurers = ["demoMetric"]
+        self.task = MetricsControllerTask(self.config)
 
     def _checkMetric(self, mockWriter, datarefs, unitsOfWork):
         """Standardized test battery for running a timing metric.
@@ -194,6 +206,10 @@ class MetricsControllerTestSuite(lsst.utils.tests.TestCase):
     def testNoData(self, mockWriter, _mockButler, _mockMetricsLoader):
         datarefs = []
         self._checkMetric(mockWriter, datarefs, unitsOfWork=[])
+
+    def testBadMetric(self, _mockWriter, _mockButler, _mockMetricsLoader):
+        with self.assertRaises(FieldValidationError):
+            self.config.measurers = ["totallyAndDefinitelyNotARealMetric"]
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
