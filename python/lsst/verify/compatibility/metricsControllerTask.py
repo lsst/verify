@@ -29,6 +29,7 @@ import lsst.pex.config as pexConfig
 import lsst.daf.persistence as dafPersist
 from lsst.pipe.base import Task, Struct
 from lsst.verify import Job, Measurement, Name, MetricComputationError
+from .metadataTask import SquashMetadataTask
 from .metricTask import MetricTask
 
 
@@ -130,19 +131,6 @@ class MetricsControllerTask(Task):
                                  "ap_association.AssociationTime"),
         ]
 
-    @staticmethod
-    def _getInstrument(dataref):
-        """Extract the instrument name from a Butler repo.
-
-        Returns
-        -------
-        instrument : `str`
-            The canonical name of the instrument, in all uppercase form.
-        """
-        camera = dataref.get('camera')
-        instrument = camera.getName()
-        return instrument.upper()
-
     def _computeSingleMeasurement(self, job, metricTask, dataref):
         """Call a single metric task on a single dataref.
 
@@ -226,9 +214,8 @@ class MetricsControllerTask(Task):
             job = Job.load_metrics_package()
             try:
                 # TODO: generalize this in DM-16642
-                job.meta['instrument'] = \
-                    MetricsControllerTask._getInstrument(dataref)
-                job.meta.update(dataref.dataId)
+                metadataAdder = SquashMetadataTask()
+                metadataAdder.run(job, dataref=dataref)
 
                 for task in self.measurers:
                     self._computeSingleMeasurement(job, task, dataref)
