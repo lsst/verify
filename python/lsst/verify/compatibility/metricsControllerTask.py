@@ -42,6 +42,14 @@ class MetricsControllerConfig(pexConfig.Config):
         "written. {id} is replaced with a unique index (recommended), "
         "while {dataId} is replaced with the data ID.",
         default="metrics{id}.{dataId}.verify.json")
+    metadataAdder = pexConfig.ConfigurableField(
+        target=SquashMetadataTask,
+        doc="Task for adding metadata needed by measurement clients. "
+            "Its ``run`` method must take a `~lsst.verify.Job` as its first "
+            "parameter, and should accept unknown keyword arguments. It must "
+            "return a `~lsst.pipe.base.Struct` with the field ``job`` "
+            "pointing to the modified job.",
+    )
 
 
 class MetricsControllerTask(Task):
@@ -109,6 +117,7 @@ class MetricsControllerTask(Task):
 
     def __init__(self, config=None, **kwargs):
         super().__init__(config=config, **kwargs)
+        self.makeSubtask("metadataAdder")
 
         # TODO: generalize in DM-16535
         self.measurers = [
@@ -213,9 +222,7 @@ class MetricsControllerTask(Task):
         for dataref in datarefs:
             job = Job.load_metrics_package()
             try:
-                # TODO: generalize this in DM-16642
-                metadataAdder = SquashMetadataTask()
-                metadataAdder.run(job, dataref=dataref)
+                self.metadataAdder.run(job, dataref=dataref)
 
                 for task in self.measurers:
                     self._computeSingleMeasurement(job, task, dataref)

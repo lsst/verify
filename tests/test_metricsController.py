@@ -25,9 +25,8 @@ import astropy.units as u
 from astropy.tests.helper import assert_quantity_allclose
 
 import lsst.utils.tests
-from lsst.daf.persistence import ButlerDataRef
-from lsst.afw.cameraGeom import Camera
-from lsst.pipe.base import Struct
+from lsst.pex.config import Config
+from lsst.pipe.base import Task, Struct
 from lsst.verify import Job, MetricComputationError
 from lsst.verify.compatibility import MetricTask, MetricsControllerTask
 
@@ -38,21 +37,26 @@ def _metricName():
     return "misc_tasks.FancyMetric"
 
 
-# TODO: can be replaced with a vanilla mock after DM-16642
-def _makeMockDataref(_datasetType, dataId=None):
-    """A dataref-like object that returns a mock camera.
+def _makeMockDataref(dataId=None):
+    """A dataref-like object with a specific data ID.
     """
-    camera = unittest.mock.NonCallableMock(
-        Camera, autospec=True, **{"getName.return_value": "fancyCam"})
-    return unittest.mock.NonCallableMock(
-        ButlerDataRef, autospec=True, **{"get.return_value": camera},
-        dataId=dataId)
+    return unittest.mock.NonCallableMock(dataId=dataId)
 
 
-def _butlerQuery(_butler, datasetType, _level="", dataId=None):
+class _TestMetadataAdder(Task):
+    """Simplest valid non-identity metadata adder.
+    """
+    ConfigClass = Config
+
+    def run(self, job, **kwargs):
+        job.meta["tested"] = True
+        return Struct(job=job)
+
+
+def _butlerQuery(_butler, _datasetType, _level="", dataId=None):
     """Return a number of datarefs corresponding to a (partial) dataId.
     """
-    dataref = _makeMockDataref(datasetType)
+    dataref = _makeMockDataref()
 
     # Simulate a dataset of 3 visits and 2 CCDs
     nRuns = 1
@@ -70,7 +74,9 @@ def _butlerQuery(_butler, datasetType, _level="", dataId=None):
 class MetricsControllerTestSuite(lsst.utils.tests.TestCase):
 
     def setUp(self):
-        self.task = MetricsControllerTask()
+        controllerConfig = MetricsControllerTask.ConfigClass()
+        controllerConfig.metadataAdder.retarget(_TestMetadataAdder)
+        self.task = MetricsControllerTask(controllerConfig)
 
         self.metricTask = unittest.mock.create_autospec(
             MetricTask, instance=True)
@@ -106,14 +112,12 @@ class MetricsControllerTestSuite(lsst.utils.tests.TestCase):
 
         jobs = self.task.runDataRefs(datarefs).jobs
         self.assertEqual(len(jobs), len(datarefs))
-        for job, dataref, nTimings in zip(jobs, datarefs, unitsOfWork):
+        for job, nTimings in zip(jobs, unitsOfWork):
             self.assertEqual(len(job.measurements), 1)
             assert_quantity_allclose(
                 job.measurements[_metricName()].quantity,
                 float(nTimings) * u.second)
-            self.assertEqual(job.meta["instrument"], "FANCYCAM")
-            for key in dataref.dataId:
-                self.assertEqual(job.meta[key], dataref.dataId[key])
+            self.assertTrue(job.meta["tested"])
 
         # Exact arguments to Job.write are implementation detail, don't test
         if not jobs:
@@ -126,27 +130,26 @@ class MetricsControllerTestSuite(lsst.utils.tests.TestCase):
     def testCcdGrainedMetric(self, mockWriter, _mockButler,
                              _mockMetricsLoader):
         dataId = {"visit": 42, "ccd": 101, "filter": "k"}
-        datarefs = [_makeMockDataref("calexp", dataId=dataId)]
+        datarefs = [_makeMockDataref(dataId)]
         self._checkMetric(mockWriter, datarefs, unitsOfWork=[1])
 
     def testVisitGrainedMetric(self, mockWriter, _mockButler,
                                _mockMetricsLoader):
         dataId = {"visit": 42, "filter": "k"}
-        datarefs = [_makeMockDataref("calexp", dataId=dataId)]
+        datarefs = [_makeMockDataref(dataId)]
         self._checkMetric(mockWriter, datarefs, unitsOfWork=[2])
 
     def testDatasetGrainedMetric(self, mockWriter, _mockButler,
                                  _mockMetricsLoader):
         dataId = {}
-        datarefs = [_makeMockDataref("calexp", dataId=dataId)]
+        datarefs = [_makeMockDataref(dataId)]
         self._checkMetric(mockWriter, datarefs, unitsOfWork=[6])
 
     def testMultipleMetrics(self, mockWriter, _mockButler,
                             _mockMetricsLoader):
         dataIds = [{"visit": 42, "ccd": 101, "filter": "k"},
                    {"visit": 42, "ccd": 102, "filter": "k"}]
-        datarefs = [_makeMockDataref("calexp", dataId=dataId)
-                    for dataId in dataIds]
+        datarefs = [_makeMockDataref(dataId) for dataId in dataIds]
         self._checkMetric(mockWriter, datarefs,
                           unitsOfWork=[1] * len(dataIds))
 
@@ -160,15 +163,14 @@ class MetricsControllerTestSuite(lsst.utils.tests.TestCase):
 
         dataIds = [{"visit": 42, "ccd": 101, "filter": "k"},
                    {"visit": 42, "ccd": 102, "filter": "k"}]
-        datarefs = [_makeMockDataref("calexp", dataId=dataId)
-                    for dataId in dataIds]
+        datarefs = [_makeMockDataref(dataId) for dataId in dataIds]
 
         jobs = self.task.runDataRefs(datarefs).jobs
         self.assertEqual(len(jobs), len(datarefs))
 
         self.assertEqual(len(jobs[0].measurements), 0)
         for job in jobs:
-            self.assertEqual(job.meta["instrument"], "FANCYCAM")
+            self.assertTrue(job.meta["tested"])
         for job in jobs[1:]:
             self.assertEqual(len(job.measurements), 1)
             assert_quantity_allclose(
