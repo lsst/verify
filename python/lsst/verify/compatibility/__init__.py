@@ -21,3 +21,4 @@
 
 from .metricTask import *
 from .metricsControllerTask import *
+from .metadataTask import *

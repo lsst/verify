@@ -29,6 +29,7 @@ import lsst.pex.config as pexConfig
 import lsst.daf.persistence as dafPersist
 from lsst.pipe.base import Task, Struct
 from lsst.verify import Job, Measurement, Name, MetricComputationError
+from .metadataTask import SquashMetadataTask
 from .metricTask import MetricTask
 
 
@@ -41,6 +42,14 @@ class MetricsControllerConfig(pexConfig.Config):
         "written. {id} is replaced with a unique index (recommended), "
         "while {dataId} is replaced with the data ID.",
         default="metrics{id}.{dataId}.verify.json")
+    metadataAdder = pexConfig.ConfigurableField(
+        target=SquashMetadataTask,
+        doc="Task for adding metadata needed by measurement clients. "
+            "Its ``run`` method must take a `~lsst.verify.Job` as its first "
+            "parameter, and should accept unknown keyword arguments. It must "
+            "return a `~lsst.pipe.base.Struct` with the field ``job`` "
+            "pointing to the modified job.",
+    )
 
 
 class MetricsControllerTask(Task):
@@ -108,6 +117,7 @@ class MetricsControllerTask(Task):
 
     def __init__(self, config=None, **kwargs):
         super().__init__(config=config, **kwargs)
+        self.makeSubtask("metadataAdder")
 
         # TODO: generalize in DM-16535
         self.measurers = [
@@ -129,19 +139,6 @@ class MetricsControllerTask(Task):
             self._makeTimingTask("apPipe:associator.run",
                                  "ap_association.AssociationTime"),
         ]
-
-    @staticmethod
-    def _getInstrument(dataref):
-        """Extract the instrument name from a Butler repo.
-
-        Returns
-        -------
-        instrument : `str`
-            The canonical name of the instrument, in all uppercase form.
-        """
-        camera = dataref.get('camera')
-        instrument = camera.getName()
-        return instrument.upper()
 
     def _computeSingleMeasurement(self, job, metricTask, dataref):
         """Call a single metric task on a single dataref.
@@ -225,10 +222,7 @@ class MetricsControllerTask(Task):
         for dataref in datarefs:
             job = Job.load_metrics_package()
             try:
-                # TODO: generalize this in DM-16642
-                job.meta['instrument'] = \
-                    MetricsControllerTask._getInstrument(dataref)
-                job.meta.update(dataref.dataId)
+                self.metadataAdder.run(job, dataref=dataref)
 
                 for task in self.measurers:
                     self._computeSingleMeasurement(job, task, dataref)
