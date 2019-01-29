@@ -14,6 +14,8 @@ Measurements made through `lsst.verify` can be uploaded to LSST's SQUASH_ monito
 
    `SQR-019: LSST Verification Framework API Demonstration <https://sqr-019.lsst.io>`_.
 
+.. _lsst.verify-using:
+
 Using lsst.verify
 =================
 
@@ -21,6 +23,39 @@ Using lsst.verify
    :maxdepth: 1
 
    inspect_job
+
+.. _lsst.verify-command-line-taskref:
+
+Task reference
+==============
+
+.. .. _lsst.verify-command-line-tasks:
+..
+.. Command-line tasks
+.. ------------------
+..
+.. .. lsst-cmdlinetasks::
+..    :root: lsst.verify
+
+.. _lsst.verify-tasks:
+
+Tasks
+-----
+
+.. lsst-tasks::
+   :root: lsst.verify
+   :toctree: tasks
+
+.. .. _lsst.verify-configs:
+..
+.. Configurations
+.. --------------
+..
+.. .. lsst-configs::
+..    :root: lsst.verify
+..    :toctree: configs
+
+.. _lsst.verify-pyapi:
 
 Python API reference
 ====================
