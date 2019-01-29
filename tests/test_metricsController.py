@@ -28,7 +28,7 @@ import lsst.utils.tests
 from lsst.pex.config import Config, FieldValidationError
 from lsst.pipe.base import Task, Struct
 from lsst.verify import Job, Name, Measurement, MetricComputationError
-from lsst.verify.compatibility import \
+from lsst.verify.gen2tasks import \
     MetricTask, MetricsControllerTask, register, registerMultiple
 
 
@@ -57,7 +57,7 @@ class DemoMetricConfig(MetricTask.ConfigClass):
 
 @register("demoMetric")
 class _DemoMetricTask(MetricTask):
-    """A minimal `lsst.verify.compatibility.MetricTask`.
+    """A minimal `lsst.verify.gen2tasks.MetricTask`.
     """
 
     ConfigClass = DemoMetricConfig
@@ -80,7 +80,7 @@ class _DemoMetricTask(MetricTask):
 
 @registerMultiple("repeatedMetric")
 class _RepeatedMetricTask(MetricTask):
-    """A minimal `lsst.verify.compatibility.MetricTask`.
+    """A minimal `lsst.verify.gen2tasks.MetricTask`.
     """
 
     ConfigClass = DemoMetricConfig

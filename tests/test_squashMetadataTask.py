@@ -25,7 +25,7 @@ import lsst.utils.tests
 from lsst.daf.persistence import ButlerDataRef
 from lsst.afw.cameraGeom import Camera
 from lsst.verify import Job
-from lsst.verify.compatibility import SquashMetadataTask
+from lsst.verify.gen2tasks import SquashMetadataTask
 
 
 def _makeMockDataref(dataId=None):

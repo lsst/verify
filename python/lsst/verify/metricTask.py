@@ -26,7 +26,7 @@ __all__ = ["MetricComputationError"]
 class MetricComputationError(RuntimeError):
     """This class represents unresolvable errors in computing a metric.
 
-    `compatibility.MetricTask` raises ``MetricComputationError`` instead of
+    `gen2tasks.MetricTask` raises ``MetricComputationError`` instead of
     other data- or processing-related exceptions to let code that calls a mix
     of data processing and metric tasks distinguish between the two.
     Therefore, most ``MetricComputationError`` instances should be chained to

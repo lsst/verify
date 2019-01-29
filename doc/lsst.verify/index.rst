@@ -82,7 +82,7 @@ Python API reference
 .. automodapi:: lsst.verify.report
    :no-inheritance-diagram:
 
-.. automodapi:: lsst.verify.compatibility
+.. automodapi:: lsst.verify.gen2tasks
    :no-inheritance-diagram:
 
 .. _SQUASH: https://squash.lsst.codes

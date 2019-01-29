@@ -26,14 +26,14 @@ from .metricTask import MetricTask
 
 
 def register(name):
-    """A class decorator that registers a `lsst.verify.compatibility.MetricTask`
-    with a central repository.
+    """A class decorator that registers a
+    `lsst.verify.gen2tasks.MetricTask` with a central repository.
 
     Parameters
     ----------
     name : `str`
         The name under which this decorator will register the
-        `~lsst.verify.compatibility.MetricTask`.
+        `~lsst.verify.gen2tasks.MetricTask`.
 
     Raises
     ------
@@ -41,18 +41,19 @@ def register(name):
         Raised if another class has already been registered under ``name``.
     ValueError
         Raised if this decorator is applied to a class that is not a
-        `lsst.verify.compatibility.MetricTask`.
+        `lsst.verify.gen2tasks.MetricTask`.
 
     Notes
     -----
-    This decorator must be used for any `~lsst.verify.compatibility.MetricTask`
-    that is to be used with `lsst.verify.compatibility.MetricsControllerTask`.
+    This decorator must be used for any
+    `~lsst.verify.gen2tasks.MetricTask` that is to be used with
+    `lsst.verify.gen2tasks.MetricsControllerTask`.
 
     Examples
     --------
     The decorator is applied at the class definition:
 
-    >>> from lsst.verify.compatibility import register, MetricTask
+    >>> from lsst.verify.gen2tasks import register, MetricTask
     >>> @register("dummy")
     ... class DummyMetricTask(MetricTask):
     ...     pass
@@ -69,19 +70,19 @@ def register(name):
 
 
 def registerMultiple(name):
-    """A class decorator that registers a `lsst.verify.compatibility.MetricTask`
-    with a central repository.
+    """A class decorator that registers a
+    `lsst.verify.gen2tasks.MetricTask` with a central repository.
 
     Unlike `register`, this decorator assumes the same
-    `~lsst.verify.compatibility.MetricTask` class will be run by
-    `lsst.verify.compatibility.MetricsControllerTask` multiple times with
+    `~lsst.verify.gen2tasks.MetricTask` class will be run by
+    `lsst.verify.gen2tasks.MetricsControllerTask` multiple times with
     different configs.
 
     Parameters
     ----------
     name : `str`
         The name under which this decorator will register the
-        `~lsst.verify.compatibility.MetricTask`.
+        `~lsst.verify.gen2tasks.MetricTask`.
 
     Raises
     ------
@@ -89,27 +90,28 @@ def registerMultiple(name):
         Raised if another class has already been registered under ``name``.
     ValueError
         Raised if this decorator is applied to a class that is not a
-        `lsst.verify.compatibility.MetricTask`.
+        `lsst.verify.gen2tasks.MetricTask`.
 
     Notes
     -----
-    This decorator must be used for any `~lsst.verify.compatibility.MetricTask`
-    that will have multiple instances used with
-    `lsst.verify.compatibility.MetricsControllerTask`.
+    This decorator must be used for any
+    `~lsst.verify.gen2tasks.MetricTask` that will have multiple
+    instances used with `lsst.verify.gen2tasks.MetricsControllerTask`.
 
     The registry entry produced by this decorator corresponds to an anonymous
     `~lsst.pex.config.Config` class with one field, ``configs``. ``configs``
     is a `~lsst.pex.config.ConfigDictField` that may have any number of
     configs attached to it. The field will create multiple
-    `~lsst.verify.compatibility.MetricTask` objects, one for each config
-    provided. See :lsst-task:`~lsst.verify.compatibility.MetricsControllerTask`
-    for an example of how to use ``configs``.
+    `~lsst.verify.gen2tasks.MetricTask` objects, one for each config
+    provided. See
+    :lsst-task:`~lsst.verify.gen2tasks.MetricsControllerTask` for an
+    example of how to use ``configs``.
 
     Examples
     --------
     The decorator is applied at the class definition:
 
-    >>> from lsst.verify.compatibility import registerMultiple, MetricTask
+    >>> from lsst.verify.gen2tasks import registerMultiple, MetricTask
     >>> @registerMultiple("reusable")
     ... class ReusableMetricTask(MetricTask):
     ...     pass
@@ -133,7 +135,7 @@ def _makeMultiConfig(configClass):
 
     Parameters
     ----------
-    configClass : `lsst.verify.compatibility.MetricTask.ConfigClass`-type
+    configClass : `lsst.verify.gen2tasks.MetricTask.ConfigClass`-type
         The type of task config to be stored inside the new config. Subclasses
         of ``configClass`` will **NOT** be supported (this is a limitation of
         `~lsst.pex.config.ConfigDictField`).
@@ -162,7 +164,7 @@ class _MultiConfigFactory:
 
     Parameters
     ----------
-    configurableClass : `lsst.verify.compatibility.MetricTask`-type
+    configurableClass : `lsst.verify.gen2tasks.MetricTask`-type
         The type of configurable created by `__call__`.
     """
     def __init__(self, configurableClass):
@@ -190,7 +192,7 @@ class _MultiConfigFactory:
 
 
 class MetricRegistry:
-    """Registry of all `lsst.verify.compatibility.MetricTask` subclasses known
+    """Registry of all `lsst.verify.gen2tasks.MetricTask` subclasses known
     to `lsst.verify`'s client.
 
     Notes
