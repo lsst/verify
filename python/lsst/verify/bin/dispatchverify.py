@@ -391,14 +391,14 @@ class Configuration(object):
 
         self.api_user = args.api_user or os.getenv('SQUASH_USER')
         if not self.test and self.api_user is None:
-                message = '--user or $SQUASH_USER configuration required'
-                raise RuntimeError(message)
+            message = '--user or $SQUASH_USER configuration required'
+            raise RuntimeError(message)
 
         self.api_password = args.api_password or os.getenv('SQUASH_password')
         if not self.test and self.api_password is None:
-                message = ('--password or $SQUASH_password configuration '
-                           'required')
-                raise RuntimeError(message)
+            message = ('--password or $SQUASH_password configuration '
+                       'required')
+            raise RuntimeError(message)
 
     def __str__(self):
         configs = {
