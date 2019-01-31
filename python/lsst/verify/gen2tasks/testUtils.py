@@ -33,7 +33,7 @@ from lsst.verify import Measurement
 
 
 class MetricTaskTestCase(lsst.utils.tests.TestCase):
-    """Unit test base class for tests of `compatibility.MetricTask`.
+    """Unit test base class for tests of `gen2tasks.MetricTask`.
 
     This class provides tests of the generic ``MetricTask`` API. Subclasses
     must override `taskFactory`, and may add extra tests for class-specific
@@ -44,7 +44,7 @@ class MetricTaskTestCase(lsst.utils.tests.TestCase):
     # For some reason, setUp for the test cases defined in MetricTaskTestCase
     # calls the wrong factory if you make it a classmethod
     taskFactory = None
-    """A nullary callable that constructs the `compatibility.MetricTask`
+    """A nullary callable that constructs the `gen2tasks.MetricTask`
     to be tested.
 
     If a concrete task's constructor satisfies the requirements, its type
@@ -52,13 +52,14 @@ class MetricTaskTestCase(lsst.utils.tests.TestCase):
     """
 
     task = None
-    """The ``MetricTask`` being tested by this object (`compatibility.MetricTask`).
+    """The ``MetricTask`` being tested by this object
+    (`gen2tasks.MetricTask`).
 
     This attribute is initialized automatically.
     """
 
     taskClass = None
-    """The type of `task` (`compatibility.MetricTask`-type).
+    """The type of `task` (`gen2tasks.MetricTask`-type).
 
     This attribute is initialized automatically.
     """

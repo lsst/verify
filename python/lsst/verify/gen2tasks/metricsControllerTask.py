@@ -83,14 +83,14 @@ class MetricsControllerConfig(pexConfig.Config):
         multi=True,
         doc=r"`MetricTask`\ s to call and their configuration. Each "
             "`MetricTask` must be identified by the name passed to its "
-            "`~lsst.verify.compatibility.register` or "
-            "`~lsst.verify.compatibility.registerMultiple` decorator.",
+            "`~lsst.verify.gen2tasks.register` or "
+            "`~lsst.verify.gen2tasks.registerMultiple` decorator.",
     )
 
 
 class MetricsControllerTask(Task):
     """A Task for executing a collection of
-    `lsst.verify.compatibility.MetricTask` objects.
+    `lsst.verify.gen2tasks.MetricTask` objects.
 
     This class handles Butler input of datasets needed by metrics, as well as
     persistence of the resulting measurements.
@@ -116,7 +116,7 @@ class MetricsControllerTask(Task):
 
     measurers = []
     """The tasks to be executed by this object (iterable of
-    `lsst.verify.compatibility.MetricTask`).
+    `lsst.verify.gen2tasks.MetricTask`).
     """
 
     def __init__(self, config=None, **kwargs):
@@ -137,7 +137,7 @@ class MetricsControllerTask(Task):
             A Job object in which to store the new measurement. Must not
             already contain a measurement for
             ``metricTask.getOutputMetricName()``.
-        metricTask : `lsst.verify.compatibility.MetricTask`
+        metricTask : `lsst.verify.gen2tasks.MetricTask`
             The code for computing the measurement.
         dataref : `lsst.daf.persistence.ButlerDataRef`
             The repository and data ID to analyze. The data ID may be
