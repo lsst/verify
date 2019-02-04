@@ -23,42 +23,13 @@ __all__ = ["MetricsControllerConfig", "MetricsControllerTask"]
 
 import traceback
 
+from lsst.utils import flatten
 import lsst.pex.config as pexConfig
 import lsst.daf.persistence as dafPersist
 from lsst.pipe.base import Task, Struct
 from lsst.verify import Job, MetricComputationError
 from .metadataTask import SquashMetadataTask
 from .metricRegistry import MetricRegistry
-
-
-def _flatten(nested):
-    """Flatten an iterable of possibly nested iterables.
-
-    Parameters
-    ----------
-    nested : iterable
-        An iterable that may contain a mix of scalars or other iterables.
-
-    Returns
-    -------
-    flat : sequence
-        A sequence where each iterable element of `nested` has been replaced
-        with its elements, in order, and so on recursively.
-
-    Examples
-    --------
-    >>> x = [42, [4, 3, 5]]
-    >>> _flatten(x)
-    [42, 4, 3, 5]
-    """
-    flat = []
-    for x in nested:
-        try:
-            iter(x)
-            flat.extend(_flatten(x))
-        except TypeError:
-            flat.append(x)
-    return flat
 
 
 class MetricsControllerConfig(pexConfig.Config):
@@ -123,7 +94,7 @@ class MetricsControllerTask(Task):
         super().__init__(config=config, **kwargs)
         self.makeSubtask("metadataAdder")
 
-        self.measurers = _flatten(self.config.measurers.apply())
+        self.measurers = flatten(self.config.measurers.apply())
 
     def _computeSingleMeasurement(self, job, metricTask, dataref):
         """Call a single metric task on a single dataref.
