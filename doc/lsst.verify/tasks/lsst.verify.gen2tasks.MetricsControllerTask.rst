@@ -18,7 +18,7 @@ Processing summary
 ==================
 
 Unlike most tasks, ``MetricsControllerTask`` has a `~MetricsControllerTask.runDataRefs` method that takes a list of data references.
-``MetricsControllerTask`` calls every :lsst-task:`~lsst.verify.gen2tasks.MetricTask` in :lsst-config-field:`~lsst.verify.gen2tasks.MetricsControllerConfig.measurers` on every data reference, loading any datasets necessary.
+``MetricsControllerTask`` calls every :lsst-task:`~lsst.verify.gen2tasks.MetricTask` in :lsst-config-field:`~lsst.verify.gen2tasks.metricsControllerTask.MetricsControllerConfig.measurers` on every data reference, loading any datasets necessary.
 It produces one `~lsst.verify.Job` object for each input data reference, and writes them to disk.
 
 .. _lsst.verify.gen2tasks.MetricsControllerTask-api:
