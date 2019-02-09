@@ -24,6 +24,14 @@ Using lsst.verify
 
    inspect_job
 
+.. _lsst.verify-contributing:
+
+Contributing
+============
+
+``lsst.verify`` is developed at https://github.com/lsst/verify.
+You can find Jira issues for this module under the `verify <https://jira.lsstcorp.org/issues/?jql=project%20%3D%20DM%20AND%20component%20%3D%20verify>`_ component.
+
 .. _lsst.verify-command-line-taskref:
 
 Task reference
@@ -61,28 +69,37 @@ Python API reference
 ====================
 
 .. automodapi:: lsst.verify
+   :no-main-docstr:
 
 .. automodapi:: lsst.verify.bin.dispatchverify
+   :no-main-docstr:
 
 .. automodapi:: lsst.verify.jsonmixin
+   :no-main-docstr:
    :no-inheritance-diagram:
 
 .. automodapi:: lsst.verify.metadata.eupsmanifest
+   :no-main-docstr:
    :no-inheritance-diagram:
 
 .. automodapi:: lsst.verify.metadata.jenkinsci
+   :no-main-docstr:
    :no-inheritance-diagram:
 
 .. automodapi:: lsst.verify.metadata.lsstsw
+   :no-main-docstr:
    :no-inheritance-diagram:
 
 .. automodapi:: lsst.verify.squash
+   :no-main-docstr:
    :no-inheritance-diagram:
 
 .. automodapi:: lsst.verify.report
+   :no-main-docstr:
    :no-inheritance-diagram:
 
 .. automodapi:: lsst.verify.gen2tasks
+   :no-main-docstr:
    :no-inheritance-diagram:
 
 .. _SQUASH: https://squash.lsst.codes
