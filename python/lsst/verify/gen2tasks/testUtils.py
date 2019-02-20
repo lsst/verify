@@ -23,6 +23,7 @@
 
 __all__ = ["MetricTaskTestCase"]
 
+import abc
 import unittest.mock
 import inspect
 
@@ -32,7 +33,7 @@ from lsst.pipe.base import Struct
 from lsst.verify import Measurement
 
 
-class MetricTaskTestCase(lsst.utils.tests.TestCase):
+class MetricTaskTestCase(lsst.utils.tests.TestCase, metaclass=abc.ABCMeta):
     """Unit test base class for tests of `gen2tasks.MetricTask`.
 
     This class provides tests of the generic ``MetricTask`` API. Subclasses
@@ -40,16 +41,18 @@ class MetricTaskTestCase(lsst.utils.tests.TestCase):
     functionality. If subclasses override `setUp`, they must call
     `MetricTaskTestCase.setUp`.
     """
+    @classmethod
+    @abc.abstractmethod
+    def makeTask(cls):
+        """Construct the task to be tested.
 
-    # For some reason, setUp for the test cases defined in MetricTaskTestCase
-    # calls the wrong factory if you make it a classmethod
-    taskFactory = None
-    """A nullary callable that constructs the `gen2tasks.MetricTask`
-    to be tested.
+        This overridable method will be called during test setup.
 
-    If a concrete task's constructor satisfies the requirements, its type
-    object may be used as the factory.
-    """
+        Returns
+        -------
+        task : `lsst.verify.gen2tasks.MetricTask`
+            A new MetricTask object to test.
+        """
 
     task = None
     """The ``MetricTask`` being tested by this object
@@ -72,7 +75,7 @@ class MetricTaskTestCase(lsst.utils.tests.TestCase):
         This implementation calls `taskFactory`, then initializes `task`
         and `taskClass`.
         """
-        self.task = self.taskFactory()
+        self.task = self.makeTask()
         self.taskClass = type(self.task)
 
     # Implementation classes will override run or adaptArgsAndRun. Can't
