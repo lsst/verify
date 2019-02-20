@@ -118,9 +118,12 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
         `addStandardMetadata` on its measurement before returning it.
 
         `adaptArgsAndRun` and `run` should assume they take multiple input
-        datasets, regardless of the expected metric granularity. This rule may
-        be broken if it is impossible for more than one copy of a dataset
-        to exist.
+        datasets, regardless of the expected metric granularity. Doing so lets
+        metrics be defined with a different granularity from the Science
+        Pipelines processing, and allows for the aggregation (or lack thereof)
+        of the metric to be controlled by the task configuration with no code
+        changes. This rule may be broken if it is impossible for more than one
+        copy of a dataset to exist.
 
         All input data must be treated as optional. This maximizes the
         ``MetricTask``'s usefulness for incomplete pipeline runs or runs with
