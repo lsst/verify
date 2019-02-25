@@ -21,3 +21,4 @@
 
 from .metricTask import *
 from .metadataMetricTask import *
+from .ppdbMetricTask import *

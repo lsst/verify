@@ -10,6 +10,7 @@ setupRequired(log)
 setupRequired(pytest_flake8)
 setupRequired(pex_config)
 setupRequired(pipe_base)
+setupRequired(dax_ppdb)
 
 # verify_metrics is the default metrics repo and is used in tests
 setupRequired(verify_metrics)

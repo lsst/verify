@@ -19,11 +19,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["MetadataMetricTestCase"]
+__all__ = ["MetadataMetricTestCase", "PpdbMetricTestCase"]
 
 import unittest.mock
 
+from lsst.pex.config import Config, ConfigField
 from lsst.daf.base import PropertySet
+from lsst.dax.ppdb import PpdbConfig
+
 from lsst.verify.gen2tasks.testUtils import MetricTaskTestCase
 from lsst.verify.tasks import MetricComputationError
 
@@ -71,3 +74,36 @@ class MetadataMetricTestCase(MetricTaskTestCase):
                                         side_effect=MetricComputationError):
             with self.assertRaises(MetricComputationError):
                 self.task.run([None])
+
+
+class DummyConfig(Config):
+    ppdb = ConfigField(dtype=PpdbConfig, doc="Mandatory field")
+
+
+class PpdbMetricTestCase(MetricTaskTestCase):
+    """Unit test base class for tests of `PpdbMetricTask`.
+
+    Notes
+    -----
+    Subclasses must override
+    `~lsst.verify.gen2tasks.MetricTaskTestCase.makeTask` for the concrete task
+    being tested.
+    """
+
+    def testInputDatasetTypes(self):
+        defaultInputs = self.taskClass.getInputDatasetTypes(self.task.config)
+        self.assertEqual(defaultInputs.keys(), {"dbInfo"})
+
+    def testValidRun(self):
+        config = DummyConfig()
+        with unittest.mock.patch.object(self.task, "makeMeasurement") \
+                as mockWorkhorse:
+            self.task.run(config)
+            mockWorkhorse.assert_called_once()
+
+    def testPassThroughRun(self):
+        with unittest.mock.patch.object(self.task, "makeMeasurement",
+                                        side_effect=MetricComputationError):
+            config = DummyConfig()
+            with self.assertRaises(MetricComputationError):
+                self.task.run(config)
