@@ -60,6 +60,9 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
     # Butler datasets
     ConfigClass = lsst.pex.config.Config
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def adaptArgsAndRun(self, inputData, inputDataIds, outputDataId):
         """Compute a metric from in-memory data.
 
