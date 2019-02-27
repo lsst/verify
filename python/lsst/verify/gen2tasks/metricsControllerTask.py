@@ -234,5 +234,5 @@ class MetricsControllerTask(Task):
             The identifier of all metrics in the Job to be persisted.
         """
         # Construct a relatively OS-friendly string (i.e., no quotes or {})
-        idString = " ".join("%s=%s" % (key, dataId[key]) for key in dataId)
+        idString = "_".join("%s%s" % (key, dataId[key]) for key in dataId)
         return self.config.jobFileTemplate.format(id=index, dataId=idString)
