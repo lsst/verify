@@ -115,6 +115,6 @@ class MetricTaskTestCase(lsst.utils.tests.TestCase, metaclass=abc.ABCMeta):
             result = self.task.adaptArgsAndRun(
                 {key: [None] for key in inputParams},
                 {key: [dataId] for key in inputParams},
-                {'measurement': {}})
+                {'measurement': dataId})
             mockDict['addStandardMetadata'].assert_called_once_with(
                 self.task, result.measurement, dataId)
