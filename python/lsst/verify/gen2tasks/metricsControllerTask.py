@@ -166,6 +166,10 @@ class MetricsControllerTask(Task):
             value = result.measurement
             if value is not None:
                 job.measurements.insert(value)
+            else:
+                self.log.debug(
+                    "Skipping measurement of %r on %s as not applicable.",
+                    metricTask, inputDataIds)
         except MetricComputationError:
             # Apparently lsst.log doesn't have built-in exception support?
             self.log.error("Measurement of %r failed on %s->%s\n%s",
@@ -177,7 +181,8 @@ class MetricsControllerTask(Task):
 
         This method loads all datasets required to compute a particular
         metric, and persists the metrics as one or more `lsst.verify.Job`
-        objects.
+        objects. Only metrics that successfully produce a
+        `~lsst.verify.Measurement` will be included in a job.
 
         Parameters
         ----------
