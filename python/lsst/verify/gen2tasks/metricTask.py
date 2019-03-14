@@ -97,12 +97,12 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
 
         Raises
         ------
-        lsst.verify.MetricComputationError
+        lsst.verify.tasks.MetricComputationError
             Raised if an algorithmic or system error prevents calculation
             of the metric. Examples include corrupted input data or
             unavoidable exceptions raised by analysis code. The
-            `~lsst.verify.MetricComputationError` should be chained to a more
-            specific exception describing the root cause.
+            `~lsst.verify.tasks.MetricComputationError` should be chained to a
+            more specific exception describing the root cause.
 
             Not having enough data for a metric to be applicable is not an
             error, and should not trigger this exception.

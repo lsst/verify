@@ -26,7 +26,8 @@ import traceback
 import lsst.pex.config as pexConfig
 import lsst.daf.persistence as dafPersist
 from lsst.pipe.base import Task, Struct
-from lsst.verify import Job, MetricComputationError
+from lsst.verify import Job
+from lsst.verify.tasks import MetricComputationError
 from .metadataTask import SquashMetadataTask
 from .metricRegistry import MetricRegistry
 
