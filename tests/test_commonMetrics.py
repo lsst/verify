@@ -1,5 +1,5 @@
 #
-# This file is part of ap_verify.
+# This file is part of verify.
 #
 # Developed for the LSST Data Management System.
 # This product includes software developed by the LSST Project
@@ -30,12 +30,11 @@ from astropy.tests.helper import assert_quantity_allclose
 import lsst.utils.tests
 import lsst.afw.image as afwImage
 from lsst.ip.isr import FringeTask
+
 from lsst.verify import Measurement, Name
 from lsst.verify.gen2tasks.testUtils import MetricTaskTestCase
-from lsst.verify.tasks import MetricComputationError
+from lsst.verify.tasks import MetricComputationError, TimingMetricTask
 from lsst.verify.tasks.testUtils import MetadataMetricTestCase
-
-from lsst.ap.verify.measurements.profiling import TimingMetricTask
 
 
 def _createFringe(width, height, filterName):
@@ -73,7 +72,8 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
     @staticmethod
     def _standardConfig():
         config = TimingMetricTask.ConfigClass()
-        config.metadata.name = TimingMetricTestSuite._SCIENCE_TASK_NAME + "_metadata"
+        config.metadata.name = TimingMetricTestSuite._SCIENCE_TASK_NAME \
+            + "_metadata"
         config.target = TimingMetricTestSuite._SCIENCE_TASK_NAME + ".run"
         config.metric = "ip_isr.IsrTime"
         return config
@@ -100,9 +100,10 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         config.small = 1
         config.large = size // 4
         config.pedestal = False
-        self.scienceTask = FringeTask(name=TimingMetricTestSuite._SCIENCE_TASK_NAME, config=config)
+        self.scienceTask = FringeTask(
+            name=TimingMetricTestSuite._SCIENCE_TASK_NAME, config=config)
 
-        # As an optimization, let test cases choose whether to run the dummy task
+        # As an optimization, let test cases choose to run the dummy task
         def runTask():
             self.scienceTask.run(exp, exp)
         self.runTask = runTask
@@ -140,7 +141,8 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
 
     def testRunDifferentMethod(self):
         self.runTask()
-        self.config.target = TimingMetricTestSuite._SCIENCE_TASK_NAME + ".runDataRef"
+        self.config.target = TimingMetricTestSuite._SCIENCE_TASK_NAME \
+            + ".runDataRef"
         task = TimingMetricTask(config=self.config)
         result = task.run([self.scienceTask.getFullMetadata()])
         meas = result.measurement
@@ -149,7 +151,9 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
     def testNonsenseKeys(self):
         self.runTask()
         metadata = self.scienceTask.getFullMetadata()
-        startKeys = [key for key in metadata.paramNames(topLevelOnly=False) if "StartCpuTime" in key]
+        startKeys = [key
+                     for key in metadata.paramNames(topLevelOnly=False)
+                     if "StartCpuTime" in key]
         for key in startKeys:
             metadata.remove(key)
 
@@ -160,7 +164,9 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
     def testBadlyTypedKeys(self):
         self.runTask()
         metadata = self.scienceTask.getFullMetadata()
-        endKeys = [key for key in metadata.paramNames(topLevelOnly=False) if "EndCpuTime" in key]
+        endKeys = [key
+                   for key in metadata.paramNames(topLevelOnly=False)
+                   if "EndCpuTime" in key]
         for key in endKeys:
             metadata.set(key, str(metadata.getAsDouble(key)))
 
@@ -170,9 +176,9 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
 
     def testGetInputDatasetTypes(self):
         types = TimingMetricTask.getInputDatasetTypes(self.config)
-        # dict.keys() is a collections.abc.Set, which has a narrower interface than __builtins__.set...
         self.assertSetEqual(set(types.keys()), {"metadata"})
-        self.assertEqual(types["metadata"], TimingMetricTestSuite._SCIENCE_TASK_NAME + "_metadata")
+        expected = TimingMetricTestSuite._SCIENCE_TASK_NAME + "_metadata"
+        self.assertEqual(types["metadata"], expected)
 
     def testFineGrainedMetric(self):
         self.runTask()
@@ -181,7 +187,8 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         inputDataIds = {"metadata": [{"visit": 42, "ccd": 1}]}
         outputDataId = {"measurement": {"visit": 42, "ccd": 1}}
         measDirect = self.task.run([metadata]).measurement
-        measIndirect = self.task.adaptArgsAndRun(inputData, inputDataIds, outputDataId).measurement
+        measIndirect = self.task.adaptArgsAndRun(
+            inputData, inputDataIds, outputDataId).measurement
 
         assert_quantity_allclose(measIndirect.quantity, measDirect.quantity)
 
@@ -190,15 +197,19 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         metadata = self.scienceTask.getFullMetadata()
         nCcds = 3
         inputData = {"metadata": [metadata] * nCcds}
-        inputDataIds = {"metadata": [{"visit": 42, "ccd": x} for x in range(nCcds)]}
+        inputDataIds = {"metadata": [{"visit": 42, "ccd": x}
+                                     for x in range(nCcds)]}
         outputDataId = {"measurement": {"visit": 42}}
         measDirect = self.task.run([metadata]).measurement
-        measMany = self.task.adaptArgsAndRun(inputData, inputDataIds, outputDataId).measurement
+        measMany = self.task.adaptArgsAndRun(
+            inputData, inputDataIds, outputDataId).measurement
 
-        assert_quantity_allclose(measMany.quantity, nCcds * measDirect.quantity)
+        assert_quantity_allclose(measMany.quantity,
+                                 nCcds * measDirect.quantity)
 
     def testGetOutputMetricName(self):
-        self.assertEqual(TimingMetricTask.getOutputMetricName(self.config), Name(self.config.metric))
+        self.assertEqual(TimingMetricTask.getOutputMetricName(self.config),
+                         Name(self.config.metric))
 
 
 # Hack around unittest's hacky test setup system

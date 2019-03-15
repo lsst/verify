@@ -1,5 +1,5 @@
 #
-# This file is part of ap_verify.
+# This file is part of verify.
 #
 # Developed for the LSST Data Management System.
 # This product includes software developed by the LSST Project
@@ -21,9 +21,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-"""Code for measuring software performance metrics.
-
-All measurements assume the necessary information is present in a task's metadata.
+"""Code for measuring metrics that apply to any Task.
 """
 
 __all__ = ["TimingMetricConfig", "TimingMetricTask"]
@@ -31,8 +29,9 @@ __all__ = ["TimingMetricConfig", "TimingMetricTask"]
 import astropy.units as u
 
 import lsst.pex.config as pexConfig
+
 from lsst.verify import Measurement, Name
-from lsst.verify.gen2tasks import registerMultiple
+from lsst.verify.gen2tasks.metricRegistry import registerMultiple
 from lsst.verify.tasks import MetricComputationError, MetadataMetricTask
 
 
@@ -45,7 +44,8 @@ class TimingMetricConfig(MetadataMetricTask.ConfigClass):
             "in the format of `lsst.pipe.base.Task.getFullMetadata()`.")
     metric = pexConfig.Field(
         dtype=str,
-        doc="The fully qualified name of the metric to store the timing information.")
+        doc="The fully qualified name of the metric to store the "
+            "timing information.")
 
 
 @registerMultiple("timing")
@@ -119,10 +119,12 @@ class TimingMetricTask(MetadataMetricTask):
         This method does not return a measurement if no timing information was
         provided by any of the metadata.
         """
-        timingFound = False  # some timings are indistinguishable from 0, so don't test totalTime > 0
+        # some timings indistinguishable from 0, so don't test totalTime > 0
+        timingFound = False
         totalTime = 0.0
         for singleRun in timings:
-            if singleRun["StartTime"] is not None or singleRun["EndTime"] is not None:
+            if singleRun["StartTime"] is not None \
+                    or singleRun["EndTime"] is not None:
                 try:
                     totalTime += singleRun["EndTime"] - singleRun["StartTime"]
                     timingFound = True
@@ -131,11 +133,13 @@ class TimingMetricTask(MetadataMetricTask):
             # If both are None, assume the method was not run that time
 
         if timingFound:
-            meas = Measurement(self.getOutputMetricName(self.config), totalTime * u.second)
+            meas = Measurement(self.getOutputMetricName(self.config),
+                               totalTime * u.second)
             meas.notes['estimator'] = 'pipe.base.timeMethod'
             return meas
         else:
-            self.log.info("Nothing to do: no timing information for %s found.", self.config.target)
+            self.log.info("Nothing to do: no timing information for %s found.",
+                          self.config.target)
             return None
 
     @classmethod
