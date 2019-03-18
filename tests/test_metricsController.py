@@ -27,7 +27,8 @@ from astropy.tests.helper import assert_quantity_allclose
 import lsst.utils.tests
 from lsst.pex.config import Config, FieldValidationError
 from lsst.pipe.base import Task, Struct
-from lsst.verify import Job, Name, Measurement, MetricComputationError
+from lsst.verify import Job, Name, Measurement
+from lsst.verify.tasks import MetricComputationError
 from lsst.verify.gen2tasks import \
     MetricTask, MetricsControllerTask, register, registerMultiple
 

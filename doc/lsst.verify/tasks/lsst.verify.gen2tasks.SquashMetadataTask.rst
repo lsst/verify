@@ -5,7 +5,7 @@ SquashMetadataTask
 ##################
 
 ``SquashMetadataTask`` modifies a `~lsst.verify.Job` object to contain metadata that is required for SQuaSH upload.
-It is both the default for the :lsst-config-field:`lsst.verify.gen2tasks.MetricsControllerConfig.metadataAdder` subtask and its reference implementation.
+It is both the default for the :lsst-config-field:`lsst.verify.gen2tasks.metricsControllerTask.MetricsControllerConfig.metadataAdder` subtask and its reference implementation.
 
 .. _lsst.verify.gen2tasks.SquashMetadataTask-summary:
 

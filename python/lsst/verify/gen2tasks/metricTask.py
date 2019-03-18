@@ -60,6 +60,9 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
     # Butler datasets
     ConfigClass = lsst.pex.config.Config
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def adaptArgsAndRun(self, inputData, inputDataIds, outputDataId):
         """Compute a metric from in-memory data.
 
@@ -97,12 +100,12 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
 
         Raises
         ------
-        lsst.verify.MetricComputationError
+        lsst.verify.tasks.MetricComputationError
             Raised if an algorithmic or system error prevents calculation
             of the metric. Examples include corrupted input data or
             unavoidable exceptions raised by analysis code. The
-            `~lsst.verify.MetricComputationError` should be chained to a more
-            specific exception describing the root cause.
+            `~lsst.verify.tasks.MetricComputationError` should be chained to a
+            more specific exception describing the root cause.
 
             Not having enough data for a metric to be applicable is not an
             error, and should not trigger this exception.
@@ -115,9 +118,12 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
         `addStandardMetadata` on its measurement before returning it.
 
         `adaptArgsAndRun` and `run` should assume they take multiple input
-        datasets, regardless of the expected metric granularity. This rule may
-        be broken if it is impossible for more than one copy of a dataset
-        to exist.
+        datasets, regardless of the expected metric granularity. Doing so lets
+        metrics be defined with a different granularity from the Science
+        Pipelines processing, and allows for the aggregation (or lack thereof)
+        of the metric to be controlled by the task configuration with no code
+        changes. This rule may be broken if it is impossible for more than one
+        copy of a dataset to exist.
 
         All input data must be treated as optional. This maximizes the
         ``MetricTask``'s usefulness for incomplete pipeline runs or runs with

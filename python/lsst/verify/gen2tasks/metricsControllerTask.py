@@ -26,7 +26,8 @@ import traceback
 import lsst.pex.config as pexConfig
 import lsst.daf.persistence as dafPersist
 from lsst.pipe.base import Task, Struct
-from lsst.verify import Job, MetricComputationError
+from lsst.verify import Job
+from lsst.verify.tasks import MetricComputationError
 from .metadataTask import SquashMetadataTask
 from .metricRegistry import MetricRegistry
 
@@ -165,6 +166,10 @@ class MetricsControllerTask(Task):
             value = result.measurement
             if value is not None:
                 job.measurements.insert(value)
+            else:
+                self.log.debug(
+                    "Skipping measurement of %r on %s as not applicable.",
+                    metricTask, inputDataIds)
         except MetricComputationError:
             # Apparently lsst.log doesn't have built-in exception support?
             self.log.error("Measurement of %r failed on %s->%s\n%s",
@@ -176,7 +181,8 @@ class MetricsControllerTask(Task):
 
         This method loads all datasets required to compute a particular
         metric, and persists the metrics as one or more `lsst.verify.Job`
-        objects.
+        objects. Only metrics that successfully produce a
+        `~lsst.verify.Measurement` will be included in a job.
 
         Parameters
         ----------
@@ -233,5 +239,5 @@ class MetricsControllerTask(Task):
             The identifier of all metrics in the Job to be persisted.
         """
         # Construct a relatively OS-friendly string (i.e., no quotes or {})
-        idString = " ".join("%s=%s" % (key, dataId[key]) for key in dataId)
+        idString = "_".join("%s%s" % (key, dataId[key]) for key in dataId)
         return self.config.jobFileTemplate.format(id=index, dataId=idString)

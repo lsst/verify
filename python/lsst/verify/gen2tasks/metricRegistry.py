@@ -187,7 +187,7 @@ class _MultiConfigFactory:
             ``config``. The order in which the objects will be returned
             is undefined.
         """
-        return [self._configurableClass(subConfig, **kwargs)
+        return [self._configurableClass(config=subConfig, **kwargs)
                 for subConfig in config.configs.values()]
 
 
