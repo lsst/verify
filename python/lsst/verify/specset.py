@@ -27,6 +27,7 @@ __all__ = ['SpecificationSet']
 from past.builtins import basestring
 
 from collections import OrderedDict
+import json
 import copy
 import os
 import re
@@ -77,7 +78,7 @@ class SpecificationSet(JsonSerializationMixin):
                     message = '{0!r} must be a Specification type'
                     raise TypeError(message.format(spec))
 
-                self._specs[spec.name] = spec
+                self[spec.name] = spec
 
         if partials is not None:
             for partial in partials:
@@ -85,7 +86,7 @@ class SpecificationSet(JsonSerializationMixin):
                     message = '{0!r} must be a SpecificationPartial type'
                     raise TypeError(message.format(partial))
 
-                self._partials[partial.name] = partial
+                self[partial.name] = partial
 
     @classmethod
     def deserialize(cls, specifications=None):
@@ -260,7 +261,7 @@ class SpecificationSet(JsonSerializationMixin):
 
                 if 'id' in doc:
                     partial = SpecificationPartial(doc)
-                    self._partials[partial.name] = partial
+                    self[partial.name] = partial
                 else:
                     # Make sure the name is fully qualified
                     # since _process_specification_yaml_doc may not have
@@ -285,7 +286,7 @@ class SpecificationSet(JsonSerializationMixin):
                             '{0!s}'.format(spec))
                         raise SpecificationResolutionError(message)
 
-                    self._specs[name] = spec
+                    self[name] = spec
 
             if len(redo_queue) == len(all_docs):
                 message = ("There are unresolved specification "
@@ -568,6 +569,18 @@ class SpecificationSet(JsonSerializationMixin):
                 message = ("Key {0!s} does not match the "
                            "SpecificationPartial's name {1!s})")
                 raise KeyError(message.format(key, value.name))
+
+            # Check for duplicates
+            if value.name in self._partials:
+                raise RuntimeError(
+                    'Duplicate of partial %s.\n\n'
+                    'Original:\n%s\n\nNew:\n%s',
+                    value.name,
+                    json.dumps(self._partials[value.name].json,
+                               indent=2,
+                               sort_keys=True),
+                    json.dumps(value.json, indent=2, sort_keys=True)
+                )
             self._partials[key] = value
 
         else:
@@ -589,6 +602,17 @@ class SpecificationSet(JsonSerializationMixin):
                 message = ("Key {0!s} does not match the "
                            "Specification's name {1!s})")
                 raise KeyError(message.format(key, value.name))
+
+            # Check for duplicates
+            if value.name in self._specs:
+                raise RuntimeError(
+                    'Duplicate of specification %s.\n\n'
+                    'Original:\n%s\n\nNew:\n%s',
+                    value.name,
+                    json.dumps(self._specs[value.name].json, indent=2,
+                               sort_keys=True),
+                    json.dumps(value.json, indent=2, sort_keys=True)
+                )
 
             self._specs[key] = value
 

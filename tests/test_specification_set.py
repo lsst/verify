@@ -102,7 +102,7 @@ class TestSpecificationSet(unittest.TestCase):
     def test_iadd(self):
         """Test SpecifcationSet.__iadd__."""
         set1 = SpecificationSet([self.spec_PA1_design, self.spec_PA1_stretch])
-        set2 = SpecificationSet([self.spec_PA1_design, self.spec_PA2_design])
+        set2 = SpecificationSet([self.spec_PA2_design])
 
         set1 += set2
 
@@ -114,7 +114,7 @@ class TestSpecificationSet(unittest.TestCase):
     def test_update(self):
         """Test SpecificationSet.update()."""
         set1 = SpecificationSet([self.spec_PA1_design, self.spec_PA1_stretch])
-        set2 = SpecificationSet([self.spec_PA1_design, self.spec_PA2_design])
+        set2 = SpecificationSet([self.spec_PA2_design])
 
         set1.update(set2)
 
@@ -193,9 +193,8 @@ class TestSpecificationSetGetterSetter(unittest.TestCase):
         self.assertFalse('validate_drp.PA1.stretch' in spec_set)
 
         # Insert duplicate
-        spec_set[spec_PA1_design.name] = spec_PA1_design
-        self.assertEqual(len(spec_set), 1)
-        self.assertTrue('validate_drp.PA1.design' in spec_set)
+        with self.assertRaises(RuntimeError):
+            spec_set[spec_PA1_design.name] = spec_PA1_design
 
         # Insert weird value
         with self.assertRaises(TypeError):
