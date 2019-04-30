@@ -67,7 +67,7 @@ A task for a metric that does not apply to a particular pipeline run (case 2) mu
 A task that cannot give a valid result (case 3) must raise `~lsst.verify.tasks.MetricComputationError`.
 
 In grey areas, developers should choose a ``MetricTask``'s behavior based on whether the root cause is closer to case 2 or case 3.
-For example, ``TimingMetricTask`` accepts top-level task metadata as input, but returns `None` if it can't find metadata for the subtask it is supposed to time.
+For example, :lsst-task:`~lsst.verify.tasks.commonMetrics.TimingMetricTask` accepts top-level task metadata as input, but returns `None` if it can't find metadata for the subtask it is supposed to time.
 While the input dataset is available, the subtask metadata are most likely missing because the subtask was never run, making the situation equivalent to case 2.
 On the other hand, metadata with nonsense values falls squarely under case 3.
 

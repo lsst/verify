@@ -28,12 +28,14 @@ Python API summary
 
 .. lsst-task-api-summary:: lsst.verify.gen2tasks.MetricsControllerTask
 
-.. _lsst.verify.gen2tasks.MetricsControllerTask-subtasks:
+.. TODO: uncomment this block after resolving DM-18496
 
-Retargetable subtasks
-=====================
-
-.. lsst-task-config-subtasks:: lsst.verify.gen2tasks.MetricsControllerTask
+.. .. _lsst.verify.gen2tasks.MetricsControllerTask-subtasks:
+..
+.. Retargetable subtasks
+.. =====================
+..
+.. .. lsst-task-config-subtasks:: lsst.verify.gen2tasks.MetricsControllerTask
 
 .. _lsst.verify.gen2tasks.MetricsControllerTask-configs:
 
