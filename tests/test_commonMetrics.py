@@ -21,15 +21,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import time
 import unittest
 
-import numpy as np
 import astropy.units as u
 from astropy.tests.helper import assert_quantity_allclose
 
 import lsst.utils.tests
-import lsst.afw.image as afwImage
-from lsst.ip.isr import FringeTask
+from lsst.pex.config import Config
+from lsst.pipe.base import Task, timeMethod
 
 from lsst.verify import Measurement, Name
 from lsst.verify.gen2tasks.testUtils import MetricTaskTestCase
@@ -37,34 +37,17 @@ from lsst.verify.tasks import MetricComputationError, TimingMetricTask
 from lsst.verify.tasks.testUtils import MetadataMetricTestCase
 
 
-def _createFringe(width, height, filterName):
-    """Create a fringe frame
+class DummyTask(Task):
+    ConfigClass = Config
+    _DefaultName = "NotARealTask"
+    taskLength = 0.1
 
-    Parameters
-    ----------
-    width, height: `int`
-        Size of image
-    filterName: `str`
-        name of the filterName to use
-
-    Returns
-    -------
-    fringe: `lsst.afw.image.ExposureF`
-        Fringe frame
-    """
-    image = afwImage.ImageF(width, height)
-    array = image.getArray()
-    freq = np.pi / 10.0
-    x, y = np.indices(array.shape)
-    array[x, y] = np.sin(freq * x) + np.sin(freq * y)
-    exp = afwImage.makeExposure(afwImage.makeMaskedImage(image))
-    exp.setFilter(afwImage.Filter(filterName))
-    return exp
+    @timeMethod
+    def run(self):
+        time.sleep(self.taskLength)
 
 
 class TimingMetricTestSuite(MetadataMetricTestCase):
-    _SCIENCE_TASK_NAME = "fringe"
-
     @classmethod
     def makeTask(cls):
         return TimingMetricTask(config=cls._standardConfig())
@@ -72,10 +55,9 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
     @staticmethod
     def _standardConfig():
         config = TimingMetricTask.ConfigClass()
-        config.metadata.name = TimingMetricTestSuite._SCIENCE_TASK_NAME \
-            + "_metadata"
-        config.target = TimingMetricTestSuite._SCIENCE_TASK_NAME + ".run"
-        config.metric = "ip_isr.IsrTime"
+        config.metadata.name = DummyTask._DefaultName + "_metadata"
+        config.target = DummyTask._DefaultName + ".run"
+        config.metric = "verify.DummyTime"
         return config
 
     def setUp(self):
@@ -85,45 +67,19 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         super().setUp()
         self.config = TimingMetricTestSuite._standardConfig()
 
-        # Create dummy filter and fringe so that `FringeTask` has short but
-        # significant run time.
-        # Code adapted from lsst.ip.isr.test_fringes
-        size = 128
-        dummyFilter = "FILTER"
-        afwImage.utils.defineFilter(dummyFilter, lambdaEff=0)
-        exp = _createFringe(size, size, dummyFilter)
-
-        # Create and run `FringeTask` itself
-        config = FringeTask.ConfigClass()
-        config.filters = [dummyFilter]
-        config.num = 1000
-        config.small = 1
-        config.large = size // 4
-        config.pedestal = False
-        self.scienceTask = FringeTask(
-            name=TimingMetricTestSuite._SCIENCE_TASK_NAME, config=config)
-
-        # As an optimization, let test cases choose to run the dummy task
-        def runTask():
-            self.scienceTask.run(exp, exp)
-        self.runTask = runTask
-
-    def tearDown(self):
-        del self.scienceTask
+        self.scienceTask = DummyTask()
+        self.scienceTask.run()
 
     def testValid(self):
-        self.runTask()
         result = self.task.run([self.scienceTask.getFullMetadata()])
         meas = result.measurement
 
         self.assertIsInstance(meas, Measurement)
         self.assertEqual(meas.metric_name, Name(metric=self.config.metric))
         self.assertGreater(meas.quantity, 0.0 * u.second)
-        # Task normally takes 0.2 s, so this should be a safe margin of error
-        self.assertLess(meas.quantity, 10.0 * u.second)
+        self.assertLess(meas.quantity, 2 * DummyTask.taskLength * u.second)
 
     def testNoMetric(self):
-        self.runTask()
         self.config.metric = "foo.bar.FooBarTime"
         task = TimingMetricTask(config=self.config)
         with self.assertRaises(TypeError):
@@ -140,16 +96,13 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         self.assertIsNone(meas)
 
     def testRunDifferentMethod(self):
-        self.runTask()
-        self.config.target = TimingMetricTestSuite._SCIENCE_TASK_NAME \
-            + ".runDataRef"
+        self.config.target = DummyTask._DefaultName + ".runDataRef"
         task = TimingMetricTask(config=self.config)
         result = task.run([self.scienceTask.getFullMetadata()])
         meas = result.measurement
         self.assertIsNone(meas)
 
     def testNonsenseKeys(self):
-        self.runTask()
         metadata = self.scienceTask.getFullMetadata()
         startKeys = [key
                      for key in metadata.paramNames(topLevelOnly=False)
@@ -162,7 +115,6 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
             task.run([metadata])
 
     def testBadlyTypedKeys(self):
-        self.runTask()
         metadata = self.scienceTask.getFullMetadata()
         endKeys = [key
                    for key in metadata.paramNames(topLevelOnly=False)
@@ -177,11 +129,10 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
     def testGetInputDatasetTypes(self):
         types = TimingMetricTask.getInputDatasetTypes(self.config)
         self.assertSetEqual(set(types.keys()), {"metadata"})
-        expected = TimingMetricTestSuite._SCIENCE_TASK_NAME + "_metadata"
+        expected = DummyTask._DefaultName + "_metadata"
         self.assertEqual(types["metadata"], expected)
 
     def testFineGrainedMetric(self):
-        self.runTask()
         metadata = self.scienceTask.getFullMetadata()
         inputData = {"metadata": [metadata]}
         inputDataIds = {"metadata": [{"visit": 42, "ccd": 1}]}
@@ -193,7 +144,6 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         assert_quantity_allclose(measIndirect.quantity, measDirect.quantity)
 
     def testCoarseGrainedMetric(self):
-        self.runTask()
         metadata = self.scienceTask.getFullMetadata()
         nCcds = 3
         inputData = {"metadata": [metadata] * nCcds}
