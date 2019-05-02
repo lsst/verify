@@ -166,8 +166,6 @@ class PpdbMetricConfig(MetricTask.ConfigClass):
             "config, such as 'processCcd_config'.",
         nameTemplate="{taskName}_config",
         storageClass="Config",
-        # One config for entire CmdLineTask run
-        scalar=True,
         dimensions=set(),
     )
     dbLoader = ConfigurableField(
