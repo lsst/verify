@@ -176,7 +176,7 @@ class MetricsControllerTask(Task):
                            metricTask, inputDataIds, outputDataIds,
                            traceback.format_exc())
 
-    def runDataRefs(self, datarefs):
+    def runDataRefs(self, datarefs, customMetadata=None):
         """Call all registered metric tasks on each dataref.
 
         This method loads all datasets required to compute a particular
@@ -191,6 +191,13 @@ class MetricsControllerTask(Task):
             generates a measurement at the same granularity (e.g., a
             dataref with only ``"visit"`` specified generates visit-level
             measurements).
+        customMetadata : `dict`, optional
+            Any metadata that are needed for a specific pipeline, but that are
+            not needed by the ``lsst.verify`` framework or by general-purpose
+            measurement analysis code (these cases are handled by the
+            `~MetricsControllerConfig.metadataAdder` subtask). If omitted,
+            only generic metadata are added. Both keys and values must be valid
+            inputs to `~lsst.verify.Metadata`.
 
         Returns
         -------
@@ -214,6 +221,8 @@ class MetricsControllerTask(Task):
             job = Job.load_metrics_package()
             try:
                 self.metadataAdder.run(job, dataref=dataref)
+                if customMetadata:
+                    job.meta.update(customMetadata)
 
                 for task in self.measurers:
                     self._computeSingleMeasurement(job, task, dataref)

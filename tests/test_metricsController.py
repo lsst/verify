@@ -266,6 +266,18 @@ class MetricsControllerTestSuite(lsst.utils.tests.TestCase):
         with self.assertRaises(FieldValidationError):
             self.config.measurers = ["totallyAndDefinitelyNotARealMetric"]
 
+    def testCustomMetadata(self, _mockWriter, _mockButler, _mockMetricsLoader):
+        dataIds = [{"visit": 42, "ccd": 101, "filter": "k"},
+                   {"visit": 42, "ccd": 102, "filter": "k"}]
+        datarefs = [_makeMockDataref(dataId) for dataId in dataIds]
+        extraMetadata = {"test_protocol": 42}
+        jobs = self.task.runDataRefs(datarefs, extraMetadata).jobs
+
+        for job in jobs:
+            self.assertTrue(job.meta["tested"])
+            self.assertEqual(job.meta["test_protocol"],
+                             extraMetadata["test_protocol"])
+
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
     pass
