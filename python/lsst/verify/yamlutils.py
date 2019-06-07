@@ -80,7 +80,8 @@ def load_all_ordered_yaml(stream, **kwargs):
     return yaml.load_all(stream, OrderedLoader)
 
 
-def _build_ordered_loader(Loader=yaml.Loader, object_pairs_hook=OrderedDict):
+def _build_ordered_loader(Loader=yaml.CSafeLoader,
+                          object_pairs_hook=OrderedDict):
     # Solution from http://stackoverflow.com/a/21912744
 
     class OrderedLoader(Loader):
