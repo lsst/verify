@@ -17,7 +17,7 @@ class MetricTestCase(unittest.TestCase):
         yaml_path = os.path.join(os.path.dirname(__file__),
                                  'data', 'metrics', 'testing.yaml')
         with open(yaml_path) as f:
-            self.metric_doc = yaml.load(f)
+            self.metric_doc = yaml.safe_load(f)
 
     def test_load_all_yaml_metrics(self):
         """Verify that all metrics from testing.yaml can be loaded."""
