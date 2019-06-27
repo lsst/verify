@@ -75,6 +75,7 @@ __all__ = ['parse_args', 'main', 'insert_lsstsw_metadata',
 import argparse
 import os
 import json
+import getpass
 
 try:
     import git
@@ -182,7 +183,7 @@ def parse_args():
         dest='api_password',
         metavar='PASSWORD',
         help='Password for SQUASH API. Equivalent to the $SQUASH_PASSWORD '
-             'environment variable.')
+             'environment variable. If neither is set, you will be prompted.')
     return parser.parse_args()
 
 
@@ -394,11 +395,11 @@ class Configuration(object):
             message = '--user or $SQUASH_USER configuration required'
             raise RuntimeError(message)
 
-        self.api_password = args.api_password or os.getenv('SQUASH_password')
+        self.api_password = (args.api_password or
+                             os.getenv('SQUASH_password'))
         if not self.test and self.api_password is None:
-            message = ('--password or $SQUASH_password configuration '
-                       'required')
-            raise RuntimeError(message)
+            # If password hasn't been set, prompt for it.
+            self.api_password = getpass.getpass(prompt="SQuaSH password: ")
 
     def __str__(self):
         configs = {
