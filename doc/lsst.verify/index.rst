@@ -63,6 +63,16 @@ Tasks
 ..    :root: lsst.verify
 ..    :toctree: configs
 
+.. _lsst.verify-scripts:
+
+Script reference
+================
+
+.. toctree::
+   :maxdepth: 1
+
+   scripts/dispatch_verify.py
+
 .. _lsst.verify-pyapi:
 
 Python API reference
