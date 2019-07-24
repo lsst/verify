@@ -101,7 +101,7 @@ def build_argparser():
         'json_paths',
         nargs='+',
         metavar='json',
-        help='Verificaton job JSON file, or files. When multiple JSON '
+        help='Verification job JSON file, or files. When multiple JSON '
              'files are present, their measurements, blobs, and metadata '
              'are merged.')
     parser.add_argument(
@@ -137,18 +137,22 @@ def build_argparser():
         choices=Configuration.allowed_env,
         help='Name of the environment where the verification job is being '
              'run. In some environments display_verify.py will gather '
-             'additional metadata automatically. '
-             '**jenkins**: for the Jenkins CI (https://ci.lsst.codes)'
-             'environment.'
-             '**ldf**: for the LSST Data Facility environment. '
+             'additional metadata automatically:\n'
+             '\n'
+             'jenkins\n'
+             '  For the Jenkins CI (https://ci.lsst.codes)'
+             '  environment.\n'
+             'ldf\n'
+             '  For the LSST Data Facility environment. \n'
+             '\n'
              'Equivalent to the $VERIFY_ENV environment variable.')
     env_group.add_argument(
         '--lsstsw',
         dest='lsstsw',
         metavar='PATH',
         help='lsstsw directory path. If available, Stack package versions are '
-             'read from lsstsw. Equivalent to the $LSSTSW environment '
-             'variable. Disabled with --ignore-lsstsw.')
+             'read from lsstsw. Equivalent to the ``$LSSTSW`` environment '
+             'variable. Disabled with ``--ignore-lsstsw.``')
     env_group.add_argument(
         '--package-repos',
         dest='extra_package_paths',
@@ -163,14 +167,14 @@ def build_argparser():
         action='store_true',
         default=False,
         help='Ignore lsstsw metadata even if it is available (for example, '
-             'the $LSSTSW variable is set).')
+             'the ``$LSSTSW`` variable is set).')
 
     api_group = parser.add_argument_group('SQUASH API arguments')
     api_group.add_argument(
         '--url',
         dest='api_url',
         metavar='URL',
-        help='Root URL of the SQUASH API. Equivalent to the $SQUASH_URL '
+        help='Root URL of the SQUASH API. Equivalent to the ``$SQUASH_URL`` '
              'environment variable.')
     api_group.add_argument(
         '--user',
@@ -182,7 +186,7 @@ def build_argparser():
         '--password',
         dest='api_password',
         metavar='PASSWORD',
-        help='Password for SQUASH API. Equivalent to the $SQUASH_PASSWORD '
+        help='Password for SQUASH API. Equivalent to the ``$SQUASH_PASSWORD`` '
              'environment variable. If neither is set, you will be prompted.')
     return parser
 
