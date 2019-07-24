@@ -68,7 +68,7 @@ in the LDF environment, thus if ``--env=ldf`` is used ``--ignore-lsstsw`` is
 aslo used by default in this environment.
 """
 # For determining what is documented in Sphinx
-__all__ = ['parse_args', 'main', 'insert_lsstsw_metadata',
+__all__ = ['build_argparser', 'main', 'insert_lsstsw_metadata',
            'insert_extra_package_metadata', 'insert_env_metadata',
            'Configuration']
 
@@ -91,7 +91,7 @@ from lsst.verify.metadata.jenkinsci import get_jenkins_env
 from lsst.verify.metadata.ldf import get_ldf_env
 
 
-def parse_args():
+def build_argparser():
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -184,7 +184,7 @@ def parse_args():
         metavar='PASSWORD',
         help='Password for SQUASH API. Equivalent to the $SQUASH_PASSWORD '
              'environment variable. If neither is set, you will be prompted.')
-    return parser.parse_args()
+    return parser
 
 
 def main():
@@ -192,7 +192,8 @@ def main():
     """
     log = lsst.log.Log.getLogger('verify.bin.dispatchverify.main')
 
-    args = parse_args()
+    parser = build_argparser()
+    args = parser.parse_args()
     config = Configuration(args)
     log.debug(str(config))
 
