@@ -19,16 +19,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Print the contents of a persisted Job object.
+"""Print the measurements and metadata in lsst.verify JSON files.
 
-This script takes as arguments one or more Job .json files, and prints the
-top-level metadata and a summary of any measurements. It does not print
-metrics that don't have measurements (there are far too many) or
-specifications (which are not helpful for testing measurement code).
+This script takes as arguments one or more lsst.verify JSON files, and prints
+the top-level metadata and a summary of any measurements.
+
+This script does not print information about metrics or specifications.
 """
 
 __all__ = ["main", "inspect_job"]
 
+import argparse
 import json
 
 from lsst.verify import Job
@@ -110,6 +111,27 @@ def inspect_job(job):
             print("%*s = %10s" % (max_metric_length, metric, pretty_quantity))
 
 
+def build_argparser():
+    """Construct an argument parser for the ``inspect_job.py`` script.
+
+    Returns
+    -------
+    argparser : `argparse.ArgumentParser`
+        The argument parser that defines the ``inspect_job.py`` command-line
+        interface.
+    """
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='More information is available at https://pipelines.lsst.io.')
+    parser.add_argument(
+        'json_paths',
+        nargs='+',
+        metavar='json',
+        help='lsst.verify JSON file, or files (``*verify.json``).')
+    return parser
+
+
 def main(filenames):
     """Present all Job files.
 
@@ -118,7 +140,8 @@ def main(filenames):
     filenames : `list` of `str`
         The Job files to open. Must be in JSON format.
     """
-    for filename in filenames:
+    args = build_argparser().parse_args()
+    for filename in args.json_paths:
         if len(filenames) > 1:
             print("\n%s:" % filename)
         with open(filename) as f:
