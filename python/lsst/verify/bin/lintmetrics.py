@@ -40,7 +40,15 @@ from lsst.utils import getPackageDir
 from lsst.verify import MetricSet, SpecificationSet
 
 
-def main():
+def build_argparser():
+    """Construct an argument parser for the ``lint_metrics.py`` script.
+
+    Returns
+    -------
+    argparser : `argparse.ArgumentParser`
+        The argument parser that defines the ``lint_metrics.py`` command-line
+        interface.
+    """
     try:
         default_metrics_package_dir = getPackageDir('verify_metrics')
     except lsst.pex.exceptions.NotFoundError:
@@ -55,7 +63,13 @@ def main():
         type=str,
         nargs='?',
         help="Filepath of the metrics package to be checked.")
-    args = parser.parse_args()
+    return parser
+
+
+def main():
+    """Main entrypoint for the ``lint_metrics.py`` script.
+    """
+    args = build_argparser().parse_args()
 
     print('Linting {}.'.format(args.package_dir))
 
