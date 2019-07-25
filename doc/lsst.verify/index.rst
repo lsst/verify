@@ -72,6 +72,7 @@ Script reference
    :maxdepth: 1
 
    scripts/dispatch_verify.py
+   scripts/inspect_job.py
 
 .. _lsst.verify-pyapi:
 
