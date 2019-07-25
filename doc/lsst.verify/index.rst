@@ -73,6 +73,7 @@ Script reference
 
    scripts/dispatch_verify.py
    scripts/inspect_job.py
+   scripts/lint_metrics.py
 
 .. _lsst.verify-pyapi:
 
