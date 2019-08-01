@@ -22,7 +22,7 @@ Using lsst.verify
 .. toctree::
    :maxdepth: 1
 
-   inspect_job
+   reviewing-verification-json-on-the-command-line
 
 .. _lsst.verify-contributing:
 
