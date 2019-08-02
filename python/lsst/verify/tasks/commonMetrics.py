@@ -106,7 +106,7 @@ class TimingMetricTask(MetadataMetricTask):
         Returns
         -------
         measurement : `lsst.verify.Measurement` or `None`
-            The the total running time of the target method across all
+            The total running time of the target method across all
             elements of ``metadata``.
 
         Raises

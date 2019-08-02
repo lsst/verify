@@ -59,9 +59,6 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         return config
 
     def setUp(self):
-        """Create a dummy instance of `FringeTask` so that test cases can
-        run and measure it.
-        """
         super().setUp()
         self.config = TimingMetricTestSuite._standardConfig()
 
