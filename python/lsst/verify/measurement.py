@@ -200,8 +200,10 @@ class Measurement(JsonSerializationMixin):
             # check unit consistency
             if not self.metric.check_unit(q):
                 message = ("The quantity's units {0} are incompatible with "
-                           "the metric's units {1}")
-                raise TypeError(message.format(q.unit, self.metric.unit))
+                           "{1}'s units {2}")
+                raise TypeError(message.format(q.unit,
+                                               self.metric_name,
+                                               self.metric.unit))
 
         self._quantity = q
 
