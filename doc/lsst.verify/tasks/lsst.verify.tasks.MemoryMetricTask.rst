@@ -7,6 +7,11 @@ MemoryMetricTask
 ``MemoryMetricTask`` creates a resident set size `~lsst.verify.Measurement` based on data collected by @\ `~lsst.pipe.base.timeMethod`.
 It reads the raw timing data from the top-level `~lsst.pipe.base.CmdLineTask`'s metadata, which is identified by the task configuration.
 
+In general, it's only useful to measure this metric for the top-level task being run.
+@\ `~lsst.pipe.base.timeMethod` measures the peak memory usage from process start, so the results for any subtask will be contaminated by previous subtasks run on the same data ID.
+
+Because @\ `~lsst.pipe.base.timeMethod` gives platform-dependent results, this task may give incorrect results (e.g., units) when run in a distributed system with heterogeneous nodes.
+
 .. _lsst.verify.tasks.MemoryMetricTask-summary:
 
 Processing summary
