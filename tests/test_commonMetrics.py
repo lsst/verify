@@ -31,7 +31,8 @@ from lsst.pipe.base import Task, timeMethod
 
 from lsst.verify import Measurement, Name
 from lsst.verify.gen2tasks.testUtils import MetricTaskTestCase
-from lsst.verify.tasks import MetricComputationError, TimingMetricTask
+from lsst.verify.tasks import MetricComputationError, TimingMetricTask, \
+    MemoryMetricTask
 from lsst.verify.tasks.testUtils import MetadataMetricTestCase
 
 
@@ -154,6 +155,105 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
 
     def testGetOutputMetricName(self):
         self.assertEqual(TimingMetricTask.getOutputMetricName(self.config),
+                         Name(self.config.metric))
+
+
+class MemoryMetricTestSuite(MetadataMetricTestCase):
+    @classmethod
+    def makeTask(cls):
+        return MemoryMetricTask(config=cls._standardConfig())
+
+    @staticmethod
+    def _standardConfig():
+        config = MemoryMetricTask.ConfigClass()
+        config.metadata.name = DummyTask._DefaultName + "_metadata"
+        config.target = DummyTask._DefaultName + ".run"
+        config.metric = "verify.DummyMemory"
+        return config
+
+    def setUp(self):
+        super().setUp()
+        self.config = self._standardConfig()
+
+        self.scienceTask = DummyTask()
+        self.scienceTask.run()
+
+    def testValid(self):
+        result = self.task.run([self.scienceTask.getFullMetadata()])
+        meas = result.measurement
+
+        self.assertIsInstance(meas, Measurement)
+        self.assertEqual(meas.metric_name, Name(metric=self.config.metric))
+        self.assertGreater(meas.quantity, 0.0 * u.byte)
+
+    def testNoMetric(self):
+        self.config.metric = "foo.bar.FooBarMemory"
+        task = MemoryMetricTask(config=self.config)
+        with self.assertRaises(TypeError):
+            task.run([self.scienceTask.getFullMetadata()])
+
+    def testMissingData(self):
+        result = self.task.run([None])
+        meas = result.measurement
+        self.assertIsNone(meas)
+
+    def testNoDataExpected(self):
+        result = self.task.run([])
+        meas = result.measurement
+        self.assertIsNone(meas)
+
+    def testRunDifferentMethod(self):
+        self.config.target = DummyTask._DefaultName + ".runDataRef"
+        task = MemoryMetricTask(config=self.config)
+        result = task.run([self.scienceTask.getFullMetadata()])
+        meas = result.measurement
+        self.assertIsNone(meas)
+
+    def testBadlyTypedKeys(self):
+        metadata = self.scienceTask.getFullMetadata()
+        endKeys = [key
+                   for key in metadata.paramNames(topLevelOnly=False)
+                   if "EndMaxResidentSetSize" in key]
+        for key in endKeys:
+            metadata.set(key, str(metadata.getAsDouble(key)))
+
+        task = MemoryMetricTask(config=self.config)
+        with self.assertRaises(MetricComputationError):
+            task.run([metadata])
+
+    def testGetInputDatasetTypes(self):
+        types = MemoryMetricTask.getInputDatasetTypes(self.config)
+        self.assertSetEqual(set(types.keys()), {"metadata"})
+        expected = DummyTask._DefaultName + "_metadata"
+        self.assertEqual(types["metadata"], expected)
+
+    def testFineGrainedMetric(self):
+        metadata = self.scienceTask.getFullMetadata()
+        inputData = {"metadata": [metadata]}
+        inputDataIds = {"metadata": [{"visit": 42, "ccd": 1}]}
+        outputDataId = {"measurement": {"visit": 42, "ccd": 1}}
+        measDirect = self.task.run([metadata]).measurement
+        measIndirect = self.task.adaptArgsAndRun(
+            inputData, inputDataIds, outputDataId).measurement
+
+        assert_quantity_allclose(measIndirect.quantity, measDirect.quantity)
+
+    def testCoarseGrainedMetric(self):
+        metadata = self.scienceTask.getFullMetadata()
+        nCcds = 3
+        inputData = {"metadata": [metadata] * nCcds}
+        inputDataIds = {"metadata": [{"visit": 42, "ccd": x}
+                                     for x in range(nCcds)]}
+        outputDataId = {"measurement": {"visit": 42}}
+        measDirect = self.task.run([metadata]).measurement
+        measMany = self.task.adaptArgsAndRun(
+            inputData, inputDataIds, outputDataId).measurement
+
+        # Aggregated metric takes the max, so no change
+        assert_quantity_allclose(measMany.quantity, measDirect.quantity)
+
+    def testGetOutputMetricName(self):
+        self.assertEqual(MemoryMetricTask.getOutputMetricName(self.config),
                          Name(self.config.metric))
 
 
