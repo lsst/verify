@@ -22,7 +22,7 @@ Using lsst.verify
 .. toctree::
    :maxdepth: 1
 
-   inspect_job
+   reviewing-verification-json-on-the-command-line
 
 .. _lsst.verify-contributing:
 
@@ -62,6 +62,18 @@ Tasks
 .. .. lsst-configs::
 ..    :root: lsst.verify
 ..    :toctree: configs
+
+.. _lsst.verify-scripts:
+
+Script reference
+================
+
+.. toctree::
+   :maxdepth: 1
+
+   scripts/dispatch_verify.py
+   scripts/inspect_job.py
+   scripts/lint_metrics.py
 
 .. _lsst.verify-pyapi:
 

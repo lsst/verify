@@ -68,7 +68,7 @@ in the LDF environment, thus if ``--env=ldf`` is used ``--ignore-lsstsw`` is
 aslo used by default in this environment.
 """
 # For determining what is documented in Sphinx
-__all__ = ['parse_args', 'main', 'insert_lsstsw_metadata',
+__all__ = ['build_argparser', 'main', 'insert_lsstsw_metadata',
            'insert_extra_package_metadata', 'insert_env_metadata',
            'Configuration']
 
@@ -91,7 +91,7 @@ from lsst.verify.metadata.jenkinsci import get_jenkins_env
 from lsst.verify.metadata.ldf import get_ldf_env
 
 
-def parse_args():
+def build_argparser():
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -101,7 +101,7 @@ def parse_args():
         'json_paths',
         nargs='+',
         metavar='json',
-        help='Verificaton job JSON file, or files. When multiple JSON '
+        help='Verification job JSON file, or files. When multiple JSON '
              'files are present, their measurements, blobs, and metadata '
              'are merged.')
     parser.add_argument(
@@ -137,18 +137,22 @@ def parse_args():
         choices=Configuration.allowed_env,
         help='Name of the environment where the verification job is being '
              'run. In some environments display_verify.py will gather '
-             'additional metadata automatically. '
-             '**jenkins**: for the Jenkins CI (https://ci.lsst.codes)'
-             'environment.'
-             '**ldf**: for the LSST Data Facility environment. '
+             'additional metadata automatically:\n'
+             '\n'
+             'jenkins\n'
+             '  For the Jenkins CI (https://ci.lsst.codes)'
+             '  environment.\n'
+             'ldf\n'
+             '  For the LSST Data Facility environment. \n'
+             '\n'
              'Equivalent to the $VERIFY_ENV environment variable.')
     env_group.add_argument(
         '--lsstsw',
         dest='lsstsw',
         metavar='PATH',
         help='lsstsw directory path. If available, Stack package versions are '
-             'read from lsstsw. Equivalent to the $LSSTSW environment '
-             'variable. Disabled with --ignore-lsstsw.')
+             'read from lsstsw. Equivalent to the ``$LSSTSW`` environment '
+             'variable. Disabled with ``--ignore-lsstsw.``')
     env_group.add_argument(
         '--package-repos',
         dest='extra_package_paths',
@@ -163,14 +167,14 @@ def parse_args():
         action='store_true',
         default=False,
         help='Ignore lsstsw metadata even if it is available (for example, '
-             'the $LSSTSW variable is set).')
+             'the ``$LSSTSW`` variable is set).')
 
     api_group = parser.add_argument_group('SQUASH API arguments')
     api_group.add_argument(
         '--url',
         dest='api_url',
         metavar='URL',
-        help='Root URL of the SQUASH API. Equivalent to the $SQUASH_URL '
+        help='Root URL of the SQUASH API. Equivalent to the ``$SQUASH_URL`` '
              'environment variable.')
     api_group.add_argument(
         '--user',
@@ -182,9 +186,9 @@ def parse_args():
         '--password',
         dest='api_password',
         metavar='PASSWORD',
-        help='Password for SQUASH API. Equivalent to the $SQUASH_PASSWORD '
+        help='Password for SQUASH API. Equivalent to the ``$SQUASH_PASSWORD`` '
              'environment variable. If neither is set, you will be prompted.')
-    return parser.parse_args()
+    return parser
 
 
 def main():
@@ -192,7 +196,8 @@ def main():
     """
     log = lsst.log.Log.getLogger('verify.bin.dispatchverify.main')
 
-    args = parse_args()
+    parser = build_argparser()
+    args = parser.parse_args()
     config = Configuration(args)
     log.debug(str(config))
 
