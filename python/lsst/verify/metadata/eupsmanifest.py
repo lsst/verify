@@ -23,8 +23,6 @@
 """API for parsing the manifest.txt file for EUPS packages found in lsstsw.
 """
 
-from __future__ import print_function
-
 __all__ = ['Manifest']
 
 from collections import OrderedDict, namedtuple

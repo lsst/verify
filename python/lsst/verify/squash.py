@@ -28,7 +28,6 @@ upload and retrieve data from the SQUASH verification database.
 SQUASH will likely be replaced by a database served behind Data Management's
 webserv API. This client is considered a shim during construction.
 """
-from __future__ import print_function
 
 __all__ = ['get', 'post', 'get_endpoint_url', 'reset_endpoint_cache',
            'get_default_timeout', 'get_default_api_version',

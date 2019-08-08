@@ -22,8 +22,6 @@
 #
 """APIs for building software provenance from lsstsw."""
 
-from __future__ import print_function
-
 __all__ = ['LsstswRepos']
 
 from past.builtins import basestring

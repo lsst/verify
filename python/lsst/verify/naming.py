@@ -23,7 +23,6 @@
 """Tools for building and parsing fully-qualified names of metrics and
 specifications.
 """
-from __future__ import print_function
 
 __all__ = ['Name']
 

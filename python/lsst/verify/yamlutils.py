@@ -22,8 +22,6 @@
 #
 """Utilities for working with YAML documents."""
 
-from __future__ import print_function, division
-
 from collections import OrderedDict
 from copy import deepcopy
 import yaml
