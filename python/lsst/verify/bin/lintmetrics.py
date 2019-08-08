@@ -35,7 +35,6 @@ __all__ = ('main',)
 
 import argparse
 
-import lsst.pex.exceptions
 from lsst.utils import getPackageDir
 from lsst.verify import MetricSet, SpecificationSet
 
@@ -51,7 +50,7 @@ def build_argparser():
     """
     try:
         default_metrics_package_dir = getPackageDir('verify_metrics')
-    except lsst.pex.exceptions.NotFoundError:
+    except LookupError:
         default_metrics_package_dir = None
 
     parser = argparse.ArgumentParser(

@@ -1,10 +1,10 @@
+# This file is part of verify.
 #
-# LSST Data Management System
-#
-# This product includes software developed by the
-# LSST Project (http://www.lsst.org/).
-#
-# See COPYRIGHT file at the top of the source tree.
+# Developed for the LSST Data Management System.
+# This product includes software developed by the LSST Project
+# (https://www.lsst.org).
+# See the COPYRIGHT file at the top-level directory of this distribution
+# for details of code ownership.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,22 +16,15 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the LSST License Statement and
-# the GNU General Public License along with this program.  If not,
-# see <https://www.lsstcorp.org/LegalNotices/>.
-#
-from __future__ import print_function, division
-
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 __all__ = ['JsonSerializationMixin']
-
-from builtins import object
-from future.utils import with_metaclass
 
 import abc
 import json
 
 
-class JsonSerializationMixin(with_metaclass(abc.ABCMeta, object)):
+class JsonSerializationMixin(metaclass=abc.ABCMeta):
     """Mixin that provides JSON serialization support to subclasses.
 
     Subclasses must implement the `json` method. The method returns a `dict`

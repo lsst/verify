@@ -1,10 +1,10 @@
+# This file is part of verify.
 #
-# LSST Data Management System
-#
-# This product includes software developed by the
-# LSST Project (http://www.lsst.org/).
-#
-# See COPYRIGHT file at the top of the source tree.
+# Developed for the LSST Data Management System.
+# This product includes software developed by the LSST Project
+# (https://www.lsst.org).
+# See the COPYRIGHT file at the top-level directory of this distribution
+# for details of code ownership.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,15 +16,9 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the LSST License Statement and
-# the GNU General Public License along with this program.  If not,
-# see <https://www.lsstcorp.org/LegalNotices/>.
-#
-from __future__ import print_function, division
-
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 __all__ = ['Blob']
-
-from past.builtins import basestring
 
 import uuid
 
@@ -52,7 +46,7 @@ class Blob(JsonSerializationMixin):
         # Internal read-only instance ID, access with the name attribute
         self._id = uuid.uuid4().hex
 
-        if not isinstance(name, basestring):
+        if not isinstance(name, str):
             message = 'Blob name {0!r} must be a string'.format(name)
             raise TypeError(message)
         self._name = name
@@ -121,7 +115,7 @@ class Blob(JsonSerializationMixin):
         return json_doc
 
     def __setitem__(self, key, value):
-        if not isinstance(key, basestring):
+        if not isinstance(key, str):
             message = 'Key {0!r} is not a string.'.format(key)
             raise KeyError(message)
 

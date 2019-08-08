@@ -1,10 +1,10 @@
+# This file is part of verify.
 #
-# LSST Data Management System
-#
-# This product includes software developed by the
-# LSST Project (http://www.lsst.org/).
-#
-# See COPYRIGHT file at the top of the source tree.
+# Developed for the LSST Data Management System.
+# This product includes software developed by the LSST Project
+# (https://www.lsst.org).
+# See the COPYRIGHT file at the top-level directory of this distribution
+# for details of code ownership.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,17 +16,11 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the LSST License Statement and
-# the GNU General Public License along with this program.  If not,
-# see <https://www.lsstcorp.org/LegalNotices/>.
-#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """APIs for building software provenance from lsstsw."""
 
-from __future__ import print_function
-
 __all__ = ['LsstswRepos']
-
-from past.builtins import basestring
 
 import os
 
@@ -137,7 +131,7 @@ class LsstswRepos(object):
             Git origin URL of the package's Git repository.
         """
         s = self._repos[package_name]
-        if isinstance(s, basestring):
+        if isinstance(s, str):
             return s
         else:
             # For packages that have sub-documents, rather than the value

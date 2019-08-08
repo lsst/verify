@@ -1,10 +1,10 @@
+# This file is part of verify.
 #
-# LSST Data Management System
-#
-# This product includes software developed by the
-# LSST Project (http://www.lsst.org/).
-#
-# See COPYRIGHT file at the top of the source tree.
+# Developed for the LSST Data Management System.
+# This product includes software developed by the LSST Project
+# (https://www.lsst.org).
+# See the COPYRIGHT file at the top-level directory of this distribution
+# for details of code ownership.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,15 +16,9 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the LSST License Statement and
-# the GNU General Public License along with this program.  If not,
-# see <https://www.lsstcorp.org/LegalNotices/>.
-#
-from __future__ import print_function, division
-
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 __all__ = ['SpecificationSet']
-
-from past.builtins import basestring
 
 from collections import OrderedDict
 import copy
@@ -33,7 +27,6 @@ import re
 
 from astropy.table import Table
 
-import lsst.pex.exceptions
 from lsst.utils import getPackageDir
 
 from .errors import SpecificationResolutionError
@@ -164,7 +157,7 @@ class SpecificationSet(JsonSerializationMixin):
         try:
             # Try an EUPS package name
             package_dir = getPackageDir(package_name_or_path)
-        except lsst.pex.exceptions.NotFoundError:
+        except LookupError:
             # Try as a filesystem path instead
             package_dir = package_name_or_path
         finally:
@@ -527,7 +520,7 @@ class SpecificationSet(JsonSerializationMixin):
 
     def __contains__(self, name):
         """Check if the set contains a `Specification` by name."""
-        if isinstance(name, basestring) and '#' in name:
+        if isinstance(name, str) and '#' in name:
             # must be a partial's name
             return name in self._partials
 
@@ -540,7 +533,7 @@ class SpecificationSet(JsonSerializationMixin):
 
     def __getitem__(self, name):
         """Retrive a Specification or a SpecificationPartial."""
-        if isinstance(name, basestring) and '#' in name:
+        if isinstance(name, str) and '#' in name:
             # must be a partial's name
             return self._partials[name]
 
@@ -556,7 +549,7 @@ class SpecificationSet(JsonSerializationMixin):
             return self._specs[name]
 
     def __setitem__(self, key, value):
-        if isinstance(key, basestring) and '#' in key:
+        if isinstance(key, str) and '#' in key:
             # must be a partial's name
             if not isinstance(value, SpecificationPartial):
                 message = ('Expected {0!s}={1!r} to be a '
@@ -593,7 +586,7 @@ class SpecificationSet(JsonSerializationMixin):
             self._specs[key] = value
 
     def __delitem__(self, key):
-        if isinstance(key, basestring) and '#' in key:
+        if isinstance(key, str) and '#' in key:
             # must be a partial's name
             del self._partials[key]
 
@@ -728,7 +721,7 @@ class SpecificationSet(JsonSerializationMixin):
         # to the spec_doc.
         if 'base' in spec_doc:
             # Coerce 'base' field into a list for consistency
-            if isinstance(spec_doc['base'], basestring):
+            if isinstance(spec_doc['base'], str):
                 spec_doc['base'] = [spec_doc['base']]
 
             built_doc = OrderedDict()

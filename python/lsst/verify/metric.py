@@ -1,10 +1,10 @@
+# This file is part of verify.
 #
-# LSST Data Management System
-#
-# This product includes software developed by the
-# LSST Project (http://www.lsst.org/).
-#
-# See COPYRIGHT file at the top of the source tree.
+# Developed for the LSST Data Management System.
+# This product includes software developed by the LSST Project
+# (https://www.lsst.org).
+# See the COPYRIGHT file at the top-level directory of this distribution
+# for details of code ownership.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,15 +16,9 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the LSST License Statement and
-# the GNU General Public License along with this program.  If not,
-# see <https://www.lsstcorp.org/LegalNotices/>.
-#
-from __future__ import print_function, division
-
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 __all__ = ['Metric']
-
-from past.builtins import basestring
 
 import astropy.units as u
 
@@ -163,7 +157,7 @@ class Metric(JsonSerializationMixin):
         if not isinstance(value, (u.UnitBase, u.FunctionUnitBase)):
             message = ('unit attribute must be an astropy.units.Unit-type. '
                        ' Currently type {0!s}.'.format(type(value)))
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 message += (' Set the `unit_str` attribute instead for '
                             'assigning the unit as a string')
             raise ValueError(message)
@@ -188,7 +182,7 @@ class Metric(JsonSerializationMixin):
     @tags.setter
     def tags(self, t):
         # Ensure that tags is always a set.
-        if isinstance(t, basestring):
+        if isinstance(t, str):
             t = [t]
         self._tags = set(t)
 
