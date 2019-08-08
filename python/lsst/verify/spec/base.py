@@ -24,15 +24,13 @@
 __all__ = ["Specification"]
 
 import abc
-from future.utils import with_metaclass
-from past.builtins import basestring
 
 from ..jsonmixin import JsonSerializationMixin
 from ..metaquery import MetadataQuery
 from ..naming import Name
 
 
-class Specification(with_metaclass(abc.ABCMeta, JsonSerializationMixin)):
+class Specification(JsonSerializationMixin, metaclass=abc.ABCMeta):
     """Specification base class.
 
     Specification classes must implement:
@@ -86,7 +84,7 @@ class Specification(with_metaclass(abc.ABCMeta, JsonSerializationMixin)):
     @tags.setter
     def tags(self, t):
         # Ensure that tags is always a set.
-        if isinstance(t, basestring):
+        if isinstance(t, str):
             t = [t]
         self._tags = set(t)
 

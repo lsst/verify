@@ -23,8 +23,6 @@
 
 __all__ = ['SpecificationSet']
 
-from past.builtins import basestring
-
 from collections import OrderedDict
 import copy
 import os
@@ -526,7 +524,7 @@ class SpecificationSet(JsonSerializationMixin):
 
     def __contains__(self, name):
         """Check if the set contains a `Specification` by name."""
-        if isinstance(name, basestring) and '#' in name:
+        if isinstance(name, str) and '#' in name:
             # must be a partial's name
             return name in self._partials
 
@@ -539,7 +537,7 @@ class SpecificationSet(JsonSerializationMixin):
 
     def __getitem__(self, name):
         """Retrive a Specification or a SpecificationPartial."""
-        if isinstance(name, basestring) and '#' in name:
+        if isinstance(name, str) and '#' in name:
             # must be a partial's name
             return self._partials[name]
 
@@ -555,7 +553,7 @@ class SpecificationSet(JsonSerializationMixin):
             return self._specs[name]
 
     def __setitem__(self, key, value):
-        if isinstance(key, basestring) and '#' in key:
+        if isinstance(key, str) and '#' in key:
             # must be a partial's name
             if not isinstance(value, SpecificationPartial):
                 message = ('Expected {0!s}={1!r} to be a '
@@ -592,7 +590,7 @@ class SpecificationSet(JsonSerializationMixin):
             self._specs[key] = value
 
     def __delitem__(self, key):
-        if isinstance(key, basestring) and '#' in key:
+        if isinstance(key, str) and '#' in key:
             # must be a partial's name
             del self._partials[key]
 
@@ -727,7 +725,7 @@ class SpecificationSet(JsonSerializationMixin):
         # to the spec_doc.
         if 'base' in spec_doc:
             # Coerce 'base' field into a list for consistency
-            if isinstance(spec_doc['base'], basestring):
+            if isinstance(spec_doc['base'], str):
                 spec_doc['base'] = [spec_doc['base']]
 
             built_doc = OrderedDict()

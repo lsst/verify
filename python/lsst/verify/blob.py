@@ -23,8 +23,6 @@
 
 __all__ = ['Blob']
 
-from past.builtins import basestring
-
 import uuid
 
 from .jsonmixin import JsonSerializationMixin
@@ -51,7 +49,7 @@ class Blob(JsonSerializationMixin):
         # Internal read-only instance ID, access with the name attribute
         self._id = uuid.uuid4().hex
 
-        if not isinstance(name, basestring):
+        if not isinstance(name, str):
             message = 'Blob name {0!r} must be a string'.format(name)
             raise TypeError(message)
         self._name = name
@@ -120,7 +118,7 @@ class Blob(JsonSerializationMixin):
         return json_doc
 
     def __setitem__(self, key, value):
-        if not isinstance(key, basestring):
+        if not isinstance(key, str):
             message = 'Key {0!r} is not a string.'.format(key)
             raise KeyError(message)
 

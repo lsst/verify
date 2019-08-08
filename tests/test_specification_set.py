@@ -24,11 +24,7 @@
 from collections import OrderedDict
 import os
 import unittest
-try:
-    from StringIO import StringIO
-except ImportError:
-    # Python 3
-    from io import StringIO
+from io import StringIO
 
 import astropy.units as u
 

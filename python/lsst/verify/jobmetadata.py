@@ -23,16 +23,7 @@
 
 __all__ = ['Metadata']
 
-# Get ChainMap backport
-from future.standard_library import install_aliases
-install_aliases()  # noqa: E402
-
-try:
-    from collections import ChainMap
-except ImportError:
-    # future 0.16.0 doesn't do the import right; this will be fixed in 0.16.1
-    # https://github.com/PythonCharmers/python-future/issues/226
-    from future.backports.misc import ChainMap
+from collections import ChainMap
 import json
 import re
 

@@ -23,8 +23,6 @@
 
 __all__ = ['Metric']
 
-from past.builtins import basestring
-
 import astropy.units as u
 
 from .jsonmixin import JsonSerializationMixin
@@ -162,7 +160,7 @@ class Metric(JsonSerializationMixin):
         if not isinstance(value, (u.UnitBase, u.FunctionUnitBase)):
             message = ('unit attribute must be an astropy.units.Unit-type. '
                        ' Currently type {0!s}.'.format(type(value)))
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 message += (' Set the `unit_str` attribute instead for '
                             'assigning the unit as a string')
             raise ValueError(message)
@@ -187,7 +185,7 @@ class Metric(JsonSerializationMixin):
     @tags.setter
     def tags(self, t):
         # Ensure that tags is always a set.
-        if isinstance(t, basestring):
+        if isinstance(t, str):
             t = [t]
         self._tags = set(t)
 

@@ -23,14 +23,11 @@
 
 __all__ = ['JsonSerializationMixin']
 
-from builtins import object
-from future.utils import with_metaclass
-
 import abc
 import json
 
 
-class JsonSerializationMixin(with_metaclass(abc.ABCMeta, object)):
+class JsonSerializationMixin(metaclass=abc.ABCMeta):
     """Mixin that provides JSON serialization support to subclasses.
 
     Subclasses must implement the `json` method. The method returns a `dict`

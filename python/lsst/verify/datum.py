@@ -23,9 +23,6 @@
 
 __all__ = ['Datum']
 
-from builtins import object
-from past.builtins import basestring
-
 import numpy as np
 from astropy.tests.helper import quantity_allclose
 import astropy.units as u
@@ -33,7 +30,7 @@ import astropy.units as u
 from .jsonmixin import JsonSerializationMixin
 
 
-class QuantityAttributeMixin(object):
+class QuantityAttributeMixin:
     """Mixin with common attributes for classes that wrap an
     `astropy.units.Quantity`.
 
@@ -52,7 +49,7 @@ class QuantityAttributeMixin(object):
     def _is_non_quantity_type(q):
         """Test if a quantity is a acceptable (`str`, `bool`, `int`, or
         `None`), but not `astropy.quantity`."""
-        return isinstance(q, basestring) or isinstance(q, bool) or \
+        return isinstance(q, str) or isinstance(q, bool) or \
             isinstance(q, int) or q is None
 
     @quantity.setter
@@ -225,7 +222,7 @@ class Datum(QuantityAttributeMixin, JsonSerializationMixin):
 
     @label.setter
     def label(self, value):
-        assert isinstance(value, basestring) or value is None
+        assert isinstance(value, str) or value is None
         self._label = value
 
     @property
@@ -235,7 +232,7 @@ class Datum(QuantityAttributeMixin, JsonSerializationMixin):
 
     @description.setter
     def description(self, value):
-        assert isinstance(value, basestring) or value is None
+        assert isinstance(value, str) or value is None
         self._description = value
 
     def __eq__(self, other):

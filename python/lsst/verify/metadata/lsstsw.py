@@ -24,8 +24,6 @@
 
 __all__ = ['LsstswRepos']
 
-from past.builtins import basestring
-
 import os
 
 import yaml
@@ -135,7 +133,7 @@ class LsstswRepos(object):
             Git origin URL of the package's Git repository.
         """
         s = self._repos[package_name]
-        if isinstance(s, basestring):
+        if isinstance(s, str):
             return s
         else:
             # For packages that have sub-documents, rather than the value
