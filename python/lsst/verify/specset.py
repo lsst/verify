@@ -27,7 +27,6 @@ import re
 
 from astropy.table import Table
 
-import lsst.pex.exceptions
 from lsst.utils import getPackageDir
 
 from .errors import SpecificationResolutionError
@@ -158,7 +157,7 @@ class SpecificationSet(JsonSerializationMixin):
         try:
             # Try an EUPS package name
             package_dir = getPackageDir(package_name_or_path)
-        except lsst.pex.exceptions.NotFoundError:
+        except LookupError:
             # Try as a filesystem path instead
             package_dir = package_name_or_path
         finally:
