@@ -18,7 +18,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 """Print the measurements and metadata in lsst.verify JSON files.
 
 This script takes as arguments one or more lsst.verify JSON files, and prints
