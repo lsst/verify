@@ -187,7 +187,7 @@ class PostTestCase(unittest.TestCase):
 
             r = squash.post(self.api_url, api_endpoint='jobs',
                             json_doc={'key': 'value'},
-                            api_user='foo', api_password='bar')
+                            access_token='mytoken')
 
             self.assertIsInstance(r, requests.Response)
             self.assertEqual(len(reqmock.calls), 1)
@@ -196,12 +196,17 @@ class PostTestCase(unittest.TestCase):
                 squash._ENDPOINT_URLS['jobs'],
             )
             self.assertEqual(
-                reqmock.calls[0].request.headers['Accept'],
+                json.loads(reqmock.calls[0].request.body),
+                {'key': 'value'}
+            )
+            headers = reqmock.calls[0].request.headers
+            self.assertEqual(
+                headers['Accept'],
                 'application/json; version=' + squash._API_VERSION
             )
             self.assertEqual(
-                json.loads(reqmock.calls[0].request.body),
-                {'key': 'value'}
+                headers['Authorization'],
+                'JWT mytoken'
             )
 
     @unittest.skipIf(responses is None,
@@ -216,8 +221,7 @@ class PostTestCase(unittest.TestCase):
 
             with self.assertRaises(requests.exceptions.RequestException):
                 squash.post(self.api_url, api_endpoint='jobs',
-                            json_doc={},
-                            api_user='foo', api_password='bar')
+                            json_doc={})
 
 
 if __name__ == "__main__":
