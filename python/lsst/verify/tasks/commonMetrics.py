@@ -35,17 +35,24 @@ from lsst.verify.gen2tasks.metricRegistry import registerMultiple
 from lsst.verify.tasks import MetricComputationError, MetadataMetricTask
 
 
-class TimingMetricConfig(MetadataMetricTask.ConfigClass):
-    """Information that distinguishes one timing metric from another.
+class TimeMethodMetricConfig(MetadataMetricTask.ConfigClass):
+    """Common config fields for metrics based on `~lsst.pipe.base.timeMethod`.
+
+    These fields let metrics distinguish between different methods that have
+    been decorated with `~lsst.pipe.base.timeMethod`.
     """
     target = pexConfig.Field(
         dtype=str,
-        doc="The method to time, optionally prefixed by one or more tasks "
+        doc="The method to profile, optionally prefixed by one or more tasks "
             "in the format of `lsst.pipe.base.Task.getFullMetadata()`.")
     metric = pexConfig.Field(
         dtype=str,
         doc="The fully qualified name of the metric to store the "
-            "timing information.")
+            "profiling information.")
+
+
+# Expose TimingMetricConfig name because config-writers expect it
+TimingMetricConfig = TimeMethodMetricConfig
 
 
 @registerMultiple("timing")
