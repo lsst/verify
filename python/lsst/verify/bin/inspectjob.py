@@ -131,17 +131,12 @@ def build_argparser():
     return parser
 
 
-def main(filenames):
+def main():
     """Present all Job files.
-
-    Parameters
-    ----------
-    filenames : `list` of `str`
-        The Job files to open. Must be in JSON format.
     """
     args = build_argparser().parse_args()
     for filename in args.json_paths:
-        if len(filenames) > 1:
+        if len(args.json_paths) > 1:
             print("\n%s:" % filename)
         with open(filename) as f:
             job = Job.deserialize(**json.load(f))
