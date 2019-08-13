@@ -61,7 +61,7 @@ Examples
    config.metadata.name = "apPipe_metadata"
    config.target = "apPipe:ccdProcessor.runDataRef"
    config.metric = "pipe_tasks.ProcessCcdTime"
-   task = TimingMetricTask(config)
+   task = TimingMetricTask(config=config)
 
    # config.metadata provided for benefit of MetricsControllerTask/Pipeline
    # but since we've defined it we might as well use it

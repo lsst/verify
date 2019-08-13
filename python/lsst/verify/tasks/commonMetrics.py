@@ -24,7 +24,12 @@
 """Code for measuring metrics that apply to any Task.
 """
 
-__all__ = ["TimingMetricConfig", "TimingMetricTask"]
+__all__ = ["TimingMetricConfig", "TimingMetricTask",
+           "MemoryMetricConfig", "MemoryMetricTask",
+           ]
+
+import resource
+import sys
 
 import astropy.units as u
 
@@ -35,17 +40,24 @@ from lsst.verify.gen2tasks.metricRegistry import registerMultiple
 from lsst.verify.tasks import MetricComputationError, MetadataMetricTask
 
 
-class TimingMetricConfig(MetadataMetricTask.ConfigClass):
-    """Information that distinguishes one timing metric from another.
+class TimeMethodMetricConfig(MetadataMetricTask.ConfigClass):
+    """Common config fields for metrics based on `~lsst.pipe.base.timeMethod`.
+
+    These fields let metrics distinguish between different methods that have
+    been decorated with `~lsst.pipe.base.timeMethod`.
     """
     target = pexConfig.Field(
         dtype=str,
-        doc="The method to time, optionally prefixed by one or more tasks "
+        doc="The method to profile, optionally prefixed by one or more tasks "
             "in the format of `lsst.pipe.base.Task.getFullMetadata()`.")
     metric = pexConfig.Field(
         dtype=str,
         doc="The fully qualified name of the metric to store the "
-            "timing information.")
+            "profiling information.")
+
+
+# Expose TimingMetricConfig name because config-writers expect it
+TimingMetricConfig = TimeMethodMetricConfig
 
 
 @registerMultiple("timing")
@@ -106,7 +118,7 @@ class TimingMetricTask(MetadataMetricTask):
         Returns
         -------
         measurement : `lsst.verify.Measurement` or `None`
-            The the total running time of the target method across all
+            The total running time of the target method across all
             elements of ``metadata``.
 
         Raises
@@ -141,6 +153,125 @@ class TimingMetricTask(MetadataMetricTask):
             self.log.info("Nothing to do: no timing information for %s found.",
                           self.config.target)
             return None
+
+    @classmethod
+    def getOutputMetricName(cls, config):
+        return Name(config.metric)
+
+
+# Expose MemoryMetricConfig name because config-writers expect it
+MemoryMetricConfig = TimeMethodMetricConfig
+
+
+@registerMultiple("memory")
+class MemoryMetricTask(MetadataMetricTask):
+    """A Task that computes the maximum resident set size using metadata
+    produced by the `lsst.pipe.base.timeMethod` decorator.
+
+    Parameters
+    ----------
+    args
+    kwargs
+        Constructor parameters are the same as for
+        `lsst.verify.gen2tasks.MetricTask`.
+    """
+
+    ConfigClass = MemoryMetricConfig
+    _DefaultName = "memoryMetric"
+
+    @classmethod
+    def getInputMetadataKeys(cls, config):
+        """Get search strings for the metadata.
+
+        Parameters
+        ----------
+        config : ``cls.ConfigClass``
+            Configuration for this task.
+
+        Returns
+        -------
+        keys : `dict`
+            A dictionary of keys, optionally prefixed by one or more tasks in
+            the format of `lsst.pipe.base.Task.getFullMetadata()`.
+
+             ``"EndMemory"``
+                 The key for the memory usage at the end of the method (`str`).
+        """
+        keyBase = config.target
+        return {"EndMemory": keyBase + "EndMaxResidentSetSize"}
+
+    def makeMeasurement(self, memory):
+        """Compute a maximum resident set size measurement from metadata
+        provided by `lsst.pipe.base.timeMethod`.
+
+        Parameters
+        ----------
+        memory : sequence [`dict` [`str`, any]]
+            A list where each element corresponds to a metadata object passed
+            to `run`. Each `dict` has the following keys:
+
+             ``"EndMemory"``
+                 The memory usage at the end of the method (`int` or `None`).
+
+        Returns
+        -------
+        measurement : `lsst.verify.Measurement` or `None`
+            The maximum memory usage of the target method over all
+            elements of ``metadata``.
+
+        Raises
+        ------
+        MetricComputationError
+            Raised if the memory metadata are invalid.
+
+        Notes
+        -----
+        This method does not return a measurement if no memory information was
+        provided by any of the metadata.
+        """
+        maxMemory = 0.0
+        for singleRun in memory:
+            if singleRun["EndMemory"] is not None:
+                try:
+                    maxMemory = max(maxMemory, singleRun["EndMemory"])
+                except TypeError as e:
+                    raise MetricComputationError("Invalid metadata") from e
+            # If None, assume the method was not run that time
+
+        if maxMemory > 0.0:
+            meas = Measurement(self.getOutputMetricName(self.config),
+                               self._addUnits(maxMemory))
+            meas.notes['estimator'] = 'pipe.base.timeMethod'
+            return meas
+        else:
+            self.log.info("Nothing to do: no memory information for %s found.",
+                          self.config.target)
+            return None
+
+    def _addUnits(self, memory):
+        """Represent memory usage in correct units.
+
+        Parameters
+        ----------
+        memory : `int`
+            The memory usage as returned by `resource.getrusage`, in
+            platform-dependent units.
+
+        Returns
+        -------
+        memory : `astropy.units.Quantity`
+            The memory usage in absolute units.
+        """
+        if sys.platform.startswith('darwin'):
+            # MacOS uses bytes
+            return memory * u.byte
+        elif sys.platform.startswith('sunos') \
+                or sys.platform.startswith('solaris'):
+            # Solaris and SunOS use pages
+            return memory * resource.getpagesize() * u.byte
+        else:
+            # Assume Linux, which uses kibibytes
+            return memory * u.kibibyte
 
     @classmethod
     def getOutputMetricName(cls, config):
