@@ -26,7 +26,8 @@ from astropy.tests.helper import assert_quantity_allclose
 
 import lsst.utils.tests
 from lsst.pex.config import Config, FieldValidationError
-from lsst.pipe.base import Task, Struct
+from lsst.pipe.base import \
+    Task, Struct, PipelineTaskConnections, connectionTypes
 from lsst.verify import Job, Name, Measurement
 from lsst.verify.tasks import MetricComputationError
 from lsst.verify.gen2tasks import \
@@ -45,7 +46,17 @@ def _extraMetricName2():
     return "misc_tasks.RedundantMetric"
 
 
-class DemoMetricConfig(MetricTask.ConfigClass):
+class DemoConnections(
+        PipelineTaskConnections,
+        dimensions={}):
+    inputData = connectionTypes.Input(
+        name="metadata",
+        storageClass="PropertySet",
+    )
+
+
+class DemoMetricConfig(MetricTask.ConfigClass,
+                       pipelineConnections=DemoConnections):
     metric = lsst.pex.config.Field(
         dtype=str,
         default=_metricName(),
@@ -64,15 +75,15 @@ class _DemoMetricTask(MetricTask):
     ConfigClass = DemoMetricConfig
     _DefaultName = "test"
 
-    def run(self, inputs):
-        nData = len(inputs)
+    def run(self, inputData):
+        nData = len(inputData)
         return Struct(measurement=Measurement(
             self.getOutputMetricName(self.config),
             self.config.multiplier * nData * u.second))
 
     @classmethod
     def getInputDatasetTypes(cls, _config):
-        return {'inputs': "metadata"}
+        return {'inputData': "metadata"}
 
     @classmethod
     def getOutputMetricName(cls, config):
@@ -87,15 +98,15 @@ class _RepeatedMetricTask(MetricTask):
     ConfigClass = DemoMetricConfig
     _DefaultName = "test"
 
-    def run(self, inputs):
-        nData = len(inputs)
+    def run(self, inputData):
+        nData = len(inputData)
         return Struct(measurement=Measurement(
             self.getOutputMetricName(self.config),
             self.config.multiplier * nData * u.second))
 
     @classmethod
     def getInputDatasetTypes(cls, _config):
-        return {'inputs': "metadata"}
+        return {'inputData': "metadata"}
 
     @classmethod
     def getOutputMetricName(cls, config):

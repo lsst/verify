@@ -23,7 +23,6 @@ __all__ = ["MetricTask"]
 
 import abc
 
-import lsst.pex.config
 import lsst.pipe.base as pipeBase
 
 
@@ -58,7 +57,7 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
 
     # TODO: create a specialized MetricTaskConfig once metrics have
     # Butler datasets
-    ConfigClass = lsst.pex.config.Config
+    ConfigClass = pipeBase.PipelineTaskConfig
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -175,11 +174,10 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
         `~lsst.pipe.base.InputDatasetConfig` fields, much like
         `lsst.pipe.base.PipelineTask.getInputDatasetTypes` does.
         """
-        datasets = {}
-        for key, value in config.items():
-            if isinstance(value, lsst.pipe.base.InputDatasetConfig):
-                datasets[key] = value.name
-        return datasets
+        # Get connections from config for backward-compatibility
+        connections = config.connections.connectionsClass(config=config)
+        return {name: getattr(connections, name).name
+                for name in connections.inputs}
 
     @classmethod
     @abc.abstractmethod

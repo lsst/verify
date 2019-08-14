@@ -54,7 +54,7 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
     @staticmethod
     def _standardConfig():
         config = TimingMetricTask.ConfigClass()
-        config.metadata.name = DummyTask._DefaultName + "_metadata"
+        config.connections.taskName = DummyTask._DefaultName
         config.target = DummyTask._DefaultName + ".run"
         config.metric = "verify.DummyTime"
         return config
@@ -166,7 +166,7 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
     @staticmethod
     def _standardConfig():
         config = MemoryMetricTask.ConfigClass()
-        config.metadata.name = DummyTask._DefaultName + "_metadata"
+        config.connections.taskName = DummyTask._DefaultName
         config.target = DummyTask._DefaultName + ".run"
         config.metric = "verify.DummyMemory"
         return config
