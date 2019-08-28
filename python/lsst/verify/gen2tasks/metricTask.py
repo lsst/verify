@@ -70,10 +70,7 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
         inputData : `dict` from `str` to any
             Dictionary whose keys are the names of input parameters and values
             are Python-domain data objects (or lists of objects) retrieved
-            from data butler. Accepting lists of objects is strongly
-            recommended; this allows metrics to vary their granularity up to
-            the granularity of the input data without the need for extensive
-            code changes. Input objects may be `None` to represent
+            from data butler. Input objects may be `None` to represent
             missing data.
         inputDataIds : `dict` from `str` to `list` of dataId
             Dictionary whose keys are the names of input parameters and values
@@ -115,14 +112,6 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
         followed by calling `addStandardMetadata` on the result before
         returning it. Any subclass that overrides this method must also call
         `addStandardMetadata` on its measurement before returning it.
-
-        `adaptArgsAndRun` and `run` should assume they take multiple input
-        datasets, regardless of the expected metric granularity. Doing so lets
-        metrics be defined with a different granularity from the Science
-        Pipelines processing, and allows for the aggregation (or lack thereof)
-        of the metric to be controlled by the task configuration with no code
-        changes. This rule may be broken if it is impossible for more than one
-        copy of a dataset to exist.
 
         All input data must be treated as optional. This maximizes the
         ``MetricTask``'s usefulness for incomplete pipeline runs or runs with
@@ -176,6 +165,31 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
         # Get connections from config for backward-compatibility
         connections = config.connections.ConnectionsClass(config=config)
         return {name: getattr(connections, name).name
+                for name in connections.inputs}
+
+    @classmethod
+    def areInputDatasetsScalar(cls, config):
+        """Return input dataset multiplicity.
+
+        Parameters
+        ----------
+        config : ``cls.ConfigClass``
+            Configuration for this task.
+
+        Returns
+        -------
+        datasets : `Dict` [`str`, `bool`]
+            Dictionary where the key is the name of the input dataset (must
+            match a parameter to `run`) and the value is `True` if `run` takes
+            only one object and `False` if it takes a list.
+
+        Notes
+        -----
+        The default implementation extracts a
+        `~lsst.pipe.base.PipelineTaskConnections` object from ``config``.
+        """
+        connections = config.connections.ConnectionsClass(config=config)
+        return {name: not getattr(connections, name).multiple
                 for name in connections.inputs}
 
     @classmethod

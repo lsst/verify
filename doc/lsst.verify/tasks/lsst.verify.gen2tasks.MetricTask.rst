@@ -46,7 +46,7 @@ Subclassing
 Each subclass must also implement the `~MetricTask.getOutputMetricName` method.
 
 The task config should use `lsst.pipe.base.PipelineTaskConnections` to identify input datasets as if it were a `~lsst.pipe.base.PipelineTask`.
-Only the ``name`` field is used in a Gen 2 context, but use of `~lsst.pipe.base.PipelineTaskConnections` is expected to simplify the transition to Gen 3.
+Only the ``name`` and ``multiple`` fields are used in a Gen 2 context, but use of `~lsst.pipe.base.PipelineTaskConnections` is expected to simplify the transition to Gen 3.
 
 .. _lsst.verify.gen2tasks.MetricTask-indepth-errors:
 

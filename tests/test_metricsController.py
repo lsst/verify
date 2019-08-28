@@ -86,6 +86,10 @@ class _DemoMetricTask(MetricTask):
         return {'inputData': "metadata"}
 
     @classmethod
+    def areInputDatasetsScalar(cls, _config):
+        return {'inputData': False}
+
+    @classmethod
     def getOutputMetricName(cls, config):
         return Name(config.metric)
 
@@ -107,6 +111,10 @@ class _RepeatedMetricTask(MetricTask):
     @classmethod
     def getInputDatasetTypes(cls, _config):
         return {'inputData': "metadata"}
+
+    @classmethod
+    def areInputDatasetsScalar(cls, _config):
+        return {'inputData': False}
 
     @classmethod
     def getOutputMetricName(cls, config):

@@ -107,14 +107,16 @@ class MetricTaskTestCase(lsst.utils.tests.TestCase, metaclass=abc.ABCMeta):
                 addStandardMetadata=unittest.mock.DEFAULT) as mockDict:
             mockDict['run'].return_value = Struct(measurement=dummy)
 
-            inputTypes = self.taskClass.getInputDatasetTypes(self.task.config)
-            inputParams = inputTypes.keys()
+            inputScalars = self.taskClass.areInputDatasetsScalar(
+                self.task.config)
             # Probably won't satisfy all adaptArgsAndRun specs,
             # but hopefully works with most of them
             dataId = {}
             result = self.task.adaptArgsAndRun(
-                {key: [None] for key in inputParams},
-                {key: [dataId] for key in inputParams},
+                {key: (None if scalar else [None])
+                    for key, scalar in inputScalars.items()},
+                {key: (dataId if scalar else [dataId])
+                    for key, scalar in inputScalars.items()},
                 {'measurement': dataId})
             mockDict['addStandardMetadata'].assert_called_once_with(
                 self.task, result.measurement, dataId)

@@ -151,13 +151,19 @@ class MetricsControllerTask(Task):
         """
         self.log.debug("Running %s on %r", type(metricTask), dataref)
         inputTypes = metricTask.getInputDatasetTypes(metricTask.config)
+        inputScalars = metricTask.areInputDatasetsScalar(metricTask.config)
         inputData = {}
         inputDataIds = {}
-        for param, dataType in inputTypes.items():
+        for (param, dataType), scalar \
+                in zip(inputTypes.items(), inputScalars.values()):
             inputRefs = dafPersist.searchDataRefs(
                 dataref.getButler(), dataType, dataId=dataref.dataId)
-            inputData[param] = [ref.get() for ref in inputRefs]
-            inputDataIds[param] = [ref.dataId for ref in inputRefs]
+            if scalar:
+                inputData[param] = inputRefs[0].get() if inputRefs else None
+                inputDataIds[param] = inputRefs[0].dataId if inputRefs else {}
+            else:
+                inputData[param] = [ref.get() for ref in inputRefs]
+                inputDataIds[param] = [ref.dataId for ref in inputRefs]
 
         outputDataIds = {"measurement": dataref.dataId}
         try:
