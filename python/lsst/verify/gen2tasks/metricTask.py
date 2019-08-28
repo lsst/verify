@@ -170,9 +170,8 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
 
         Notes
         -----
-        The default implementation searches ``config`` for
-        `~lsst.pipe.base.InputDatasetConfig` fields, much like
-        `lsst.pipe.base.PipelineTask.getInputDatasetTypes` does.
+        The default implementation extracts a
+        `~lsst.pipe.base.PipelineTaskConnections` object from ``config``.
         """
         # Get connections from config for backward-compatibility
         connections = config.connections.connectionsClass(config=config)
