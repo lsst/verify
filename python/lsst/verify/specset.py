@@ -157,7 +157,9 @@ class SpecificationSet(JsonSerializationMixin):
         try:
             # Try an EUPS package name
             package_dir = getPackageDir(package_name_or_path)
-        except LookupError:
+        except (LookupError, RuntimeError):
+            # Nominally getPackageDir raises a LookupError, but in some cases
+            # we've observed RuntimeErrors instead.
             # Try as a filesystem path instead
             package_dir = package_name_or_path
         finally:
