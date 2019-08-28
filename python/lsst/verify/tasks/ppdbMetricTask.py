@@ -284,10 +284,7 @@ class PpdbMetricTask(MetricTask):
 
             ``"dbInfo"``
                 The dataset (of the type indicated by `getInputDatasetTypes`)
-                from which to load the database. A single-element list
-                containing a dataset is allowed for compatibility with
-                `~lsst.verify.gen2tasks.MetricsControllerTask`, but should
-                otherwise not be used.
+                from which to load the database.
         inputDataIds : `dict` [`str`, data ID]
             Dictionary with one key:
 
@@ -328,10 +325,6 @@ class PpdbMetricTask(MetricTask):
         """
         dataId = outputDataId["measurement"]
         dbInfo = inputData["dbInfo"]
-        try:
-            dbInfo = dbInfo[0]
-        except TypeError:
-            pass
 
         db = self.dbLoader.run(dbInfo).ppdb
 
