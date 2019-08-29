@@ -174,7 +174,7 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
         `~lsst.pipe.base.PipelineTaskConnections` object from ``config``.
         """
         # Get connections from config for backward-compatibility
-        connections = config.connections.connectionsClass(config=config)
+        connections = config.connections.ConnectionsClass(config=config)
         return {name: getattr(connections, name).name
                 for name in connections.inputs}
 
