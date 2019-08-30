@@ -106,9 +106,9 @@ class TimingMetricTask(MetadataMetricTask):
 
         Parameters
         ----------
-        timings : sequence [`dict` [`str`, any]]
-            A list where each element corresponds to a metadata object passed
-            to `run`. Each `dict` has the following keys:
+        timings : `dict` [`str`, any]
+            A representation of the metadata passed to `run`. The `dict` has
+            the following keys:
 
              ``"StartTime"``
                  The time the target method started (`float` or `None`).
@@ -118,37 +118,23 @@ class TimingMetricTask(MetadataMetricTask):
         Returns
         -------
         measurement : `lsst.verify.Measurement` or `None`
-            The total running time of the target method across all
-            elements of ``metadata``.
+            The running time of the target method.
 
         Raises
         ------
         MetricComputationError
-            Raised if any of the timing metadata are invalid.
-
-        Notes
-        -----
-        This method does not return a measurement if no timing information was
-        provided by any of the metadata.
+            Raised if the timing metadata are invalid.
         """
-        # some timings indistinguishable from 0, so don't test totalTime > 0
-        timingFound = False
-        totalTime = 0.0
-        for singleRun in timings:
-            if singleRun["StartTime"] is not None \
-                    or singleRun["EndTime"] is not None:
-                try:
-                    totalTime += singleRun["EndTime"] - singleRun["StartTime"]
-                    timingFound = True
-                except TypeError:
-                    raise MetricComputationError("Invalid metadata")
-            # If both are None, assume the method was not run that time
-
-        if timingFound:
-            meas = Measurement(self.getOutputMetricName(self.config),
-                               totalTime * u.second)
-            meas.notes['estimator'] = 'pipe.base.timeMethod'
-            return meas
+        if timings["StartTime"] is not None or timings["EndTime"] is not None:
+            try:
+                totalTime = timings["EndTime"] - timings["StartTime"]
+            except TypeError:
+                raise MetricComputationError("Invalid metadata")
+            else:
+                meas = Measurement(self.getOutputMetricName(self.config),
+                                   totalTime * u.second)
+                meas.notes['estimator'] = 'pipe.base.timeMethod'
+                return meas
         else:
             self.log.info("Nothing to do: no timing information for %s found.",
                           self.config.target)
@@ -206,9 +192,9 @@ class MemoryMetricTask(MetadataMetricTask):
 
         Parameters
         ----------
-        memory : sequence [`dict` [`str`, any]]
-            A list where each element corresponds to a metadata object passed
-            to `run`. Each `dict` has the following keys:
+        memory : `dict` [`str`, any]
+            A representation of the metadata passed to `run`. Each `dict` has
+            the following keys:
 
              ``"EndMemory"``
                  The memory usage at the end of the method (`int` or `None`).
@@ -216,33 +202,23 @@ class MemoryMetricTask(MetadataMetricTask):
         Returns
         -------
         measurement : `lsst.verify.Measurement` or `None`
-            The maximum memory usage of the target method over all
-            elements of ``metadata``.
+            The maximum memory usage of the target method.
 
         Raises
         ------
         MetricComputationError
             Raised if the memory metadata are invalid.
-
-        Notes
-        -----
-        This method does not return a measurement if no memory information was
-        provided by any of the metadata.
         """
-        maxMemory = 0.0
-        for singleRun in memory:
-            if singleRun["EndMemory"] is not None:
-                try:
-                    maxMemory = max(maxMemory, singleRun["EndMemory"])
-                except TypeError as e:
-                    raise MetricComputationError("Invalid metadata") from e
-            # If None, assume the method was not run that time
-
-        if maxMemory > 0.0:
-            meas = Measurement(self.getOutputMetricName(self.config),
-                               self._addUnits(maxMemory))
-            meas.notes['estimator'] = 'pipe.base.timeMethod'
-            return meas
+        if memory["EndMemory"] is not None:
+            try:
+                maxMemory = int(memory["EndMemory"])
+            except (ValueError, TypeError) as e:
+                raise MetricComputationError("Invalid metadata") from e
+            else:
+                meas = Measurement(self.getOutputMetricName(self.config),
+                                   self._addUnits(maxMemory))
+                meas.notes['estimator'] = 'pipe.base.timeMethod'
+                return meas
         else:
             self.log.info("Nothing to do: no memory information for %s found.",
                           self.config.target)

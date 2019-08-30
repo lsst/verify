@@ -21,7 +21,7 @@
 
 __all__ = ["MetadataMetricTestCase", "PpdbMetricTestCase"]
 
-import unittest.mock
+from unittest.mock import patch
 
 from lsst.pex.config import Config, ConfigField
 from lsst.daf.base import PropertySet
@@ -45,12 +45,27 @@ class MetadataMetricTestCase(MetricTaskTestCase):
         defaultInputs = self.taskClass.getInputDatasetTypes(self.task.config)
         self.assertEqual(defaultInputs.keys(), {"metadata"})
 
+    @staticmethod
+    def _takesScalarMetadata(task):
+        return task.areInputDatasetsScalar(task.config)['metadata']
+
     def testValidRun(self):
+        """Test how run delegates to the abstract methods.
+        """
         mockKey = "unitTestKey"
-        with unittest.mock.patch.object(self.task, "getInputMetadataKeys",
-                                        return_value={"unused": mockKey}):
-            with unittest.mock.patch.object(self.task, "makeMeasurement") \
-                    as mockWorkhorse:
+        with patch.object(self.task, "getInputMetadataKeys",
+                          return_value={"unused": mockKey}), \
+                patch.object(self.task, "makeMeasurement") as mockWorkhorse:
+            if self._takesScalarMetadata(self.task):
+                metadata1 = PropertySet()
+                metadata1[mockKey] = 42
+
+                self.task.run(metadata1)
+                mockWorkhorse.assert_called_once_with({"unused": 42})
+                mockWorkhorse.reset_mock()
+                self.task.run(None)
+                mockWorkhorse.assert_called_once_with({"unused": None})
+            else:
                 metadata1 = PropertySet()
                 metadata1[mockKey] = 42
                 metadata2 = PropertySet()
@@ -61,19 +76,25 @@ class MetadataMetricTestCase(MetricTaskTestCase):
 
     def testAmbiguousRun(self):
         mockKey = "unitTestKey"
-        with unittest.mock.patch.object(self.task, "getInputMetadataKeys",
-                                        return_value={"unused": mockKey}):
+        with patch.object(self.task, "getInputMetadataKeys",
+                          return_value={"unused": mockKey}):
             metadata = PropertySet()
             metadata[mockKey + "1"] = 42
             metadata[mockKey + "2"] = "Sphere"
             with self.assertRaises(MetricComputationError):
-                self.task.run([metadata])
+                if self._takesScalarMetadata(self.task):
+                    self.task.run(metadata)
+                else:
+                    self.task.run([metadata])
 
     def testPassThroughRun(self):
-        with unittest.mock.patch.object(self.task, "makeMeasurement",
-                                        side_effect=MetricComputationError):
+        with patch.object(self.task, "makeMeasurement",
+                          side_effect=MetricComputationError):
             with self.assertRaises(MetricComputationError):
-                self.task.run([None])
+                if self._takesScalarMetadata(self.task):
+                    self.task.run(None)
+                else:
+                    self.task.run([None])
 
 
 class DummyConfig(Config):
@@ -96,14 +117,14 @@ class PpdbMetricTestCase(MetricTaskTestCase):
 
     def testValidRun(self):
         config = DummyConfig()
-        with unittest.mock.patch.object(self.task, "makeMeasurement") \
+        with patch.object(self.task, "makeMeasurement") \
                 as mockWorkhorse:
             self.task.run(config)
             mockWorkhorse.assert_called_once()
 
     def testPassThroughRun(self):
-        with unittest.mock.patch.object(self.task, "makeMeasurement",
-                                        side_effect=MetricComputationError):
+        with patch.object(self.task, "makeMeasurement",
+                          side_effect=MetricComputationError):
             config = DummyConfig()
             with self.assertRaises(MetricComputationError):
                 self.task.run(config)
