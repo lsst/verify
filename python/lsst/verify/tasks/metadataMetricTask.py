@@ -49,8 +49,8 @@ class MetadataMetricConfig(MetricTask.ConfigClass,
     Notes
     -----
     `MetadataMetricTask` classes that have CCD-level granularity can use
-    this class as-is. Classes representing metrics of a different granularity
-    should use `setDefaults` to override ``metadata.dimensions``.
+    this class as-is. Support for metrics of a different granularity
+    may be added later.
     """
     pass
 
