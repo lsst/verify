@@ -23,12 +23,27 @@ __all__ = ["MetadataMetricTask", "MetadataMetricConfig"]
 
 import abc
 
-from lsst.pipe.base import Struct, InputDatasetField
+from lsst.pipe.base import Struct, PipelineTaskConnections, connectionTypes
 from lsst.verify.gen2tasks import MetricTask
 from lsst.verify.tasks import MetricComputationError
 
 
-class MetadataMetricConfig(MetricTask.ConfigClass):
+class MetadataMetricConnections(
+        PipelineTaskConnections,
+        dimensions={"Instrument", "Exposure", "Detector"},
+        defaultTemplates={"taskName": ""}):
+    metadata = connectionTypes.Input(
+        name="{taskName}_metadata",
+        doc="The target top-level task's metadata. The name must be set to "
+            "the metadata's butler type, such as 'processCcd_metadata'.",
+        storageClass="PropertySet",
+        dimensions={"Instrument", "Exposure", "Detector"},
+        multiple=True,
+    )
+
+
+class MetadataMetricConfig(MetricTask.ConfigClass,
+                           pipelineConnections=MetadataMetricConnections):
     """A base class for metadata metric task configs.
 
     Notes
@@ -37,13 +52,7 @@ class MetadataMetricConfig(MetricTask.ConfigClass):
     this class as-is. Classes representing metrics of a different granularity
     should use `setDefaults` to override ``metadata.dimensions``.
     """
-    metadata = InputDatasetField(
-        doc="The target top-level task's metadata. The name must be set to "
-            "the metadata's butler type, such as 'processCcd_metadata'.",
-        nameTemplate="{taskName}_metadata",
-        storageClass="PropertySet",
-        dimensions={"Instrument", "Exposure", "Detector"},
-    )
+    pass
 
 
 class MetadataMetricTask(MetricTask):

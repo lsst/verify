@@ -25,7 +25,8 @@ import abc
 
 from lsst.pex.config import Config, ConfigurableField, ConfigurableInstance, \
     ConfigDictField, ConfigChoiceField, FieldValidationError
-from lsst.pipe.base import Task, Struct, InputDatasetField
+from lsst.pipe.base import Task, Struct, PipelineTaskConnections, \
+    connectionTypes
 from lsst.dax.ppdb import Ppdb, PpdbConfig
 
 from lsst.verify.gen2tasks import MetricTask
@@ -157,19 +158,26 @@ class ConfigPpdbLoader(Task):
         return Struct(ppdb=self._getPpdb(config))
 
 
-class PpdbMetricConfig(MetricTask.ConfigClass):
-    """A base class for PPDB metric task configs.
-    """
-    dbInfo = InputDatasetField(
+class PpdbMetricConnections(
+        PipelineTaskConnections,
+        dimensions=set(),
+        defaultTemplates={"taskName": ""}):
+    dbInfo = connectionTypes.Input(
+        name="{taskName}_config",
         doc="The dataset from which a PPDB instance can be constructed by "
             "`dbLoader`. By default this is assumed to be a top-level "
             "config, such as 'processCcd_config'.",
-        nameTemplate="{taskName}_config",
         storageClass="Config",
         # One config for entire CmdLineTask run
-        scalar=True,
+        multiple=False,
         dimensions=set(),
     )
+
+
+class PpdbMetricConfig(MetricTask.ConfigClass,
+                       pipelineConnections=PpdbMetricConnections):
+    """A base class for PPDB metric task configs.
+    """
     dbLoader = ConfigurableField(
         target=ConfigPpdbLoader,
         doc="Task for loading a database from `dbInfo`. Its run method must "

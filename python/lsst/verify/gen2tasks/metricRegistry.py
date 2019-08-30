@@ -202,7 +202,8 @@ class MetricRegistry:
     ``MetricRegistry.registry`` should be agnostic to such changes.
     """
 
-    registry = Registry(MetricTask.ConfigClass)
+    # Don't use MetricTask.ConfigClass, to accommodate MultiConfig
+    registry = Registry(Config)
     """A unique registry of ``MetricTasks`` or collections of ``MetricTasks``
     (`lsst.pex.config.Registry`).
     """
