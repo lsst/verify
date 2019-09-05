@@ -19,7 +19,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["MetadataMetricTask", "MetadataMetricConfig"]
+__all__ = ["MetadataMetricTask", "MetadataMetricConfig",
+           "MultiMetadataMetricTask", "MultiMetadataMetricConfig"]
 
 import abc
 
@@ -28,9 +29,23 @@ from lsst.verify.gen2tasks import MetricTask
 from lsst.verify.tasks import MetricComputationError
 
 
-class MetadataMetricConnections(
+class SingleMetadataMetricConnections(
         PipelineTaskConnections,
         dimensions={"Instrument", "Exposure", "Detector"},
+        defaultTemplates={"taskName": ""}):
+    metadata = connectionTypes.Input(
+        name="{taskName}_metadata",
+        doc="The target top-level task's metadata. The name must be set to "
+            "the metadata's butler type, such as 'processCcd_metadata'.",
+        storageClass="PropertySet",
+        dimensions={"Instrument", "Exposure", "Detector"},
+        multiple=False,
+    )
+
+
+class MultiMetadataMetricConnections(
+        PipelineTaskConnections,
+        dimensions={"Instrument", "Exposure"},
         defaultTemplates={"taskName": ""}):
     metadata = connectionTypes.Input(
         name="{taskName}_metadata",
@@ -42,21 +57,40 @@ class MetadataMetricConnections(
     )
 
 
-class MetadataMetricConfig(MetricTask.ConfigClass,
-                           pipelineConnections=MetadataMetricConnections):
+class MetadataMetricConfig(
+        MetricTask.ConfigClass,
+        pipelineConnections=SingleMetadataMetricConnections):
     """A base class for metadata metric task configs.
 
     Notes
     -----
     `MetadataMetricTask` classes that have CCD-level granularity can use
-    this class as-is. Classes representing metrics of a different granularity
-    should use `setDefaults` to override ``metadata.dimensions``.
+    this class as-is. Support for metrics of a different granularity
+    may be added later.
     """
     pass
 
 
-class MetadataMetricTask(MetricTask):
+class MultiMetadataMetricConfig(
+        MetricTask.ConfigClass,
+        pipelineConnections=MultiMetadataMetricConnections):
+    """A base class for metadata metric task configs.
+
+    Notes
+    -----
+    `MetadataMetricTask` classes that have CCD-to-visit-level granularity can
+    use this class as-is. Classes representing metrics of a different
+    granularity should override ``metadata.dimensions``
+    or ``Connections.dimensions``.
+    """
+    pass
+
+
+class _AbstractMetadataMetricTask(MetricTask):
     """A base class for tasks that compute metrics from metadata values.
+
+    This class contains code that is agnostic to whether the input is one
+    metadata object or many.
 
     Parameters
     ----------
@@ -81,8 +115,6 @@ class MetadataMetricTask(MetricTask):
     # important than ensuring that no implementation details of MetricTask
     # can leak into application-specific code.
 
-    ConfigClass = MetadataMetricConfig
-
     @classmethod
     @abc.abstractmethod
     def getInputMetadataKeys(cls, config):
@@ -102,38 +134,6 @@ class MetadataMetricTask(MetricTask):
             format of `lsst.pipe.base.Task.getFullMetadata()`. This method may
             return a substring of the desired (full) key, but multiple matches
             for any key will cause an error.
-        """
-
-    @abc.abstractmethod
-    def makeMeasurement(self, values):
-        """Compute the metric given the values of the metadata.
-
-        Parameters
-        ----------
-        values : sequence [`dict` [`str`, any]]
-            A list where each element corresponds to a metadata object passed
-            to `run`. Each `dict` has the same keys as returned by
-            `getInputMetadataKeys`, and maps them to the values extracted from
-            the metadata. Any value may be `None` to represent missing data.
-
-        Returns
-        -------
-        measurement : `lsst.verify.Measurement` or `None`
-            The measurement corresponding to the input data.
-
-        Raises
-        ------
-        lsst.verify.tasks.MetricComputationError
-            Raised if an algorithmic or system error prevents calculation of
-            the metric. See `adaptArgsAndRun` for expected behavior.
-
-        Notes
-        -----
-        As with all `lsst.verify.gen2tasks.MetricTask` subclasses, this method
-        should assume a many-to-one relationship between input data and the
-        resulting metric, i.e., it should not assume that the output metric
-        and the input data have the same granularity. In the common case that
-        they do, ``values`` will contain only one element.
         """
 
     @staticmethod
@@ -196,6 +196,160 @@ class MetadataMetricTask(MetricTask):
                 raise MetricComputationError(error)
         return data
 
+
+class MetadataMetricTask(_AbstractMetadataMetricTask):
+    """A base class for tasks that compute metrics from single metadata objects.
+
+    Parameters
+    ----------
+    *args
+    **kwargs
+        Constructor parameters are the same as for
+        `lsst.pipe.base.PipelineTask`.
+
+    See also
+    --------
+    MultiMetadataMetricTask
+
+    Notes
+    -----
+    This class should be customized by overriding `getInputMetadataKeys`,
+    `makeMeasurement`, and `getOutputMetricName`. You should not need to
+    override `run`.
+
+    This class makes no assumptions about how to handle missing data;
+    `makeMeasurement` may be called with `None` values, and is responsible
+    for deciding how to deal with them.
+    """
+    # Design note: getInputMetadataKeys and makeMeasurement are overrideable
+    # methods rather than subtask(s) to keep the configs for
+    # `MetricsControllerTask` as simple as possible. This was judged more
+    # important than ensuring that no implementation details of MetricTask
+    # can leak into application-specific code.
+
+    ConfigClass = MetadataMetricConfig
+
+    @abc.abstractmethod
+    def makeMeasurement(self, values):
+        """Compute the metric given the values of the metadata.
+
+        Parameters
+        ----------
+        values : `dict` [`str`, any]
+            A `dict` representation of the metadata passed to `run`. It has the
+            same keys as returned by `getInputMetadataKeys`, and maps them to
+            the values extracted from the metadata. Any value may be `None` to
+            represent missing data.
+
+        Returns
+        -------
+        measurement : `lsst.verify.Measurement` or `None`
+            The measurement corresponding to the input data.
+
+        Raises
+        ------
+        lsst.verify.tasks.MetricComputationError
+            Raised if an algorithmic or system error prevents calculation of
+            the metric. See `adaptArgsAndRun` for expected behavior.
+        """
+
+    def run(self, metadata):
+        """Compute a measurement from science task metadata.
+
+        Parameters
+        ----------
+        metadata : `lsst.daf.base.PropertySet` or `None`
+            A metadata object for the unit of science processing to use for
+            this metric, or a collection of such objects if this task combines
+            many units of processing into a single metric.
+
+        Returns
+        -------
+        result : `lsst.pipe.base.Struct`
+            A `~lsst.pipe.base.Struct` containing the following component:
+
+            - ``measurement``: the value of the metric
+              (`lsst.verify.Measurement` or `None`)
+
+        Raises
+        ------
+        lsst.verify.tasks.MetricComputationError
+            Raised if the strings returned by `getInputMetadataKeys` match
+            more than one key in any metadata object.
+
+        Notes
+        -----
+        This implementation calls `getInputMetadataKeys`, then searches for
+        matching keys in each metadata. It then passes the values of these
+        keys (or `None` if no match) to `makeMeasurement`, and returns its
+        result to the caller.
+        """
+        metadataKeys = self.getInputMetadataKeys(self.config)
+
+        if metadata is not None:
+            data = self._extractMetadata(metadata, metadataKeys)
+        else:
+            data = {dataName: None for dataName in metadataKeys}
+
+        return Struct(measurement=self.makeMeasurement(data))
+
+
+class MultiMetadataMetricTask(_AbstractMetadataMetricTask):
+    """A base class for tasks that compute metrics from multiple metadata objects.
+
+    Parameters
+    ----------
+    *args
+    **kwargs
+        Constructor parameters are the same as for
+        `lsst.pipe.base.PipelineTask`.
+
+    See also
+    --------
+    MetadataMetricTask
+
+    Notes
+    -----
+    This class should be customized by overriding `getInputMetadataKeys`,
+    `makeMeasurement`, and `getOutputMetricName`. You should not need to
+    override `run`.
+
+    This class makes no assumptions about how to handle missing data;
+    `makeMeasurement` may be called with `None` values, and is responsible
+    for deciding how to deal with them.
+    """
+    # Design note: getInputMetadataKeys and makeMeasurement are overrideable
+    # methods rather than subtask(s) to keep the configs for
+    # `MetricsControllerTask` as simple as possible. This was judged more
+    # important than ensuring that no implementation details of MetricTask
+    # can leak into application-specific code.
+
+    ConfigClass = MultiMetadataMetricConfig
+
+    @abc.abstractmethod
+    def makeMeasurement(self, values):
+        """Compute the metric given the values of the metadata.
+
+        Parameters
+        ----------
+        values : sequence [`dict` [`str`, any]]
+            A list where each element corresponds to a metadata object passed
+            to `run`. Each `dict` has the same keys as returned by
+            `getInputMetadataKeys`, and maps them to the values extracted from
+            the metadata. Any value may be `None` to represent missing data.
+
+        Returns
+        -------
+        measurement : `lsst.verify.Measurement` or `None`
+            The measurement corresponding to the input data.
+
+        Raises
+        ------
+        lsst.verify.tasks.MetricComputationError
+            Raised if an algorithmic or system error prevents calculation of
+            the metric. See `adaptArgsAndRun` for expected behavior.
+        """
+
     def run(self, metadata):
         """Compute a measurement from science task metadata.
 
@@ -223,9 +377,9 @@ class MetadataMetricTask(MetricTask):
         Notes
         -----
         This implementation calls `getInputMetadataKeys`, then searches for
-        matching keys in each element of ``metadata``. It then passes the
-        values of these keys (or `None` if no match) to `makeMeasurement`, and
-        returns its result to the caller.
+        matching keys in each metadata. It then passes the values of these
+        keys (or `None` if no match) to `makeMeasurement`, and returns its
+        result to the caller.
         """
         metadataKeys = self.getInputMetadataKeys(self.config)
 
