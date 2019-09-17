@@ -85,6 +85,9 @@ class MetricTaskTestCase(lsst.utils.tests.TestCase, metaclass=abc.ABCMeta):
     def testInputDatasetTypesKeys(self):
         defaultInputs = self.taskClass.getInputDatasetTypes(self.task.config)
         runParams = inspect.signature(self.taskClass.run).parameters
+        # Filter out keywords with defaults
+        runParams = {name: param for name, param in runParams.items()
+                     if param.default is param.empty}
 
         # Only way to check if run has been overridden?
         if runParams.keys() != ['kwargs']:

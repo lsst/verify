@@ -239,7 +239,7 @@ class PpdbMetricTask(MetricTask):
             the metric. See `adaptArgsAndRun` for expected behavior.
         """
 
-    def run(self, dbInfo):
+    def run(self, dbInfo, outputDataId={}):
         """Compute a measurement from a database.
 
         Parameters
@@ -247,6 +247,9 @@ class PpdbMetricTask(MetricTask):
         dbInfo
             The dataset (of the type indicated by `getInputDatasetTypes`) from
             which to load the database.
+        outputDataId: any data ID type, optional
+            The output data ID for the metric value. Defaults to the empty ID,
+            representing a value that covers the entire dataset.
 
         Returns
         -------
@@ -254,8 +257,7 @@ class PpdbMetricTask(MetricTask):
             Result struct with component:
 
             ``measurement``
-                the value of the metric computed over the entire database
-                (`lsst.verify.Measurement` or `None`)
+                the value of the metric (`lsst.verify.Measurement` or `None`)
 
         Raises
         ------
@@ -272,7 +274,7 @@ class PpdbMetricTask(MetricTask):
         """
         return self.adaptArgsAndRun({"dbInfo": dbInfo},
                                     {"dbInfo": {}},
-                                    {"measurement": {}})
+                                    {"measurement": outputDataId})
 
     def adaptArgsAndRun(self, inputData, inputDataIds, outputDataId):
         """Compute a measurement from a database.

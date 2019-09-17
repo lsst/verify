@@ -21,6 +21,7 @@
 
 __all__ = ["MetadataMetricTestCase", "PpdbMetricTestCase"]
 
+import unittest.mock
 from unittest.mock import patch
 
 from lsst.pex.config import Config, ConfigField
@@ -117,10 +118,17 @@ class PpdbMetricTestCase(MetricTaskTestCase):
 
     def testValidRun(self):
         config = DummyConfig()
-        with patch.object(self.task, "makeMeasurement") \
-                as mockWorkhorse:
+        with patch.object(self.task, "makeMeasurement") as mockWorkhorse:
             self.task.run(config)
             mockWorkhorse.assert_called_once()
+
+    def testDataIdRun(self):
+        config = DummyConfig()
+        with patch.object(self.task, "makeMeasurement") as mockWorkhorse:
+            dataId = {'visit': 42}
+            self.task.run(config, outputDataId=dataId)
+            mockWorkhorse.assert_called_once_with(
+                unittest.mock.ANY, {'visit': 42})
 
     def testPassThroughRun(self):
         with patch.object(self.task, "makeMeasurement",
