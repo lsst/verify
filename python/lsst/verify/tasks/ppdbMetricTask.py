@@ -267,14 +267,20 @@ class PpdbMetricTask(MetricTask):
 
         Notes
         -----
-        This method is provided purely for compatibility with frameworks that
-        don't support `adaptArgsAndRun`. The latter method should be considered
-        the primary entry point for this task, as it lets callers define
-        metrics that apply to only a subset of the data.
+        This implementation calls
+        `~lsst.verify.tasks.PpdbMetricConfig.dbLoader` to acquire a database
+        handle, then passes it and the value of ``outputDataId`` to
+        `makeMeasurement`. The result of `makeMeasurement` is returned to
+        the caller.
         """
-        return self.adaptArgsAndRun({"dbInfo": dbInfo},
-                                    {"dbInfo": {}},
-                                    {"measurement": outputDataId})
+        db = self.dbLoader.run(dbInfo).ppdb
+
+        if db is not None:
+            measurement = self.makeMeasurement(db, outputDataId)
+        else:
+            measurement = None
+
+        return Struct(measurement=measurement)
 
     def adaptArgsAndRun(self, inputData, inputDataIds, outputDataId):
         """Compute a measurement from a database.
@@ -316,25 +322,10 @@ class PpdbMetricTask(MetricTask):
         lsst.verify.tasks.MetricComputationError
             Raised if an algorithmic or system error prevents calculation of
             the metric.
-
-        Notes
-        -----
-        This implementation calls
-        `~lsst.verify.tasks.PpdbMetricConfig.dbLoader` to acquire a database
-        handle, then passes it and the value of ``outputDataId`` to
-        `makeMeasurement`. The result of `makeMeasurement` is returned to
-        the caller.
         """
-        dataId = outputDataId["measurement"]
-        dbInfo = inputData["dbInfo"]
-
-        db = self.dbLoader.run(dbInfo).ppdb
-
-        if db is not None:
-            measurement = self.makeMeasurement(db, dataId)
-        else:
-            measurement = None
-        if measurement is not None:
-            self.addStandardMetadata(measurement, dataId)
-
-        return Struct(measurement=measurement)
+        result = self.run(**inputData,
+                          outputDataId=outputDataId["measurement"])
+        if result.measurement is not None:
+            self.addStandardMetadata(result.measurement,
+                                     outputDataId["measurement"])
+        return result
