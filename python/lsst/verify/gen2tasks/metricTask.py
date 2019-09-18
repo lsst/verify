@@ -43,10 +43,9 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
     granularity, including repository-wide.
 
     Like `lsst.pipe.base.PipelineTask`, this class should be customized by
-    overriding one of `run` or `adaptArgsAndRun` and by providing an
-    `~lsst.pipe.base.InputDatasetField` for each parameter of `run`. For
-    requirements on these methods that are specific to ``MetricTask``, see
-    `adaptArgsAndRun`.
+    overriding `run` and by providing a `lsst.pipe.base.connectionTypes.Input`
+    for each parameter of `run`. For requirements that are specific to
+    ``MetricTask``, see `run`.
 
     .. note::
         The API is designed to make it easy to convert all ``MetricTasks`` to
@@ -62,8 +61,53 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+    @abc.abstractmethod
+    def run(self, **kwargs):
+        """Run the MetricTask on in-memory data.
+
+        Parameters
+        ----------
+        **kwargs
+            Keyword arguments matching the inputs given in the class config;
+            see `lsst.pipe.base.PipelineTask.run` for more details.
+
+        Returns
+        -------
+        struct : `lsst.pipe.base.Struct`
+            A `~lsst.pipe.base.Struct` containing at least the
+            following component:
+
+            - ``measurement``: the value of the metric identified by
+              `getOutputMetricName` (`lsst.verify.Measurement` or `None`).
+              This method is not responsible for adding mandatory metadata
+              (e.g., the data ID); this is handled by the caller.
+
+        Raises
+        ------
+        lsst.verify.tasks.MetricComputationError
+            Raised if an algorithmic or system error prevents calculation
+            of the metric. Examples include corrupted input data or
+            unavoidable exceptions raised by analysis code. The
+            `~lsst.verify.tasks.MetricComputationError` should be chained to a
+            more specific exception describing the root cause.
+
+            Not having enough data for a metric to be applicable is not an
+            error, and should not trigger this exception.
+
+        Notes
+        -----
+        All input data must be treated as optional. This maximizes the
+        ``MetricTask``'s usefulness for incomplete pipeline runs or runs with
+        optional processing steps. If a metric cannot be calculated because
+        the necessary inputs are missing, the ``MetricTask`` must return `None`
+        in place of the measurement.
+        """
+
     def adaptArgsAndRun(self, inputData, inputDataIds, outputDataId):
-        """Compute a metric from in-memory data.
+        """A wrapper around `run` used by
+        `~lsst.verify.gen2tasks.MetricsControllerTask`.
+
+        Task developers should not need to call or override this method.
 
         Parameters
         ----------
@@ -110,14 +154,7 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
         -----
         This implementation calls `run` on the contents of ``inputData``,
         followed by calling `addStandardMetadata` on the result before
-        returning it. Any subclass that overrides this method must also call
-        `addStandardMetadata` on its measurement before returning it.
-
-        All input data must be treated as optional. This maximizes the
-        ``MetricTask``'s usefulness for incomplete pipeline runs or runs with
-        optional processing steps. If a metric cannot be calculated because
-        the necessary inputs are missing, the ``MetricTask`` must return `None`
-        in place of the measurement.
+        returning it.
 
         Examples
         --------

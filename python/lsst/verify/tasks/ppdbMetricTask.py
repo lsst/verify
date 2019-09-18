@@ -236,7 +236,7 @@ class PpdbMetricTask(MetricTask):
         ------
         MetricComputationError
             Raised if an algorithmic or system error prevents calculation of
-            the metric. See `adaptArgsAndRun` for expected behavior.
+            the metric. See `run` for expected behavior.
         """
 
     def run(self, dbInfo, outputDataId={}):

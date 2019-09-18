@@ -250,7 +250,7 @@ class MetadataMetricTask(_AbstractMetadataMetricTask):
         ------
         lsst.verify.tasks.MetricComputationError
             Raised if an algorithmic or system error prevents calculation of
-            the metric. See `adaptArgsAndRun` for expected behavior.
+            the metric. See `run` for expected behavior.
         """
 
     def run(self, metadata):
@@ -347,7 +347,7 @@ class MultiMetadataMetricTask(_AbstractMetadataMetricTask):
         ------
         lsst.verify.tasks.MetricComputationError
             Raised if an algorithmic or system error prevents calculation of
-            the metric. See `adaptArgsAndRun` for expected behavior.
+            the metric. See `run` for expected behavior.
         """
 
     def run(self, metadata):
