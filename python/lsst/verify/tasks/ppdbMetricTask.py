@@ -199,8 +199,7 @@ class PpdbMetricTask(MetricTask):
     Notes
     -----
     This class should be customized by overriding `makeMeasurement` and
-    `getOutputMetricName`. You should not need to override `run` or
-    `adaptArgsAndRun`.
+    `getOutputMetricName`. You should not need to override `run`.
     """
     # Design note: makeMeasurement is an overrideable method rather than a
     # subtask to keep the configs for `MetricsControllerTask` as simple as

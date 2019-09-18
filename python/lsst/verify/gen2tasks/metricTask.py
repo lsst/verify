@@ -262,9 +262,7 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
 
         Notes
         -----
-        This method must be called by any subclass that overrides
-        `adaptArgsAndRun`, but should be ignored otherwise. It should not be
-        overridden by subclasses.
+        This method should not be overridden by subclasses.
 
         This method is not responsible for shared metadata like the execution
         environment (which should be added by this ``MetricTask``'s caller),

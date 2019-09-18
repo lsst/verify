@@ -78,9 +78,8 @@ class MetricTaskTestCase(lsst.utils.tests.TestCase, metaclass=abc.ABCMeta):
         self.task = self.makeTask()
         self.taskClass = type(self.task)
 
-    # Implementation classes will override run or adaptArgsAndRun. Can't
-    # implement most tests if they're mocked, risk excessive runtime if
-    # they aren't.
+    # Implementation classes will override run. Can't implement most tests if
+    # it's mocked, risk excessive runtime if it isn't.
 
     def testInputDatasetTypesKeys(self):
         defaultInputs = self.taskClass.getInputDatasetTypes(self.task.config)
