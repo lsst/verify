@@ -244,7 +244,7 @@ class PpdbMetricTask(MetricTask):
         Parameters
         ----------
         dbInfo
-            The dataset (of the type indicated by `getInputDatasetTypes`) from
+            The dataset (of the type indicated by the config) from
             which to load the database.
         outputDataId: any data ID type, optional
             The output data ID for the metric value. Defaults to the empty ID,

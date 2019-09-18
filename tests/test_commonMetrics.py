@@ -116,12 +116,6 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         with self.assertRaises(MetricComputationError):
             task.run(metadata)
 
-    def testGetInputDatasetTypes(self):
-        types = TimingMetricTask.getInputDatasetTypes(self.config)
-        self.assertSetEqual(set(types.keys()), {"metadata"})
-        expected = DummyTask._DefaultName + "_metadata"
-        self.assertEqual(types["metadata"], expected)
-
     def testGetOutputMetricName(self):
         self.assertEqual(TimingMetricTask.getOutputMetricName(self.config),
                          Name(self.config.metric))
@@ -184,12 +178,6 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
         task = MemoryMetricTask(config=self.config)
         with self.assertRaises(MetricComputationError):
             task.run(metadata)
-
-    def testGetInputDatasetTypes(self):
-        types = MemoryMetricTask.getInputDatasetTypes(self.config)
-        self.assertSetEqual(set(types.keys()), {"metadata"})
-        expected = DummyTask._DefaultName + "_metadata"
-        self.assertEqual(types["metadata"], expected)
 
     def testGetOutputMetricName(self):
         self.assertEqual(MemoryMetricTask.getOutputMetricName(self.config),

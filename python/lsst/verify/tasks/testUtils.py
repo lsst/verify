@@ -42,10 +42,6 @@ class MetadataMetricTestCase(MetricTaskTestCase):
     being tested.
     """
 
-    def testInputDatasetTypes(self):
-        defaultInputs = self.taskClass.getInputDatasetTypes(self.task.config)
-        self.assertEqual(defaultInputs.keys(), {"metadata"})
-
     @staticmethod
     def _takesScalarMetadata(task):
         return task.areInputDatasetsScalar(task.config)['metadata']
@@ -125,10 +121,6 @@ class PpdbMetricTestCase(MetricTaskTestCase):
             ppdb = ConfigField(dtype=PpdbConfig, doc="Mandatory field")
 
         return DummyConfig()
-
-    def testInputDatasetTypes(self):
-        defaultInputs = self.taskClass.getInputDatasetTypes(self.task.config)
-        self.assertEqual(defaultInputs.keys(), {"dbInfo"})
 
     def testValidRun(self):
         info = self.makeDbInfo()
