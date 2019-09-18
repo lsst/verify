@@ -98,10 +98,6 @@ class MetadataMetricTestCase(MetricTaskTestCase):
                     self.task.run([None])
 
 
-class DummyConfig(Config):
-    ppdb = ConfigField(dtype=PpdbConfig, doc="Mandatory field")
-
-
 class PpdbMetricTestCase(MetricTaskTestCase):
     """Unit test base class for tests of `PpdbMetricTask`.
 
@@ -109,30 +105,48 @@ class PpdbMetricTestCase(MetricTaskTestCase):
     -----
     Subclasses must override
     `~lsst.verify.gen2tasks.MetricTaskTestCase.makeTask` for the concrete task
-    being tested.
+    being tested. Subclasses that use a custom DbLoader should also
+    override `makeDbInfo`.
     """
+
+    @classmethod
+    def makeDbInfo(cls):
+        """Return an object that can be passed as input to a `PpdbMetricTask`.
+
+        This method is intended for generic tests that simply need to call
+        ``run`` on some valid input. If a test depends on specific input, it
+        should create that input directly.
+
+        The default implementation creates a `~lsst.pex.config.Config` that
+        will be accepted by `~lsst.verify.tasks.ConfigPpdbLoader`. Test suites
+        that use a different loader should override this method.
+        """
+        class DummyConfig(Config):
+            ppdb = ConfigField(dtype=PpdbConfig, doc="Mandatory field")
+
+        return DummyConfig()
 
     def testInputDatasetTypes(self):
         defaultInputs = self.taskClass.getInputDatasetTypes(self.task.config)
         self.assertEqual(defaultInputs.keys(), {"dbInfo"})
 
     def testValidRun(self):
-        config = DummyConfig()
+        info = self.makeDbInfo()
         with patch.object(self.task, "makeMeasurement") as mockWorkhorse:
-            self.task.run(config)
+            self.task.run(info)
             mockWorkhorse.assert_called_once()
 
     def testDataIdRun(self):
-        config = DummyConfig()
+        info = self.makeDbInfo()
         with patch.object(self.task, "makeMeasurement") as mockWorkhorse:
             dataId = {'visit': 42}
-            self.task.run(config, outputDataId=dataId)
+            self.task.run(info, outputDataId=dataId)
             mockWorkhorse.assert_called_once_with(
                 unittest.mock.ANY, {'visit': 42})
 
     def testPassThroughRun(self):
         with patch.object(self.task, "makeMeasurement",
                           side_effect=MetricComputationError):
-            config = DummyConfig()
+            info = self.makeDbInfo()
             with self.assertRaises(MetricComputationError):
-                self.task.run(config)
+                self.task.run(info)
