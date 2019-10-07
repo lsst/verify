@@ -42,7 +42,7 @@ In Depth
 Subclassing
 -----------
 
-``MetricTask`` is primarily customized using the `~MetricTask.run` or `~MetricTask.adaptArgsAndRun` methods.
+``MetricTask`` is primarily customized using the `~MetricTask.run` method.
 Each subclass must also implement the `~MetricTask.getOutputMetricName` method.
 
 The task config should use `lsst.pipe.base.PipelineTaskConnections` to identify input datasets as if it were a `~lsst.pipe.base.PipelineTask`.

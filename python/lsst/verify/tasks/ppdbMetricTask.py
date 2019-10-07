@@ -199,8 +199,7 @@ class PpdbMetricTask(MetricTask):
     Notes
     -----
     This class should be customized by overriding `makeMeasurement` and
-    `getOutputMetricName`. You should not need to override `run` or
-    `adaptArgsAndRun`.
+    `getOutputMetricName`. You should not need to override `run`.
     """
     # Design note: makeMeasurement is an overrideable method rather than a
     # subtask to keep the configs for `MetricsControllerTask` as simple as
@@ -236,17 +235,20 @@ class PpdbMetricTask(MetricTask):
         ------
         MetricComputationError
             Raised if an algorithmic or system error prevents calculation of
-            the metric. See `adaptArgsAndRun` for expected behavior.
+            the metric. See `run` for expected behavior.
         """
 
-    def run(self, dbInfo):
+    def run(self, dbInfo, outputDataId={}):
         """Compute a measurement from a database.
 
         Parameters
         ----------
         dbInfo
-            The dataset (of the type indicated by `getInputDatasetTypes`) from
+            The dataset (of the type indicated by the config) from
             which to load the database.
+        outputDataId: any data ID type, optional
+            The output data ID for the metric value. Defaults to the empty ID,
+            representing a value that covers the entire dataset.
 
         Returns
         -------
@@ -254,64 +256,11 @@ class PpdbMetricTask(MetricTask):
             Result struct with component:
 
             ``measurement``
-                the value of the metric computed over the entire database
-                (`lsst.verify.Measurement` or `None`)
+                the value of the metric (`lsst.verify.Measurement` or `None`)
 
         Raises
         ------
         MetricComputationError
-            Raised if an algorithmic or system error prevents calculation of
-            the metric.
-
-        Notes
-        -----
-        This method is provided purely for compatibility with frameworks that
-        don't support `adaptArgsAndRun`. The latter method should be considered
-        the primary entry point for this task, as it lets callers define
-        metrics that apply to only a subset of the data.
-        """
-        return self.adaptArgsAndRun({"dbInfo": dbInfo},
-                                    {"dbInfo": {}},
-                                    {"measurement": {}})
-
-    def adaptArgsAndRun(self, inputData, inputDataIds, outputDataId):
-        """Compute a measurement from a database.
-
-        Parameters
-        ----------
-        inputData : `dict` [`str`, any]
-            Dictionary with one key:
-
-            ``"dbInfo"``
-                The dataset (of the type indicated by `getInputDatasetTypes`)
-                from which to load the database.
-        inputDataIds : `dict` [`str`, data ID]
-            Dictionary with one key:
-
-            ``"dbInfo"``
-                The data ID of the input data. Since there can only be one
-                prompt products database per dataset, the value must be an
-                empty data ID.
-        outputDataId : `dict` [`str`, data ID]
-            Dictionary with one key:
-
-            ``"measurement"``
-                The data ID for the measurement, at the appropriate level
-                of granularity for the metric.
-
-        Returns
-        -------
-        result : `lsst.pipe.base.Struct`
-            Result struct with component:
-
-            ``measurement``
-                the value of the metric computed over the portion of the
-                dataset that matches ``outputDataId``
-                (`lsst.verify.Measurement` or `None`)
-
-        Raises
-        ------
-        lsst.verify.tasks.MetricComputationError
             Raised if an algorithmic or system error prevents calculation of
             the metric.
 
@@ -323,16 +272,11 @@ class PpdbMetricTask(MetricTask):
         `makeMeasurement`. The result of `makeMeasurement` is returned to
         the caller.
         """
-        dataId = outputDataId["measurement"]
-        dbInfo = inputData["dbInfo"]
-
         db = self.dbLoader.run(dbInfo).ppdb
 
         if db is not None:
-            measurement = self.makeMeasurement(db, dataId)
+            measurement = self.makeMeasurement(db, outputDataId)
         else:
             measurement = None
-        if measurement is not None:
-            self.addStandardMetadata(measurement, dataId)
 
         return Struct(measurement=measurement)

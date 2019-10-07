@@ -23,7 +23,6 @@ import time
 import unittest
 
 import astropy.units as u
-from astropy.tests.helper import assert_quantity_allclose
 
 import lsst.utils.tests
 from lsst.pex.config import Config
@@ -117,23 +116,6 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         with self.assertRaises(MetricComputationError):
             task.run(metadata)
 
-    def testGetInputDatasetTypes(self):
-        types = TimingMetricTask.getInputDatasetTypes(self.config)
-        self.assertSetEqual(set(types.keys()), {"metadata"})
-        expected = DummyTask._DefaultName + "_metadata"
-        self.assertEqual(types["metadata"], expected)
-
-    def testFineGrainedMetric(self):
-        metadata = self.scienceTask.getFullMetadata()
-        inputData = {"metadata": metadata}
-        inputDataIds = {"metadata": {"visit": 42, "ccd": 1}}
-        outputDataId = {"measurement": {"visit": 42, "ccd": 1}}
-        measDirect = self.task.run(metadata).measurement
-        measIndirect = self.task.adaptArgsAndRun(
-            inputData, inputDataIds, outputDataId).measurement
-
-        assert_quantity_allclose(measIndirect.quantity, measDirect.quantity)
-
     def testGetOutputMetricName(self):
         self.assertEqual(TimingMetricTask.getOutputMetricName(self.config),
                          Name(self.config.metric))
@@ -196,23 +178,6 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
         task = MemoryMetricTask(config=self.config)
         with self.assertRaises(MetricComputationError):
             task.run(metadata)
-
-    def testGetInputDatasetTypes(self):
-        types = MemoryMetricTask.getInputDatasetTypes(self.config)
-        self.assertSetEqual(set(types.keys()), {"metadata"})
-        expected = DummyTask._DefaultName + "_metadata"
-        self.assertEqual(types["metadata"], expected)
-
-    def testFineGrainedMetric(self):
-        metadata = self.scienceTask.getFullMetadata()
-        inputData = {"metadata": metadata}
-        inputDataIds = {"metadata": {"visit": 42, "ccd": 1}}
-        outputDataId = {"measurement": {"visit": 42, "ccd": 1}}
-        measDirect = self.task.run(metadata).measurement
-        measIndirect = self.task.adaptArgsAndRun(
-            inputData, inputDataIds, outputDataId).measurement
-
-        assert_quantity_allclose(measIndirect.quantity, measDirect.quantity)
 
     def testGetOutputMetricName(self):
         self.assertEqual(MemoryMetricTask.getOutputMetricName(self.config),
