@@ -219,7 +219,7 @@ class MetricsControllerTestSuite(lsst.utils.tests.TestCase):
         elif len(jobs) == 1:
             mockWriter.assert_called_once()
         else:
-            mockWriter.assert_called()
+            self.assertEqual(mockWriter.call_count, len(jobs))
 
     def testCcdGrainedMetric(self, mockWriter, _mockButler,
                              _mockMetricsLoader):
