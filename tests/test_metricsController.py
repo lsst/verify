@@ -219,7 +219,7 @@ class MetricsControllerTestSuite(lsst.utils.tests.TestCase):
         elif len(jobs) == 1:
             mockWriter.assert_called_once()
         else:
-            mockWriter.assert_called()
+            self.assertEqual(mockWriter.call_count, len(jobs))
 
     def testCcdGrainedMetric(self, mockWriter, _mockButler,
                              _mockMetricsLoader):
@@ -246,6 +246,23 @@ class MetricsControllerTestSuite(lsst.utils.tests.TestCase):
         datarefs = [_makeMockDataref(dataId) for dataId in dataIds]
         self._checkMetric(mockWriter, datarefs,
                           unitsOfWork=[1] * len(dataIds))
+
+    def testSkippedMetrics(self, mockWriter, _mockButler, _mockMetricsLoader):
+        dataIds = [{"visit": 42, "ccd": 101, "filter": "k"},
+                   {"visit": 42, "ccd": 102, "filter": "k"}]
+        datarefs = [_makeMockDataref(dataId) for dataId in dataIds]
+
+        with unittest.mock.patch("os.path.isfile", side_effect=[True, False]):
+            jobs = self.task.runDataRefs(datarefs).jobs
+            self.assertEqual(len(jobs), 2)
+            self.assertEqual(mockWriter.call_count, 2)
+
+        mockWriter.reset_mock()
+
+        with unittest.mock.patch("os.path.isfile", side_effect=[True, False]):
+            jobs = self.task.runDataRefs(datarefs, skipExisting=True).jobs
+            self.assertEqual(len(jobs), 1)
+            mockWriter.assert_called_once()
 
     def testInvalidMetricSegregation(self, _mockWriter, _mockButler,
                                      _mockMetricsLoader):

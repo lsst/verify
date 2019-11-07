@@ -21,6 +21,7 @@
 
 __all__ = ["MetricsControllerConfig", "MetricsControllerTask"]
 
+import os.path
 import traceback
 
 import lsst.pex.config as pexConfig
@@ -182,7 +183,7 @@ class MetricsControllerTask(Task):
                            metricTask, inputDataIds, outputDataIds,
                            traceback.format_exc())
 
-    def runDataRefs(self, datarefs, customMetadata=None):
+    def runDataRefs(self, datarefs, customMetadata=None, skipExisting=False):
         """Call all registered metric tasks on each dataref.
 
         This method loads all datasets required to compute a particular
@@ -204,6 +205,11 @@ class MetricsControllerTask(Task):
             `~MetricsControllerConfig.metadataAdder` subtask). If omitted,
             only generic metadata are added. Both keys and values must be valid
             inputs to `~lsst.verify.Metadata`.
+        skipExisting : `bool`, optional
+            If this flag is set, MetricsControllerTask will skip computing
+            metrics for any data ID that already has an output job file on
+            disk. While this option is useful for restarting failed runs, it
+            does *not* check whether the file is valid.
 
         Returns
         -------
@@ -215,6 +221,8 @@ class MetricsControllerTask(Task):
               measurement(s) for the corresponding dataref, and each job has
               at most one measurement for each element in `self.measurers`. A
               particular measurement is omitted if it could not be created.
+              If ``skipExisting`` is set, any jobs that already exist on disk
+              are also omitted.
 
         Notes
         -----
@@ -224,22 +232,25 @@ class MetricsControllerTask(Task):
         jobs = []
         index = 0
         for dataref in datarefs:
-            job = Job.load_metrics_package()
-            try:
-                self.metadataAdder.run(job, dataref=dataref)
-                if customMetadata:
-                    job.meta.update(customMetadata)
+            jobFile = self._getJobFilePath(index, dataref.dataId)
+            if not (skipExisting and os.path.isfile(jobFile)):
+                job = Job.load_metrics_package()
+                try:
+                    self.metadataAdder.run(job, dataref=dataref)
+                    if customMetadata:
+                        job.meta.update(customMetadata)
 
-                for task in self.measurers:
-                    self._computeSingleMeasurement(job, task, dataref)
-            finally:
-                jobFile = self._getJobFilePath(index, dataref.dataId)
-                self.log.info("Persisting metrics to %s...", jobFile)
-                # This call order maximizes the chance that job gets
-                # written, and to a unique file
-                index += 1
-                job.write(jobFile)
-                jobs.append(job)
+                    for task in self.measurers:
+                        self._computeSingleMeasurement(job, task, dataref)
+                finally:
+                    self.log.info("Persisting metrics to %s...", jobFile)
+                    # This call order maximizes the chance that job gets
+                    # written, and to a unique file
+                    index += 1
+                    job.write(jobFile)
+                    jobs.append(job)
+            else:
+                self.log.debug("File %s already exists; skipping.", jobFile)
 
         return Struct(jobs=jobs)
 
