@@ -19,7 +19,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["ApdbMetricTask", "ApdbMetricConfig", "ConfigApdbLoader"]
+__all__ = ["ApdbMetricTask", "ApdbMetricConfig", "ConfigApdbLoader",
+           "DirectApdbLoader"]
 
 import abc
 
@@ -156,6 +157,42 @@ class ConfigApdbLoader(Task):
                 exists (`lsst.dax.apdb.Apdb` or `None`).
         """
         return Struct(apdb=self._getApdb(config))
+
+
+class DirectApdbLoader(Task):
+    """A Task that takes a Apdb config and returns the corresponding
+    Apdb object.
+
+    Parameters
+    ----------
+    *args
+    **kwargs
+        Constructor parameters are the same as for `lsst.pipe.base.Task`.
+    """
+
+    _DefaultName = "directApdb"
+    ConfigClass = Config
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def run(self, config):
+        """Create a database from a config.
+
+        Parameters
+        ----------
+        config : `lsst.dax.apdb.ApdbConfig` or `None`
+            A config for the database connection.
+
+        Returns
+        -------
+        result : `lsst.pipe.base.Struct`
+            Result struct with components:
+
+            ``apdb``
+                A database configured the same way as in ``config``.
+        """
+        return Struct(apdb=(Apdb(config) if config else None))
 
 
 class ApdbMetricConnections(
