@@ -197,7 +197,7 @@ class DirectApdbLoader(Task):
 
 class ApdbMetricConnections(
         PipelineTaskConnections,
-        dimensions=set(),
+        dimensions={"instrument"},
 ):
     dbInfo = connectionTypes.Input(
         name="apdb_marker",
