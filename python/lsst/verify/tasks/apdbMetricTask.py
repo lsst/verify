@@ -198,16 +198,15 @@ class DirectApdbLoader(Task):
 class ApdbMetricConnections(
         PipelineTaskConnections,
         dimensions=set(),
-        defaultTemplates={"taskName": ""}):
+):
     dbInfo = connectionTypes.Input(
-        name="{taskName}_config",
+        name="apdb_marker",
         doc="The dataset from which an APDB instance can be constructed by "
-            "`dbLoader`. By default this is assumed to be a top-level "
-            "config, such as 'processCcd_config'.",
+            "`dbLoader`. By default this is assumed to be a marker produced "
+            "by AP processing.",
         storageClass="Config",
-        # One config for entire CmdLineTask run
-        multiple=False,
-        dimensions=set(),
+        multiple=True,
+        dimensions={"instrument", "visit", "detector"},
     )
 
 
@@ -216,10 +215,10 @@ class ApdbMetricConfig(MetricTask.ConfigClass,
     """A base class for APDB metric task configs.
     """
     dbLoader = ConfigurableField(
-        target=ConfigApdbLoader,
+        target=DirectApdbLoader,
         doc="Task for loading a database from `dbInfo`. Its run method must "
-        "take the dataset provided by `dbInfo` and return a Struct with a "
-        "'apdb' member."
+        "take one object of the dataset type indicated by `dbInfo` and return "
+        "a Struct with an 'apdb' member."
     )
 
 
@@ -280,9 +279,11 @@ class ApdbMetricTask(MetricTask):
 
         Parameters
         ----------
-        dbInfo
-            The dataset (of the type indicated by the config) from
-            which to load the database.
+        dbInfo : `list`
+            The datasets (of the type indicated by the config) from
+            which to load the database. If more than one dataset is provided
+            (as may be the case if DB writes are fine-grained), all are
+            assumed identical.
         outputDataId: any data ID type, optional
             The output data ID for the metric value. Defaults to the empty ID,
             representing a value that covers the entire dataset.
@@ -309,7 +310,7 @@ class ApdbMetricTask(MetricTask):
         ``outputDataId`` to `makeMeasurement`. The result of `makeMeasurement`
         is returned to the caller.
         """
-        db = self.dbLoader.run(dbInfo).apdb
+        db = self.dbLoader.run(dbInfo[0] if dbInfo else None).apdb
 
         if db is not None:
             measurement = self.makeMeasurement(db, outputDataId)

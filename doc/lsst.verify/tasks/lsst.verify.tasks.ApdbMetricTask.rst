@@ -17,8 +17,8 @@ Processing summary
 
 ``ApdbMetricTask`` runs this sequence of operations:
 
-#. Load the dataset indicated by :lsst-config-field:`~lsst.verify.tasks.apdbMetricTask.ApdbMetricConfig.dbInfo` (default: the top-level science task's config).
-#. Generate an `~lsst.dax.apdb.Apdb` object by calling the :lsst-config-field:`~lsst.verify.tasks.apdbMetricTask.ApdbMetricConfig.dbLoader` subtask (default: :lsst-task:`~lsst.verify.tasks.apdbMetricTask.ConfigApdbLoader`).
+#. Load the dataset indicated by :lsst-config-field:`~lsst.verify.tasks.apdbMetricTask.ApdbMetricConfig.dbInfo` (default: one or more ``apdb_marker`` datasets).
+#. Generate an `~lsst.dax.apdb.Apdb` object by calling the :lsst-config-field:`~lsst.verify.tasks.apdbMetricTask.ApdbMetricConfig.dbLoader` subtask (default: :lsst-task:`~lsst.verify.tasks.apdbMetricTask.DirectApdbLoader`).
 #. Process the database by passing it to the customizable `~lsst.verify.tasks.apdbMetricTask.ApdbMetricTask.makeMeasurement` method, and return the `~lsst.verify.Measurement`.
 
 .. _lsst.verify.tasks.ApdbMetricTask-api:
@@ -38,8 +38,8 @@ Input datasets
 
 :lsst-config-field:`~lsst.verify.tasks.apdbMetricTask.ApdbMetricConfig.dbInfo`
     The Butler dataset from which the database connection can be initialized.
-    The type must match the input required by the :lsst-config-field:`~lsst.verify.tasks.apdbMetricTask.ApdbMetricConfig.dbLoader` subtask (default: the top-level science task's config).
-    If the input is a config, its name **must** be explicitly configured when running ``ApdbMetricTask`` or a :lsst-task:`~lsst.verify.gen2tasks.MetricsControllerTask` that contains it.
+    The type must match the input required by the :lsst-config-field:`~lsst.verify.tasks.apdbMetricTask.ApdbMetricConfig.dbLoader` subtask (default: ``apdb_marker``).
+    If the input is a task config, its name **must** be explicitly configured when running ``ApdbMetricTask`` or a :lsst-task:`~lsst.verify.gen2tasks.MetricsControllerTask` that contains it.
 
 .. _lsst.verify.tasks.ApdbMetricTask-subtasks:
 

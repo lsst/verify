@@ -24,7 +24,6 @@ __all__ = ["MetadataMetricTestCase", "ApdbMetricTestCase"]
 import unittest.mock
 from unittest.mock import patch
 
-from lsst.pex.config import Config, ConfigField
 from lsst.daf.base import PropertySet
 from lsst.dax.apdb import ApdbConfig
 
@@ -114,25 +113,22 @@ class ApdbMetricTestCase(MetricTaskTestCase):
         should create that input directly.
 
         The default implementation creates a `~lsst.pex.config.Config` that
-        will be accepted by `~lsst.verify.tasks.ConfigApdbLoader`. Test suites
+        will be accepted by `~lsst.verify.tasks.DirectApdbLoader`. Test suites
         that use a different loader should override this method.
         """
-        class DummyConfig(Config):
-            apdb = ConfigField(dtype=ApdbConfig, doc="Mandatory field")
-
-        return DummyConfig()
+        return ApdbConfig()
 
     def testValidRun(self):
         info = self.makeDbInfo()
         with patch.object(self.task, "makeMeasurement") as mockWorkhorse:
-            self.task.run(info)
+            self.task.run([info])
             mockWorkhorse.assert_called_once()
 
     def testDataIdRun(self):
         info = self.makeDbInfo()
         with patch.object(self.task, "makeMeasurement") as mockWorkhorse:
             dataId = {'visit': 42}
-            self.task.run(info, outputDataId=dataId)
+            self.task.run([info], outputDataId=dataId)
             mockWorkhorse.assert_called_once_with(
                 unittest.mock.ANY, {'visit': 42})
 
@@ -141,4 +137,4 @@ class ApdbMetricTestCase(MetricTaskTestCase):
                           side_effect=MetricComputationError):
             info = self.makeDbInfo()
             with self.assertRaises(MetricComputationError):
-                self.task.run(info)
+                self.task.run([info])
