@@ -25,12 +25,12 @@ import lsst.utils.tests
 from lsst.pex.config import Config, Field, ConfigField, ConfigChoiceField, \
     RegistryField, Registry, ConfigurableField, ConfigurableInstance, \
     ConfigDictField
-from lsst.dax.ppdb import Ppdb, PpdbConfig
+from lsst.dax.apdb import Apdb, ApdbConfig
 
-from lsst.verify.tasks import ConfigPpdbLoader
+from lsst.verify.tasks import ConfigApdbLoader
 
 
-class ConfigPpdbLoaderTestSuite(lsst.utils.tests.TestCase):
+class ConfigApdbLoaderTestSuite(lsst.utils.tests.TestCase):
 
     @staticmethod
     def _dummyRegistry():
@@ -38,33 +38,33 @@ class ConfigPpdbLoaderTestSuite(lsst.utils.tests.TestCase):
             ConfigClass = Config
         registry = Registry()
         registry.register("foo", DummyConfigurable)
-        registry.register("bar", Ppdb, ConfigClass=PpdbConfig)
+        registry.register("bar", Apdb, ConfigClass=ApdbConfig)
         return registry
 
     @staticmethod
-    def _dummyPpdbConfig():
-        config = PpdbConfig()
+    def _dummyApdbConfig():
+        config = ApdbConfig()
         config.db_url = "sqlite://"     # in-memory DB
         config.isolation_level = "READ_UNCOMMITTED"
         return config
 
     def setUp(self):
-        self.task = ConfigPpdbLoader()
+        self.task = ConfigApdbLoader()
 
     def testNoConfig(self):
         result = self.task.run(None)
-        self.assertIsNone(result.ppdb)
+        self.assertIsNone(result.apdb)
 
     def testEmptyConfig(self):
         result = self.task.run(Config())
-        self.assertIsNone(result.ppdb)
+        self.assertIsNone(result.apdb)
 
     def testSelfConfig(self):
-        result = self.task.run(self._dummyPpdbConfig())
-        self.assertIsInstance(result.ppdb, Ppdb)
+        result = self.task.run(self._dummyApdbConfig())
+        self.assertIsInstance(result.apdb, Apdb)
 
     def testConfigChoiceFieldUnSelected(self):
-        typemap = {"foo": Config, "bar": PpdbConfig}
+        typemap = {"foo": Config, "bar": ApdbConfig}
 
         class TestConfig(Config):
             field = ConfigChoiceField(typemap=typemap, doc="")
@@ -72,31 +72,31 @@ class ConfigPpdbLoaderTestSuite(lsst.utils.tests.TestCase):
         config = TestConfig()
         config.field = "foo"
         result = self.task.run(config)
-        self.assertIsNone(result.ppdb)
+        self.assertIsNone(result.apdb)
 
     def testConfigChoiceFieldSelected(self):
-        typemap = {"foo": Config, "bar": PpdbConfig}
+        typemap = {"foo": Config, "bar": ApdbConfig}
 
         class TestConfig(Config):
             field = ConfigChoiceField(typemap=typemap, doc="")
 
         config = TestConfig()
         config.field = "bar"
-        config.field["bar"] = self._dummyPpdbConfig()
+        config.field["bar"] = self._dummyApdbConfig()
         result = self.task.run(config)
-        self.assertIsInstance(result.ppdb, Ppdb)
+        self.assertIsInstance(result.apdb, Apdb)
 
     def testConfigChoiceFieldMulti(self):
-        typemap = {"foo": Config, "bar": PpdbConfig}
+        typemap = {"foo": Config, "bar": ApdbConfig}
 
         class TestConfig(Config):
             field = ConfigChoiceField(typemap=typemap, doc="", multi=True)
 
         config = TestConfig()
         config.field = {"bar", "foo"}
-        config.field["bar"] = self._dummyPpdbConfig()
+        config.field["bar"] = self._dummyApdbConfig()
         result = self.task.run(config)
-        self.assertIsInstance(result.ppdb, Ppdb)
+        self.assertIsInstance(result.apdb, Apdb)
 
     def testRegistryFieldUnSelected(self):
         registry = self._dummyRegistry()
@@ -107,7 +107,7 @@ class ConfigPpdbLoaderTestSuite(lsst.utils.tests.TestCase):
         config = TestConfig()
         config.field = "foo"
         result = self.task.run(config)
-        self.assertIsNone(result.ppdb)
+        self.assertIsNone(result.apdb)
 
     def testRegistryFieldSelected(self):
         registry = self._dummyRegistry()
@@ -117,9 +117,9 @@ class ConfigPpdbLoaderTestSuite(lsst.utils.tests.TestCase):
 
         config = TestConfig()
         config.field = "bar"
-        config.field["bar"] = self._dummyPpdbConfig()
+        config.field["bar"] = self._dummyApdbConfig()
         result = self.task.run(config)
-        self.assertIsInstance(result.ppdb, Ppdb)
+        self.assertIsInstance(result.apdb, Apdb)
 
     def testRegistryFieldMulti(self):
         registry = self._dummyRegistry()
@@ -129,68 +129,68 @@ class ConfigPpdbLoaderTestSuite(lsst.utils.tests.TestCase):
 
         config = TestConfig()
         config.field = {"bar", "foo"}
-        config.field["bar"] = self._dummyPpdbConfig()
+        config.field["bar"] = self._dummyApdbConfig()
         result = self.task.run(config)
-        self.assertIsInstance(result.ppdb, Ppdb)
+        self.assertIsInstance(result.apdb, Apdb)
 
     def testConfigField(self):
         class TestConfig(Config):
-            field = ConfigField(dtype=PpdbConfig,
-                                default=self._dummyPpdbConfig(), doc="")
+            field = ConfigField(dtype=ApdbConfig,
+                                default=self._dummyApdbConfig(), doc="")
 
         result = self.task.run(TestConfig())
-        self.assertIsInstance(result.ppdb, Ppdb)
+        self.assertIsInstance(result.apdb, Apdb)
 
     def testConfigurableField(self):
         class TestConfig(Config):
-            field = ConfigurableField(target=Ppdb, ConfigClass=PpdbConfig,
+            field = ConfigurableField(target=Apdb, ConfigClass=ApdbConfig,
                                       doc="")
 
         config = TestConfig()
-        config.field = self._dummyPpdbConfig()
+        config.field = self._dummyApdbConfig()
         self.assertIsInstance(config.field, ConfigurableInstance)
         result = self.task.run(config)
-        self.assertIsInstance(result.ppdb, Ppdb)
+        self.assertIsInstance(result.apdb, Apdb)
 
     def testConfigDictFieldUnSelected(self):
         class TestConfig(Config):
-            field = ConfigDictField(keytype=int, itemtype=PpdbConfig, doc="")
+            field = ConfigDictField(keytype=int, itemtype=ApdbConfig, doc="")
 
         result = self.task.run(TestConfig())
-        self.assertIsNone(result.ppdb)
+        self.assertIsNone(result.apdb)
 
     def testConfigDictFieldSelected(self):
         class TestConfig(Config):
-            field = ConfigDictField(keytype=int, itemtype=PpdbConfig, doc="")
+            field = ConfigDictField(keytype=int, itemtype=ApdbConfig, doc="")
 
         config = TestConfig()
-        config.field = {42: self._dummyPpdbConfig()}
+        config.field = {42: self._dummyApdbConfig()}
         result = self.task.run(config)
-        self.assertIsInstance(result.ppdb, Ppdb)
+        self.assertIsInstance(result.apdb, Apdb)
 
     def testSiblingConfigs(self):
         class TestConfig(Config):
             field1 = Field(dtype=int, doc="")
-            field2 = ConfigField(dtype=PpdbConfig,
-                                 default=self._dummyPpdbConfig(), doc="")
+            field2 = ConfigField(dtype=ApdbConfig,
+                                 default=self._dummyApdbConfig(), doc="")
             field3 = Field(dtype=str, doc="")
 
         result = self.task.run(TestConfig())
-        self.assertIsInstance(result.ppdb, Ppdb)
+        self.assertIsInstance(result.apdb, Apdb)
 
     def testNestedConfigs(self):
         class InnerConfig(Config):
-            field = ConfigurableField(target=Ppdb,
-                                      ConfigClass=PpdbConfig, doc="")
+            field = ConfigurableField(target=Apdb,
+                                      ConfigClass=ApdbConfig, doc="")
 
         class TestConfig(Config):
             field = ConfigField(dtype=InnerConfig, doc="")
 
         config = TestConfig()
-        config.field.field = self._dummyPpdbConfig()
+        config.field.field = self._dummyApdbConfig()
         self.assertIsInstance(config.field.field, ConfigurableInstance)
         result = self.task.run(config)
-        self.assertIsInstance(result.ppdb, Ppdb)
+        self.assertIsInstance(result.apdb, Apdb)
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
