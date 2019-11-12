@@ -142,7 +142,7 @@ class ConfigApdbLoader(Task):
 
         Parameters
         ----------
-        config : `lsst.pex.config.Config`
+        config : `lsst.pex.config.Config` or `None`
             A config that should contain a `lsst.dax.apdb.ApdbConfig`.
             Behavior is undefined if there is more than one such member.
 
@@ -268,9 +268,9 @@ class ApdbMetricTask(MetricTask):
         -----
         This implementation calls
         `~lsst.verify.tasks.ApdbMetricConfig.dbLoader` to acquire a database
-        handle, then passes it and the value of ``outputDataId`` to
-        `makeMeasurement`. The result of `makeMeasurement` is returned to
-        the caller.
+        handle (taking `None` if no input), then passes it and the value of
+        ``outputDataId`` to `makeMeasurement`. The result of `makeMeasurement`
+        is returned to the caller.
         """
         db = self.dbLoader.run(dbInfo).apdb
 
