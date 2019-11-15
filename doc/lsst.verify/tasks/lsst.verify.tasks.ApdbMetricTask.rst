@@ -18,7 +18,7 @@ Processing summary
 ``ApdbMetricTask`` runs this sequence of operations:
 
 #. Load the dataset indicated by :lsst-config-field:`~lsst.verify.tasks.apdbMetricTask.ApdbMetricConfig.dbInfo` (default: the top-level science task's config).
-#. Generate a `~lsst.dax.apdb.Apdb` object by calling the :lsst-config-field:`~lsst.verify.tasks.apdbMetricTask.ApdbMetricConfig.dbLoader` subtask (default: :lsst-task:`~lsst.verify.tasks.apdbMetricTask.ConfigApdbLoader`).
+#. Generate an `~lsst.dax.apdb.Apdb` object by calling the :lsst-config-field:`~lsst.verify.tasks.apdbMetricTask.ApdbMetricConfig.dbLoader` subtask (default: :lsst-task:`~lsst.verify.tasks.apdbMetricTask.ConfigApdbLoader`).
 #. Process the database by passing it to the customizable `~lsst.verify.tasks.apdbMetricTask.ApdbMetricTask.makeMeasurement` method, and return the `~lsst.verify.Measurement`.
 
 .. _lsst.verify.tasks.ApdbMetricTask-api:

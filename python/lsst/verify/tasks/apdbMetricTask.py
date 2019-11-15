@@ -49,7 +49,7 @@ class ConfigApdbLoader(Task):
         super().__init__(**kwargs)
 
     def _getApdb(self, config):
-        """Extract a Apdb object from an arbitrary task config.
+        """Extract an Apdb object from an arbitrary task config.
 
         Parameters
         ----------
@@ -95,7 +95,7 @@ class ConfigApdbLoader(Task):
         return None
 
     def _getApdbFromConfigurableField(self, configurable):
-        """Extract a Apdb object from a ConfigurableField.
+        """Extract an Apdb object from a ConfigurableField.
 
         Parameters
         ----------
@@ -117,7 +117,7 @@ class ConfigApdbLoader(Task):
             return self._getApdb(configurable.value)
 
     def _getApdbFromConfigIterable(self, configDict):
-        """Extract a Apdb object from an iterable of configs.
+        """Extract an Apdb object from an iterable of configs.
 
         Parameters
         ----------
@@ -164,7 +164,7 @@ class ApdbMetricConnections(
         defaultTemplates={"taskName": ""}):
     dbInfo = connectionTypes.Input(
         name="{taskName}_config",
-        doc="The dataset from which a APDB instance can be constructed by "
+        doc="The dataset from which an APDB instance can be constructed by "
             "`dbLoader`. By default this is assumed to be a top-level "
             "config, such as 'processCcd_config'.",
         storageClass="Config",
@@ -187,7 +187,7 @@ class ApdbMetricConfig(MetricTask.ConfigClass,
 
 
 class ApdbMetricTask(MetricTask):
-    """A base class for tasks that compute metrics from a alert production
+    """A base class for tasks that compute metrics from an alert production
     database.
 
     Parameters

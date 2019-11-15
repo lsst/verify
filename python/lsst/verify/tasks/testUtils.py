@@ -107,7 +107,7 @@ class ApdbMetricTestCase(MetricTaskTestCase):
 
     @classmethod
     def makeDbInfo(cls):
-        """Return an object that can be passed as input to a `ApdbMetricTask`.
+        """Return an object that can be passed as input to an `ApdbMetricTask`.
 
         This method is intended for generic tests that simply need to call
         ``run`` on some valid input. If a test depends on specific input, it
