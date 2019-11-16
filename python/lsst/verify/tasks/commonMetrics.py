@@ -138,7 +138,7 @@ class TimingMetricTask(MetadataMetricTask):
             else:
                 meas = Measurement(self.getOutputMetricName(self.config),
                                    totalTime * u.second)
-                meas.notes['estimator'] = 'pipe.base.timeMethod'
+                meas.notes["estimator"] = "pipe.base.timeMethod"
                 if timings["EndTimestamp"]:
                     meas.notes["end"] = timings["EndTimestamp"]
                 return meas
