@@ -31,7 +31,7 @@ import lsst.pipe.base as pipeBase
 class MetricComputationError(RuntimeError):
     """This class represents unresolvable errors in computing a metric.
 
-    `lsst.verify.gen2tasks.MetricTask` raises ``MetricComputationError``
+    `lsst.verify.tasks.MetricTask` raises ``MetricComputationError``
     instead of other data- or processing-related exceptions to let code that
     calls a mix of data processing and metric tasks distinguish between
     the two. Therefore, most ``MetricComputationError`` instances should be

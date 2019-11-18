@@ -70,7 +70,7 @@ class TimingMetricTask(MetadataMetricTask):
     args
     kwargs
         Constructor parameters are the same as for
-        `lsst.verify.gen2tasks.MetricTask`.
+        `lsst.verify.tasks.MetricTask`.
     """
 
     ConfigClass = TimingMetricConfig
@@ -159,7 +159,7 @@ class MemoryMetricTask(MetadataMetricTask):
     args
     kwargs
         Constructor parameters are the same as for
-        `lsst.verify.gen2tasks.MetricTask`.
+        `lsst.verify.tasks.MetricTask`.
     """
 
     ConfigClass = MemoryMetricConfig

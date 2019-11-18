@@ -29,7 +29,7 @@ from lsst.pipe.base import Task, Struct, PipelineTaskConnections, \
     connectionTypes
 from lsst.dax.ppdb import Ppdb, PpdbConfig
 
-from lsst.verify.gen2tasks import MetricTask
+from lsst.verify.tasks import MetricTask
 
 
 class ConfigPpdbLoader(Task):

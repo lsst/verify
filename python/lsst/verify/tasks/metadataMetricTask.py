@@ -25,8 +25,7 @@ __all__ = ["MetadataMetricTask", "MetadataMetricConfig",
 import abc
 
 from lsst.pipe.base import Struct, PipelineTaskConnections, connectionTypes
-from lsst.verify.gen2tasks import MetricTask
-from lsst.verify.tasks import MetricComputationError
+from lsst.verify.tasks import MetricTask, MetricComputationError
 
 
 class SingleMetadataMetricConnections(
