@@ -21,41 +21,48 @@
 
 __all__ = ["MetricTask"]
 
+
 import abc
+
+from deprecated.sphinx import deprecated
 
 import lsst.pipe.base as pipeBase
 
 
+# Duplicate original MetricTask to avoid a circular dependency on ..tasks
+# Docstring needs to have no leading whitespace for @deprecated to work
+@deprecated(
+    reason="Replaced by `lsst.verify.tasks.MetricTask`. "
+           "To be removed along with daf_persistence.",
+    category=FutureWarning)
 class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
     """A base class for tasks that compute one metric from input datasets.
 
-    Parameters
-    ----------
-    *args
-    **kwargs
-        Constructor parameters are the same as for
-        `lsst.pipe.base.PipelineTask`.
+Parameters
+----------
+*args
+**kwargs
+    Constructor parameters are the same as for
+    `lsst.pipe.base.PipelineTask`.
 
-    Notes
-    -----
-    In general, both the ``MetricTask``'s metric and its input data are
-    configurable. Metrics may be associated with a data ID at any level of
-    granularity, including repository-wide.
+Notes
+-----
+In general, both the ``MetricTask``'s metric and its input data are
+configurable. Metrics may be associated with a data ID at any level of
+granularity, including repository-wide.
 
-    Like `lsst.pipe.base.PipelineTask`, this class should be customized by
-    overriding `run` and by providing a `lsst.pipe.base.connectionTypes.Input`
-    for each parameter of `run`. For requirements that are specific to
-    ``MetricTask``, see `run`.
+Like `lsst.pipe.base.PipelineTask`, this class should be customized by
+overriding `run` and by providing a `lsst.pipe.base.connectionTypes.Input`
+for each parameter of `run`. For requirements that are specific to
+``MetricTask``, see `run`.
 
-    .. note::
-        The API is designed to make it easy to convert all ``MetricTasks`` to
-        `~lsst.pipe.base.PipelineTask` later, but this class is *not* a
-        `~lsst.pipe.base.PipelineTask` and does not work with activators,
-        quanta, or `lsst.daf.butler`.
+.. note::
+    The API is designed to make it easy to convert all ``MetricTasks`` to
+    `~lsst.pipe.base.PipelineTask` later, but this class is *not* a
+    `~lsst.pipe.base.PipelineTask` and does not work with activators,
+    quanta, or `lsst.daf.butler`.
     """
 
-    # TODO: create a specialized MetricTaskConfig once metrics have
-    # Butler datasets
     ConfigClass = pipeBase.PipelineTaskConfig
 
     def __init__(self, **kwargs):
