@@ -9,7 +9,7 @@ The class handles loading metadata and extracting the keys of interest, while su
 
 See :lsst-task:`~lsst.verify.tasks.MetadataMetricTask` for when the metadata and metric have the same granularity.
 
-``MultiMetadataMetricTask`` is currently a subclass of `lsst.verify.gen2tasks.MetricTask`.
+``MultiMetadataMetricTask`` is currently a subclass of `lsst.verify.tasks.MetricTask`.
 It is expected that ``MultiMetadataMetricTask`` can be migrated to the Gen 3 framework without affecting its subclasses.
 
 .. _lsst.verify.tasks.MultiMetadataMetricTask-summary:

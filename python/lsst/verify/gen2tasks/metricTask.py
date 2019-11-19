@@ -21,257 +21,45 @@
 
 __all__ = ["MetricTask"]
 
+
 import abc
 
-import lsst.pipe.base as pipeBase
+from deprecated.sphinx import deprecated
+
+# Avoid importing tasks, which causes circular dependency
+from ..tasks.metricTask import MetricTask as Gen3MetricTask
 
 
-class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
+# Docstring needs to have no leading whitespace for @deprecated to work
+@deprecated(
+    reason="Replaced by `lsst.verify.tasks.MetricTask`. "
+           "To be removed along with daf_persistence.",
+    category=FutureWarning)
+class MetricTask(Gen3MetricTask, metaclass=abc.ABCMeta):
     """A base class for tasks that compute one metric from input datasets.
 
-    Parameters
-    ----------
-    *args
-    **kwargs
-        Constructor parameters are the same as for
-        `lsst.pipe.base.PipelineTask`.
+Parameters
+----------
+*args
+**kwargs
+    Constructor parameters are the same as for
+    `lsst.pipe.base.PipelineTask`.
 
-    Notes
-    -----
-    In general, both the ``MetricTask``'s metric and its input data are
-    configurable. Metrics may be associated with a data ID at any level of
-    granularity, including repository-wide.
+Notes
+-----
+In general, both the ``MetricTask``'s metric and its input data are
+configurable. Metrics may be associated with a data ID at any level of
+granularity, including repository-wide.
 
-    Like `lsst.pipe.base.PipelineTask`, this class should be customized by
-    overriding `run` and by providing a `lsst.pipe.base.connectionTypes.Input`
-    for each parameter of `run`. For requirements that are specific to
-    ``MetricTask``, see `run`.
+Like `lsst.pipe.base.PipelineTask`, this class should be customized by
+overriding `run` and by providing a `lsst.pipe.base.connectionTypes.Input`
+for each parameter of `run`. For requirements that are specific to
+``MetricTask``, see `run`.
 
-    .. note::
-        The API is designed to make it easy to convert all ``MetricTasks`` to
-        `~lsst.pipe.base.PipelineTask` later, but this class is *not* a
-        `~lsst.pipe.base.PipelineTask` and does not work with activators,
-        quanta, or `lsst.daf.butler`.
-    """
-
-    # TODO: create a specialized MetricTaskConfig once metrics have
-    # Butler datasets
-    ConfigClass = pipeBase.PipelineTaskConfig
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    @abc.abstractmethod
-    def run(self, **kwargs):
-        """Run the MetricTask on in-memory data.
-
-        Parameters
-        ----------
-        **kwargs
-            Keyword arguments matching the inputs given in the class config;
-            see `lsst.pipe.base.PipelineTask.run` for more details.
-
-        Returns
-        -------
-        struct : `lsst.pipe.base.Struct`
-            A `~lsst.pipe.base.Struct` containing at least the
-            following component:
-
-            - ``measurement``: the value of the metric identified by
-              `getOutputMetricName` (`lsst.verify.Measurement` or `None`).
-              This method is not responsible for adding mandatory metadata
-              (e.g., the data ID); this is handled by the caller.
-
-        Raises
-        ------
-        lsst.verify.tasks.MetricComputationError
-            Raised if an algorithmic or system error prevents calculation
-            of the metric. Examples include corrupted input data or
-            unavoidable exceptions raised by analysis code. The
-            `~lsst.verify.tasks.MetricComputationError` should be chained to a
-            more specific exception describing the root cause.
-
-            Not having enough data for a metric to be applicable is not an
-            error, and should not trigger this exception.
-
-        Notes
-        -----
-        All input data must be treated as optional. This maximizes the
-        ``MetricTask``'s usefulness for incomplete pipeline runs or runs with
-        optional processing steps. If a metric cannot be calculated because
-        the necessary inputs are missing, the ``MetricTask`` must return `None`
-        in place of the measurement.
-        """
-
-    def adaptArgsAndRun(self, inputData, inputDataIds, outputDataId):
-        """A wrapper around `run` used by
-        `~lsst.verify.gen2tasks.MetricsControllerTask`.
-
-        Task developers should not need to call or override this method.
-
-        Parameters
-        ----------
-        inputData : `dict` from `str` to any
-            Dictionary whose keys are the names of input parameters and values
-            are Python-domain data objects (or lists of objects) retrieved
-            from data butler. Input objects may be `None` to represent
-            missing data.
-        inputDataIds : `dict` from `str` to `list` of dataId
-            Dictionary whose keys are the names of input parameters and values
-            are data IDs (or lists of data IDs) that the task consumes for
-            corresponding dataset type. Data IDs are guaranteed to match data
-            objects in ``inputData``.
-        outputDataId : `dict` from `str` to dataId
-            Dictionary containing a single key, ``"measurement"``, which maps
-            to a single data ID for the measurement. The data ID must have the
-            same granularity as the metric.
-
-        Returns
-        -------
-        struct : `lsst.pipe.base.Struct`
-            A `~lsst.pipe.base.Struct` containing at least the
-            following component:
-
-            - ``measurement``: the value of the metric identified by
-              `getOutputMetricName`, computed from ``inputData``
-              (`lsst.verify.Measurement` or `None`). The measurement is
-              guaranteed to contain not only the value of the metric, but also
-              any mandatory supplementary information.
-
-        Raises
-        ------
-        lsst.verify.tasks.MetricComputationError
-            Raised if an algorithmic or system error prevents calculation
-            of the metric. Examples include corrupted input data or
-            unavoidable exceptions raised by analysis code. The
-            `~lsst.verify.tasks.MetricComputationError` should be chained to a
-            more specific exception describing the root cause.
-
-            Not having enough data for a metric to be applicable is not an
-            error, and should not trigger this exception.
-
-        Notes
-        -----
-        This implementation calls `run` on the contents of ``inputData``,
-        followed by calling `addStandardMetadata` on the result before
-        returning it.
-
-        Examples
-        --------
-        Consider a metric that characterizes PSF variations across the entire
-        field of view, given processed images. Then, if `run` has the
-        signature ``run(images)``:
-
-        .. code-block:: py
-
-            inputData = {'images': [image1, image2, ...]}
-            inputDataIds = {'images': [{'visit': 42, 'ccd': 1},
-                                       {'visit': 42, 'ccd': 2},
-                                       ...]}
-            outputDataId = {'measurement': {'visit': 42}}
-            result = task.adaptArgsAndRun(
-                inputData, inputDataIds, outputDataId)
-        """
-        result = self.run(**inputData)
-        if result.measurement is not None:
-            self.addStandardMetadata(result.measurement,
-                                     outputDataId["measurement"])
-        return result
-
-    @classmethod
-    def getInputDatasetTypes(cls, config):
-        """Return input dataset types for this task.
-
-        Parameters
-        ----------
-        config : ``cls.ConfigClass``
-            Configuration for this task.
-
-        Returns
-        -------
-        datasets : `dict` from `str` to `str`
-            Dictionary where the key is the name of the input dataset (must
-            match a parameter to `run`) and the value is the name of its
-            Butler dataset type.
-
-        Notes
-        -----
-        The default implementation extracts a
-        `~lsst.pipe.base.PipelineTaskConnections` object from ``config``.
-        """
-        # Get connections from config for backward-compatibility
-        connections = config.connections.ConnectionsClass(config=config)
-        return {name: getattr(connections, name).name
-                for name in connections.inputs}
-
-    @classmethod
-    def areInputDatasetsScalar(cls, config):
-        """Return input dataset multiplicity.
-
-        Parameters
-        ----------
-        config : ``cls.ConfigClass``
-            Configuration for this task.
-
-        Returns
-        -------
-        datasets : `Dict` [`str`, `bool`]
-            Dictionary where the key is the name of the input dataset (must
-            match a parameter to `run`) and the value is `True` if `run` takes
-            only one object and `False` if it takes a list.
-
-        Notes
-        -----
-        The default implementation extracts a
-        `~lsst.pipe.base.PipelineTaskConnections` object from ``config``.
-        """
-        connections = config.connections.ConnectionsClass(config=config)
-        return {name: not getattr(connections, name).multiple
-                for name in connections.inputs}
-
-    @classmethod
-    @abc.abstractmethod
-    def getOutputMetricName(cls, config):
-        """Identify the metric calculated by this ``MetricTask``.
-
-        Parameters
-        ----------
-        config : ``cls.ConfigClass``
-            Configuration for this ``MetricTask``.
-
-        Returns
-        -------
-        metric : `lsst.verify.Name`
-            The name of the metric computed by objects of this class when
-            configured with ``config``.
-        """
-
-    def addStandardMetadata(self, measurement, outputDataId):
-        """Add data ID-specific metadata required for all metrics.
-
-        This method currently does not add any metadata, but may do so
-        in the future.
-
-        Parameters
-        ----------
-        measurement : `lsst.verify.Measurement`
-            The `~lsst.verify.Measurement` that the metadata are added to.
-        outputDataId : ``dataId``
-            The data ID to which the measurement applies, at the appropriate
-            level of granularity.
-
-        Notes
-        -----
-        This method should not be overridden by subclasses.
-
-        This method is not responsible for shared metadata like the execution
-        environment (which should be added by this ``MetricTask``'s caller),
-        nor for metadata specific to a particular metric (which should be
-        added when the metric is calculated).
-
-        .. warning::
-            This method's signature will change whenever additional data needs
-            to be provided. This is a deliberate restriction to ensure that all
-            subclasses pass in the new data as well.
-        """
-        pass
+.. note::
+    The API is designed to make it easy to convert all ``MetricTasks`` to
+    `~lsst.pipe.base.PipelineTask` later, but this class is *not* a
+    `~lsst.pipe.base.PipelineTask` and does not work with activators,
+    quanta, or `lsst.daf.butler`.
+"""
+    pass

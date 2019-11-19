@@ -7,7 +7,7 @@ PpdbMetricTask
 ``PpdbMetricTask`` is a base class for generating `~lsst.verify.Measurement`\ s from a prompt products database.
 The class handles loading an appropriately configured database, while subclasses are responsible for creating the `~lsst.verify.Measurement` using the database API.
 
-``PpdbMetricTask`` is currently a subclass of `lsst.verify.gen2tasks.MetricTask`.
+``PpdbMetricTask`` is currently a subclass of `lsst.verify.tasks.MetricTask`.
 It is expected that ``PpdbMetricTask`` can be migrated to the Gen 3 framework without affecting its subclasses.
 
 .. _lsst.verify.tasks.PpdbMetricTask-summary:

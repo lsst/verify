@@ -23,8 +23,9 @@ import unittest
 
 import lsst.utils.tests
 
-from lsst.verify.gen2tasks import MetricTask, register, registerMultiple
+from lsst.verify.gen2tasks import register, registerMultiple
 from lsst.verify.gen2tasks.metricRegistry import MetricRegistry
+from lsst.verify.tasks import MetricTask
 
 
 class MetricRegistryTestSuite(lsst.utils.tests.TestCase):

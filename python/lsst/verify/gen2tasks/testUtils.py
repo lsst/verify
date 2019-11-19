@@ -34,7 +34,7 @@ from lsst.verify import Measurement
 
 
 class MetricTaskTestCase(lsst.utils.tests.TestCase, metaclass=abc.ABCMeta):
-    """Unit test base class for tests of `gen2tasks.MetricTask`.
+    """Unit test base class for tests of `tasks.MetricTask`.
 
     This class provides tests of the generic ``MetricTask`` API. Subclasses
     must override `taskFactory`, and may add extra tests for class-specific
@@ -50,19 +50,19 @@ class MetricTaskTestCase(lsst.utils.tests.TestCase, metaclass=abc.ABCMeta):
 
         Returns
         -------
-        task : `lsst.verify.gen2tasks.MetricTask`
+        task : `lsst.verify.tasks.MetricTask`
             A new MetricTask object to test.
         """
 
     task = None
     """The ``MetricTask`` being tested by this object
-    (`gen2tasks.MetricTask`).
+    (`tasks.MetricTask`).
 
     This attribute is initialized automatically.
     """
 
     taskClass = None
-    """The type of `task` (`gen2tasks.MetricTask`-type).
+    """The type of `task` (`tasks.MetricTask`-type).
 
     This attribute is initialized automatically.
     """

@@ -6,9 +6,9 @@
 MetricsControllerTask
 #####################
 
-``MetricsControllerTask`` runs collections of :lsst-task:`lsst.verify.gen2tasks.MetricTask`, and stores the resulting `~lsst.verify.Measurement` objects using the `~lsst.verify.Job` persistence framework.
+``MetricsControllerTask`` runs collections of :lsst-task:`lsst.verify.tasks.MetricTask`, and stores the resulting `~lsst.verify.Measurement` objects using the `~lsst.verify.Job` persistence framework.
 It is a stand-in for functionality provided by the Gen 3 Tasks framework.
-The datasets that ``MetricsControllerTask`` consumes depend on the :lsst-task:`~lsst.verify.gen2tasks.MetricTask`\ s to be run, and are handled automatically.
+The datasets that ``MetricsControllerTask`` consumes depend on the :lsst-task:`~lsst.verify.tasks.MetricTask`\ s to be run, and are handled automatically.
 
 ``MetricsControllerTask`` is not a command-line task, but may be called from within both task- and non-task pipelines.
 
@@ -18,7 +18,7 @@ Processing summary
 ==================
 
 Unlike most tasks, ``MetricsControllerTask`` has a `~MetricsControllerTask.runDataRefs` method that takes a list of data references.
-``MetricsControllerTask`` calls every :lsst-task:`~lsst.verify.gen2tasks.MetricTask` in :lsst-config-field:`~lsst.verify.gen2tasks.metricsControllerTask.MetricsControllerConfig.measurers` on every data reference, loading any datasets necessary.
+``MetricsControllerTask`` calls every :lsst-task:`~lsst.verify.tasks.MetricTask` in :lsst-config-field:`~lsst.verify.gen2tasks.metricsControllerTask.MetricsControllerConfig.measurers` on every data reference, loading any datasets necessary.
 It produces one `~lsst.verify.Job` object for each input data reference, and writes them to disk.
 
 .. _lsst.verify.gen2tasks.MetricsControllerTask-api:
@@ -49,10 +49,10 @@ Configuration fields
 In Depth
 ========
 
-Because ``MetricsControllerTask`` applies every :lsst-task:`~lsst.verify.gen2tasks.MetricTask` to every input data reference indiscriminately, it may not give good results with metrics or data references having a mixture of granularities (e.g., CCD-level, visit-level, dataset-level).
+Because ``MetricsControllerTask`` applies every :lsst-task:`~lsst.verify.tasks.MetricTask` to every input data reference indiscriminately, it may not give good results with metrics or data references having a mixture of granularities (e.g., CCD-level, visit-level, dataset-level).
 The recommended way around this limitation is to create multiple ``MetricsControllerTask`` objects, and configure each one for metrics of a single granularity.
 
-Each :lsst-task:`~lsst.verify.gen2tasks.MetricTask` in a ``MetricsControllerTask`` must measure a different metric, or they will overwrite each others' values.
+Each :lsst-task:`~lsst.verify.tasks.MetricTask` in a ``MetricsControllerTask`` must measure a different metric, or they will overwrite each others' values.
 
 .. _lsst.verify.gen2tasks.MetricsControllerTask-examples:
 
@@ -64,7 +64,8 @@ Typically, a user of ``MetricsControllerTask`` will configure it with tasks that
 .. code-block:: py
 
    from lsst.verify.gen2tasks import register, \
-       MetricTask, MetricsControllerTask
+       MetricsControllerTask
+   from lsst.verify.tasks import MetricTask
 
 
    @register("ultimate")
@@ -89,11 +90,12 @@ Typically, a user of ``MetricsControllerTask`` will configure it with tasks that
    struct = task.runDataRefs(datarefs)
    assert len(struct.jobs) == len(datarefs)
 
-A :lsst-task:`~lsst.verify.gen2tasks.MetricTask` must have the `registerMultiple` decorator to be used multiple times:
+A :lsst-task:`~lsst.verify.tasks.MetricTask` must have the `registerMultiple` decorator to be used multiple times:
 
 .. code-block:: py
 
-   from lsst.verify.gen2tasks import registerMultiple, MetricTask, MetricsControllerTask
+   from lsst.verify.gen2tasks import registerMultiple, MetricsControllerTask
+   from lsst.verify.tasks import MetricTask
 
    @registerMultiple("common")
    class CommonMetric(MetricTask):
