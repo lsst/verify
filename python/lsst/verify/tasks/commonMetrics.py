@@ -98,7 +98,9 @@ class TimingMetricTask(MetadataMetricTask):
         """
         keyBase = config.target
         return {"StartTime": keyBase + "StartCpuTime",
-                "EndTime": keyBase + "EndCpuTime"}
+                "EndTime": keyBase + "EndCpuTime",
+                "EndTimestamp": keyBase + "EndUtc",
+                }
 
     def makeMeasurement(self, timings):
         """Compute a wall-clock measurement from metadata provided by
@@ -114,6 +116,9 @@ class TimingMetricTask(MetadataMetricTask):
                  The time the target method started (`float` or `None`).
              ``"EndTime"``
                  The time the target method ended (`float` or `None`).
+             ``"EndTimestamp"``
+                 The timestamp, in an ISO 8601-compliant format
+                 (`str` or `None`).
 
         Returns
         -------
@@ -133,7 +138,9 @@ class TimingMetricTask(MetadataMetricTask):
             else:
                 meas = Measurement(self.getOutputMetricName(self.config),
                                    totalTime * u.second)
-                meas.notes['estimator'] = 'pipe.base.timeMethod'
+                meas.notes["estimator"] = "pipe.base.timeMethod"
+                if timings["EndTimestamp"]:
+                    meas.notes["end"] = timings["EndTimestamp"]
                 return meas
         else:
             self.log.info("Nothing to do: no timing information for %s found.",
