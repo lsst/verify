@@ -7,7 +7,7 @@ setupRequired(utils)
 setupRequired(log)
 setupRequired(pex_config)
 setupRequired(pipe_base)
-setupRequired(dax_ppdb)
+setupRequired(dax_apdb)
 
 # verify_metrics is the default metrics repo and is used in tests
 setupRequired(verify_metrics)

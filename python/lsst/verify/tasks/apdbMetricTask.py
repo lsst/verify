@@ -19,7 +19,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["PpdbMetricTask", "PpdbMetricConfig", "ConfigPpdbLoader"]
+__all__ = ["ApdbMetricTask", "ApdbMetricConfig", "ConfigApdbLoader"]
 
 import abc
 
@@ -27,14 +27,14 @@ from lsst.pex.config import Config, ConfigurableField, ConfigurableInstance, \
     ConfigDictField, ConfigChoiceField, FieldValidationError
 from lsst.pipe.base import Task, Struct, PipelineTaskConnections, \
     connectionTypes
-from lsst.dax.ppdb import Ppdb, PpdbConfig
+from lsst.dax.apdb import Apdb, ApdbConfig
 
 from lsst.verify.tasks import MetricTask
 
 
-class ConfigPpdbLoader(Task):
+class ConfigApdbLoader(Task):
     """A Task that takes a science task config and returns the corresponding
-    Ppdb object.
+    Apdb object.
 
     Parameters
     ----------
@@ -42,35 +42,35 @@ class ConfigPpdbLoader(Task):
     **kwargs
         Constructor parameters are the same as for `lsst.pipe.base.Task`.
     """
-    _DefaultName = "configPpdb"
+    _DefaultName = "configApdb"
     ConfigClass = Config
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def _getPpdb(self, config):
-        """Extract a Ppdb object from an arbitrary task config.
+    def _getApdb(self, config):
+        """Extract an Apdb object from an arbitrary task config.
 
         Parameters
         ----------
         config : `lsst.pex.config.Config` or `None`
-            A config that may contain a `lsst.dax.ppdb.PpdbConfig`.
+            A config that may contain a `lsst.dax.apdb.ApdbConfig`.
             Behavior is undefined if there is more than one such member.
 
         Returns
         -------
-        ppdb : `lsst.dax.ppdb.Ppdb`-like or `None`
-            A `lsst.dax.ppdb.Ppdb` object or a drop-in replacement, or `None`
-            if no `lsst.dax.ppdb.PpdbConfig` is present in ``config``.
+        apdb : `lsst.dax.apdb.Apdb`-like or `None`
+            A `lsst.dax.apdb.Apdb` object or a drop-in replacement, or `None`
+            if no `lsst.dax.apdb.ApdbConfig` is present in ``config``.
         """
         if config is None:
             return None
-        if isinstance(config, PpdbConfig):
-            return Ppdb(config)
+        if isinstance(config, ApdbConfig):
+            return Apdb(config)
 
         for field in config.values():
             if isinstance(field, ConfigurableInstance):
-                result = self._getPpdbFromConfigurableField(field)
+                result = self._getApdbFromConfigurableField(field)
                 if result:
                     return result
             elif isinstance(field, ConfigChoiceField.instanceDictClass):
@@ -78,61 +78,61 @@ class ConfigPpdbLoader(Task):
                     # can't test with hasattr because of non-standard getattr
                     field.names
                 except FieldValidationError:
-                    result = self._getPpdb(field.active)
+                    result = self._getApdb(field.active)
                 else:
-                    result = self._getPpdbFromConfigIterable(field.active)
+                    result = self._getApdbFromConfigIterable(field.active)
                 if result:
                     return result
             elif isinstance(field, ConfigDictField.DictClass):
-                result = self._getPpdbFromConfigIterable(field.values())
+                result = self._getApdbFromConfigIterable(field.values())
                 if result:
                     return result
             elif isinstance(field, Config):
                 # Can't test for `ConfigField` more directly than this
-                result = self._getPpdb(field)
+                result = self._getApdb(field)
                 if result:
                     return result
         return None
 
-    def _getPpdbFromConfigurableField(self, configurable):
-        """Extract a Ppdb object from a ConfigurableField.
+    def _getApdbFromConfigurableField(self, configurable):
+        """Extract an Apdb object from a ConfigurableField.
 
         Parameters
         ----------
         configurable : `lsst.pex.config.ConfigurableInstance` or `None`
-            A configurable that may contain a `lsst.dax.ppdb.PpdbConfig`.
+            A configurable that may contain a `lsst.dax.apdb.ApdbConfig`.
 
         Returns
         -------
-        ppdb : `lsst.dax.ppdb.Ppdb`-like or `None`
-            A `lsst.dax.ppdb.Ppdb` object or a drop-in replacement, if a
+        apdb : `lsst.dax.apdb.Apdb`-like or `None`
+            A `lsst.dax.apdb.Apdb` object or a drop-in replacement, if a
             suitable config exists.
         """
         if configurable is None:
             return None
 
-        if configurable.ConfigClass == PpdbConfig:
+        if configurable.ConfigClass == ApdbConfig:
             return configurable.apply()
         else:
-            return self._getPpdb(configurable.value)
+            return self._getApdb(configurable.value)
 
-    def _getPpdbFromConfigIterable(self, configDict):
-        """Extract a Ppdb object from an iterable of configs.
+    def _getApdbFromConfigIterable(self, configDict):
+        """Extract an Apdb object from an iterable of configs.
 
         Parameters
         ----------
         configDict: iterable of `lsst.pex.config.Config` or `None`
-            A config iterable that may contain a `lsst.dax.ppdb.PpdbConfig`.
+            A config iterable that may contain a `lsst.dax.apdb.ApdbConfig`.
 
         Returns
         -------
-        ppdb : `lsst.dax.ppdb.Ppdb`-like or `None`
-            A `lsst.dax.ppdb.Ppdb` object or a drop-in replacement, if a
+        apdb : `lsst.dax.apdb.Apdb`-like or `None`
+            A `lsst.dax.apdb.Apdb` object or a drop-in replacement, if a
             suitable config exists.
         """
         if configDict:
             for config in configDict:
-                result = self._getPpdb(config)
+                result = self._getApdb(config)
                 if result:
                     return result
         return None
@@ -143,7 +143,7 @@ class ConfigPpdbLoader(Task):
         Parameters
         ----------
         config : `lsst.pex.config.Config`
-            A config that should contain a `lsst.dax.ppdb.PpdbConfig`.
+            A config that should contain a `lsst.dax.apdb.ApdbConfig`.
             Behavior is undefined if there is more than one such member.
 
         Returns
@@ -151,20 +151,20 @@ class ConfigPpdbLoader(Task):
         result : `lsst.pipe.base.Struct`
             Result struct with components:
 
-            ``ppdb``
+            ``apdb``
                 A database configured the same way as in ``config``, if one
-                exists (`lsst.dax.ppdb.Ppdb` or `None`).
+                exists (`lsst.dax.apdb.Apdb` or `None`).
         """
-        return Struct(ppdb=self._getPpdb(config))
+        return Struct(apdb=self._getApdb(config))
 
 
-class PpdbMetricConnections(
+class ApdbMetricConnections(
         PipelineTaskConnections,
         dimensions=set(),
         defaultTemplates={"taskName": ""}):
     dbInfo = connectionTypes.Input(
         name="{taskName}_config",
-        doc="The dataset from which a PPDB instance can be constructed by "
+        doc="The dataset from which an APDB instance can be constructed by "
             "`dbLoader`. By default this is assumed to be a top-level "
             "config, such as 'processCcd_config'.",
         storageClass="Config",
@@ -174,20 +174,20 @@ class PpdbMetricConnections(
     )
 
 
-class PpdbMetricConfig(MetricTask.ConfigClass,
-                       pipelineConnections=PpdbMetricConnections):
-    """A base class for PPDB metric task configs.
+class ApdbMetricConfig(MetricTask.ConfigClass,
+                       pipelineConnections=ApdbMetricConnections):
+    """A base class for APDB metric task configs.
     """
     dbLoader = ConfigurableField(
-        target=ConfigPpdbLoader,
+        target=ConfigApdbLoader,
         doc="Task for loading a database from `dbInfo`. Its run method must "
         "take the dataset provided by `dbInfo` and return a Struct with a "
-        "'ppdb' member."
+        "'apdb' member."
     )
 
 
-class PpdbMetricTask(MetricTask):
-    """A base class for tasks that compute metrics from a prompt products
+class ApdbMetricTask(MetricTask):
+    """A base class for tasks that compute metrics from an alert production
     database.
 
     Parameters
@@ -207,7 +207,7 @@ class PpdbMetricTask(MetricTask):
     # implementation details of MetricTask can leak into
     # application-specific code.
 
-    ConfigClass = PpdbMetricConfig
+    ConfigClass = ApdbMetricConfig
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -220,7 +220,7 @@ class PpdbMetricTask(MetricTask):
 
         Parameters
         ----------
-        dbHandle : `lsst.dax.ppdb.Ppdb`
+        dbHandle : `lsst.dax.apdb.Apdb`
             A database instance.
         outputDataId : any data ID type
             The subset of the database to which this measurement applies.
@@ -267,12 +267,12 @@ class PpdbMetricTask(MetricTask):
         Notes
         -----
         This implementation calls
-        `~lsst.verify.tasks.PpdbMetricConfig.dbLoader` to acquire a database
+        `~lsst.verify.tasks.ApdbMetricConfig.dbLoader` to acquire a database
         handle, then passes it and the value of ``outputDataId`` to
         `makeMeasurement`. The result of `makeMeasurement` is returned to
         the caller.
         """
-        db = self.dbLoader.run(dbInfo).ppdb
+        db = self.dbLoader.run(dbInfo).apdb
 
         if db is not None:
             measurement = self.makeMeasurement(db, outputDataId)

@@ -19,14 +19,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["MetadataMetricTestCase", "PpdbMetricTestCase"]
+__all__ = ["MetadataMetricTestCase", "ApdbMetricTestCase"]
 
 import unittest.mock
 from unittest.mock import patch
 
 from lsst.pex.config import Config, ConfigField
 from lsst.daf.base import PropertySet
-from lsst.dax.ppdb import PpdbConfig
+from lsst.dax.apdb import ApdbConfig
 
 from lsst.verify.gen2tasks.testUtils import MetricTaskTestCase
 from lsst.verify.tasks import MetricComputationError
@@ -94,8 +94,8 @@ class MetadataMetricTestCase(MetricTaskTestCase):
                     self.task.run([None])
 
 
-class PpdbMetricTestCase(MetricTaskTestCase):
-    """Unit test base class for tests of `PpdbMetricTask`.
+class ApdbMetricTestCase(MetricTaskTestCase):
+    """Unit test base class for tests of `ApdbMetricTask`.
 
     Notes
     -----
@@ -107,18 +107,18 @@ class PpdbMetricTestCase(MetricTaskTestCase):
 
     @classmethod
     def makeDbInfo(cls):
-        """Return an object that can be passed as input to a `PpdbMetricTask`.
+        """Return an object that can be passed as input to an `ApdbMetricTask`.
 
         This method is intended for generic tests that simply need to call
         ``run`` on some valid input. If a test depends on specific input, it
         should create that input directly.
 
         The default implementation creates a `~lsst.pex.config.Config` that
-        will be accepted by `~lsst.verify.tasks.ConfigPpdbLoader`. Test suites
+        will be accepted by `~lsst.verify.tasks.ConfigApdbLoader`. Test suites
         that use a different loader should override this method.
         """
         class DummyConfig(Config):
-            ppdb = ConfigField(dtype=PpdbConfig, doc="Mandatory field")
+            apdb = ConfigField(dtype=ApdbConfig, doc="Mandatory field")
 
         return DummyConfig()
 

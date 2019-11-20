@@ -21,5 +21,5 @@
 
 from .metricTask import *
 from .metadataMetricTask import *
-from .ppdbMetricTask import *
+from .apdbMetricTask import *
 from .commonMetrics import *
