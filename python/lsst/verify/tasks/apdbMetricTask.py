@@ -19,7 +19,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["ApdbMetricTask", "ApdbMetricConfig", "ConfigApdbLoader"]
+__all__ = ["ApdbMetricTask", "ApdbMetricConfig", "ConfigApdbLoader",
+           "DirectApdbLoader"]
 
 import abc
 
@@ -142,7 +143,7 @@ class ConfigApdbLoader(Task):
 
         Parameters
         ----------
-        config : `lsst.pex.config.Config`
+        config : `lsst.pex.config.Config` or `None`
             A config that should contain a `lsst.dax.apdb.ApdbConfig`.
             Behavior is undefined if there is more than one such member.
 
@@ -158,19 +159,54 @@ class ConfigApdbLoader(Task):
         return Struct(apdb=self._getApdb(config))
 
 
+class DirectApdbLoader(Task):
+    """A Task that takes a Apdb config and returns the corresponding
+    Apdb object.
+
+    Parameters
+    ----------
+    *args
+    **kwargs
+        Constructor parameters are the same as for `lsst.pipe.base.Task`.
+    """
+
+    _DefaultName = "directApdb"
+    ConfigClass = Config
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def run(self, config):
+        """Create a database from a config.
+
+        Parameters
+        ----------
+        config : `lsst.dax.apdb.ApdbConfig` or `None`
+            A config for the database connection.
+
+        Returns
+        -------
+        result : `lsst.pipe.base.Struct`
+            Result struct with components:
+
+            ``apdb``
+                A database configured the same way as in ``config``.
+        """
+        return Struct(apdb=(Apdb(config) if config else None))
+
+
 class ApdbMetricConnections(
         PipelineTaskConnections,
-        dimensions=set(),
-        defaultTemplates={"taskName": ""}):
+        dimensions={"instrument"},
+):
     dbInfo = connectionTypes.Input(
-        name="{taskName}_config",
+        name="apdb_marker",
         doc="The dataset from which an APDB instance can be constructed by "
-            "`dbLoader`. By default this is assumed to be a top-level "
-            "config, such as 'processCcd_config'.",
+            "`dbLoader`. By default this is assumed to be a marker produced "
+            "by AP processing.",
         storageClass="Config",
-        # One config for entire CmdLineTask run
-        multiple=False,
-        dimensions=set(),
+        multiple=True,
+        dimensions={"instrument", "visit", "detector"},
     )
 
 
@@ -179,10 +215,10 @@ class ApdbMetricConfig(MetricTask.ConfigClass,
     """A base class for APDB metric task configs.
     """
     dbLoader = ConfigurableField(
-        target=ConfigApdbLoader,
+        target=DirectApdbLoader,
         doc="Task for loading a database from `dbInfo`. Its run method must "
-        "take the dataset provided by `dbInfo` and return a Struct with a "
-        "'apdb' member."
+        "take one object of the dataset type indicated by `dbInfo` and return "
+        "a Struct with an 'apdb' member."
     )
 
 
@@ -243,9 +279,11 @@ class ApdbMetricTask(MetricTask):
 
         Parameters
         ----------
-        dbInfo
-            The dataset (of the type indicated by the config) from
-            which to load the database.
+        dbInfo : `list`
+            The datasets (of the type indicated by the config) from
+            which to load the database. If more than one dataset is provided
+            (as may be the case if DB writes are fine-grained), all are
+            assumed identical.
         outputDataId: any data ID type, optional
             The output data ID for the metric value. Defaults to the empty ID,
             representing a value that covers the entire dataset.
@@ -268,11 +306,11 @@ class ApdbMetricTask(MetricTask):
         -----
         This implementation calls
         `~lsst.verify.tasks.ApdbMetricConfig.dbLoader` to acquire a database
-        handle, then passes it and the value of ``outputDataId`` to
-        `makeMeasurement`. The result of `makeMeasurement` is returned to
-        the caller.
+        handle (taking `None` if no input), then passes it and the value of
+        ``outputDataId`` to `makeMeasurement`. The result of `makeMeasurement`
+        is returned to the caller.
         """
-        db = self.dbLoader.run(dbInfo).apdb
+        db = self.dbLoader.run(dbInfo[0] if dbInfo else None).apdb
 
         if db is not None:
             measurement = self.makeMeasurement(db, outputDataId)
