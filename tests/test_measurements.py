@@ -22,6 +22,7 @@
 #
 
 import unittest
+import yaml
 
 import astropy.units as u
 from astropy.tests.helper import quantity_allclose
@@ -217,6 +218,23 @@ class MeasurementTestCase(TestCase):
         value = 1235 * u.mag
         m = Measurement(metric, value)
         self.assertEqual(str(m), "test.cmodel_mag: 1235.0 mag")
+
+    def _check_yaml_round_trip(self, old_measurement):
+        persisted = yaml.dump(old_measurement)
+        new_measurement = yaml.safe_load(persisted)
+
+        self.assertEqual(old_measurement, new_measurement)
+        # These fields don't participate in Measurement equality
+        self.assertEqual(old_measurement.identifier,
+                         new_measurement.identifier)
+
+    def test_yamlpersist_basic(self):
+        measurement = Measurement('validate_drp.PA1', 0.002 * u.mag)
+        self._check_yaml_round_trip(measurement)
+
+    def test_yamlpersist_complex(self):
+        measurement = Measurement(self.pa1, 5. * u.mmag)
+        self._check_yaml_round_trip(measurement)
 
 
 if __name__ == "__main__":
