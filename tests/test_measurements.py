@@ -121,6 +121,7 @@ class MeasurementTestCase(TestCase):
         # Job object.
         new_measurement.notes.update(measurement.notes)
         self.assertEqual(measurement, new_measurement)
+        self.assertEqual(measurement.identifier, new_measurement.identifier)
         self.assertIn('Blob1', measurement.blobs)
         self.assertIn('Blob2', measurement.blobs)
 
@@ -139,6 +140,7 @@ class MeasurementTestCase(TestCase):
 
         new_measurement = Measurement.deserialize(**json_doc)
         self.assertEqual(measurement, new_measurement)
+        self.assertEqual(measurement.identifier, new_measurement.identifier)
 
     def test_PA1_deferred_metric(self):
         """Test a measurement when the Metric instance is added later."""
@@ -187,6 +189,7 @@ class MeasurementTestCase(TestCase):
         new_measurement = Measurement.deserialize(blobs=blobs, **json_doc)
         self.assertIn('extra1', new_measurement.extras)
         self.assertEqual(measurement, new_measurement)
+        self.assertEqual(measurement.identifier, new_measurement.identifier)
 
     def test_deferred_extras(self):
         """Test adding extras to an existing measurement."""

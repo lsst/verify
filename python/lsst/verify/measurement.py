@@ -368,7 +368,7 @@ class Measurement(JsonSerializationMixin):
         _quantity = u.Quantity(value, u.Unit(unit))
 
         instance = cls(metric, quantity=_quantity, blobs=_blobs)
-        instance._identifer = identifier  # re-wire id from serialization
+        instance._id = identifier  # re-wire id from serialization
         return instance
 
     def __eq__(self, other):
