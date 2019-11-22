@@ -89,17 +89,22 @@ def measurement_representer(dumper, measurement):
          "identifier": measurement.identifier,
          "value": normalized_value,
          "unit": normalized_unit_str,
+         "notes": dict(measurement.notes),
          },
     )
 
 
 # Based on Measurement.deserialize
 def measurement_constructor(loader, node):
-    state = loader.construct_mapping(node)
+    state = loader.construct_mapping(node, deep=True)
 
     quantity = u.Quantity(state["value"], u.Unit(state["unit"]))
 
-    instance = Measurement(state["metric"], quantity=quantity)
+    instance = Measurement(
+        state["metric"],
+        quantity=quantity,
+        notes=state["notes"],
+    )
     instance._id = state["identifier"]  # re-wire id from serialization
     return instance
 

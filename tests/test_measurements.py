@@ -233,7 +233,8 @@ class MeasurementTestCase(TestCase):
         self._check_yaml_round_trip(measurement)
 
     def test_yamlpersist_complex(self):
-        measurement = Measurement(self.pa1, 5. * u.mmag)
+        measurement = Measurement(self.pa1, 5. * u.mmag,
+                                  notes={'filter_name': 'r'})
         self._check_yaml_round_trip(measurement)
 
 
