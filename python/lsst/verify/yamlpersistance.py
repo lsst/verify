@@ -96,6 +96,8 @@ def measurement_representer(dumper, measurement):
          "value": normalized_value,
          "unit": normalized_unit_str,
          "notes": dict(measurement.notes),
+         # extras included in blobs
+         "blobs": list(measurement.blobs.values()),
          },
     )
 
@@ -110,6 +112,7 @@ def measurement_constructor(loader, node):
         state["metric"],
         quantity=quantity,
         notes=state["notes"],
+        blobs=state["blobs"],
     )
     instance._id = state["identifier"]  # re-wire id from serialization
     return instance

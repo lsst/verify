@@ -227,14 +227,23 @@ class MeasurementTestCase(TestCase):
         # These fields don't participate in Measurement equality
         self.assertEqual(old_measurement.identifier,
                          new_measurement.identifier)
+        self.assertEqual(old_measurement.blobs,
+                         new_measurement.blobs)
+        self.assertEqual(old_measurement.extras,
+                         new_measurement.extras)
 
     def test_yamlpersist_basic(self):
         measurement = Measurement('validate_drp.PA1', 0.002 * u.mag)
         self._check_yaml_round_trip(measurement)
 
     def test_yamlpersist_complex(self):
-        measurement = Measurement(self.pa1, 5. * u.mmag,
-                                  notes={'filter_name': 'r'})
+        measurement = Measurement(
+            self.pa1,
+            5. * u.mmag,
+            notes={'filter_name': 'r'},
+            blobs=[self.blob1],
+            extras={'extra1': Datum(10. * u.arcmin, 'Extra 1')}
+        )
         self._check_yaml_round_trip(measurement)
 
 
