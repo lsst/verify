@@ -21,6 +21,7 @@
 
 import unittest
 import astropy.units as u
+import yaml
 
 from lsst.verify.blob import Blob
 from lsst.verify.datum import Datum
@@ -81,6 +82,11 @@ class BlobTestCase(unittest.TestCase):
         # Rebuild from blob
         b2 = Blob.deserialize(**j)
         self.assertEqual(self.blob, b2)
+
+    def test_yaml(self):
+        yaml_form = yaml.dump(self.blob)
+        blob2 = yaml.safe_load(yaml_form)
+        self.assertEqual(self.blob, blob2)
 
     def test_mutation(self):
         blob = Blob('mutable')

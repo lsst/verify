@@ -30,7 +30,7 @@ __all__ = []  # code defined by this module only called indirectly
 import astropy.units as u
 import yaml
 
-from .measurement import Datum, Measurement
+from .measurement import Datum, Blob, Measurement
 
 
 def _getValidLoaders():
@@ -61,11 +61,14 @@ def _getValidLoaders():
 
 def _registerTypes():
     yaml.add_representer(Datum, datum_representer)
+    yaml.add_representer(Blob, blob_representer)
     yaml.add_representer(Measurement, measurement_representer)
 
     for loader in _getValidLoaders():
         yaml.add_constructor(
             "lsst.verify.Datum", datum_constructor, Loader=loader)
+        yaml.add_constructor(
+            "lsst.verify.Blob", blob_constructor, Loader=loader)
         yaml.add_constructor(
             "lsst.verify.Measurement", measurement_constructor, Loader=loader)
 
@@ -108,6 +111,29 @@ def measurement_constructor(loader, node):
         quantity=quantity,
         notes=state["notes"],
     )
+    instance._id = state["identifier"]  # re-wire id from serialization
+    return instance
+
+
+# Port of Blob.json to yaml
+def blob_representer(dumper, blob):
+    """Persist a Blob as a mapping.
+    """
+    return dumper.represent_mapping(
+        "lsst.verify.Blob",
+        {"identifier": blob.identifier,
+         "name": blob.name,
+         "data": blob._datums,
+         }
+    )
+
+
+# Port of Blob.deserialize to yaml
+def blob_constructor(loader, node):
+    state = loader.construct_mapping(node, deep=True)
+
+    data = state["data"] if state["data"] is not None else {}
+    instance = Blob(state["name"], **data)
     instance._id = state["identifier"]  # re-wire id from serialization
     return instance
 
