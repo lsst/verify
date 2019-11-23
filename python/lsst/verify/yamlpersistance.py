@@ -30,7 +30,7 @@ __all__ = []  # code defined by this module only called indirectly
 import astropy.units as u
 import yaml
 
-from .measurement import Measurement
+from .measurement import Datum, Measurement
 
 
 def _getValidLoaders():
@@ -60,9 +60,12 @@ def _getValidLoaders():
 
 
 def _registerTypes():
+    yaml.add_representer(Datum, datum_representer)
     yaml.add_representer(Measurement, measurement_representer)
 
     for loader in _getValidLoaders():
+        yaml.add_constructor(
+            "lsst.verify.Datum", datum_constructor, Loader=loader)
         yaml.add_constructor(
             "lsst.verify.Measurement", measurement_constructor, Loader=loader)
 
@@ -107,6 +110,38 @@ def measurement_constructor(loader, node):
     )
     instance._id = state["identifier"]  # re-wire id from serialization
     return instance
+
+
+# Port of Datum.json to yaml
+def datum_representer(dumper, datum):
+    """Persist a Datum as a mapping.
+    """
+    if datum._is_non_quantity_type(datum.quantity):
+        v = datum.quantity
+    elif len(datum.quantity.shape) > 0:
+        v = datum.quantity.value.tolist()
+    else:
+        v = datum.quantity.value
+
+    return dumper.represent_mapping(
+        "lsst.verify.Datum",
+        {"value": v,
+         "unit": datum.unit_str,
+         "label": datum.label,
+         "description": datum.description,
+         }
+    )
+
+
+# Port of Datum.deserialize to yaml
+def datum_constructor(loader, node):
+    state = loader.construct_mapping(node, deep=True)
+
+    return Datum(quantity=state["value"],
+                 unit=state["unit"],
+                 label=state["label"],
+                 description=state["description"],
+                 )
 
 
 _registerTypes()
