@@ -21,7 +21,9 @@
 # see <https://www.lsstcorp.org/LegalNotices/>.
 #
 
+import shutil
 import unittest
+import tempfile
 import yaml
 
 import astropy.units as u
@@ -29,6 +31,7 @@ from astropy.tests.helper import quantity_allclose
 
 from lsst.utils.tests import TestCase
 from lsst.verify import Measurement, Metric, Name, Blob, BlobSet, Datum
+from butler_utils import make_test_butler, make_dataset_type
 
 
 class MeasurementTestCase(TestCase):
@@ -245,6 +248,80 @@ class MeasurementTestCase(TestCase):
             extras={'extra1': Datum(10. * u.arcmin, 'Extra 1')}
         )
         self._check_yaml_round_trip(measurement)
+
+    def test_butler(self):
+        CAMERA_ID = "NotACam"
+        MAP_ID = "map"
+        TRACT_ID = 5
+        PATCH_IDS = [42, 43]
+
+        root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, root, ignore_errors=True)
+        butler = make_test_butler(
+            root,
+            {
+                "instrument": [{"name": CAMERA_ID}],
+                "skymap": [{"name": MAP_ID, "hash": bytes()}],
+                "tract": [{"id": TRACT_ID, "skymap": MAP_ID}],
+                "patch": [{"id": num,
+                           "tract": TRACT_ID,
+                           "skymap": MAP_ID,
+                           "cell_x": 0, "cell_y": i}
+                          for i, num in enumerate(PATCH_IDS)],
+            })
+        metric_coarse = "verify.dummyMetric"
+        make_dataset_type(
+            butler,
+            self._get_dataset_name(metric_coarse),
+            set(),
+            "MetricValue")
+        metric_fine = "verify.tractableMetric"
+        make_dataset_type(
+            butler,
+            self._get_dataset_name(metric_fine),
+            {"instrument", "skymap", "patch", "tract"},
+            "MetricValue")
+
+        initial_data = {
+            None: Measurement(metric_coarse, 0.052 * u.mag),
+            PATCH_IDS[0]: Measurement(metric_fine, 0.2 * u.arcsec),
+            PATCH_IDS[1]: Measurement(metric_fine, 0.5 * u.arcsec),
+        }
+        for patch, value in initial_data.items():
+            # Expect data ID keywords to be ignored for coarse metric
+            butler.put(
+                value, self._get_dataset_name(value.metric_name),
+                instrument=CAMERA_ID, skymap=MAP_ID, tract=TRACT_ID,
+                patch=patch)
+
+        for patch, value in initial_data.items():
+            dataset_name = self._get_dataset_name(value.metric_name)
+            if patch is None:
+                unpersisted = butler.get(dataset_name)
+            else:
+                unpersisted = butler.get(
+                    dataset_name,
+                    instrument=CAMERA_ID, skymap=MAP_ID, tract=TRACT_ID,
+                    patch=patch)
+            self.assertEqual(unpersisted, value)
+
+    @staticmethod
+    def _get_dataset_name(metric_name):
+        """Get the dataset type corresponding to a metric.
+
+        Parameters
+        ----------
+        metric_name : `lsst.verify.Name` or `str`
+            The name of the metric to store or retrieve.
+
+        Returns
+        -------
+        dataset_type : `str`
+            The name of the corresponding dataset type.
+        """
+        raw_name = "metricvalue_%s" % metric_name
+        # avoid confusion with compound datasets
+        return raw_name.replace(".", "_")
 
 
 if __name__ == "__main__":

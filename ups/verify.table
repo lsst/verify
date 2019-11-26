@@ -6,6 +6,7 @@ setupRequired(sconsUtils)
 setupRequired(utils)
 setupRequired(log)
 setupRequired(pex_config)
+setupRequired(daf_butler)
 setupRequired(pipe_base)
 setupRequired(dax_apdb)
 
