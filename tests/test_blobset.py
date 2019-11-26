@@ -88,6 +88,8 @@ class BlobSetTestCase(unittest.TestCase):
         self.assertEqual(len(blobs), 2)
         for blob in blobs:
             self.assertIsInstance(blob, Blob)
+        blobs_direct = list(blob_set.values())
+        self.assertEqual(blobs, blobs_direct)
 
         # serialize
         json_doc = blob_set.json

@@ -21,13 +21,17 @@
 # see <https://www.lsstcorp.org/LegalNotices/>.
 #
 
+import shutil
 import unittest
+import tempfile
+import yaml
 
 import astropy.units as u
 from astropy.tests.helper import quantity_allclose
 
 from lsst.utils.tests import TestCase
 from lsst.verify import Measurement, Metric, Name, Blob, BlobSet, Datum
+from butler_utils import make_test_butler, make_dataset_type
 
 
 class MeasurementTestCase(TestCase):
@@ -121,6 +125,7 @@ class MeasurementTestCase(TestCase):
         # Job object.
         new_measurement.notes.update(measurement.notes)
         self.assertEqual(measurement, new_measurement)
+        self.assertEqual(measurement.identifier, new_measurement.identifier)
         self.assertIn('Blob1', measurement.blobs)
         self.assertIn('Blob2', measurement.blobs)
 
@@ -139,6 +144,7 @@ class MeasurementTestCase(TestCase):
 
         new_measurement = Measurement.deserialize(**json_doc)
         self.assertEqual(measurement, new_measurement)
+        self.assertEqual(measurement.identifier, new_measurement.identifier)
 
     def test_PA1_deferred_metric(self):
         """Test a measurement when the Metric instance is added later."""
@@ -187,6 +193,7 @@ class MeasurementTestCase(TestCase):
         new_measurement = Measurement.deserialize(blobs=blobs, **json_doc)
         self.assertIn('extra1', new_measurement.extras)
         self.assertEqual(measurement, new_measurement)
+        self.assertEqual(measurement.identifier, new_measurement.identifier)
 
     def test_deferred_extras(self):
         """Test adding extras to an existing measurement."""
@@ -214,6 +221,107 @@ class MeasurementTestCase(TestCase):
         value = 1235 * u.mag
         m = Measurement(metric, value)
         self.assertEqual(str(m), "test.cmodel_mag: 1235.0 mag")
+
+    def _check_yaml_round_trip(self, old_measurement):
+        persisted = yaml.dump(old_measurement)
+        new_measurement = yaml.safe_load(persisted)
+
+        self.assertEqual(old_measurement, new_measurement)
+        # These fields don't participate in Measurement equality
+        self.assertEqual(old_measurement.identifier,
+                         new_measurement.identifier)
+        self.assertEqual(old_measurement.blobs,
+                         new_measurement.blobs)
+        self.assertEqual(old_measurement.extras,
+                         new_measurement.extras)
+
+    def test_yamlpersist_basic(self):
+        measurement = Measurement('validate_drp.PA1', 0.002 * u.mag)
+        self._check_yaml_round_trip(measurement)
+
+    def test_yamlpersist_complex(self):
+        measurement = Measurement(
+            self.pa1,
+            5. * u.mmag,
+            notes={'filter_name': 'r'},
+            blobs=[self.blob1],
+            extras={'extra1': Datum(10. * u.arcmin, 'Extra 1')}
+        )
+        self._check_yaml_round_trip(measurement)
+
+    def test_butler(self):
+        CAMERA_ID = "NotACam"
+        MAP_ID = "map"
+        TRACT_ID = 5
+        PATCH_IDS = [42, 43]
+
+        root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, root, ignore_errors=True)
+        butler = make_test_butler(
+            root,
+            {
+                "instrument": [{"name": CAMERA_ID}],
+                "skymap": [{"name": MAP_ID, "hash": bytes()}],
+                "tract": [{"id": TRACT_ID, "skymap": MAP_ID}],
+                "patch": [{"id": num,
+                           "tract": TRACT_ID,
+                           "skymap": MAP_ID,
+                           "cell_x": 0, "cell_y": i}
+                          for i, num in enumerate(PATCH_IDS)],
+            })
+        metric_coarse = "verify.dummyMetric"
+        make_dataset_type(
+            butler,
+            self._get_dataset_name(metric_coarse),
+            set(),
+            "MetricValue")
+        metric_fine = "verify.tractableMetric"
+        make_dataset_type(
+            butler,
+            self._get_dataset_name(metric_fine),
+            {"instrument", "skymap", "patch", "tract"},
+            "MetricValue")
+
+        initial_data = {
+            None: Measurement(metric_coarse, 0.052 * u.mag),
+            PATCH_IDS[0]: Measurement(metric_fine, 0.2 * u.arcsec),
+            PATCH_IDS[1]: Measurement(metric_fine, 0.5 * u.arcsec),
+        }
+        for patch, value in initial_data.items():
+            # Expect data ID keywords to be ignored for coarse metric
+            butler.put(
+                value, self._get_dataset_name(value.metric_name),
+                instrument=CAMERA_ID, skymap=MAP_ID, tract=TRACT_ID,
+                patch=patch)
+
+        for patch, value in initial_data.items():
+            dataset_name = self._get_dataset_name(value.metric_name)
+            if patch is None:
+                unpersisted = butler.get(dataset_name)
+            else:
+                unpersisted = butler.get(
+                    dataset_name,
+                    instrument=CAMERA_ID, skymap=MAP_ID, tract=TRACT_ID,
+                    patch=patch)
+            self.assertEqual(unpersisted, value)
+
+    @staticmethod
+    def _get_dataset_name(metric_name):
+        """Get the dataset type corresponding to a metric.
+
+        Parameters
+        ----------
+        metric_name : `lsst.verify.Name` or `str`
+            The name of the metric to store or retrieve.
+
+        Returns
+        -------
+        dataset_type : `str`
+            The name of the corresponding dataset type.
+        """
+        raw_name = "metricvalue_%s" % metric_name
+        # avoid confusion with compound datasets
+        return raw_name.replace(".", "_")
 
 
 if __name__ == "__main__":

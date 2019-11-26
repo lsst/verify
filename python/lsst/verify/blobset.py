@@ -139,6 +139,17 @@ class BlobSet(JsonSerializationMixin):
         """
         return self._items.keys()
 
+    def values(self):
+        """Get a new view of the BlobSet's values.
+
+        Returns
+        ------
+        blob : iterable of `lsst.verify.Blob`
+            A collection of `~lsst.verify.Blob` objects that is updated when
+            this object changes.
+        """
+        return self._items.values()
+
     def items(self):
         """Iterate over (identifier, `Blob`) pairs in the set.
 

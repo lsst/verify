@@ -21,6 +21,7 @@
 import unittest
 
 import astropy.units as u
+import yaml
 
 from lsst.verify import Datum
 
@@ -84,18 +85,32 @@ class DatumTestCase(unittest.TestCase):
         self.assertEqual(d.quantity.value, 100.)
         self.assertEqual(d.unit_str, 'mmag')
 
+    def _assertDatumsEqual(self, datum1, datum2):
+        """Test that two Datums are equal without calling ``__eq__``.
+        """
+        self.assertEqual(datum1.quantity, datum2.quantity)
+        self.assertEqual(datum1.unit, datum2.unit)
+        self.assertEqual(datum1.label, datum2.label)
+        self.assertEqual(datum1.description, datum2.description)
+
+    def _checkRoundTrip(self, d):
+        """Test that a Datum can be serialized and restored.
+        """
+        json_data = d.json
+        d2 = Datum.deserialize(**json_data)
+        self._assertDatumsEqual(d, d2)
+
+        yaml_data = yaml.dump(d)
+        d3 = yaml.safe_load(yaml_data)
+        self._assertDatumsEqual(d, d3)
+
     def test_unitless(self):
         """Ensure that Datums can be unitless too."""
         d = Datum(5., '')
         self.assertEqual(d.unit_str, '')
         self.assertEqual(d.unit, u.dimensionless_unscaled)
 
-        json_data = d.json
-        d2 = Datum.deserialize(**json_data)
-        self.assertEqual(d.quantity, d2.quantity)
-        self.assertEqual(d.unit, d2.unit)
-        self.assertEqual(d.label, d2.label)
-        self.assertEqual(d.description, d2.description)
+        self._checkRoundTrip(d)
 
     def test_str_quantity(self):
         """Quantity as a string."""
@@ -107,12 +122,7 @@ class DatumTestCase(unittest.TestCase):
         self.assertEqual(d.label, 'Test string')
         self.assertEqual(d.description, 'Test description.')
 
-        json_data = d.json
-        d2 = Datum.deserialize(**json_data)
-        self.assertEqual(d.quantity, d2.quantity)
-        self.assertEqual(d.unit, d2.unit)
-        self.assertEqual(d.label, d2.label)
-        self.assertEqual(d.description, d2.description)
+        self._checkRoundTrip(d)
 
     def test_bool_quantity(self):
         """Quantity as a boolean."""
@@ -124,12 +134,7 @@ class DatumTestCase(unittest.TestCase):
         self.assertEqual(d.label, 'Test boolean')
         self.assertEqual(d.description, 'Test description.')
 
-        json_data = d.json
-        d2 = Datum.deserialize(**json_data)
-        self.assertEqual(d.quantity, d2.quantity)
-        self.assertEqual(d.unit, d2.unit)
-        self.assertEqual(d.label, d2.label)
-        self.assertEqual(d.description, d2.description)
+        self._checkRoundTrip(d)
 
     def test_int_quantity(self):
         """Quantity as a unitless int."""
@@ -141,12 +146,7 @@ class DatumTestCase(unittest.TestCase):
         self.assertEqual(d.label, 'Test int')
         self.assertEqual(d.description, 'Test description.')
 
-        json_data = d.json
-        d2 = Datum.deserialize(**json_data)
-        self.assertEqual(d.quantity, d2.quantity)
-        self.assertEqual(d.unit, d2.unit)
-        self.assertEqual(d.label, d2.label)
-        self.assertEqual(d.description, d2.description)
+        self._checkRoundTrip(d)
 
     def test_none(self):
         """Quantity as None."""
@@ -158,12 +158,7 @@ class DatumTestCase(unittest.TestCase):
         self.assertEqual(d.label, 'Test None')
         self.assertEqual(d.description, 'Test description.')
 
-        json_data = d.json
-        d2 = Datum.deserialize(**json_data)
-        self.assertEqual(d.quantity, d2.quantity)
-        self.assertEqual(d.unit, d2.unit)
-        self.assertEqual(d.label, d2.label)
-        self.assertEqual(d.description, d2.description)
+        self._checkRoundTrip(d)
 
     def test_json_output(self):
         """Verify content from json property and deserialization."""
