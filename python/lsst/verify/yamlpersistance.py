@@ -83,10 +83,10 @@ def measurement_representer(dumper, measurement):
     elif measurement.metric is not None:
         # ensure metrics are normalized to metric definition's units
         metric = measurement.metric
-        normalized_value = measurement.quantity.to(metric.unit).value
+        normalized_value = float(measurement.quantity.to(metric.unit).value)
         normalized_unit_str = metric.unit_str
     else:
-        normalized_value = measurement.quantity.value
+        normalized_value = float(measurement.quantity.value)
         normalized_unit_str = str(measurement.quantity.unit)
 
     return dumper.represent_mapping(
@@ -150,7 +150,9 @@ def datum_representer(dumper, datum):
     elif len(datum.quantity.shape) > 0:
         v = datum.quantity.value.tolist()
     else:
-        v = datum.quantity.value
+        # Some versions of astropy return numpy scalars,
+        # which pyyaml can't handle safely
+        v = float(datum.quantity.value)
 
     return dumper.represent_mapping(
         "lsst.verify.Datum",
