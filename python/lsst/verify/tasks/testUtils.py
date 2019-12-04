@@ -21,17 +21,84 @@
 
 __all__ = ["MetadataMetricTestCase", "ApdbMetricTestCase"]
 
+import abc
+
 import unittest.mock
 from unittest.mock import patch
 
+import lsst.utils.tests
 from lsst.daf.base import PropertySet
 from lsst.dax.apdb import ApdbConfig
 
-from lsst.verify.gen2tasks.testUtils import MetricTaskTestCase
+import lsst.verify.gen2tasks.testUtils as gen2Utils
 from lsst.verify.tasks import MetricComputationError
 
 
-class MetadataMetricTestCase(MetricTaskTestCase):
+class MetricTaskTestCase(lsst.utils.tests.TestCase, metaclass=abc.ABCMeta):
+    """Unit test base class for tests of `tasks.MetricTask`.
+
+    This class provides tests of the generic ``MetricTask`` API. Subclasses
+    must override `taskFactory`, and may add extra tests for class-specific
+    functionality. If subclasses override `setUp`, they must call
+    `MetricTaskTestCase.setUp`.
+    """
+    @classmethod
+    @abc.abstractmethod
+    def makeTask(cls):
+        """Construct the task to be tested.
+
+        This overridable method will be called during test setup.
+
+        Returns
+        -------
+        task : `lsst.verify.tasks.MetricTask`
+            A new MetricTask object to test.
+        """
+
+    task = None
+    """The ``MetricTask`` being tested by this object
+    (`tasks.MetricTask`).
+
+    This attribute is initialized automatically.
+    """
+
+    taskClass = None
+    """The type of `task` (`tasks.MetricTask`-type).
+
+    This attribute is initialized automatically.
+    """
+
+    def setUp(self):
+        """Setup common to all MetricTask tests.
+
+        Notes
+        -----
+        This implementation calls `taskFactory`, then initializes `task`
+        and `taskClass`.
+        """
+        self.task = self.makeTask()
+        self.taskClass = type(self.task)
+
+    def testGetOutputMetricName(self):
+        config = self.task.config
+        name = self.task.getOutputMetricName(config)
+        self.assertEqual(
+            str(name),
+            config.connections.package + "." + config.connections.metric)
+
+    def testOutputDatasetName(self):
+        config = self.task.config
+        connections = config.connections.ConnectionsClass(config=config)
+        dataset = connections.measurement.name
+
+        self.assertTrue(dataset.startswith("metricvalue_"))
+        self.assertNotIn(".", dataset)
+
+        self.assertIn(config.connections.package, dataset)
+        self.assertIn(config.connections.metric, dataset)
+
+
+class MetadataMetricTestCase(gen2Utils.MetricTaskTestCase):
     """Unit test base class for tests of `MetadataMetricTask`.
 
     Notes

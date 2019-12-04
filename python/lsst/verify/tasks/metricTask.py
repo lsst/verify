@@ -20,12 +20,14 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-__all__ = ["MetricComputationError", "MetricTask"]
+__all__ = ["MetricComputationError", "MetricTask", "MetricConfig",
+           "MetricConnections"]
 
 
 import abc
 
 import lsst.pipe.base as pipeBase
+from lsst.pipe.base import connectionTypes
 
 
 class MetricComputationError(RuntimeError):
@@ -37,6 +39,40 @@ class MetricComputationError(RuntimeError):
     the two. Therefore, most ``MetricComputationError`` instances should be
     chained to another exception representing the underlying problem.
     """
+    pass
+
+
+class MetricConnections(pipeBase.PipelineTaskConnections,
+                        defaultTemplates={"package": None, "metric": None},
+                        dimensions={"instrument", "visit", "detector"},
+                        ):
+    """An abstract connections class defining a metric output.
+
+    This class assumes detector-level metrics, which is the most common case.
+    Subclasses can redeclare ``measurement`` and ``dimensions`` to override
+    this assumption.
+
+    Notes
+    -----
+    ``MetricConnections`` defines the following dataset templates:
+        ``package``
+            Name of the metric's namespace. By
+            :ref:`verify_metrics <verify-metrics-package>` convention, this is
+            the name of the package the metric is most closely
+            associated with.
+        ``metric``
+            Name of the metric, excluding any namespace.
+    """
+    measurement = connectionTypes.Output(
+        name="metricvalue_{package}_{metric}",
+        doc="The metric value computed by this task.",
+        storageClass="MetricValue",
+        dimensions={"instrument", "visit", "detector"},
+    )
+
+
+class MetricConfig(pipeBase.PipelineTaskConfig,
+                   pipelineConnections=MetricConnections):
     pass
 
 
@@ -68,9 +104,7 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
         quanta, or `lsst.daf.butler`.
     """
 
-    # TODO: create a specialized MetricTaskConfig once metrics have
-    # Butler datasets
-    ConfigClass = pipeBase.PipelineTaskConfig
+    ConfigClass = MetricConfig
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
