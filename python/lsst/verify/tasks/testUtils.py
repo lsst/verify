@@ -166,7 +166,7 @@ class MetadataMetricTestCase(gen2Utils.MetricTaskTestCase):
                     self.task.run([None])
 
 
-class ApdbMetricTestCase(MetricTaskTestCase):
+class ApdbMetricTestCase(gen2Utils.MetricTaskTestCase, MetricTaskTestCase):
     """Unit test base class for tests of `ApdbMetricTask`.
 
     Notes
