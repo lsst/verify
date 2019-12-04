@@ -29,6 +29,8 @@ import abc
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes
 
+from lsst.verify import Name
+
 
 class MetricComputationError(RuntimeError):
     """This class represents unresolvable errors in computing a metric.
@@ -288,7 +290,6 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
                 for name in connections.inputs}
 
     @classmethod
-    @abc.abstractmethod
     def getOutputMetricName(cls, config):
         """Identify the metric calculated by this ``MetricTask``.
 
@@ -303,6 +304,8 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
             The name of the metric computed by objects of this class when
             configured with ``config``.
         """
+        return Name(package=config.connections.package,
+                    metric=config.connections.metric)
 
     def addStandardMetadata(self, measurement, outputDataId):
         """Add data ID-specific metadata required for all metrics.
