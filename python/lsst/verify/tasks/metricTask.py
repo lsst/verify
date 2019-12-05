@@ -25,6 +25,7 @@ __all__ = ["MetricComputationError", "MetricTask", "MetricConfig",
 
 
 import abc
+import traceback
 
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes
@@ -156,6 +157,27 @@ class MetricTask(pipeBase.PipelineTask, metaclass=abc.ABCMeta):
         the necessary inputs are missing, the ``MetricTask`` must return `None`
         in place of the measurement.
         """
+
+    def runQuantum(self, butlerQC, inputRefs, outputRefs):
+        """Do Butler I/O to provide in-memory objects for run.
+
+        This specialization of runQuantum performs error-handling specific to
+        MetricTasks. Most or all of this functionality may be moved to
+        activators in the future.
+        """
+        try:
+            inputs = butlerQC.get(inputRefs)
+            outputs = self.run(**inputs)
+            if outputs.measurement is not None:
+                butlerQC.put(outputs, outputRefs)
+            else:
+                self.log.debugf("Skipping measurement of {!r} on {} "
+                                "as not applicable.", self, inputRefs)
+        except MetricComputationError:
+            # Apparently lsst.log doesn't have built-in exception support?
+            self.log.errorf(
+                "Measurement of {!r} failed on {}->{}\n{}",
+                self, inputRefs, outputRefs, traceback.format_exc())
 
     def adaptArgsAndRun(self, inputData, inputDataIds, outputDataId):
         """A wrapper around `run` used by
