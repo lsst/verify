@@ -7,8 +7,6 @@ MetadataMetricTask
 ``MetadataMetricTask`` is a base class for generating `~lsst.verify.Measurement`\ s from task metadata of the same granularity.
 The class handles loading metadata and extracting the keys of interest, while subclasses are responsible for creating the `~lsst.verify.Measurement` from the extracted values.
 
-See :lsst-task:`~lsst.verify.tasks.MultiMetadataMetricTask` for metrics computed from several finer-grained metadata.
-
 ``MetadataMetricTask`` is currently a subclass of `lsst.verify.tasks.MetricTask`.
 It is expected that ``MetadataMetricTask`` can be migrated to the Gen 3 framework without affecting its subclasses.
 
