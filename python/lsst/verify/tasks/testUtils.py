@@ -97,6 +97,12 @@ class MetricTaskTestCase(lsst.utils.tests.TestCase, metaclass=abc.ABCMeta):
         self.assertIn(config.connections.package, dataset)
         self.assertIn(config.connections.metric, dataset)
 
+    def testConfigValidation(self):
+        config = self.task.config
+        config.connections.metric = "verify.DummyMetric"
+        with self.assertRaises(ValueError):
+            config.validate()
+
 
 class MetadataMetricTestCase(gen2Utils.MetricTaskTestCase):
     """Unit test base class for tests of `MetadataMetricTask`.

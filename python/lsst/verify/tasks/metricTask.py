@@ -73,7 +73,17 @@ class MetricConnections(pipeBase.PipelineTaskConnections,
 
 class MetricConfig(pipeBase.PipelineTaskConfig,
                    pipelineConnections=MetricConnections):
-    pass
+
+    def validate(self):
+        super().validate()
+
+        if "." in self.connections.package:
+            raise ValueError(f"package name {self.connections.package} must "
+                             "not contain periods")
+        if "." in self.connections.metric:
+            raise ValueError(f"metric name {self.connections.metric} must "
+                             "not contain periods; use connections.package "
+                             "instead")
 
 
 class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
