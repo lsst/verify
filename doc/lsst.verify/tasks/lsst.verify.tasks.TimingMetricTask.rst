@@ -30,9 +30,20 @@ Butler datasets
 Input datasets
 --------------
 
-:lsst-config-field:`~lsst.verify.tasks.commonMetrics.TimingMetricConfig.metadata`
+``metadata``
     The metadata of the top-level command-line task (e.g., ``ProcessCcdTask``, ``ApPipeTask``) being instrumented.
     Because the metadata produced by each top-level task is a different Butler dataset type, this dataset **must** be explicitly configured when running ``TimingMetricTask`` or a :lsst-task:`~lsst.verify.gen2tasks.MetricsControllerTask` that contains it.
+
+Output datasets
+---------------
+
+``measurement``
+    The value of the metric.
+    The dataset type should not be configured directly, but should be set
+    changing the ``package`` and ``metric`` template variables to the metric's
+    namespace (package, by convention) and in-package name, respectively.
+    Subclasses that only support one metric should set these variables
+    automatically.
 
 .. _lsst.verify.tasks.TimingMetricTask-subtasks:
 
@@ -58,12 +69,13 @@ Examples
    from lsst.verify.tasks import TimingMetricTask
 
    config = TimingMetricTask.ConfigClass()
-   config.metadata.name = "apPipe_metadata"
+   config.connections.metadata = "apPipe_metadata"
+   config.connections.package = "pipe_tasks"
+   cofig.connections.metric = "ProcessCcdTime"
    config.target = "apPipe:ccdProcessor.runDataRef"
-   config.metric = "pipe_tasks.ProcessCcdTime"
    task = TimingMetricTask(config=config)
 
-   # config.metadata provided for benefit of MetricsControllerTask/Pipeline
+   # config.connections provided for benefit of MetricsControllerTask/Pipeline
    # but since we've defined it we might as well use it
-   metadata = butler.get(config.metadata.name)
+   metadata = butler.get(config.connections.metadata)
    processCcdTime = task.run(metadata).measurement

@@ -30,17 +30,19 @@ __all__ = ["TimingMetricConfig", "TimingMetricTask",
 
 import resource
 import sys
+import warnings
 
 import astropy.units as u
 
 import lsst.pex.config as pexConfig
 
-from lsst.verify import Measurement, Name, Datum
+from lsst.verify import Measurement, Datum
 from lsst.verify.gen2tasks.metricRegistry import registerMultiple
-from lsst.verify.tasks import MetricComputationError, MetadataMetricTask
+from lsst.verify.tasks import MetricComputationError, MetadataMetricTask, \
+    MetadataMetricConfig
 
 
-class TimeMethodMetricConfig(MetadataMetricTask.ConfigClass):
+class TimeMethodMetricConfig(MetadataMetricConfig):
     """Common config fields for metrics based on `~lsst.pipe.base.timeMethod`.
 
     These fields let metrics distinguish between different methods that have
@@ -53,7 +55,28 @@ class TimeMethodMetricConfig(MetadataMetricTask.ConfigClass):
     metric = pexConfig.Field(
         dtype=str,
         doc="The fully qualified name of the metric to store the "
-            "profiling information.")
+            "profiling information.",
+        deprecated="This field has been replaced by connections.package and "
+                   "connections.metric. It will be removed along "
+                   "with daf_persistence."
+    )
+
+    def validate(self):
+        super().validate()
+
+        if self.metric:
+            if self.metric != self.connections.package \
+                    + "." + self.connections.metric:
+                warnings.warn(
+                    "config.metric is deprecated; set connections.package "
+                    "and connections.metric instead.",
+                    FutureWarning)
+                try:
+                    self.connections.package, self.connections.metric \
+                        = self.metric.split(".")
+                except ValueError:
+                    self.connections.package = ""
+                    self.connections.metric = self.metric
 
 
 # Expose TimingMetricConfig name because config-writers expect it
@@ -149,10 +172,6 @@ class TimingMetricTask(MetadataMetricTask):
             self.log.info("Nothing to do: no timing information for %s found.",
                           self.config.target)
             return None
-
-    @classmethod
-    def getOutputMetricName(cls, config):
-        return Name(config.metric)
 
 
 # Expose MemoryMetricConfig name because config-writers expect it
@@ -258,7 +277,3 @@ class MemoryMetricTask(MetadataMetricTask):
         else:
             # Assume Linux, which uses kibibytes
             return memory * u.kibibyte
-
-    @classmethod
-    def getOutputMetricName(cls, config):
-        return Name(config.metric)

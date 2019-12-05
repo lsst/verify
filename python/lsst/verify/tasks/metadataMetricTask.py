@@ -19,18 +19,38 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["MetadataMetricTask", "MetadataMetricConfig"]
+__all__ = ["MetadataMetricTask", "MetadataMetricConfig",
+           "SingleMetadataMetricConnections"]
 
 import abc
 
-from lsst.pipe.base import Struct, PipelineTaskConnections, connectionTypes
-from lsst.verify.tasks import MetricTask, MetricComputationError
+from lsst.pipe.base import Struct, connectionTypes
+from lsst.verify.tasks import MetricTask, MetricConfig, MetricConnections, \
+    MetricComputationError
 
 
 class SingleMetadataMetricConnections(
-        PipelineTaskConnections,
-        dimensions={"Instrument", "Exposure", "Detector"},
-        defaultTemplates={"taskName": ""}):
+        MetricConnections,
+        dimensions={"instrument", "exposure", "detector"},
+        defaultTemplates={"taskName": "", "package": None, "metric": None}):
+    """An abstract connections class defining a metadata input.
+
+    Notes
+    -----
+    ``SingleMetadataMetricConnections`` defines the following dataset
+    templates:
+
+        ``package``
+            Name of the metric's namespace. By
+            :ref:`verify_metrics <verify-metrics-package>` convention, this is
+            the name of the package the metric is most closely
+            associated with.
+        ``metric``
+            Name of the metric, excluding any namespace.
+        ``taskName``
+            Name of the `~lsst.pipe.base.CmdLineTask` or
+            `~lsst.pipe.base.PipelineTask` whose metadata are being read.
+    """
     metadata = connectionTypes.Input(
         name="{taskName}_metadata",
         doc="The target top-level task's metadata. The name must be set to "
@@ -42,7 +62,7 @@ class SingleMetadataMetricConnections(
 
 
 class MetadataMetricConfig(
-        MetricTask.ConfigClass,
+        MetricConfig,
         pipelineConnections=SingleMetadataMetricConnections):
     """A base class for metadata metric task configs.
 
@@ -70,9 +90,8 @@ class _AbstractMetadataMetricTask(MetricTask):
 
     Notes
     -----
-    This class should be customized by overriding `getInputMetadataKeys`,
-    `makeMeasurement`, and `getOutputMetricName`. You should not need to
-    override `run`.
+    This class should be customized by overriding `getInputMetadataKeys`
+    and `makeMeasurement`. You should not need to override `run`.
 
     This class makes no assumptions about how to handle missing data;
     `makeMeasurement` may be called with `None` values, and is responsible
@@ -178,9 +197,8 @@ class MetadataMetricTask(_AbstractMetadataMetricTask):
 
     Notes
     -----
-    This class should be customized by overriding `getInputMetadataKeys`,
-    `makeMeasurement`, and `getOutputMetricName`. You should not need to
-    override `run`.
+    This class should be customized by overriding `getInputMetadataKeys`
+    and `makeMeasurement`. You should not need to override `run`.
 
     This class makes no assumptions about how to handle missing data;
     `makeMeasurement` may be called with `None` values, and is responsible

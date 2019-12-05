@@ -104,7 +104,7 @@ class MetricTaskTestCase(lsst.utils.tests.TestCase, metaclass=abc.ABCMeta):
             config.validate()
 
 
-class MetadataMetricTestCase(gen2Utils.MetricTaskTestCase):
+class MetadataMetricTestCase(gen2Utils.MetricTaskTestCase, MetricTaskTestCase):
     """Unit test base class for tests of `MetadataMetricTask`.
 
     Notes

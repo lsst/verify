@@ -36,9 +36,20 @@ Butler datasets
 Input datasets
 --------------
 
-:lsst-config-field:`~lsst.verify.tasks.MetadataMetricTask.MetadataMetricConfig.metadata`
+`metadata``
     The metadata of the top-level command-line task (e.g., ``ProcessCcdTask``, ``ApPipeTask``) being instrumented.
     Because the metadata produced by each top-level task is a different Butler dataset type, this dataset **must** be explicitly configured when running ``MetadataMetricTask`` or a :lsst-task:`~lsst.verify.gen2tasks.MetricsControllerTask` that contains it.
+
+Output datasets
+---------------
+
+``measurement``
+    The value of the metric.
+    The dataset type should not be configured directly, but should be set
+    changing the ``package`` and ``metric`` template variables to the metric's
+    namespace (package, by convention) and in-package name, respectively.
+    Subclasses that only support one metric should set these variables
+    automatically.
 
 .. _lsst.verify.tasks.MetadataMetricTask-subtasks:
 
