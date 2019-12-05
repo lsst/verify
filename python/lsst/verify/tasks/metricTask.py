@@ -88,7 +88,7 @@ class MetricConfig(pipeBase.PipelineTaskConfig,
                              "instead")
 
 
-class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
+class MetricTask(pipeBase.PipelineTask, metaclass=abc.ABCMeta):
     """A base class for tasks that compute one metric from input datasets.
 
     Parameters
@@ -108,12 +108,6 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
     overriding `run` and by providing a `lsst.pipe.base.connectionTypes.Input`
     for each parameter of `run`. For requirements that are specific to
     ``MetricTask``, see `run`.
-
-    .. note::
-        The API is designed to make it easy to convert all ``MetricTasks`` to
-        `~lsst.pipe.base.PipelineTask` later, but this class is *not* a
-        `~lsst.pipe.base.PipelineTask` and does not work with activators,
-        quanta, or `lsst.daf.butler`.
     """
 
     ConfigClass = MetricConfig

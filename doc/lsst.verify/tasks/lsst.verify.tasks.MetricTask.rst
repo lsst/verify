@@ -9,7 +9,8 @@ MetricTask (lsst.verify.tasks)
 ``MetricTask`` is a base class for generating `lsst.verify.Measurement` given input data.
 Each ``MetricTask`` class accepts specific type(s) of datasets and produces measurements for a specific metric or family of metrics.
 
-While its API mirrors that of `~lsst.pipe.base.PipelineTask`, this version of ``MetricTask`` is designed to be used with the Gen 2 framework.
+``MetricTask`` is a `~lsst.pipe.base.PipelineTask` and can be executed as part of pipelines.
+In Gen 2, ``MetricTask`` can be run as a plugin to :lsst-task:`lsst.verify.gen2tasks.MetricsControllerTask`.
 
 .. _lsst.verify.tasks.MetricTask-api:
 
