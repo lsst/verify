@@ -99,6 +99,7 @@ class TimingMetricTask(MetadataMetricTask):
         keyBase = config.target
         return {"StartTime": keyBase + "StartCpuTime",
                 "EndTime": keyBase + "EndCpuTime",
+                "StartTimestamp": keyBase + "StartUtc",
                 "EndTimestamp": keyBase + "EndUtc",
                 }
 
@@ -116,8 +117,8 @@ class TimingMetricTask(MetadataMetricTask):
                  The time the target method started (`float` or `None`).
              ``"EndTime"``
                  The time the target method ended (`float` or `None`).
-             ``"EndTimestamp"``
-                 The timestamp, in an ISO 8601-compliant format
+             ``"StartTimestamp"``, ``"EndTimestamp"``
+                 The start and end timestamps, in an ISO 8601-compliant format
                  (`str` or `None`).
 
         Returns
@@ -139,6 +140,8 @@ class TimingMetricTask(MetadataMetricTask):
                 meas = Measurement(self.getOutputMetricName(self.config),
                                    totalTime * u.second)
                 meas.notes["estimator"] = "pipe.base.timeMethod"
+                if timings["StartTimestamp"]:
+                    meas.extras["start"] = Datum(timings["StartTimestamp"])
                 if timings["EndTimestamp"]:
                     meas.extras["end"] = Datum(timings["EndTimestamp"])
                 return meas
