@@ -35,7 +35,7 @@ import astropy.units as u
 
 import lsst.pex.config as pexConfig
 
-from lsst.verify import Measurement, Name
+from lsst.verify import Measurement, Name, Datum
 from lsst.verify.gen2tasks.metricRegistry import registerMultiple
 from lsst.verify.tasks import MetricComputationError, MetadataMetricTask
 
@@ -140,7 +140,7 @@ class TimingMetricTask(MetadataMetricTask):
                                    totalTime * u.second)
                 meas.notes["estimator"] = "pipe.base.timeMethod"
                 if timings["EndTimestamp"]:
-                    meas.notes["end"] = timings["EndTimestamp"]
+                    meas.extras["end"] = Datum(timings["EndTimestamp"])
                 return meas
         else:
             self.log.info("Nothing to do: no timing information for %s found.",
