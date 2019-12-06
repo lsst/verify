@@ -143,7 +143,7 @@ class BlobSet(JsonSerializationMixin):
         """Get a new view of the BlobSet's values.
 
         Returns
-        ------
+        -------
         blob : iterable of `lsst.verify.Blob`
             A collection of `~lsst.verify.Blob` objects that is updated when
             this object changes.
