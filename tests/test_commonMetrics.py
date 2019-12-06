@@ -54,7 +54,7 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
     @staticmethod
     def _standardConfig():
         config = TimingMetricTask.ConfigClass()
-        config.connections.taskName = DummyTask._DefaultName
+        config.connections.labelName = DummyTask._DefaultName
         config.target = DummyTask._DefaultName + ".run"
         config.connections.package = "verify"
         config.connections.metric = "DummyTime"
@@ -140,7 +140,7 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
     @staticmethod
     def _standardConfig():
         config = MemoryMetricTask.ConfigClass()
-        config.connections.taskName = DummyTask._DefaultName
+        config.connections.labelName = DummyTask._DefaultName
         config.target = DummyTask._DefaultName + ".run"
         config.connections.package = "verify"
         config.connections.metric = "DummyMemory"

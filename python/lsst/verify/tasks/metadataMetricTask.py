@@ -32,7 +32,7 @@ from lsst.verify.tasks import MetricTask, MetricConfig, MetricConnections, \
 class SingleMetadataMetricConnections(
         MetricConnections,
         dimensions={"instrument", "exposure", "detector"},
-        defaultTemplates={"taskName": "", "package": None, "metric": None}):
+        defaultTemplates={"labelName": "", "package": None, "metric": None}):
     """An abstract connections class defining a metadata input.
 
     Notes
@@ -47,12 +47,12 @@ class SingleMetadataMetricConnections(
             associated with.
         ``metric``
             Name of the metric, excluding any namespace.
-        ``taskName``
-            Name of the `~lsst.pipe.base.CmdLineTask` or
-            `~lsst.pipe.base.PipelineTask` whose metadata are being read.
+        ``labelName``
+            Pipeline label of the `~lsst.pipe.base.PipelineTask` or name of
+            the `~lsst.pipe.base.CmdLineTask` whose metadata are being read.
     """
     metadata = connectionTypes.Input(
-        name="{taskName}_metadata",
+        name="{labelName}_metadata",
         doc="The target top-level task's metadata. The name must be set to "
             "the metadata's butler type, such as 'processCcd_metadata'.",
         storageClass="PropertySet",
