@@ -35,7 +35,7 @@ import astropy.units as u
 
 import lsst.pex.config as pexConfig
 
-from lsst.verify import Measurement, Name
+from lsst.verify import Measurement, Name, Datum
 from lsst.verify.gen2tasks.metricRegistry import registerMultiple
 from lsst.verify.tasks import MetricComputationError, MetadataMetricTask
 
@@ -99,6 +99,7 @@ class TimingMetricTask(MetadataMetricTask):
         keyBase = config.target
         return {"StartTime": keyBase + "StartCpuTime",
                 "EndTime": keyBase + "EndCpuTime",
+                "StartTimestamp": keyBase + "StartUtc",
                 "EndTimestamp": keyBase + "EndUtc",
                 }
 
@@ -116,8 +117,8 @@ class TimingMetricTask(MetadataMetricTask):
                  The time the target method started (`float` or `None`).
              ``"EndTime"``
                  The time the target method ended (`float` or `None`).
-             ``"EndTimestamp"``
-                 The timestamp, in an ISO 8601-compliant format
+             ``"StartTimestamp"``, ``"EndTimestamp"``
+                 The start and end timestamps, in an ISO 8601-compliant format
                  (`str` or `None`).
 
         Returns
@@ -139,8 +140,10 @@ class TimingMetricTask(MetadataMetricTask):
                 meas = Measurement(self.getOutputMetricName(self.config),
                                    totalTime * u.second)
                 meas.notes["estimator"] = "pipe.base.timeMethod"
+                if timings["StartTimestamp"]:
+                    meas.extras["start"] = Datum(timings["StartTimestamp"])
                 if timings["EndTimestamp"]:
-                    meas.notes["end"] = timings["EndTimestamp"]
+                    meas.extras["end"] = Datum(timings["EndTimestamp"])
                 return meas
         else:
             self.log.info("Nothing to do: no timing information for %s found.",
