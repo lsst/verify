@@ -20,17 +20,16 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 __all__ = ["ApdbMetricTask", "ApdbMetricConfig", "ConfigApdbLoader",
-           "DirectApdbLoader"]
+           "DirectApdbLoader", "ApdbMetricConnections"]
 
 import abc
 
 from lsst.pex.config import Config, ConfigurableField, ConfigurableInstance, \
     ConfigDictField, ConfigChoiceField, FieldValidationError
-from lsst.pipe.base import Task, Struct, PipelineTaskConnections, \
-    connectionTypes
+from lsst.pipe.base import Task, Struct, connectionTypes
 from lsst.dax.apdb import Apdb, ApdbConfig
 
-from lsst.verify.tasks import MetricTask
+from lsst.verify.tasks import MetricTask, MetricConfig, MetricConnections
 
 
 class ConfigApdbLoader(Task):
@@ -196,9 +195,22 @@ class DirectApdbLoader(Task):
 
 
 class ApdbMetricConnections(
-        PipelineTaskConnections,
+        MetricConnections,
         dimensions={"instrument"},
 ):
+    """An abstract connections class defining a database input.
+
+    Notes
+    -----
+    ``ApdbMetricConnections`` defines the following dataset templates:
+        ``package``
+            Name of the metric's namespace. By
+            :ref:`verify_metrics <verify-metrics-package>` convention, this is
+            the name of the package the metric is most closely
+            associated with.
+        ``metric``
+            Name of the metric, excluding any namespace.
+    """
     dbInfo = connectionTypes.Input(
         name="apdb_marker",
         doc="The dataset from which an APDB instance can be constructed by "
@@ -208,9 +220,16 @@ class ApdbMetricConnections(
         multiple=True,
         dimensions={"instrument", "visit", "detector"},
     )
+    # Replaces MetricConnections.measurement, which is detector-level
+    measurement = connectionTypes.Output(
+        name="metricvalue_{package}_{metric}",
+        doc="The metric value computed by this task.",
+        storageClass="MetricValue",
+        dimensions={"instrument"},
+    )
 
 
-class ApdbMetricConfig(MetricTask.ConfigClass,
+class ApdbMetricConfig(MetricConfig,
                        pipelineConnections=ApdbMetricConnections):
     """A base class for APDB metric task configs.
     """
@@ -234,8 +253,8 @@ class ApdbMetricTask(MetricTask):
 
     Notes
     -----
-    This class should be customized by overriding `makeMeasurement` and
-    `getOutputMetricName`. You should not need to override `run`.
+    This class should be customized by overriding `makeMeasurement`. You
+    should not need to override `run`.
     """
     # Design note: makeMeasurement is an overrideable method rather than a
     # subtask to keep the configs for `MetricsControllerTask` as simple as

@@ -9,7 +9,8 @@ MetricTask (lsst.verify.tasks)
 ``MetricTask`` is a base class for generating `lsst.verify.Measurement` given input data.
 Each ``MetricTask`` class accepts specific type(s) of datasets and produces measurements for a specific metric or family of metrics.
 
-While its API mirrors that of `~lsst.pipe.base.PipelineTask`, this version of ``MetricTask`` is designed to be used with the Gen 2 framework.
+``MetricTask`` is a `~lsst.pipe.base.PipelineTask` and can be executed as part of pipelines.
+In Gen 2, ``MetricTask`` can be run as a plugin to :lsst-task:`lsst.verify.gen2tasks.MetricsControllerTask`.
 
 .. _lsst.verify.tasks.MetricTask-api:
 
@@ -17,6 +18,22 @@ Python API summary
 ==================
 
 .. lsst-task-api-summary:: lsst.verify.tasks.MetricTask
+
+.. _lsst.verify.tasks.MetricTask-butler:
+
+Butler datasets
+===============
+
+Output datasets
+---------------
+
+``measurement``
+    The value of the metric.
+    The dataset type should not be configured directly, but should be set
+    changing the ``package`` and ``metric`` template variables to the metric's
+    namespace (package, by convention) and in-package name, respectively.
+    ``MetricTask`` subclasses that only support one metric should set these
+    variables automatically.
 
 .. _lsst.verify.tasks.MetricTask-subtasks:
 
@@ -43,10 +60,9 @@ Subclassing
 -----------
 
 ``MetricTask`` is primarily customized using the `~MetricTask.run` method.
-Each subclass must also implement the `~MetricTask.getOutputMetricName` method.
 
-The task config should use `lsst.pipe.base.PipelineTaskConnections` to identify input datasets as if it were a `~lsst.pipe.base.PipelineTask`.
-Only the ``name`` and ``multiple`` fields are used in a Gen 2 context, but use of `~lsst.pipe.base.PipelineTaskConnections` is expected to simplify the transition to Gen 3.
+The task config should use `lsst.pipe.base.PipelineTaskConnections` to identify input datasets; ``MetricConfig`` handles the output dataset.
+Only the ``name`` and ``multiple`` fields are used in a Gen 2 context.
 
 .. _lsst.verify.tasks.MetricTask-indepth-errors:
 
@@ -76,7 +92,7 @@ On the other hand, metadata with nonsense values falls squarely under case 3.
 Registration
 ------------
 
-The most common way to run ``MetricTask`` is as plugins to :lsst-task:`~lsst.verify.gen2tasks.MetricsControllerTask`.
+The most common way to run ``MetricTask`` in Gen 2 is as plugins to :lsst-task:`~lsst.verify.gen2tasks.MetricsControllerTask`.
 Most ``MetricTask`` classes should use the `register` decorator to assign a plugin name.
 
 Because of implementation limitations, each registered name may appear at most once in `MetricsControllerConfig`.

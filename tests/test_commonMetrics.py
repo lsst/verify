@@ -21,6 +21,7 @@
 
 import time
 import unittest
+import warnings
 
 import astropy.units as u
 
@@ -53,14 +54,16 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
     @staticmethod
     def _standardConfig():
         config = TimingMetricTask.ConfigClass()
-        config.connections.taskName = DummyTask._DefaultName
+        config.connections.labelName = DummyTask._DefaultName
         config.target = DummyTask._DefaultName + ".run"
-        config.metric = "verify.DummyTime"
+        config.connections.package = "verify"
+        config.connections.metric = "DummyTime"
         return config
 
     def setUp(self):
         super().setUp()
         self.config = TimingMetricTestSuite._standardConfig()
+        self.metric = Name("verify.DummyTime")
 
         self.scienceTask = DummyTask()
         self.scienceTask.run()
@@ -70,12 +73,13 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         meas = result.measurement
 
         self.assertIsInstance(meas, Measurement)
-        self.assertEqual(meas.metric_name, Name(metric=self.config.metric))
+        self.assertEqual(meas.metric_name, self.metric)
         self.assertGreater(meas.quantity, 0.0 * u.second)
         self.assertLess(meas.quantity, 2 * DummyTask.taskLength * u.second)
 
     def testNoMetric(self):
-        self.config.metric = "foo.bar.FooBarTime"
+        self.config.connections.package = "foo.bar"
+        self.config.connections.metric = "FooBarTime"
         task = TimingMetricTask(config=self.config)
         with self.assertRaises(TypeError):
             task.run(self.scienceTask.getFullMetadata())
@@ -116,9 +120,16 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         with self.assertRaises(MetricComputationError):
             task.run(metadata)
 
-    def testGetOutputMetricName(self):
-        self.assertEqual(TimingMetricTask.getOutputMetricName(self.config),
-                         Name(self.config.metric))
+    def testDeprecated(self):
+        self.config.metric = "verify.DummyTime"
+        self.config.connections.package = ""
+        self.config.connections.metric = ""
+        with warnings.catch_warnings(record=True) as emitted:
+            self.config.validate()
+            self.assertEqual(len(emitted), 1)
+            self.assertEqual(emitted[0].category, FutureWarning)
+        self.assertEqual(self.config.connections.package, "verify")
+        self.assertEqual(self.config.connections.metric, "DummyTime")
 
 
 class MemoryMetricTestSuite(MetadataMetricTestCase):
@@ -129,14 +140,16 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
     @staticmethod
     def _standardConfig():
         config = MemoryMetricTask.ConfigClass()
-        config.connections.taskName = DummyTask._DefaultName
+        config.connections.labelName = DummyTask._DefaultName
         config.target = DummyTask._DefaultName + ".run"
-        config.metric = "verify.DummyMemory"
+        config.connections.package = "verify"
+        config.connections.metric = "DummyMemory"
         return config
 
     def setUp(self):
         super().setUp()
         self.config = self._standardConfig()
+        self.metric = Name("verify.DummyMemory")
 
         self.scienceTask = DummyTask()
         self.scienceTask.run()
@@ -146,11 +159,12 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
         meas = result.measurement
 
         self.assertIsInstance(meas, Measurement)
-        self.assertEqual(meas.metric_name, Name(metric=self.config.metric))
+        self.assertEqual(meas.metric_name, self.metric)
         self.assertGreater(meas.quantity, 0.0 * u.byte)
 
     def testNoMetric(self):
-        self.config.metric = "foo.bar.FooBarMemory"
+        self.config.connections.package = "foo.bar"
+        self.config.connections.metric = "FooBarMemory"
         task = MemoryMetricTask(config=self.config)
         with self.assertRaises(TypeError):
             task.run(self.scienceTask.getFullMetadata())
@@ -179,9 +193,16 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
         with self.assertRaises(MetricComputationError):
             task.run(metadata)
 
-    def testGetOutputMetricName(self):
-        self.assertEqual(MemoryMetricTask.getOutputMetricName(self.config),
-                         Name(self.config.metric))
+    def testDeprecated(self):
+        self.config.metric = "verify.DummyMemory"
+        self.config.connections.package = ""
+        self.config.connections.metric = ""
+        with warnings.catch_warnings(record=True) as emitted:
+            self.config.validate()
+            self.assertEqual(len(emitted), 1)
+            self.assertEqual(emitted[0].category, FutureWarning)
+        self.assertEqual(self.config.connections.package, "verify")
+        self.assertEqual(self.config.connections.metric, "DummyMemory")
 
 
 # Hack around unittest's hacky test setup system

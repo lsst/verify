@@ -37,6 +37,15 @@ You can find Jira issues for this module under the `verify <https://jira.lsstcor
 Task reference
 ==============
 
+.. _lsst.verify-pipeline-tasks:
+
+Pipeline tasks
+------------------
+
+.. lsst-pipelinetasks::
+   :root: lsst.verify
+   :toctree: tasks
+
 .. .. _lsst.verify-command-line-tasks:
 ..
 .. Command-line tasks

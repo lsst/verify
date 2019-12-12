@@ -137,8 +137,7 @@ class MetricsControllerTask(Task):
         ----------
         job : `lsst.verify.Job`
             A Job object in which to store the new measurement. Must not
-            already contain a measurement for
-            ``metricTask.getOutputMetricName()``.
+            already contain a measurement for ``metricTask.config.metricName``.
         metricTask : `lsst.verify.tasks.MetricTask`
             The code for computing the measurement.
         dataref : `lsst.daf.persistence.ButlerDataRef`

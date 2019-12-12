@@ -20,12 +20,17 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-__all__ = ["MetricComputationError", "MetricTask"]
+__all__ = ["MetricComputationError", "MetricTask", "MetricConfig",
+           "MetricConnections"]
 
 
 import abc
+import traceback
 
 import lsst.pipe.base as pipeBase
+from lsst.pipe.base import connectionTypes
+
+from lsst.verify import Name
 
 
 class MetricComputationError(RuntimeError):
@@ -40,7 +45,59 @@ class MetricComputationError(RuntimeError):
     pass
 
 
-class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
+class MetricConnections(pipeBase.PipelineTaskConnections,
+                        defaultTemplates={"package": None, "metric": None},
+                        dimensions={"instrument", "visit", "detector"},
+                        ):
+    """An abstract connections class defining a metric output.
+
+    This class assumes detector-level metrics, which is the most common case.
+    Subclasses can redeclare ``measurement`` and ``dimensions`` to override
+    this assumption.
+
+    Notes
+    -----
+    ``MetricConnections`` defines the following dataset templates:
+        ``package``
+            Name of the metric's namespace. By
+            :ref:`verify_metrics <verify-metrics-package>` convention, this is
+            the name of the package the metric is most closely
+            associated with.
+        ``metric``
+            Name of the metric, excluding any namespace.
+    """
+    measurement = connectionTypes.Output(
+        name="metricvalue_{package}_{metric}",
+        doc="The metric value computed by this task.",
+        storageClass="MetricValue",
+        dimensions={"instrument", "visit", "detector"},
+    )
+
+
+class MetricConfig(pipeBase.PipelineTaskConfig,
+                   pipelineConnections=MetricConnections):
+
+    def validate(self):
+        super().validate()
+
+        if "." in self.connections.package:
+            raise ValueError(f"package name {self.connections.package} must "
+                             "not contain periods")
+        if "." in self.connections.metric:
+            raise ValueError(f"metric name {self.connections.metric} must "
+                             "not contain periods; use connections.package "
+                             "instead")
+
+    @property
+    def metricName(self):
+        """The metric calculated by a `MetricTask` with this config
+        (`lsst.verify.Name`, read-only).
+        """
+        return Name(package=self.connections.package,
+                    metric=self.connections.metric)
+
+
+class MetricTask(pipeBase.PipelineTask, metaclass=abc.ABCMeta):
     """A base class for tasks that compute one metric from input datasets.
 
     Parameters
@@ -60,17 +117,9 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
     overriding `run` and by providing a `lsst.pipe.base.connectionTypes.Input`
     for each parameter of `run`. For requirements that are specific to
     ``MetricTask``, see `run`.
-
-    .. note::
-        The API is designed to make it easy to convert all ``MetricTasks`` to
-        `~lsst.pipe.base.PipelineTask` later, but this class is *not* a
-        `~lsst.pipe.base.PipelineTask` and does not work with activators,
-        quanta, or `lsst.daf.butler`.
     """
 
-    # TODO: create a specialized MetricTaskConfig once metrics have
-    # Butler datasets
-    ConfigClass = pipeBase.PipelineTaskConfig
+    ConfigClass = MetricConfig
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -91,10 +140,10 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
             A `~lsst.pipe.base.Struct` containing at least the
             following component:
 
-            - ``measurement``: the value of the metric identified by
-              `getOutputMetricName` (`lsst.verify.Measurement` or `None`).
-              This method is not responsible for adding mandatory metadata
-              (e.g., the data ID); this is handled by the caller.
+            - ``measurement``: the value of the metric
+              (`lsst.verify.Measurement` or `None`). This method is not
+              responsible for adding mandatory metadata (e.g., the data ID);
+              this is handled by the caller.
 
         Raises
         ------
@@ -116,6 +165,27 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
         the necessary inputs are missing, the ``MetricTask`` must return `None`
         in place of the measurement.
         """
+
+    def runQuantum(self, butlerQC, inputRefs, outputRefs):
+        """Do Butler I/O to provide in-memory objects for run.
+
+        This specialization of runQuantum performs error-handling specific to
+        MetricTasks. Most or all of this functionality may be moved to
+        activators in the future.
+        """
+        try:
+            inputs = butlerQC.get(inputRefs)
+            outputs = self.run(**inputs)
+            if outputs.measurement is not None:
+                butlerQC.put(outputs, outputRefs)
+            else:
+                self.log.debugf("Skipping measurement of {!r} on {} "
+                                "as not applicable.", self, inputRefs)
+        except MetricComputationError:
+            # Apparently lsst.log doesn't have built-in exception support?
+            self.log.errorf(
+                "Measurement of {!r} failed on {}->{}\n{}",
+                self, inputRefs, outputRefs, traceback.format_exc())
 
     def adaptArgsAndRun(self, inputData, inputDataIds, outputDataId):
         """A wrapper around `run` used by
@@ -146,11 +216,10 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
             A `~lsst.pipe.base.Struct` containing at least the
             following component:
 
-            - ``measurement``: the value of the metric identified by
-              `getOutputMetricName`, computed from ``inputData``
-              (`lsst.verify.Measurement` or `None`). The measurement is
-              guaranteed to contain not only the value of the metric, but also
-              any mandatory supplementary information.
+            - ``measurement``: the value of the metric, computed from
+              ``inputData`` (`lsst.verify.Measurement` or `None`). The
+              measurement is guaranteed to contain not only the value of the
+              metric, but also any mandatory supplementary information.
 
         Raises
         ------
@@ -242,23 +311,6 @@ class MetricTask(pipeBase.Task, metaclass=abc.ABCMeta):
         connections = config.connections.ConnectionsClass(config=config)
         return {name: not getattr(connections, name).multiple
                 for name in connections.inputs}
-
-    @classmethod
-    @abc.abstractmethod
-    def getOutputMetricName(cls, config):
-        """Identify the metric calculated by this ``MetricTask``.
-
-        Parameters
-        ----------
-        config : ``cls.ConfigClass``
-            Configuration for this ``MetricTask``.
-
-        Returns
-        -------
-        metric : `lsst.verify.Name`
-            The name of the metric computed by objects of this class when
-            configured with ``config``.
-        """
 
     def addStandardMetadata(self, measurement, outputDataId):
         """Add data ID-specific metadata required for all metrics.
