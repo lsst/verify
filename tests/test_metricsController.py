@@ -26,10 +26,10 @@ from astropy.tests.helper import assert_quantity_allclose
 
 import lsst.utils.tests
 from lsst.pex.config import Config, FieldValidationError
-from lsst.pipe.base import \
-    Task, Struct, PipelineTaskConnections, connectionTypes
+from lsst.pipe.base import Task, Struct, connectionTypes
 from lsst.verify import Job, Name, Measurement
-from lsst.verify.tasks import MetricTask, MetricComputationError
+from lsst.verify.tasks import MetricTask, MetricConfig, MetricConnections, \
+    MetricComputationError
 from lsst.verify.gen2tasks import \
     MetricsControllerTask, register, registerMultiple
 
@@ -47,7 +47,8 @@ def _extraMetricName2():
 
 
 class DemoConnections(
-        PipelineTaskConnections,
+        MetricConnections,
+        defaultTemplates={"package": "misc_tasks", "metric": _metricName()},
         dimensions={}):
     inputData = connectionTypes.Input(
         name="metadata",
@@ -55,12 +56,8 @@ class DemoConnections(
     )
 
 
-class DemoMetricConfig(MetricTask.ConfigClass,
+class DemoMetricConfig(MetricConfig,
                        pipelineConnections=DemoConnections):
-    metric = lsst.pex.config.Field(
-        dtype=str,
-        default=_metricName(),
-        doc="Metric to target")
     multiplier = lsst.pex.config.Field(
         dtype=float,
         default=1.0,
@@ -89,10 +86,6 @@ class _DemoMetricTask(MetricTask):
     def areInputDatasetsScalar(cls, _config):
         return {'inputData': False}
 
-    @classmethod
-    def getOutputMetricName(cls, config):
-        return Name(config.metric)
-
 
 @registerMultiple("repeatedMetric")
 class _RepeatedMetricTask(MetricTask):
@@ -115,10 +108,6 @@ class _RepeatedMetricTask(MetricTask):
     @classmethod
     def areInputDatasetsScalar(cls, _config):
         return {'inputData': False}
-
-    @classmethod
-    def getOutputMetricName(cls, config):
-        return Name(config.metric)
 
 
 def _makeMockDataref(dataId=None):
@@ -165,9 +154,9 @@ class MetricsControllerTestSuite(lsst.utils.tests.TestCase):
         self.config.measurers["demoMetric"].multiplier = 2.0
         repeated = self.config.measurers["repeatedMetric"]
         repeated.configs["first"] = DemoMetricConfig()
-        repeated.configs["first"].metric = _extraMetricName1()
+        repeated.configs["first"].connections.metric = _extraMetricName1()
         repeated.configs["second"] = DemoMetricConfig()
-        repeated.configs["second"].metric = _extraMetricName2()
+        repeated.configs["second"].connections.metric = _extraMetricName2()
         repeated.configs["second"].multiplier = 3.4
 
         self.task = MetricsControllerTask(self.config)
@@ -206,9 +195,11 @@ class MetricsControllerTestSuite(lsst.utils.tests.TestCase):
             taskConfigs = self._allMetricTaskConfigs()
             self.assertEqual(len(job.measurements), len(taskConfigs))
             for metricName, metricConfig in zip(job.measurements, taskConfigs):
-                self.assertEqual(metricName, Name(metricConfig.metric))
+                configuredName = Name(metricConfig.connections.package,
+                                      metricConfig.connections.metric)
+                self.assertEqual(metricName, configuredName)
                 assert_quantity_allclose(
-                    job.measurements[metricConfig.metric].quantity,
+                    job.measurements[metricName].quantity,
                     metricConfig.multiplier * float(nTimings) * u.second)
 
             self.assertTrue(job.meta["tested"])
