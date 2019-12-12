@@ -79,13 +79,6 @@ class MetricTaskTestCase(lsst.utils.tests.TestCase, metaclass=abc.ABCMeta):
         self.task = self.makeTask()
         self.taskClass = type(self.task)
 
-    def testGetOutputMetricName(self):
-        config = self.task.config
-        name = self.task.getOutputMetricName(config)
-        self.assertEqual(
-            str(name),
-            config.connections.package + "." + config.connections.metric)
-
     def testOutputDatasetName(self):
         config = self.task.config
         connections = config.connections.ConnectionsClass(config=config)

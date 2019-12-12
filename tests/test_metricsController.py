@@ -75,7 +75,7 @@ class _DemoMetricTask(MetricTask):
     def run(self, inputData):
         nData = len(inputData)
         return Struct(measurement=Measurement(
-            self.getOutputMetricName(self.config),
+            self.config.metricName,
             self.config.multiplier * nData * u.second))
 
     @classmethod
@@ -98,7 +98,7 @@ class _RepeatedMetricTask(MetricTask):
     def run(self, inputData):
         nData = len(inputData)
         return Struct(measurement=Measurement(
-            self.getOutputMetricName(self.config),
+            self.config.metricName,
             self.config.multiplier * nData * u.second))
 
     @classmethod

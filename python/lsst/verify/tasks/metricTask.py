@@ -88,6 +88,14 @@ class MetricConfig(pipeBase.PipelineTaskConfig,
                              "not contain periods; use connections.package "
                              "instead")
 
+    @property
+    def metricName(self):
+        """The metric calculated by a `MetricTask` with this config
+        (`lsst.verify.Name`, read-only).
+        """
+        return Name(package=self.connections.package,
+                    metric=self.connections.metric)
+
 
 class MetricTask(pipeBase.PipelineTask, metaclass=abc.ABCMeta):
     """A base class for tasks that compute one metric from input datasets.
@@ -132,10 +140,10 @@ class MetricTask(pipeBase.PipelineTask, metaclass=abc.ABCMeta):
             A `~lsst.pipe.base.Struct` containing at least the
             following component:
 
-            - ``measurement``: the value of the metric identified by
-              `getOutputMetricName` (`lsst.verify.Measurement` or `None`).
-              This method is not responsible for adding mandatory metadata
-              (e.g., the data ID); this is handled by the caller.
+            - ``measurement``: the value of the metric
+              (`lsst.verify.Measurement` or `None`). This method is not
+              responsible for adding mandatory metadata (e.g., the data ID);
+              this is handled by the caller.
 
         Raises
         ------
@@ -208,11 +216,10 @@ class MetricTask(pipeBase.PipelineTask, metaclass=abc.ABCMeta):
             A `~lsst.pipe.base.Struct` containing at least the
             following component:
 
-            - ``measurement``: the value of the metric identified by
-              `getOutputMetricName`, computed from ``inputData``
-              (`lsst.verify.Measurement` or `None`). The measurement is
-              guaranteed to contain not only the value of the metric, but also
-              any mandatory supplementary information.
+            - ``measurement``: the value of the metric, computed from
+              ``inputData`` (`lsst.verify.Measurement` or `None`). The
+              measurement is guaranteed to contain not only the value of the
+              metric, but also any mandatory supplementary information.
 
         Raises
         ------
@@ -304,24 +311,6 @@ class MetricTask(pipeBase.PipelineTask, metaclass=abc.ABCMeta):
         connections = config.connections.ConnectionsClass(config=config)
         return {name: not getattr(connections, name).multiple
                 for name in connections.inputs}
-
-    @classmethod
-    def getOutputMetricName(cls, config):
-        """Identify the metric calculated by this ``MetricTask``.
-
-        Parameters
-        ----------
-        config : ``cls.ConfigClass``
-            Configuration for this ``MetricTask``.
-
-        Returns
-        -------
-        metric : `lsst.verify.Name`
-            The name of the metric computed by objects of this class when
-            configured with ``config``.
-        """
-        return Name(package=config.connections.package,
-                    metric=config.connections.metric)
 
     def addStandardMetadata(self, measurement, outputDataId):
         """Add data ID-specific metadata required for all metrics.

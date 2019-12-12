@@ -160,7 +160,7 @@ class TimingMetricTask(MetadataMetricTask):
             except TypeError:
                 raise MetricComputationError("Invalid metadata")
             else:
-                meas = Measurement(self.getOutputMetricName(self.config),
+                meas = Measurement(self.config.metricName,
                                    totalTime * u.second)
                 meas.notes["estimator"] = "pipe.base.timeMethod"
                 if timings["StartTimestamp"]:
@@ -244,7 +244,7 @@ class MemoryMetricTask(MetadataMetricTask):
             except (ValueError, TypeError) as e:
                 raise MetricComputationError("Invalid metadata") from e
             else:
-                meas = Measurement(self.getOutputMetricName(self.config),
+                meas = Measurement(self.config.metricName,
                                    self._addUnits(maxMemory))
                 meas.notes['estimator'] = 'pipe.base.timeMethod'
                 return meas
