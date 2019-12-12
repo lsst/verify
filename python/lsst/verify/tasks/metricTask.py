@@ -173,6 +173,7 @@ class MetricTask(pipeBase.PipelineTask, metaclass=abc.ABCMeta):
         MetricTasks. Most or all of this functionality may be moved to
         activators in the future.
         """
+        # Synchronize changes to this method with ApdbMetricTask
         try:
             inputs = butlerQC.get(inputRefs)
             outputs = self.run(**inputs)
