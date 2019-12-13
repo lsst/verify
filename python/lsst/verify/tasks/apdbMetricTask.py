@@ -343,13 +343,12 @@ class ApdbMetricTask(MetricTask):
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         """Do Butler I/O to provide in-memory objects for run.
 
-        This specialization of runQuantum performs error-handling specific to
-        MetricTasks. Most or all of this functionality may be moved to
-        activators in the future.
+        This specialization of runQuantum passes the output data ID to `run`.
         """
         try:
             inputs = butlerQC.get(inputRefs)
-            outputs = self.run(**inputs)
+            outputs = self.run(**inputs,
+                               outputDataId=outputRefs.measurement.dataId)
             if outputs.measurement is not None:
                 butlerQC.put(outputs, outputRefs)
             else:
