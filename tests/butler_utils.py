@@ -20,10 +20,12 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-__all__ = ["make_test_butler", "make_dataset_type"]
+__all__ = ["make_test_butler", "make_dataset_type", "ref_from_connection",
+           "run_quantum"]
 
 
-from lsst.daf.butler import Butler, DatasetType
+from lsst.daf.butler import Butler, DatasetType, DataCoordinate, DatasetRef
+from lsst.pipe.base import ButlerQuantumContext
 
 
 # TODO: factor this out into a pipeline testing library
@@ -84,3 +86,47 @@ def make_dataset_type(butler, name, dimensions, storageClass):
                                universe=butler.registry.dimensions)
     butler.registry.registerDatasetType(dataset_type)
     return dataset_type
+
+
+def ref_from_connection(butler, connection, data_id):
+    """Create a DatasetRef for a connection in a collection.
+
+    Parameters
+    ----------
+    butler : `lsst.daf.butler.Butler`
+        The collection to point to.
+    connection : `lsst.pipe.base.connectionTypes.DimensionedConnection`
+        The connection defining the dataset type to point to.
+    data_id : `Mapping` [`str`] or `lsst.daf.butler.DataCoordinate`
+        The data ID for the dataset to point to.
+
+    Returns
+    -------
+    ref : `lsst.daf.butler.DatasetRef`
+        A reference to a dataset compatible with ``connection``, with ID
+        ``data_id``, in the collection pointed to by ``butler``.
+    """
+    universe = butler.registry.dimensions
+    data_id = DataCoordinate.standardize(data_id, universe=universe)
+    return DatasetRef(
+        datasetType=connection.makeDatasetType(universe),
+        dataId=data_id,
+    )
+
+
+def run_quantum(task, butler, quantum):
+    """Run a PipelineTask on a Quantum.
+
+    Parameters
+    ----------
+    task : `lsst.pipe.base.PipelineTask`
+        The task to run on the quantum.
+    butler : `lsst.daf.butler.Butler`
+        The collection to run on.
+    quantum : `lsst.daf.butler.Quantum`
+        The quantum to run.
+    """
+    butler_qc = ButlerQuantumContext(butler, quantum)
+    connections = task.config.ConnectionsClass(config=task.config)
+    input_refs, output_refs = connections.buildDatasetRefs(quantum)
+    task.runQuantum(butler_qc, input_refs, output_refs)
