@@ -23,13 +23,15 @@ __all__ = ["ApdbMetricTask", "ApdbMetricConfig", "ConfigApdbLoader",
            "DirectApdbLoader", "ApdbMetricConnections"]
 
 import abc
+import traceback
 
 from lsst.pex.config import Config, ConfigurableField, ConfigurableInstance, \
     ConfigDictField, ConfigChoiceField, FieldValidationError
 from lsst.pipe.base import Task, Struct, connectionTypes
 from lsst.dax.apdb import Apdb, ApdbConfig
 
-from lsst.verify.tasks import MetricTask, MetricConfig, MetricConnections
+from lsst.verify.tasks import MetricTask, MetricConfig, MetricConnections, \
+    MetricComputationError
 
 
 class ConfigApdbLoader(Task):
@@ -337,3 +339,23 @@ class ApdbMetricTask(MetricTask):
             measurement = None
 
         return Struct(measurement=measurement)
+
+    def runQuantum(self, butlerQC, inputRefs, outputRefs):
+        """Do Butler I/O to provide in-memory objects for run.
+
+        This specialization of runQuantum passes the output data ID to `run`.
+        """
+        try:
+            inputs = butlerQC.get(inputRefs)
+            outputs = self.run(**inputs,
+                               outputDataId=outputRefs.measurement.dataId)
+            if outputs.measurement is not None:
+                butlerQC.put(outputs, outputRefs)
+            else:
+                self.log.debugf("Skipping measurement of {!r} on {} "
+                                "as not applicable.", self, inputRefs)
+        except MetricComputationError:
+            # Apparently lsst.log doesn't have built-in exception support?
+            self.log.errorf(
+                "Measurement of {!r} failed on {}->{}\n{}",
+                self, inputRefs, outputRefs, traceback.format_exc())
