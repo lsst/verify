@@ -1,6 +1,5 @@
 setupRequired(astropy)
 setupRequired(pyyaml)
-setupRequired(requests)
 setupRequired(numpy)
 setupRequired(sconsUtils)
 setupRequired(utils)
