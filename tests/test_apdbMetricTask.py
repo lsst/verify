@@ -28,13 +28,13 @@ import astropy.units as u
 import lsst.utils.tests
 from lsst.pex.config import Config
 from lsst.daf.butler import Quantum
+import lsst.daf.butler.tests as butlerTests
 from lsst.pipe.base import Task, Struct
 
 from lsst.verify import Measurement
 from lsst.verify.tasks import ApdbMetricTask
 from lsst.verify.tasks.testUtils import ApdbMetricTestCase
-from butler_utils import make_test_butler, make_dataset_type, \
-    ref_from_connection, run_quantum
+from butler_utils import ref_from_connection, run_quantum
 
 
 class DummyTask(ApdbMetricTask):
@@ -66,46 +66,47 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
         config.validate()
         return DummyTask(config=config)
 
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        cls.CAMERA_ID = "NotACam"
+        cls.VISIT_ID = 42
+        cls.CHIP_ID = 5
+
+        # makeTestRepo called in setUpClass because it's *very* slow
+        cls.root = tempfile.mkdtemp()
+        cls.repo = butlerTests.makeTestRepo(cls.root, {
+            "instrument": [cls.CAMERA_ID],
+            "visit": [cls.VISIT_ID],
+            "detector": [cls.CHIP_ID],
+        })
+
+        # self.task not visible at class level
+        task = cls.makeTask()
+        connections = task.config.ConnectionsClass(config=task.config)
+
+        butlerTests.addDatasetType(
+            cls.repo,
+            connections.measurement.name,
+            connections.measurement.dimensions,
+            connections.measurement.storageClass)
+        butlerTests.addDatasetType(
+            cls.repo,
+            connections.dbInfo.name,
+            connections.dbInfo.dimensions,
+            connections.dbInfo.storageClass)
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.root, ignore_errors=True)
+        super().tearDownClass()
+
     def setUp(self):
         super().setUp()
 
         self.connections = self.task.config.ConnectionsClass(
             config=self.task.config)
-        self.CAMERA_ID = "NotACam"
-        self.VISIT_ID = 42
-        self.CHIP_ID = 5
-
-    def _makeButler(self):
-        """Construct a repository that supports the inputs and outputs of a
-        generic `ApdbMetricTask`.
-
-        This method is *very* slow; call it only from tests that need it.
-        """
-
-        root = tempfile.mkdtemp()
-        self.addCleanup(shutil.rmtree, root, ignore_errors=True)
-        butler = make_test_butler(
-            root,
-            {
-                "instrument": [{"name": self.CAMERA_ID}],
-                "visit": [{"id": self.VISIT_ID,
-                           "name": "only_visit",
-                           "instrument": self.CAMERA_ID}],
-                "detector": [{"id": self.CHIP_ID,
-                              "full_name": "only_ccd",
-                              "instrument": self.CAMERA_ID}],
-            })
-        make_dataset_type(
-            butler,
-            self.connections.measurement.name,
-            self.connections.measurement.dimensions,
-            self.connections.measurement.storageClass)
-        make_dataset_type(
-            butler,
-            self.connections.dbInfo.name,
-            self.connections.dbInfo.dimensions,
-            self.connections.dbInfo.storageClass)
-        return butler
 
     def testRunQuantum(self):
         inputId = {
@@ -114,7 +115,7 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
             "detector": self.CHIP_ID,
         }
 
-        butler = self._makeButler()
+        butler = butlerTests.makeTestCollection(self.repo)
         # self.task.config not persistable because it refers to a local class
         # We don't actually use the persisted config, so just make a new one
         butler.put(self.task.ConfigClass(), "apdb_marker", inputId)
