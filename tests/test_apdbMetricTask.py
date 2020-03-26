@@ -27,14 +27,12 @@ import astropy.units as u
 
 import lsst.utils.tests
 from lsst.pex.config import Config
-from lsst.daf.butler import Quantum
 import lsst.daf.butler.tests as butlerTests
-from lsst.pipe.base import Task, Struct
+from lsst.pipe.base import Task, Struct, testUtils
 
 from lsst.verify import Measurement
 from lsst.verify.tasks import ApdbMetricTask
 from lsst.verify.tasks.testUtils import ApdbMetricTestCase
-from butler_utils import ref_from_connection, run_quantum
 
 
 class DummyTask(ApdbMetricTask):
@@ -118,25 +116,21 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
         butler = butlerTests.makeTestCollection(self.repo)
         # self.task.config not persistable because it refers to a local class
         # We don't actually use the persisted config, so just make a new one
-        butler.put(self.task.ConfigClass(), "apdb_marker", inputId)
+        info = self.task.ConfigClass()
+        butler.put(info, "apdb_marker", inputId)
 
-        quantum = Quantum(taskClass=self.taskClass)
-        quantum.addPredictedInput(ref_from_connection(
-            butler,
-            self.connections.dbInfo,
-            inputId))
-        quantum.addOutput(ref_from_connection(
-            butler,
-            self.connections.measurement,
-            {"instrument": self.CAMERA_ID, }))
-
-        run_quantum(self.task, butler, quantum)
+        quantum = testUtils.makeQuantum(
+            self.task, butler, inputId,
+            {"dbInfo": [inputId], "measurement": inputId})
+        run = testUtils.runTestQuantum(self.task, butler, quantum)
 
         # Did output data ID get passed to DummyTask.run?
-        measurement = butler.get(self.connections.measurement.name,
-                                 instrument=self.CAMERA_ID)
-        self.assertEqual(measurement.quantity,
-                         len(self.CAMERA_ID) * u.dimensionless_unscaled)
+        expectedId = lsst.daf.butler.DataCoordinate.standardize(
+            {"instrument": self.CAMERA_ID},
+            universe=butler.registry.dimensions)
+        run.assert_called_once_with(
+            dbInfo=[info],
+            outputDataId=expectedId)
 
 
 # Hack around unittest's hacky test setup system
