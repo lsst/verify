@@ -124,7 +124,8 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
             task.run(metadata)
 
     def testDeprecated(self):
-        self.config.metric = "verify.DummyTime"
+        with warnings.catch_warnings(record=True):
+            self.config.metric = "verify.DummyTime"
         self.config.connections.package = ""
         self.config.connections.metric = ""
         with warnings.catch_warnings(record=True) as emitted:
@@ -200,7 +201,8 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
             task.run(metadata)
 
     def testDeprecated(self):
-        self.config.metric = "verify.DummyMemory"
+        with warnings.catch_warnings(record=True):
+            self.config.metric = "verify.DummyMemory"
         self.config.connections.package = ""
         self.config.connections.metric = ""
         with warnings.catch_warnings(record=True) as emitted:
