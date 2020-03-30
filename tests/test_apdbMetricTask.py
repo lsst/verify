@@ -106,7 +106,7 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
         self.connections = self.task.config.ConnectionsClass(
             config=self.task.config)
 
-    def testRunQuantum(self):
+    def _prepareQuantum(self, task):
         inputId = {
             "instrument": self.CAMERA_ID,
             "visit": self.VISIT_ID,
@@ -114,14 +114,20 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
         }
 
         butler = butlerTests.makeTestCollection(self.repo)
-        # self.task.config not persistable because it refers to a local class
+        # task.config not persistable if it refers to a local class
         # We don't actually use the persisted config, so just make a new one
-        info = self.task.ConfigClass()
+        info = task.ConfigClass()
         butler.put(info, "apdb_marker", inputId)
 
         quantum = testUtils.makeQuantum(
-            self.task, butler, inputId,
+            task, butler, inputId,
             {"dbInfo": [inputId], "measurement": inputId})
+
+        return (butler, quantum, info)
+
+    def testRunQuantum(self):
+        butler, quantum, input = self._prepareQuantum(self.task)
+
         run = testUtils.runTestQuantum(self.task, butler, quantum)
 
         # Did output data ID get passed to DummyTask.run?
@@ -129,7 +135,7 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
             {"instrument": self.CAMERA_ID},
             universe=butler.registry.dimensions)
         run.assert_called_once_with(
-            dbInfo=[info],
+            dbInfo=[input],
             outputDataId=expectedId)
 
 
