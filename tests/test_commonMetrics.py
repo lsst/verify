@@ -70,6 +70,7 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
 
     def testValid(self):
         result = self.task.run(self.scienceTask.getFullMetadata())
+        lsst.pipe.base.testUtils.assertValidOutput(self.task, result)
         meas = result.measurement
 
         self.assertIsInstance(meas, Measurement)
@@ -86,6 +87,7 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
 
     def testMissingData(self):
         result = self.task.run(None)
+        lsst.pipe.base.testUtils.assertValidOutput(self.task, result)
         meas = result.measurement
         self.assertIsNone(meas)
 
@@ -93,6 +95,7 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         self.config.target = DummyTask._DefaultName + ".runDataRef"
         task = TimingMetricTask(config=self.config)
         result = task.run(self.scienceTask.getFullMetadata())
+        lsst.pipe.base.testUtils.assertValidOutput(task, result)
         meas = result.measurement
         self.assertIsNone(meas)
 
@@ -121,7 +124,8 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
             task.run(metadata)
 
     def testDeprecated(self):
-        self.config.metric = "verify.DummyTime"
+        with warnings.catch_warnings(record=True):
+            self.config.metric = "verify.DummyTime"
         self.config.connections.package = ""
         self.config.connections.metric = ""
         with warnings.catch_warnings(record=True) as emitted:
@@ -156,6 +160,7 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
 
     def testValid(self):
         result = self.task.run(self.scienceTask.getFullMetadata())
+        lsst.pipe.base.testUtils.assertValidOutput(self.task, result)
         meas = result.measurement
 
         self.assertIsInstance(meas, Measurement)
@@ -171,6 +176,7 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
 
     def testMissingData(self):
         result = self.task.run(None)
+        lsst.pipe.base.testUtils.assertValidOutput(self.task, result)
         meas = result.measurement
         self.assertIsNone(meas)
 
@@ -178,6 +184,7 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
         self.config.target = DummyTask._DefaultName + ".runDataRef"
         task = MemoryMetricTask(config=self.config)
         result = task.run(self.scienceTask.getFullMetadata())
+        lsst.pipe.base.testUtils.assertValidOutput(task, result)
         meas = result.measurement
         self.assertIsNone(meas)
 
@@ -194,7 +201,8 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
             task.run(metadata)
 
     def testDeprecated(self):
-        self.config.metric = "verify.DummyMemory"
+        with warnings.catch_warnings(record=True):
+            self.config.metric = "verify.DummyMemory"
         self.config.connections.package = ""
         self.config.connections.metric = ""
         with warnings.catch_warnings(record=True) as emitted:

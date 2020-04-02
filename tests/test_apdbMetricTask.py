@@ -27,14 +27,12 @@ import astropy.units as u
 
 import lsst.utils.tests
 from lsst.pex.config import Config
-from lsst.daf.butler import Quantum
-from lsst.pipe.base import Task, Struct
+import lsst.daf.butler.tests as butlerTests
+from lsst.pipe.base import Task, Struct, testUtils
 
 from lsst.verify import Measurement
-from lsst.verify.tasks import ApdbMetricTask
+from lsst.verify.tasks import ApdbMetricTask, MetricComputationError
 from lsst.verify.tasks.testUtils import ApdbMetricTestCase
-from butler_utils import make_test_butler, make_dataset_type, \
-    ref_from_connection, run_quantum
 
 
 class DummyTask(ApdbMetricTask):
@@ -66,76 +64,114 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
         config.validate()
         return DummyTask(config=config)
 
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        cls.CAMERA_ID = "NotACam"
+        cls.VISIT_ID = 42
+        cls.CHIP_ID = 5
+
+        # makeTestRepo called in setUpClass because it's *very* slow
+        cls.root = tempfile.mkdtemp()
+        cls.repo = butlerTests.makeTestRepo(cls.root, {
+            "instrument": [cls.CAMERA_ID],
+            "visit": [cls.VISIT_ID],
+            "detector": [cls.CHIP_ID],
+        })
+
+        # self.task not visible at class level
+        task = cls.makeTask()
+        connections = task.config.ConnectionsClass(config=task.config)
+
+        butlerTests.addDatasetType(
+            cls.repo,
+            connections.measurement.name,
+            connections.measurement.dimensions,
+            connections.measurement.storageClass)
+        butlerTests.addDatasetType(
+            cls.repo,
+            connections.dbInfo.name,
+            connections.dbInfo.dimensions,
+            connections.dbInfo.storageClass)
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.root, ignore_errors=True)
+        super().tearDownClass()
+
     def setUp(self):
         super().setUp()
 
         self.connections = self.task.config.ConnectionsClass(
             config=self.task.config)
-        self.CAMERA_ID = "NotACam"
-        self.VISIT_ID = 42
-        self.CHIP_ID = 5
 
-    def _makeButler(self):
-        """Construct a repository that supports the inputs and outputs of a
-        generic `ApdbMetricTask`.
-
-        This method is *very* slow; call it only from tests that need it.
-        """
-
-        root = tempfile.mkdtemp()
-        self.addCleanup(shutil.rmtree, root, ignore_errors=True)
-        butler = make_test_butler(
-            root,
-            {
-                "instrument": [{"name": self.CAMERA_ID}],
-                "visit": [{"id": self.VISIT_ID,
-                           "name": "only_visit",
-                           "instrument": self.CAMERA_ID}],
-                "detector": [{"id": self.CHIP_ID,
-                              "full_name": "only_ccd",
-                              "instrument": self.CAMERA_ID}],
-            })
-        make_dataset_type(
-            butler,
-            self.connections.measurement.name,
-            self.connections.measurement.dimensions,
-            self.connections.measurement.storageClass)
-        make_dataset_type(
-            butler,
-            self.connections.dbInfo.name,
-            self.connections.dbInfo.dimensions,
-            self.connections.dbInfo.storageClass)
-        return butler
-
-    def testRunQuantum(self):
+    def _prepareQuantum(self, task):
         inputId = {
             "instrument": self.CAMERA_ID,
             "visit": self.VISIT_ID,
             "detector": self.CHIP_ID,
         }
 
-        butler = self._makeButler()
-        # self.task.config not persistable because it refers to a local class
+        butler = butlerTests.makeTestCollection(self.repo)
+        # task.config not persistable if it refers to a local class
         # We don't actually use the persisted config, so just make a new one
-        butler.put(self.task.ConfigClass(), "apdb_marker", inputId)
+        info = task.ConfigClass()
+        butler.put(info, "apdb_marker", inputId)
 
-        quantum = Quantum(taskClass=self.taskClass)
-        quantum.addPredictedInput(ref_from_connection(
-            butler,
-            self.connections.dbInfo,
-            inputId))
-        quantum.addOutput(ref_from_connection(
-            butler,
-            self.connections.measurement,
-            {"instrument": self.CAMERA_ID, }))
+        quantum = testUtils.makeQuantum(
+            task, butler, inputId,
+            {"dbInfo": [inputId], "measurement": inputId})
 
-        run_quantum(self.task, butler, quantum)
+        return (butler, quantum, info)
+
+    def testRunQuantum(self):
+        butler, quantum, input = self._prepareQuantum(self.task)
+
+        run = testUtils.runTestQuantum(self.task, butler, quantum)
 
         # Did output data ID get passed to DummyTask.run?
-        measurement = butler.get(self.connections.measurement.name,
-                                 instrument=self.CAMERA_ID)
-        self.assertEqual(measurement.quantity,
-                         len(self.CAMERA_ID) * u.dimensionless_unscaled)
+        expectedId = lsst.daf.butler.DataCoordinate.standardize(
+            {"instrument": self.CAMERA_ID},
+            universe=butler.registry.dimensions)
+        run.assert_called_once_with(
+            dbInfo=[input],
+            outputDataId=expectedId)
+
+    def testRunQuantumNone(self):
+        class NoneTask(DummyTask):
+            def run(self, *args, **kwargs):
+                return Struct(measurement=None)
+
+        config = NoneTask.ConfigClass()
+        config.connections.package = "verify"
+        config.connections.metric = "DummyApdb"
+        task = NoneTask(config=config)
+        butler, quantum, input = self._prepareQuantum(task)
+
+        with unittest.mock.patch.object(
+                lsst.pipe.base.ButlerQuantumContext, "put") as put:
+            testUtils.runTestQuantum(task, butler, quantum, mockRun=False)
+            # Should not attempt to write nonexistent data
+            put.assert_not_called()
+
+    def testRunQuantumException(self):
+        class ExceptionalTask(DummyTask):
+            def run(self, *args, **kwargs):
+                raise MetricComputationError()
+
+        config = ExceptionalTask.ConfigClass()
+        config.connections.package = "verify"
+        config.connections.metric = "DummyApdb"
+        task = ExceptionalTask(config=config)
+        butler, quantum, input = self._prepareQuantum(task)
+
+        with unittest.mock.patch.object(
+                lsst.pipe.base.ButlerQuantumContext, "put") as put:
+            testUtils.runTestQuantum(task, butler, quantum, mockRun=False)
+            # Should not propagate MetricComputationError
+            # Should not attempt to write data that was never returned
+            put.assert_not_called()
 
 
 # Hack around unittest's hacky test setup system
