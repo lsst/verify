@@ -1,6 +1,3 @@
-setupRequired(astropy)
-setupRequired(pyyaml)
-setupRequired(numpy)
 setupRequired(sconsUtils)
 setupRequired(utils)
 setupRequired(log)
