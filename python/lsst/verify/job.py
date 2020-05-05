@@ -302,7 +302,7 @@ class Job(JsonSerializationMixin):
                 os.makedirs(dirname)
 
         with open(filename, 'w') as f:
-            json.dump(self.json, f)
+            json.dump(self.json, f, indent=2, sort_keys=True)
 
     def dispatch(self, api_user=None, api_password=None,
                  api_url='https://squash-restful-api.lsst.codes',
