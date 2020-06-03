@@ -40,6 +40,7 @@ def get_jenkins_env():
         - ``'ci_label'``: Value of ``${label}`` environment variable in
           Jenkins CI.
         - ``'ci_url'``: URL to job page in Jenkins CI.
+        - ``'ci_refs'``: whitespace-delimited branch references
         - ``'status'``: Job return status (always ``0``).
 
     Examples
@@ -57,6 +58,7 @@ def get_jenkins_env():
         'ci_name': os.getenv('PRODUCT', 'unknown'),
         'ci_dataset': os.getenv('dataset', 'unknown'),
         'ci_label': os.getenv('label', 'unknown'),
+        'ci_refs': os.getenv('refs', 'unknown'),
         'ci_url': os.getenv('BUILD_URL', 'https://example.com'),
         'status': 0,
     }
