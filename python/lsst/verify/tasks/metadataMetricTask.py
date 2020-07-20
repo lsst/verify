@@ -31,7 +31,7 @@ from lsst.verify.tasks import MetricTask, MetricConfig, MetricConnections, \
 
 class SingleMetadataMetricConnections(
         MetricConnections,
-        dimensions={"instrument", "exposure", "detector"},
+        dimensions={"instrument", "visit", "detector"},
         defaultTemplates={"labelName": "", "package": None, "metric": None}):
     """An abstract connections class defining a metadata input.
 
@@ -56,7 +56,7 @@ class SingleMetadataMetricConnections(
         doc="The target top-level task's metadata. The name must be set to "
             "the metadata's butler type, such as 'processCcd_metadata'.",
         storageClass="PropertySet",
-        dimensions={"Instrument", "Exposure", "Detector"},
+        dimensions={"instrument", "visit", "detector"},
         multiple=False,
     )
 
