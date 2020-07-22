@@ -158,6 +158,19 @@ class MetadataMetricTestCase(gen2Utils.MetricTaskTestCase, MetricTaskTestCase):
                 else:
                     self.task.run([None])
 
+    def testDimensionsOverride(self):
+        config = self.task.config
+        expectedDimensions = {"instrument", "visit"}
+        config.metadataDimensions = expectedDimensions
+
+        connections = config.connections.ConnectionsClass(config=config)
+        self.assertSetEqual(set(connections.dimensions),
+                            expectedDimensions)
+        self.assertIn(connections.metadata,
+                      connections.allConnections.values())
+        self.assertSetEqual(set(connections.metadata.dimensions),
+                            expectedDimensions)
+
 
 class ApdbMetricTestCase(gen2Utils.MetricTaskTestCase, MetricTaskTestCase):
     """Unit test base class for tests of `ApdbMetricTask`.
