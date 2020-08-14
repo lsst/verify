@@ -24,6 +24,8 @@ __all__ = ["MetadataMetricTask", "MetadataMetricConfig",
 
 import abc
 
+import lsst.pex.config
+
 from lsst.pipe.base import Struct, connectionTypes
 from lsst.verify.tasks import MetricTask, MetricConfig, MetricConnections, \
     MetricComputationError
@@ -31,7 +33,7 @@ from lsst.verify.tasks import MetricTask, MetricConfig, MetricConnections, \
 
 class SingleMetadataMetricConnections(
         MetricConnections,
-        dimensions={"instrument", "exposure", "detector"},
+        dimensions={"instrument", "visit", "detector"},
         defaultTemplates={"labelName": "", "package": None, "metric": None}):
     """An abstract connections class defining a metadata input.
 
@@ -56,23 +58,47 @@ class SingleMetadataMetricConnections(
         doc="The target top-level task's metadata. The name must be set to "
             "the metadata's butler type, such as 'processCcd_metadata'.",
         storageClass="PropertySet",
-        dimensions={"Instrument", "Exposure", "Detector"},
+        dimensions={"instrument", "visit", "detector"},
         multiple=False,
     )
+
+    def __init__(self, *, config=None):
+        """Customize the connections for a specific MetricTask instance.
+
+        Parameters
+        ----------
+        config : `MetadataMetricConfig`
+            A config for `MetadataMetricTask` or one of its subclasses.
+        """
+        super().__init__(config=config)
+        if config and config.metadataDimensions != self.metadata.dimensions:
+            # Hack, but only way to get a connection without fixed dimensions
+            newMetadata = connectionTypes.Input(
+                name=self.metadata.name,
+                doc=self.metadata.doc,
+                storageClass=self.metadata.storageClass,
+                dimensions=config.metadataDimensions,
+                multiple=self.metadata.multiple,
+            )
+            self.metadata = newMetadata
+            # Registry must match actual connections
+            self.allConnections['metadata'] = self.metadata
+            # Task requires that quantum dimensions match input dimensions
+            self.dimensions = config.metadataDimensions
 
 
 class MetadataMetricConfig(
         MetricConfig,
         pipelineConnections=SingleMetadataMetricConnections):
     """A base class for metadata metric task configs.
-
-    Notes
-    -----
-    `MetadataMetricTask` classes that have CCD-level granularity can use
-    this class as-is. Support for metrics of a different granularity
-    may be added later.
     """
-    pass
+    metadataDimensions = lsst.pex.config.ListField(
+        default=SingleMetadataMetricConnections.dimensions,
+        dtype=str,
+        doc="Override for the dimensions of the 'metadata' input, when "
+            "instrumenting Tasks that don't produce one metadata object "
+            "per visit.",
+    )
 
 
 class _AbstractMetadataMetricTask(MetricTask):

@@ -54,6 +54,7 @@ class TimeMethodMetricConfig(MetadataMetricConfig):
             "in the format of `lsst.pipe.base.Task.getFullMetadata()`.")
     metric = pexConfig.Field(
         dtype=str,
+        optional=True,
         doc="The fully qualified name of the metric to store the "
             "profiling information.",
         deprecated="This field has been replaced by connections.package and "
