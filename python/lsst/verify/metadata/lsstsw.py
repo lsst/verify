@@ -88,8 +88,9 @@ class LsstswRepos(object):
             Name of the checked-out Git branch. If GitPython is not
             installed, `None` is always returned instead.
         """
-        if git is not None:
-            repo = git.Repo(self.get_package_repo_path(package_name))
+        path = self.get_package_repo_path(package_name)
+        if git is not None and os.path.exists(path):
+            repo = git.Repo(path)
             return repo.active_branch.name
         else:
             return None
@@ -109,8 +110,9 @@ class LsstswRepos(object):
             Hex SHA of the checkout-out Git commit. If GitPython is not
             installed, `None` is always returned instead.
         """
-        if git is not None:
-            repo = git.Repo(self.get_package_repo_path(package_name))
+        path = self.get_package_repo_path(package_name)
+        if git is not None and os.path.exists(path):
+            repo = git.Repo(path)
             return repo.active_branch.commit.hexsha
         else:
             return None
