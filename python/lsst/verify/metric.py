@@ -117,11 +117,11 @@ class Metric(JsonSerializationMixin):
         return cls(name, **args)
 
     def __eq__(self, other):
-        return ((self.name == other.name) and
-                (self.unit == other.unit) and
-                (self.tags == other.tags) and
-                (self.description == other.description) and
-                (self.reference == other.reference))
+        return ((self.name == other.name)
+                and (self.unit == other.unit)
+                and (self.tags == other.tags)
+                and (self.description == other.description)
+                and (self.reference == other.reference))
 
     def __ne__(self, other):
         return not self.__eq__(other)
