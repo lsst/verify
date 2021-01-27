@@ -399,8 +399,8 @@ class Configuration(object):
             message = '--user or $SQUASH_USER configuration required'
             raise RuntimeError(message)
 
-        self.api_password = (args.api_password or
-                             os.getenv('SQUASH_password'))
+        self.api_password = (args.api_password
+                             or os.getenv('SQUASH_password'))
         if not self.test and self.api_password is None:
             # If password hasn't been set, prompt for it.
             self.api_password = getpass.getpass(prompt="SQuaSH password: ")
