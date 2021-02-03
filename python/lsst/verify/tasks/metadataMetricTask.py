@@ -93,7 +93,8 @@ class MetadataMetricConfig(
     """A base class for metadata metric task configs.
     """
     metadataDimensions = lsst.pex.config.ListField(
-        default=SingleMetadataMetricConnections.dimensions,
+        # Sort to ensure default order is consistent between runs
+        default=sorted(SingleMetadataMetricConnections.dimensions),
         dtype=str,
         doc="Override for the dimensions of the 'metadata' input, when "
             "instrumenting Tasks that don't produce one metadata object "
