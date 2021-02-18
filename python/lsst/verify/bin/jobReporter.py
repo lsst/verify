@@ -20,15 +20,16 @@ def build_argparser():
         'collection', type=str,
         help='Collection to search for metric measurement values')
     parser.add_argument(
-        '--metrics_package', type=str, default="validate_drp",
-        help='Name of metrics package to load')
+        '--metrics_package', type=str,
+        help='Metrics namespace to filter by. If omitted, all metrics '
+             'are processed.')
     parser.add_argument(
         '--spec', type=str, default="design",
         help='Spec level to apply: minimum, design, or stretch')
     parser.add_argument(
-        '--dataset_name', type=str,
-        default="validation_data_hsc",
-        help='Name of the dataset for which the report is being generated.')
+        '--dataset_name', type=str, required=True,
+        help='Name of the dataset for which the report is being generated.'
+             'This is the desired ci_dataset tag in SQuaSH.')
     return parser
 
 
@@ -49,7 +50,7 @@ def main(repository, collection, metrics_package, spec, dataset_name):
     if len(jobs) == 0:
         raise RuntimeError('Job reporter returned no jobs.')
     for k, v in jobs.items():
-        filename = f"{metrics_package}_{spec}_{k}_{time.time()}.json"
+        filename = f"{metrics_package or 'all'}_{spec}_{k}_{time.time()}.json"
         with open(filename, 'w') as fh:
             json.dump(v.json, fh, indent=2, sort_keys=True)
 
@@ -64,8 +65,8 @@ class JobReporter:
         Path to a Butler configuration YAML file or a directory containing one.
     collection : `str`
         Name of the collection to search for metric values.
-    metrics_package : `str`
-        The namespace by which to filter selected metrics.
+    metrics_package : `str` or `None`
+        If provided, the namespace by which to filter selected metrics.
     spec : `str`
         The level of specification to filter metrics by.
     dataset_name : `str`
