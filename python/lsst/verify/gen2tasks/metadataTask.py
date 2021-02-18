@@ -86,6 +86,7 @@ class SquashMetadataTask(Task):
             (e.g., ``"visit"``), with the corresponding value.
         """
         job.meta['instrument'] = SquashMetadataTask._getInstrument(dataref)
+        job.meta['butler_generation'] = 'Gen2'
         job.meta.update(dataref.dataId)
 
         return Struct(job=job)

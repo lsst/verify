@@ -48,7 +48,7 @@ class SquashMetadataTestSuite(lsst.utils.tests.TestCase):
         dataref = _makeMockDataref(dataId)
         self.testbed.run(self.job, dataref=dataref)
         self.assertEqual(set(self.job.meta.keys()),
-                         {"instrument"} | dataId.keys())
+                         {"instrument", "butler_generation"} | dataId.keys())
         self.assertEqual(self.job.meta["instrument"], "FANCYCAM")
         for key, value in dataId.items():
             self.assertEqual(self.job.meta[key], value)
