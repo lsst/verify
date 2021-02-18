@@ -9,6 +9,13 @@ __all__ = ["main", "JobReporter"]
 
 
 def main(repository, collection, metrics_package, spec, dataset_name):
+    """Extract metric values from a Gen 3 repository and rewrite them to disk
+    in Job format.
+
+    Parameters
+    ----------
+    Parameters are the same as for the `JobReporter` class.
+    """
     jr = JobReporter(repository,
                      collection,
                      metrics_package,
@@ -24,6 +31,24 @@ def main(repository, collection, metrics_package, spec, dataset_name):
 
 
 class JobReporter:
+    """A class for extracting metric values from a Gen 3 repository and
+    repackaging them as Job objects.
+
+    Parameters
+    ----------
+    repository : `str`
+        Path to a Butler configuration YAML file or a directory containing one.
+    collection : `str`
+        Name of the collection to search for metric values.
+    metrics_package : `str`
+        The namespace by which to filter selected metrics.
+    spec : `str`
+        The level of specification to filter metrics by.
+    dataset_name : `str`
+        The name of the dataset to report to SQuaSH through the
+        ``ci_dataset`` tag.
+    """
+
     def __init__(self,
                  repository,
                  collection,
@@ -42,6 +67,14 @@ class JobReporter:
         self.dataset_name = dataset_name
 
     def run(self):
+        """Collate job information.
+
+        Returns
+        -------
+        jobs : `dict` [`str`, `lsst.verify.Job`]
+            A mapping of `~lsst.verify.Job` objects, indexed by a string
+            representation of their data ID.
+        """
         jobs = {}
         for metric in self.metrics:
             dataset = f'metricvalue_{metric.package}_{metric.metric}'
