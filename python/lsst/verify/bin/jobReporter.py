@@ -102,10 +102,10 @@ class JobReporter:
         jobs = {}
         for metric in self.metrics:
             dataset = f'metricvalue_{metric.package}_{metric.metric}'
-            data_ids = list(self.registry.queryDatasets(dataset,
-                            collections=self.collection))
-            for did in data_ids:
-                m = self.butler.get(did, collections=self.collection)
+            datasetRefs = list(self.registry.queryDatasets(dataset,
+                               collections=self.collection))
+            for ref in datasetRefs:
+                m = self.butler.get(ref, collections=self.collection)
                 # make the name the same as what SQuaSH Expects
                 m.metric_name = metric
                 # Grab the physical filter associated with the abstract filter
@@ -114,14 +114,14 @@ class JobReporter:
                 pfilts = [el.name for el in
                           self.registry.queryDimensionRecords(
                               'physical_filter',
-                              dataId=did.dataId)]
+                              dataId=ref.dataId)]
                 pfilt = min(pfilts, key=len)
 
-                tract = did.dataId['tract']
-                afilt = did.dataId['band']
+                tract = ref.dataId['tract']
+                afilt = ref.dataId['band']
                 key = f"{tract}_{afilt}"
                 if key not in jobs.keys():
-                    job_metadata = {'instrument': did.dataId['instrument'],
+                    job_metadata = {'instrument': ref.dataId['instrument'],
                                     'filter': pfilt,
                                     'band': afilt,
                                     'tract': tract,
