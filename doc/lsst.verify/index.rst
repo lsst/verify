@@ -81,6 +81,7 @@ Script reference
    :maxdepth: 1
 
    scripts/dispatch_verify.py
+   scripts/gen3_to_job.py
    scripts/inspect_job.py
    scripts/lint_metrics.py
 
