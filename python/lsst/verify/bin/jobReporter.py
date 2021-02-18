@@ -108,24 +108,30 @@ class JobReporter:
                 m = self.butler.get(ref, collections=self.collection)
                 # make the name the same as what SQuaSH Expects
                 m.metric_name = metric
-                # Grab the physical filter associated with the abstract filter
-                # In general there may be more than one.  Take the shortest
-                # assuming it is the most generic.
-                pfilts = [el.name for el in
-                          self.registry.queryDimensionRecords(
-                              'physical_filter',
-                              dataId=ref.dataId)]
-                pfilt = min(pfilts, key=len)
 
                 # queryDatasets guarantees ref.dataId.hasFull()
                 dataId = ref.dataId.full.byName()
                 # Sort values by key name
                 key = "_".join(str(id) for _, id in sorted(dataId.items()))
 
+                # For backward-compatibility with Gen 2 SQuaSH uploads
+                pfilt = dataId.get('physical_filter')
+                if not pfilt:
+                    # Grab the physical filter associated with the abstract
+                    # filter. In general there may be more than one. Take the
+                    # shortest assuming it is the most generic.
+                    pfilts = [el.name for el in
+                              self.registry.queryDimensionRecords(
+                                  'physical_filter',
+                                  dataId=ref.dataId)]
+                    pfilt = min(pfilts, key=len)
+
                 if key not in jobs.keys():
-                    job_metadata = {'filter': pfilt,
-                                    'butler_generation': 'Gen3',
-                                    'ci_dataset': self.dataset_name}
+                    job_metadata = {
+                        'filter': pfilt,
+                        'butler_generation': 'Gen3',
+                        'ci_dataset': self.dataset_name,
+                    }
                     job_metadata.update(dataId)
                     # Get dataset_repo_url from repository somehow?
                     jobs[key] = Job(meta=job_metadata, metrics=self.metrics)
