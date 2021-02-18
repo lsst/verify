@@ -1,24 +1,7 @@
 #!/usr/bin/env python
 import argparse
-import time
-import json
 
-from lsst.verify.bin.jobReporter import JobReporter
-
-
-def main(repository, collection, metrics_package, spec, dataset_name):
-    jr = JobReporter(repository,
-                     collection,
-                     metrics_package,
-                     spec,
-                     dataset_name)
-    jobs = jr.run()
-    if len(jobs) == 0:
-        raise RuntimeError('Job reporter returned no jobs.')
-    for k, v in jobs.items():
-        filename = f"{metrics_package}_{spec}_{k}_{time.time()}.json"
-        with open(filename, 'w') as fh:
-            json.dump(v.json, fh, indent=2, sort_keys=True)
+from lsst.verify.bin.jobReporter import main
 
 
 if __name__ == "__main__":
