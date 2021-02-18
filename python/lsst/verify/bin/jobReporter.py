@@ -117,16 +117,16 @@ class JobReporter:
                               dataId=ref.dataId)]
                 pfilt = min(pfilts, key=len)
 
-                tract = ref.dataId['tract']
-                afilt = ref.dataId['band']
-                key = f"{tract}_{afilt}"
+                # queryDatasets guarantees ref.dataId.hasFull()
+                dataId = ref.dataId.full.byName()
+                # Sort values by key name
+                key = "_".join(str(id) for _, id in sorted(dataId.items()))
+
                 if key not in jobs.keys():
-                    job_metadata = {'instrument': ref.dataId['instrument'],
-                                    'filter': pfilt,
-                                    'band': afilt,
-                                    'tract': tract,
+                    job_metadata = {'filter': pfilt,
                                     'butler_generation': 'Gen3',
                                     'ci_dataset': self.dataset_name}
+                    job_metadata.update(dataId)
                     # Get dataset_repo_url from repository somehow?
                     jobs[key] = Job(meta=job_metadata, metrics=self.metrics)
                 jobs[key].measurements.insert(m)
