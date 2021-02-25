@@ -1,9 +1,8 @@
 import argparse
 import json
-import time
 
 from lsst.verify import Job, MetricSet
-from lsst.daf.butler import Butler
+from lsst.daf.butler import Butler, FileTemplate
 
 
 __all__ = ["main", "JobReporter", "build_argparser"]
@@ -50,9 +49,18 @@ def main(repository, collection, metrics_package, spec, dataset_name):
     if len(jobs) == 0:
         raise RuntimeError('Job reporter returned no jobs.')
     for k, v in jobs.items():
-        filename = f"{metrics_package or 'all'}_{spec}_{k}_{time.time()}.json"
+        filename = f"{metrics_package or 'all'}_{spec}_{k}.verify.json"
         with open(filename, 'w') as fh:
             json.dump(v.json, fh, indent=2, sort_keys=True)
+
+
+def make_key(ref):
+    names = sorted(list(ref.dataId.names))
+    names.append('run')  # "run" must be in the template
+    key_tmpl = '_'.join(['{' + el + '}' for el in names])
+    file_tmpl = FileTemplate(key_tmpl)
+    key = file_tmpl.format(ref)
+    return key
 
 
 class JobReporter:
@@ -112,8 +120,7 @@ class JobReporter:
 
                 # queryDatasets guarantees ref.dataId.hasFull()
                 dataId = ref.dataId.full.byName()
-                # Sort values by key name
-                key = "_".join(str(id) for _, id in sorted(dataId.items()))
+                key = make_key(ref)
 
                 # For backward-compatibility with Gen 2 SQuaSH uploads
                 pfilt = dataId.get('physical_filter')
