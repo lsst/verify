@@ -34,6 +34,7 @@ from ..tasks.metricTask import MetricTask as Gen3MetricTask
 @deprecated(
     reason="Replaced by `lsst.verify.tasks.MetricTask`. "
            "To be removed along with daf_persistence.",
+    version="v20.0",
     category=FutureWarning)
 class MetricTask(Gen3MetricTask, metaclass=abc.ABCMeta):
     """A base class for tasks that compute one metric from input datasets.
