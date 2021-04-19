@@ -172,7 +172,7 @@ class _AbstractMetadataMetricTask(MetricTask):
         return {key for key in keys if keyFragment in key}
 
     @staticmethod
-    def _extractMetadata(metadata, metadataKeys):
+    def extractMetadata(metadata, metadataKeys):
         """Read multiple keys from a metadata object.
 
         Parameters
@@ -297,7 +297,7 @@ class MetadataMetricTask(_AbstractMetadataMetricTask):
         metadataKeys = self.getInputMetadataKeys(self.config)
 
         if metadata is not None:
-            data = self._extractMetadata(metadata, metadataKeys)
+            data = self.extractMetadata(metadata, metadataKeys)
         else:
             data = {dataName: None for dataName in metadataKeys}
 
