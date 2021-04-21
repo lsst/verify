@@ -19,7 +19,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["MetadataMetricTask", "MetadataMetricConfig",
+__all__ = ["AbstractMetadataMetricTask",
+           "MetadataMetricTask", "MetadataMetricConfig",
            "SingleMetadataMetricConnections"]
 
 import abc
@@ -102,7 +103,7 @@ class MetadataMetricConfig(
     )
 
 
-class _AbstractMetadataMetricTask(MetricTask):
+class AbstractMetadataMetricTask(MetricTask):
     """A base class for tasks that compute metrics from metadata values.
 
     This class contains code that is agnostic to whether the input is one
@@ -118,14 +119,14 @@ class _AbstractMetadataMetricTask(MetricTask):
     Notes
     -----
     This class should be customized by overriding `getInputMetadataKeys`
-    and `makeMeasurement`. You should not need to override `run`.
+    and `run`.
 
     This class makes no assumptions about how to handle missing data;
-    `makeMeasurement` may be called with `None` values, and is responsible
+    `run` may be called with `None` values, and is responsible
     for deciding how to deal with them.
     """
-    # Design note: getInputMetadataKeys and makeMeasurement are overrideable
-    # methods rather than subtask(s) to keep the configs for
+    # Design note: getInputMetadataKeys and MetadataMetricTask.makeMeasurement
+    # are overrideable methods rather than subtask(s) to keep the configs for
     # `MetricsControllerTask` as simple as possible. This was judged more
     # important than ensuring that no implementation details of MetricTask
     # can leak into application-specific code.
@@ -143,12 +144,13 @@ class _AbstractMetadataMetricTask(MetricTask):
         Returns
         -------
         keys : `dict` [`str`, `str`]
-            The keys are the (arbitrary) names of values needed by
-            `makeMeasurement`, the values are the metadata keys to be looked
-            up. Metadata keys are assumed to include task prefixes in the
+            The keys are the (arbitrary) names of values to use in task code,
+            the values are the metadata keys to be looked up (see the
+            ``metadataKeys`` parameter to `extractMetadata`). Metadata keys are
+            assumed to include task prefixes in the
             format of `lsst.pipe.base.Task.getFullMetadata()`. This method may
-            return a substring of the desired (full) key, but multiple matches
-            for any key will cause an error.
+            return a substring of the desired (full) key, but the string must
+            match a unique metadata key.
         """
 
     @staticmethod
@@ -172,7 +174,7 @@ class _AbstractMetadataMetricTask(MetricTask):
         return {key for key in keys if keyFragment in key}
 
     @staticmethod
-    def _extractMetadata(metadata, metadataKeys):
+    def extractMetadata(metadata, metadataKeys):
         """Read multiple keys from a metadata object.
 
         Parameters
@@ -212,7 +214,7 @@ class _AbstractMetadataMetricTask(MetricTask):
         return data
 
 
-class MetadataMetricTask(_AbstractMetadataMetricTask):
+class MetadataMetricTask(AbstractMetadataMetricTask):
     """A base class for tasks that compute metrics from single metadata objects.
 
     Parameters
@@ -297,7 +299,7 @@ class MetadataMetricTask(_AbstractMetadataMetricTask):
         metadataKeys = self.getInputMetadataKeys(self.config)
 
         if metadata is not None:
-            data = self._extractMetadata(metadata, metadataKeys)
+            data = self.extractMetadata(metadata, metadataKeys)
         else:
             data = {dataName: None for dataName in metadataKeys}
 

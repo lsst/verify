@@ -38,7 +38,7 @@ class MetricTaskTestCase(lsst.utils.tests.TestCase, metaclass=abc.ABCMeta):
     """Unit test base class for tests of `tasks.MetricTask`.
 
     This class provides tests of the generic ``MetricTask`` API. Subclasses
-    must override `taskFactory`, and may add extra tests for class-specific
+    must override `makeTask`, and may add extra tests for class-specific
     functionality. If subclasses override `setUp`, they must call
     `MetricTaskTestCase.setUp`.
     """
@@ -73,7 +73,7 @@ class MetricTaskTestCase(lsst.utils.tests.TestCase, metaclass=abc.ABCMeta):
 
         Notes
         -----
-        This implementation calls `taskFactory`, then initializes `task`
+        This implementation calls `makeTask`, then initializes `task`
         and `taskClass`.
         """
         self.task = self.makeTask()
