@@ -107,7 +107,10 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
             config=self.task.config)
 
     def _prepareQuantum(self, task):
-        inputId = {
+        globalId = {
+            "instrument": self.CAMERA_ID,
+        }
+        detectorId = {
             "instrument": self.CAMERA_ID,
             "visit": self.VISIT_ID,
             "detector": self.CHIP_ID,
@@ -117,11 +120,11 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
         # task.config not persistable if it refers to a local class
         # We don't actually use the persisted config, so just make a new one
         info = task.ConfigClass()
-        butler.put(info, "apdb_marker", inputId)
+        butler.put(info, "apdb_marker", detectorId)
 
         quantum = testUtils.makeQuantum(
-            task, butler, inputId,
-            {"dbInfo": [inputId], "measurement": inputId})
+            task, butler, globalId,
+            {"dbInfo": [detectorId], "measurement": globalId})
 
         return (butler, quantum, info)
 
