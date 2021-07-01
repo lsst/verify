@@ -20,7 +20,6 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 __all__ = ['get_jenkins_env']
 
-from datetime import datetime, timezone
 import os
 
 
@@ -33,7 +32,6 @@ def get_jenkins_env():
         Dictionary of metadata items obtained from the Jenkins CI
         environment. Fields are:
 
-        - ``'date'``: ISO8601-formatted current datetime.
         - ``'ci_id'``: Job ID in Jenkins CI.
         - ``'ci_name'``: Job name in Jenkins CI.
         - ``'ci_dataset'``: Name of the dataset being processed.
@@ -53,7 +51,6 @@ def get_jenkins_env():
     """
 
     return {
-        'date': datetime.now(timezone.utc).isoformat(),
         'ci_id': os.getenv('BUILD_ID', 'unknown'),
         'ci_name': os.getenv('PRODUCT', 'unknown'),
         'ci_dataset': os.getenv('dataset', 'unknown'),

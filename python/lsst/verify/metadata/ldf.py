@@ -20,7 +20,6 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 __all__ = ['get_ldf_env']
 
-from datetime import datetime, timezone
 import os
 
 
@@ -33,7 +32,6 @@ def get_ldf_env():
         Dictionary of metadata items obtained from the LDF environment.
         Fields are:
 
-        - ``'date'``: ISO8601-formatted current datetime.
         - ``'dataset'``: the name of the dataset processed.
         - ``'dataset_repo_url'``: a reference URL with information about the
         dataset.
@@ -51,7 +49,6 @@ def get_ldf_env():
     """
 
     return {
-        'date': datetime.now(timezone.utc).isoformat(),
         'dataset': os.getenv('DATASET', 'unknown'),
         'dataset_repo_url': os.getenv('DATASET_REPO_URL',
                                       'https://example.com'),

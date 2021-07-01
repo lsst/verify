@@ -69,12 +69,14 @@ aslo used by default in this environment.
 # For determining what is documented in Sphinx
 __all__ = ['build_argparser', 'main', 'insert_lsstsw_metadata',
            'insert_extra_package_metadata', 'insert_env_metadata',
-           'Configuration']
+           'validate_date_created', 'Configuration']
 
 import argparse
 import os
 import json
 import getpass
+from dateutil import parser as date_parser
+from datetime import datetime, timezone
 
 try:
     import git
@@ -187,6 +189,12 @@ def build_argparser():
         metavar='PASSWORD',
         help='Password for SQUASH API. Equivalent to the ``$SQUASH_PASSWORD`` '
              'environment variable. If neither is set, you will be prompted.')
+    api_group.add_argument(
+        '--date-created',
+        dest='date_created',
+        help='ISO8601 formatted datetime in UTC for the Job creation date, '
+             'e.g. 2021-06-30T22:28:25Z. If not provided the current '
+             'datetime is used.')
     return parser
 
 
@@ -238,11 +246,13 @@ def main():
     if config.env_name == 'jenkins':
         log.info('Inserting Jenkins CI environment metadata.')
         jenkins_metadata = get_jenkins_env()
-        job = insert_env_metadata(job, 'jenkins', jenkins_metadata)
+        job = insert_env_metadata(job, 'jenkins', jenkins_metadata,
+                                  config.date_created)
     elif config.env_name == 'ldf':
         log.info('Inserting LSST Data Facility environment metadata.')
         ldf_metadata = get_ldf_env()
-        job = insert_env_metadata(job, 'ldf', ldf_metadata)
+        job = insert_env_metadata(job, 'ldf', ldf_metadata,
+                                  config.date_created)
 
     # Upload job
     if not config.test:
@@ -329,13 +339,35 @@ def insert_extra_package_metadata(job, config):
     return job
 
 
-def insert_env_metadata(job, env_name, metadata):
+def insert_env_metadata(job, env_name, metadata, date_created):
     """Insert environment metadata into the Job.
     """
     metadata.update({'env_name': env_name})
+
+    if date_created is not None:
+        date = date_created
+    else:
+        date = datetime.now(timezone.utc).isoformat()
+
+    metadata.update({'date': date})
+
     job.meta['env'] = metadata
 
     return job
+
+
+def validate_date_created(date_created):
+    """Ensure date_created is a valid datetime string in UTC.
+    """
+    try:
+        date = date_parser.parse(date_created)
+    except ValueError:
+        return False
+
+    if date.tzname() == 'UTC':
+        return True
+    else:
+        return False
 
 
 class Configuration(object):
@@ -405,6 +437,17 @@ class Configuration(object):
             # If password hasn't been set, prompt for it.
             self.api_password = getpass.getpass(prompt="SQuaSH password: ")
 
+        self.date_created = args.date_created
+
+        if self.date_created is not None:
+            if not validate_date_created(self.date_created):
+                message = 'Invalid datetime string, use a ISO8601 formatted ' \
+                          'datetime in UTC, e.g. 2021-06-30T22:28:25Z.'
+                raise RuntimeError(message)
+            else:
+                self.date_created = \
+                    date_parser.parse(self.date_created).isoformat()
+
     def __str__(self):
         configs = {
             'json_paths': self.json_paths,
@@ -418,6 +461,7 @@ class Configuration(object):
             'extra_package_paths': self.extra_package_paths,
             'api_url': self.api_url,
             'api_user': self.api_user,
+            'date_created': self.date_created,
         }
         if self.api_password is None:
             configs['api_password'] = None
