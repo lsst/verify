@@ -121,6 +121,11 @@ class InspectJobTestCase(unittest.TestCase):
                                               reportedMetadataName)
                 self.assertEqual(fullMetadataName, key)
 
+    def _check_metadata(self, key, value, output):
+        regex = r"%s.+%s" % (key, value)
+        match = re.search(regex, output, flags=self.regex_flags)
+        self.assertIsNotNone(match, msg="Can't find metadata %s" % key)
+
     def test_top_metadata(self, mock_stdout):
         """Test that inspect_job dumps top-level metadata.
         """
@@ -128,9 +133,7 @@ class InspectJobTestCase(unittest.TestCase):
         output = mock_stdout.getvalue()
         for key, value in [("bar", "high"),
                            ("shape", "rotund")]:
-            regex = r"%s.+%s" % (key, value)
-            match = re.search(regex, output, flags=self.regex_flags)
-            self.assertIsNotNone(match, msg="Can't find metadata %s" % key)
+            self._check_metadata(key, value, output)
 
     def test_specs(self, mock_stdout):
         """Test that inspect_job does not dump specifications."
