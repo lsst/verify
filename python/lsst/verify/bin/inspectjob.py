@@ -77,6 +77,29 @@ def _simplify_key(key, prefix):
         return key
 
 
+def _get_first_col_width(job):
+    """Return the width to use for the output's first column.
+
+    This column displays metadata and metric keys.
+
+    Parameters
+    ----------
+    job : `lsst.verify.Job`
+        The Job to print.
+
+    Returns
+    -------
+    width : `int`
+        The minimum width to use to format the Job's values. May be 0 if the
+        Job is empty.
+    """
+    max_meta = max(len(key) for key in job.meta) if job.meta else 0
+    max_meas = max(len(str(metric)) for metric in job.measurements) \
+        if job.measurements else 0
+
+    return max(max_meta, max_meas)
+
+
 def inspect_job(job):
     """Present the measurements in a Job object.
 
@@ -88,7 +111,7 @@ def inspect_job(job):
         The Job to examine.
     """
     # Leave enough space for output so that all '=' characters are aligned
-    max_metric_length = max([len(str(metric)) for metric in job.measurements])
+    max_metric_length = _get_first_col_width(job)
 
     print("Common metadata:")
     for key, value in job.meta.items():

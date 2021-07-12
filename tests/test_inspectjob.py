@@ -121,6 +121,11 @@ class InspectJobTestCase(unittest.TestCase):
                                               reportedMetadataName)
                 self.assertEqual(fullMetadataName, key)
 
+    def _check_metadata(self, key, value, output):
+        regex = r"%s.+%s" % (key, value)
+        match = re.search(regex, output, flags=self.regex_flags)
+        self.assertIsNotNone(match, msg="Can't find metadata %s" % key)
+
     def test_top_metadata(self, mock_stdout):
         """Test that inspect_job dumps top-level metadata.
         """
@@ -128,14 +133,69 @@ class InspectJobTestCase(unittest.TestCase):
         output = mock_stdout.getvalue()
         for key, value in [("bar", "high"),
                            ("shape", "rotund")]:
-            regex = r"%s.+%s" % (key, value)
-            match = re.search(regex, output, flags=self.regex_flags)
-            self.assertIsNotNone(match, msg="Can't find metadata %s" % key)
+            self._check_metadata(key, value, output)
 
     def test_specs(self, mock_stdout):
         """Test that inspect_job does not dump specifications."
         """
         self.assertNotIn("utterly_ridiculous", mock_stdout.getvalue())
+
+    def test_empty(self, mock_stdout):
+        """Test that inspect_job can handle files with neither metrics nor metadata.
+        """
+        inspect_job(Job())
+        # No specific output expected, so test passes if inspect_job
+        # didn't raise.
+
+    def test_metadataonly(self, mock_stdout):
+        """Test that inspect_job can handle files with metadata but no metrics.
+        """
+        # Job and its components were not designed to support deletion, so
+        # create a new Job from scratch to ensure it's a valid object.
+        job = Job()
+        job.metrics.insert(Metric("foo.boringmetric", "",
+                                  u.percent,
+                                  tags=["redundant"]))
+        job.metrics.insert(Metric("foo.fancymetric", "",
+                                  u.meter,
+                                  tags=["vital"]))
+        job.meta["bar"] = "high"
+        job.meta["shape"] = "rotund"
+        job.specs.insert(ThresholdSpecification("utterly_ridiculous",
+                                                1e10 * u.meter,
+                                                ">"))
+
+        inspect_job(job)
+        output = mock_stdout.getvalue()
+        for key, value in [("bar", "high"),
+                           ("shape", "rotund")]:
+            self._check_metadata(key, value, output)
+
+    def test_metricsonly(self, mock_stdout):
+        """Test that inspect_job can handle files with metrics but no metadata.
+        """
+        # Job and its components were not designed to support deletion, so
+        # create a new Job from scratch to ensure it's a valid object.
+        job = Job()
+        job.metrics.insert(Metric("foo.boringmetric", "",
+                                  u.percent,
+                                  tags=["redundant"]))
+        job.metrics.insert(Metric("foo.fancymetric", "",
+                                  u.meter,
+                                  tags=["vital"]))
+        job.measurements.insert(Measurement("foo.fancymetric",
+                                            2.0 * u.meter))
+        job.measurements.insert(Measurement("foo.fanciermetric",
+                                            3.5 * u.second))
+        job.measurements["foo.fanciermetric"].notes["fanciness"] = "moderate"
+        job.measurements.insert(Measurement("foo.fanciestmetric",
+                                            3.1415927 * u.kilogram))
+
+        inspect_job(job)
+        output = mock_stdout.getvalue()
+        # MeasurementSet.values does not exist
+        for _, measurement in job.measurements.items():
+            self._check_measurement(measurement, output)
 
 
 if __name__ == "__main__":
