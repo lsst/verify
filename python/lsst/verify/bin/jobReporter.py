@@ -27,7 +27,7 @@ def build_argparser():
         help='Spec level to apply: minimum, design, or stretch')
     parser.add_argument(
         '--dataset_name', type=str, required=True,
-        help='Name of the dataset for which the report is being generated.'
+        help='Name of the dataset for which the report is being generated. '
              'This is the desired ci_dataset tag in SQuaSH.')
     return parser
 
