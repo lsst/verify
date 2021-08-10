@@ -111,8 +111,10 @@ class JobReporter:
         jobs = {}
         for metric in self.metrics:
             dataset = f'metricvalue_{metric.package}_{metric.metric}'
-            datasetRefs = list(self.registry.queryDatasets(dataset,
-                               collections=self.collection))
+            datasetRefs = list(self.registry.queryDatasets(
+                dataset,
+                collections=self.collection,
+                findFirst=True))
             for ref in datasetRefs:
                 m = self.butler.get(ref, collections=self.collection)
                 # make the name the same as what SQuaSH Expects
