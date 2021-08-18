@@ -22,7 +22,6 @@
 __all__ = ["MetricsControllerConfig", "MetricsControllerTask"]
 
 import os.path
-import traceback
 
 import lsst.pex.config as pexConfig
 import lsst.daf.persistence as dafPersist
@@ -177,10 +176,9 @@ class MetricsControllerTask(Task):
                     "Skipping measurement of %r on %s as not applicable.",
                     metricTask, inputDataIds)
         except MetricComputationError:
-            # Apparently lsst.log doesn't have built-in exception support?
-            self.log.error("Measurement of %r failed on %s->%s\n%s",
+            self.log.error("Measurement of %r failed on %s->%s",
                            metricTask, inputDataIds, outputDataIds,
-                           traceback.format_exc())
+                           exc_info=True)
 
     def runDataRefs(self, datarefs, customMetadata=None, skipExisting=False):
         """Call all registered metric tasks on each dataref.

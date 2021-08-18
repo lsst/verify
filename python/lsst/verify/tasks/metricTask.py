@@ -25,7 +25,6 @@ __all__ = ["MetricComputationError", "MetricTask", "MetricConfig",
 
 
 import abc
-import traceback
 
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes
@@ -180,13 +179,12 @@ class MetricTask(pipeBase.PipelineTask, metaclass=abc.ABCMeta):
             if outputs.measurement is not None:
                 butlerQC.put(outputs, outputRefs)
             else:
-                self.log.debugf("Skipping measurement of {!r} on {} "
-                                "as not applicable.", self, inputRefs)
+                self.log.debug("Skipping measurement of %r on %s "
+                               "as not applicable.", self, inputRefs)
         except MetricComputationError:
-            # Apparently lsst.log doesn't have built-in exception support?
-            self.log.errorf(
-                "Measurement of {!r} failed on {}->{}\n{}",
-                self, inputRefs, outputRefs, traceback.format_exc())
+            self.log.error(
+                "Measurement of %r failed on %s->%s",
+                self, inputRefs, outputRefs, exc_info=True)
 
     def adaptArgsAndRun(self, inputData, inputDataIds, outputDataId):
         """A wrapper around `run` used by
