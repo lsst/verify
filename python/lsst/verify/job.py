@@ -319,6 +319,11 @@ class Job(JsonSerializationMixin):
             API password.
         **kwargs : optional
             Additional keyword arguments passed to `lsst.verify.squash.post`.
+
+        Returns
+        -------
+        output : response
+            The response from the POST request to the SQuaSH API
         """
         full_json_doc = self.json
         # subset JSON to just the 'job' fields; no metrics and specs
@@ -328,8 +333,8 @@ class Job(JsonSerializationMixin):
         access_token = squash.get_access_token(api_url, api_user,
                                                api_password)
 
-        squash.post(api_url, 'job', json_doc=job_json,
-                    access_token=access_token, **kwargs)
+        return squash.post(api_url, 'job', json_doc=job_json,
+                           access_token=access_token, **kwargs)
 
     def report(self, name=None, spec_tags=None, metric_tags=None):
         r"""Create a verification report that lists the pass/fail status of
