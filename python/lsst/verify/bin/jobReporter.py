@@ -27,7 +27,7 @@ def build_argparser():
         help='Spec level to apply: minimum, design, or stretch')
     parser.add_argument(
         '--dataset_name', type=str, required=True,
-        help='Name of the dataset for which the report is being generated.'
+        help='Name of the dataset for which the report is being generated. '
              'This is the desired ci_dataset tag in SQuaSH.')
     return parser
 
@@ -55,7 +55,7 @@ def main(repository, collection, metrics_package, spec, dataset_name):
 
 
 def make_key(ref):
-    names = sorted(list(ref.dataId.names))
+    names = sorted(ref.dataId.names)
     names.append('run')  # "run" must be in the template
     key_tmpl = '_'.join(['{' + el + '}' for el in names])
     file_tmpl = FileTemplate(key_tmpl)
@@ -111,10 +111,14 @@ class JobReporter:
         jobs = {}
         for metric in self.metrics:
             dataset = f'metricvalue_{metric.package}_{metric.metric}'
-            datasetRefs = list(self.registry.queryDatasets(dataset,
-                               collections=self.collection))
+            datasetRefs = set(self.registry.queryDatasets(
+                dataset,
+                collections=self.collection,
+                findFirst=True))
             for ref in datasetRefs:
-                m = self.butler.get(ref, collections=self.collection)
+                # getDirect skips dataset resolution; ref is guaranteed to
+                # be valid.
+                m = self.butler.getDirect(ref)
                 # make the name the same as what SQuaSH Expects
                 m.metric_name = metric
 
