@@ -214,7 +214,7 @@ class Measurement(JsonSerializationMixin):
         return self._id
 
     def __str__(self):
-        return "{self.metric_name!s}: {self.quantity!s}".format(self=self)
+        return f"{self.metric_name!s}: {self.quantity!s}"
 
     def _repr_latex_(self):
         """Get a LaTeX-formatted string representation of the measurement
