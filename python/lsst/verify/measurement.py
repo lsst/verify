@@ -216,6 +216,29 @@ class Measurement(JsonSerializationMixin):
     def __str__(self):
         return f"{self.metric_name!s}: {self.quantity!s}"
 
+    def __repr__(self):
+        metricString = str(self.metric_name)
+        # For readability, don't print rarely-used components if they're None
+        args = [repr(str(metricString)),
+                repr(self.quantity),
+                ]
+
+        # invariant: self.blobs always exists and contains at least extras
+        if self.blobs.keys() - {metricString}:
+            pureBlobs = self.blobs.copy()
+            del pureBlobs[metricString]
+            args.append(f"blobs={list(pureBlobs.values())!r}")
+
+        # invariant: self.extras always exists, but may be empty
+        if self.extras:
+            args.append(f"extras={dict(self.extras)!r}")
+
+        # invariant: self.notes always exists, but may be empty
+        if self.notes:
+            args.append(f"notes={dict(self.notes)!r}")
+
+        return f"Measurement({', '.join(args)})"
+
     def _repr_latex_(self):
         """Get a LaTeX-formatted string representation of the measurement
         quantity (used in Jupyter notebooks).
