@@ -219,6 +219,31 @@ class MeasurementTestCase(TestCase):
         m = Measurement(metric, value)
         self.assertEqual(str(m), "test.cmodel_mag: 1235.0 mag")
 
+    def test_repr(self):
+        metric = 'test.cmodel_mag'
+        self.assertEqual(
+            repr(Measurement(metric)),
+            "Measurement('test.cmodel_mag', None)")
+        value = 1235 * u.mag
+        self.assertEqual(
+            repr(Measurement(metric, value)),
+            "Measurement('test.cmodel_mag', <Quantity 1235. mag>)")
+
+        self.assertEqual(
+            repr(Measurement(metric, value, [self.blob1])),
+            "Measurement('test.cmodel_mag', <Quantity 1235. mag>, "
+            f"blobs=[{self.blob1!r}])"
+        )
+
+        notes = {metric + '.filter_name': 'r'}
+        extras = {'extra1': Datum(10. * u.arcmin, 'Extra 1')}
+        self.assertEqual(
+            repr(Measurement(metric, value, notes=notes, blobs=[self.blob1],
+                             extras=extras)),
+            "Measurement('test.cmodel_mag', <Quantity 1235. mag>, "
+            f"blobs=[{self.blob1!r}], extras={extras!r}, notes={notes!r})"
+        )
+
     def _check_yaml_round_trip(self, old_measurement):
         persisted = yaml.dump(old_measurement)
         new_measurement = yaml.safe_load(persisted)
