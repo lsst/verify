@@ -22,6 +22,7 @@ __all__ = ['Measurement', 'MeasurementNotes']
 
 import uuid
 
+import numpy as np
 import astropy.units as u
 from astropy.tests.helper import quantity_allclose
 
@@ -335,6 +336,10 @@ class Measurement(JsonSerializationMixin):
             _normalized_value = self.quantity.value
             _normalized_unit_str = str(self.quantity.unit)
 
+        # Represent NaN, positive infinity, or negative infinity as None
+        if _normalized_value and not np.isfinite(_normalized_value):
+            _normalized_value = None
+
         blob_refs = [b.identifier for k, b in self.blobs.items()]
         # Remove any reference to an empty extras blob
         if len(self.extras) == 0:
@@ -387,7 +392,9 @@ class Measurement(JsonSerializationMixin):
         else:
             _blobs = None
 
-        # Resolve quantity
+        # Resolve quantity, represent None values as np.nan
+        if value is None:
+            value = np.nan
         _quantity = u.Quantity(value, u.Unit(unit))
 
         instance = cls(metric, quantity=_quantity, blobs=_blobs)
