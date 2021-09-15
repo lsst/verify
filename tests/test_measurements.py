@@ -23,6 +23,7 @@
 
 import unittest
 import yaml
+import numpy as np
 
 import astropy.units as u
 from astropy.tests.helper import quantity_allclose
@@ -142,6 +143,28 @@ class MeasurementTestCase(TestCase):
         new_measurement = Measurement.deserialize(**json_doc)
         self.assertEqual(measurement, new_measurement)
         self.assertEqual(measurement.identifier, new_measurement.identifier)
+
+    def test_PA1_measurement_with_nan(self):
+        """Test (de)serialization of a measurement with value np.nan."""
+        measurement = Measurement('PA1', np.nan * u.mag)
+
+        json_doc = measurement.json
+        # a np.nan value is serialized to None
+        self.assertEqual(json_doc['value'], None)
+        # a None value is deserialized to np.nan
+        new_measurement = Measurement.deserialize(**json_doc)
+        self.assertEqual(str(new_measurement), 'PA1: nan mag')
+
+    def test_PA1_measurement_with_inf(self):
+        """Test (de)serialization of a measurement with value np.inf."""
+        measurement = Measurement('PA1', np.inf * u.mag)
+
+        json_doc = measurement.json
+        # a np.inf value is also serialized to None
+        self.assertEqual(json_doc['value'], None)
+        # but once it is None, we can only deserialized it to np.nan
+        new_measurement = Measurement.deserialize(**json_doc)
+        self.assertEqual(str(new_measurement), 'PA1: nan mag')
 
     def test_PA1_deferred_metric(self):
         """Test a measurement when the Metric instance is added later."""
