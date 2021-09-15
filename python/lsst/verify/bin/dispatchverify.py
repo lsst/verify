@@ -257,9 +257,10 @@ def main():
     # Upload job
     if not config.test:
         log.info('Uploading Job JSON to {0}.'.format(config.api_url))
-        job.dispatch(api_user=config.api_user,
-                     api_password=config.api_password,
-                     api_url=config.api_url)
+        response = job.dispatch(api_user=config.api_user,
+                                api_password=config.api_password,
+                                api_url=config.api_url)
+        log.info(response.json()['message'])
 
     if config.show_json:
         print(json.dumps(job.json,
