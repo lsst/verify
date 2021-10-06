@@ -22,7 +22,7 @@
 import unittest
 
 import lsst.utils.tests
-from lsst.dax.apdb import Apdb, ApdbConfig
+from lsst.dax.apdb import Apdb, ApdbSqlConfig
 
 from lsst.verify.tasks import DirectApdbLoader
 
@@ -31,9 +31,8 @@ class DirectApdbLoaderTestSuite(lsst.utils.tests.TestCase):
 
     @staticmethod
     def _dummyApdbConfig():
-        config = ApdbConfig()
+        config = ApdbSqlConfig()
         config.db_url = "sqlite://"     # in-memory DB
-        config.isolation_level = "READ_UNCOMMITTED"
         return config
 
     def setUp(self):
