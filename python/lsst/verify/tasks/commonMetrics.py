@@ -43,10 +43,10 @@ from lsst.verify.tasks import MetricComputationError, MetadataMetricTask, \
 
 
 class TimeMethodMetricConfig(MetadataMetricConfig):
-    """Common config fields for metrics based on `~lsst.pipe.base.timeMethod`.
+    """Common config fields for metrics based on `~lsst.utils.timer.timeMethod`.
 
     These fields let metrics distinguish between different methods that have
-    been decorated with `~lsst.pipe.base.timeMethod`.
+    been decorated with `~lsst.utils.timer.timeMethod`.
     """
     target = pexConfig.Field(
         dtype=str,
@@ -87,7 +87,7 @@ TimingMetricConfig = TimeMethodMetricConfig
 @registerMultiple("timing")
 class TimingMetricTask(MetadataMetricTask):
     """A Task that computes a wall-clock time using metadata produced by the
-    `lsst.pipe.base.timeMethod` decorator.
+    `lsst.utils.timer.timeMethod` decorator.
 
     Parameters
     ----------
@@ -129,7 +129,7 @@ class TimingMetricTask(MetadataMetricTask):
 
     def makeMeasurement(self, timings):
         """Compute a wall-clock measurement from metadata provided by
-        `lsst.pipe.base.timeMethod`.
+        `lsst.utils.timer.timeMethod`.
 
         Parameters
         ----------
@@ -163,7 +163,7 @@ class TimingMetricTask(MetadataMetricTask):
             else:
                 meas = Measurement(self.config.metricName,
                                    totalTime * u.second)
-                meas.notes["estimator"] = "pipe.base.timeMethod"
+                meas.notes["estimator"] = "utils.timer.timeMethod"
                 if timings["StartTimestamp"]:
                     meas.extras["start"] = Datum(timings["StartTimestamp"])
                 if timings["EndTimestamp"]:
@@ -182,7 +182,7 @@ MemoryMetricConfig = TimeMethodMetricConfig
 @registerMultiple("memory")
 class MemoryMetricTask(MetadataMetricTask):
     """A Task that computes the maximum resident set size using metadata
-    produced by the `lsst.pipe.base.timeMethod` decorator.
+    produced by the `lsst.utils.timer.timeMethod` decorator.
 
     Parameters
     ----------
@@ -218,7 +218,7 @@ class MemoryMetricTask(MetadataMetricTask):
 
     def makeMeasurement(self, memory):
         """Compute a maximum resident set size measurement from metadata
-        provided by `lsst.pipe.base.timeMethod`.
+        provided by `lsst.utils.timer.timeMethod`.
 
         Parameters
         ----------
@@ -247,7 +247,7 @@ class MemoryMetricTask(MetadataMetricTask):
             else:
                 meas = Measurement(self.config.metricName,
                                    self._addUnits(maxMemory))
-                meas.notes['estimator'] = 'pipe.base.timeMethod'
+                meas.notes['estimator'] = 'utils.timer.timeMethod'
                 return meas
         else:
             self.log.info("Nothing to do: no memory information for %s found.",
