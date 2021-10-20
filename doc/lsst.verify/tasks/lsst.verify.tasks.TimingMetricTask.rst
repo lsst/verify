@@ -4,7 +4,7 @@
 TimingMetricTask
 ################
 
-``TimingMetricTask`` creates a wall-clock timing `~lsst.verify.Measurement` based on data collected by @\ `~lsst.pipe.base.timeMethod`.
+``TimingMetricTask`` creates a wall-clock timing `~lsst.verify.Measurement` based on data collected by @\ `~lsst.utils.timer.timeMethod`.
 It reads the raw timing data from the top-level `~lsst.pipe.base.CmdLineTask`'s metadata, which is identified by the task configuration.
 
 .. _lsst.verify.tasks.TimingMetricTask-summary:
@@ -12,7 +12,7 @@ It reads the raw timing data from the top-level `~lsst.pipe.base.CmdLineTask`'s 
 Processing summary
 ==================
 
-``TimingMetricTask`` searches the metadata for @\ `~lsst.pipe.base.timeMethod`-generated keys corresponding to the method of interest.
+``TimingMetricTask`` searches the metadata for @\ `~lsst.utils.timer.timeMethod`-generated keys corresponding to the method of interest.
 If it finds matching keys, it stores the elapsed time as a `~lsst.verify.Measurement`.
 
 .. _lsst.verify.tasks.TimingMetricTask-api:

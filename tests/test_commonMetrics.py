@@ -27,7 +27,8 @@ import astropy.units as u
 
 import lsst.utils.tests
 from lsst.pex.config import Config
-from lsst.pipe.base import Task, timeMethod
+from lsst.pipe.base import Task
+from lsst.utils.timer import timeMethod
 
 from lsst.verify import Measurement, Name
 from lsst.verify.gen2tasks.testUtils import MetricTaskTestCase
