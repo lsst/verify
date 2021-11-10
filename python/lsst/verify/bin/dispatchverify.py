@@ -77,6 +77,7 @@ import json
 import getpass
 from dateutil import parser as date_parser
 from datetime import datetime, timezone
+import logging
 
 try:
     import git
@@ -84,12 +85,13 @@ except ImportError:
     # GitPython is not a standard Stack package; skip gracefully if unavailable
     git = None
 
-import lsst.log
 from lsst.verify import Job
 from lsst.verify.metadata.lsstsw import LsstswRepos
 from lsst.verify.metadata.eupsmanifest import Manifest
 from lsst.verify.metadata.jenkinsci import get_jenkins_env
 from lsst.verify.metadata.ldf import get_ldf_env
+
+_LOG = logging.getLogger(__name__)
 
 
 def build_argparser():
@@ -201,7 +203,7 @@ def build_argparser():
 def main():
     """Entrypoint for the ``dispatch_verify.py`` command line executable.
     """
-    log = lsst.log.Log.getLogger('verify.bin.dispatchverify.main')
+    log = _LOG.getChild('main')
 
     parser = build_argparser()
     args = parser.parse_args()
@@ -312,8 +314,7 @@ def insert_extra_package_metadata(job, config):
     """Insert metadata for extra packages ('--package-repos') into
     ``Job.meta['packages']``.
     """
-    log = lsst.log.Log.getLogger(
-        'verify.bin.dispatchverify.insert_extra_package_metadata')
+    log = _LOG.getChild("insert_extra_package_metadata")
 
     if 'packages' not in job.meta:
         job.meta['packages'] = dict()

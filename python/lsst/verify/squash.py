@@ -33,8 +33,7 @@ __all__ = ['get', 'post', 'get_endpoint_url', 'reset_endpoint_cache',
 
 
 import requests
-
-import lsst.log
+import logging
 
 # Version of the SQUASH API this client is compatible with
 _API_VERSION = '1.0'
@@ -44,6 +43,8 @@ _TIMEOUT = 900.0
 
 # URLs for SQUASH endpoints, cached by `get_endpoint_url()`.
 _ENDPOINT_URLS = None
+
+_LOG = logging.getLogger(__name__)
 
 
 def get_endpoint_url(api_url, api_endpoint, **kwargs):
@@ -215,7 +216,7 @@ def post(api_url, api_endpoint, json_doc=None,
     response : `requests.Response`
         Response object. Obtain JSON content with ``response.json()``.
     """
-    log = lsst.log.Log.getLogger('verify.squash.post')
+    log = _LOG.getChild('post')
 
     api_endpoint_url = get_endpoint_url(api_url, api_endpoint)
 
@@ -284,7 +285,7 @@ def get(api_url, api_endpoint=None,
     response : `requests.Response`
         Response object. Obtain JSON content with ``response.json()``.
     """
-    log = lsst.log.Log.getLogger('verify.squash.get')
+    log = _LOG.getChild('get')
 
     if api_user is not None and api_password is not None:
         auth = (api_user, api_password)
