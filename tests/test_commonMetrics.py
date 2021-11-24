@@ -106,7 +106,7 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
                      for key in metadata.paramNames(topLevelOnly=False)
                      if "StartCpuTime" in key]
         for key in startKeys:
-            metadata.remove(key)
+            del metadata[key]
 
         task = TimingMetricTask(config=self.config)
         with self.assertRaises(MetricComputationError):
@@ -118,7 +118,7 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
                    for key in metadata.paramNames(topLevelOnly=False)
                    if "EndCpuTime" in key]
         for key in endKeys:
-            metadata.set(key, str(metadata.getAsDouble(key)))
+            metadata[key] = str(float(metadata[key]))
 
         task = TimingMetricTask(config=self.config)
         with self.assertRaises(MetricComputationError):
@@ -195,7 +195,7 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
                    for key in metadata.paramNames(topLevelOnly=False)
                    if "EndMaxResidentSetSize" in key]
         for key in endKeys:
-            metadata.set(key, str(metadata.getAsDouble(key)))
+            metadata[key] = str(float(metadata[key]))
 
         task = MemoryMetricTask(config=self.config)
         with self.assertRaises(MetricComputationError):
