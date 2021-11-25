@@ -26,6 +26,7 @@ import warnings
 import astropy.units as u
 
 import lsst.utils.tests
+import lsst.pipe.base.testUtils
 from lsst.pex.config import Config
 from lsst.pipe.base import Task
 from lsst.utils.timer import timeMethod
