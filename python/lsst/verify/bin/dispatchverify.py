@@ -48,7 +48,7 @@ following environment variables are consumed:
 - ``PRODUCT``: the name of the product built, e.g. 'validate_drp'
 - ``dataset``: the name of the dataset processed, e.g. 'validation_data_cfht'
 - ``label``: the name of the platform where it runs
-- ``refs``: the branches run by Jenkins, e.g. 'tickets/DM-12345 master'
+- ``refs``: the branches run by Jenkins, e.g. 'tickets/DM-12345 main'
 
 If ``--lsstsw`` is used, additional Git branch information is included with
 Science Pipelines package metadata.

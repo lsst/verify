@@ -74,15 +74,15 @@ class LsstswReposTestCase(unittest.TestCase):
     # @unittest.skipIf(mock is None, 'unittest.mock is required.')
     # def test_get_package_branch(self, MockRepo):
     #     # mock git.Repo in lsst.verify.provsrc.lsstsw so that a repo's active
-    #     # branch is master and doesn't attempt to actually query the repo in
+    #     # branch is main and doesn't attempt to actually query the repo in
     #     # the filesystem.
     #     # mock.mocker.patch('lsstsw.verify.provsrc.lsstsw.git.Repo')
-    #     MockRepo.return_value.active_branch.name = 'master'
+    #     MockRepo.return_value.active_branch.name = 'main'
 
     #     lsstsw_repos = lsstsw.LsstswRepos(self.lsstsw_dirname)
     #     self.assertEqual(
     #         lsstsw_repos.get_package_branch('afw'),
-    #         'master')
+    #         'main')
 
 
 if __name__ == "__main__":

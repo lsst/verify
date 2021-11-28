@@ -13,7 +13,7 @@
 # how it may be cloned.  Key names must conform to the EUPS product name of the
 # source package.  Values may be either a URL (string) or a dict/hash/map with
 # a `url` key and *at least* one `ref` or `lfs`.  The `ref` key generally
-# should be used only if a ref /other than/ `master` is desired.  The `lfs`
+# should be used only if a ref /other than/ `main` is desired.  The `lfs`
 # key is used to identicate that the repo is using git-lfs.
 #
 # * `url`: string - URL of git repo
