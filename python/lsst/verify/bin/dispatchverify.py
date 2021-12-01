@@ -78,6 +78,7 @@ import getpass
 from dateutil import parser as date_parser
 from datetime import datetime, timezone
 import logging
+import sys
 
 try:
     import git
@@ -203,6 +204,7 @@ def build_argparser():
 def main():
     """Entrypoint for the ``dispatch_verify.py`` command line executable.
     """
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     log = _LOG.getChild('main')
 
     parser = build_argparser()
