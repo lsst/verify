@@ -204,7 +204,8 @@ def build_argparser():
 def main():
     """Entrypoint for the ``dispatch_verify.py`` command line executable.
     """
-    logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="{name} {levelname}: {message}", style="{")
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout, 
+                        format="{name} {levelname}: {message}", style="{")
     log = _LOG.getChild('main')
 
     parser = build_argparser()
