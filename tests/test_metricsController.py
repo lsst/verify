@@ -52,7 +52,7 @@ class DemoConnections(
         dimensions={}):
     inputData = connectionTypes.Input(
         name="metadata",
-        storageClass="PropertySet",
+        storageClass="TaskMetadata",
     )
 
 

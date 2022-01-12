@@ -58,7 +58,7 @@ class SingleMetadataMetricConnections(
         name="{labelName}_metadata",
         doc="The target top-level task's metadata. The name must be set to "
             "the metadata's butler type, such as 'processCcd_metadata'.",
-        storageClass="PropertySet",
+        storageClass="TaskMetadata",
         dimensions={"instrument", "visit", "detector"},
         multiple=False,
     )
@@ -159,7 +159,7 @@ class AbstractMetadataMetricTask(MetricTask):
 
         Parameters
         ----------
-        metadata : `lsst.daf.base.PropertySet`
+        metadata : `lsst.pipe.base.TaskMetadata`
             A metadata object with task-qualified keys as returned by
             `lsst.pipe.base.Task.getFullMetadata()`.
         keyFragment : `str`
@@ -179,7 +179,7 @@ class AbstractMetadataMetricTask(MetricTask):
 
         Parameters
         ----------
-        metadata : `lsst.daf.base.PropertySet`
+        metadata : `lsst.pipe.base.TaskMetadata`
             A metadata object, assumed not `None`.
         metadataKeys : `dict` [`str`, `str`]
             Keys are arbitrary labels, values are metadata keys (or their
@@ -270,7 +270,7 @@ class MetadataMetricTask(AbstractMetadataMetricTask):
 
         Parameters
         ----------
-        metadata : `lsst.daf.base.PropertySet` or `None`
+        metadata : `lsst.pipe.base.TaskMetadata` or `None`
             A metadata object for the unit of science processing to use for
             this metric, or a collection of such objects if this task combines
             many units of processing into a single metric.
