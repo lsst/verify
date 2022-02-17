@@ -61,7 +61,6 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
         config.dbLoader.retarget(MockDbLoader)
         config.connections.package = "verify"
         config.connections.metric = "DummyApdb"
-        config.validate()
         return DummyTask(config=config)
 
     @classmethod
