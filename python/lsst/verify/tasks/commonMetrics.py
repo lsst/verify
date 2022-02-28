@@ -119,6 +119,12 @@ class TimingMetricTask(MetadataMetricTask):
                  The key for when the target method started (`str`).
              ``"EndTime"``
                  The key for when the target method ended (`str`).
+             ``"StartTimestamp"``
+                 The key for an ISO 8601-compliant text string where the target
+                 method started (`str`).
+             ``"EndTimestamp"``
+                 The key for an ISO 8601-compliant text string where the target
+                 method ended (`str`).
         """
         keyBase = config.target
         return {"StartTime": keyBase + "StartCpuTime",
