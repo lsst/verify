@@ -119,6 +119,12 @@ class TimingMetricTask(MetadataMetricTask):
                  The key for when the target method started (`str`).
              ``"EndTime"``
                  The key for when the target method ended (`str`).
+             ``"StartTimestamp"``
+                 The key for an ISO 8601-compliant text string where the target
+                 method started (`str`).
+             ``"EndTimestamp"``
+                 The key for an ISO 8601-compliant text string where the target
+                 method ended (`str`).
         """
         keyBase = config.target
         return {"StartTime": keyBase + "StartCpuTime",
@@ -212,9 +218,19 @@ class MemoryMetricTask(MetadataMetricTask):
 
              ``"EndMemory"``
                  The key for the memory usage at the end of the method (`str`).
+             ``"MetadataVersion"``
+                 The key for the task-level metadata version.
         """
         keyBase = config.target
-        return {"EndMemory": keyBase + "EndMaxResidentSetSize"}
+        # Parse keyBase to get just the task prefix, if any; needed to
+        # guarantee that returned keys all point to unique entries.
+        # The following line returns a "."-terminated string if keyBase has a
+        # task prefix, and "" otherwise.
+        taskPrefix = "".join(keyBase.rpartition(".")[0:2])
+
+        return {"EndMemory": keyBase + "EndMaxResidentSetSize",
+                "MetadataVersion": taskPrefix + "__version__",
+                }
 
     def makeMeasurement(self, memory):
         """Compute a maximum resident set size measurement from metadata
@@ -228,6 +244,9 @@ class MemoryMetricTask(MetadataMetricTask):
 
              ``"EndMemory"``
                  The memory usage at the end of the method (`int` or `None`).
+             ``"MetadataVersion"``
+                 The version of the task metadata in which the value was stored
+                 (`int` or `None`). `None` is assumed to be version 0.
 
         Returns
         -------
@@ -242,11 +261,13 @@ class MemoryMetricTask(MetadataMetricTask):
         if memory["EndMemory"] is not None:
             try:
                 maxMemory = int(memory["EndMemory"])
+                version = memory["MetadataVersion"] \
+                    if memory["MetadataVersion"] else 0
             except (ValueError, TypeError) as e:
                 raise MetricComputationError("Invalid metadata") from e
             else:
                 meas = Measurement(self.config.metricName,
-                                   self._addUnits(maxMemory))
+                                   self._addUnits(maxMemory, version))
                 meas.notes['estimator'] = 'utils.timer.timeMethod'
                 return meas
         else:
@@ -254,7 +275,7 @@ class MemoryMetricTask(MetadataMetricTask):
                           self.config.target)
             return None
 
-    def _addUnits(self, memory):
+    def _addUnits(self, memory, version):
         """Represent memory usage in correct units.
 
         Parameters
@@ -262,13 +283,18 @@ class MemoryMetricTask(MetadataMetricTask):
         memory : `int`
             The memory usage as returned by `resource.getrusage`, in
             platform-dependent units.
+        version : `int`
+            The metadata version. If ``0``, ``memory`` is in platform-dependent
+            units. If ``1`` or greater, ``memory`` is in bytes.
 
         Returns
         -------
         memory : `astropy.units.Quantity`
             The memory usage in absolute units.
         """
-        if sys.platform.startswith('darwin'):
+        if version >= 1:
+            return memory * u.byte
+        elif sys.platform.startswith('darwin'):
             # MacOS uses bytes
             return memory * u.byte
         elif sys.platform.startswith('sunos') \

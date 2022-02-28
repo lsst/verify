@@ -202,6 +202,31 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
         with self.assertRaises(MetricComputationError):
             task.run(metadata)
 
+    def testOldMetadata(self):
+        """Test compatibility with version 0 metadata
+
+        This can't actually test differences in unit handling between version 0
+        and version 1, but at least verifies that the code didn't choke on
+        old-style metadata.
+        """
+        newMetadata = self.scienceTask.getFullMetadata()
+        oldMetadata = newMetadata.copy()
+        for key in newMetadata.names(topLevelOnly=False):
+            if "__version__" in key:
+                oldMetadata.remove(key)
+
+        result = self.task.run(oldMetadata)
+        lsst.pipe.base.testUtils.assertValidOutput(self.task, result)
+        meas = result.measurement
+
+        self.assertIsInstance(meas, Measurement)
+        self.assertEqual(meas.metric_name, self.metric)
+
+        # Since new style is always bytes, old-style will be less or equal
+        newResult = self.task.run(newMetadata)
+        self.assertGreater(meas.quantity, 0.0 * u.byte)
+        self.assertLessEqual(meas.quantity, newResult.measurement.quantity)
+
     def testDeprecated(self):
         with warnings.catch_warnings(record=True):
             self.config.metric = "verify.DummyMemory"
