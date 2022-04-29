@@ -76,6 +76,8 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
         cls.root = tempfile.mkdtemp()
         cls.repo = butlerTests.makeTestRepo(cls.root, {
             "instrument": [cls.CAMERA_ID],
+            "band": ["r"],
+            "physical_filter": ["r"],
             "visit": [cls.VISIT_ID],
             "detector": [cls.CHIP_ID],
         })
