@@ -58,7 +58,7 @@ class SingleMetadataMetricConnections(
         name="{labelName}_metadata",
         doc="The target top-level task's metadata. The name must be set to "
             "the metadata's butler type, such as 'processCcd_metadata'.",
-        storageClass="TaskMetadata",
+        storageClass="PropertySet",
         dimensions={"instrument", "visit", "detector"},
         multiple=False,
     )

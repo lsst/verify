@@ -27,7 +27,8 @@ import unittest.mock
 from unittest.mock import patch
 
 import lsst.utils.tests
-from lsst.pipe.base import TaskMetadata
+# from lsst.pipe.base import TaskMetadata
+from lsst.daf.base import PropertySet
 from lsst.dax.apdb import ApdbConfig
 
 import lsst.verify.gen2tasks.testUtils as gen2Utils
@@ -119,7 +120,7 @@ class MetadataMetricTestCase(gen2Utils.MetricTaskTestCase, MetricTaskTestCase):
                           return_value={"unused": mockKey}), \
                 patch.object(self.task, "makeMeasurement") as mockWorkhorse:
             if self._takesScalarMetadata(self.task):
-                metadata1 = TaskMetadata()
+                metadata1 = PropertySet()
                 metadata1[mockKey] = 42
 
                 self.task.run(metadata1)
@@ -128,9 +129,9 @@ class MetadataMetricTestCase(gen2Utils.MetricTaskTestCase, MetricTaskTestCase):
                 self.task.run(None)
                 mockWorkhorse.assert_called_once_with({"unused": None})
             else:
-                metadata1 = TaskMetadata()
+                metadata1 = PropertySet()
                 metadata1[mockKey] = 42
-                metadata2 = TaskMetadata()
+                metadata2 = PropertySet()
                 metadata2[mockKey] = "Sphere"
                 self.task.run([metadata1, None, metadata2])
                 mockWorkhorse.assert_called_once_with(
@@ -140,7 +141,7 @@ class MetadataMetricTestCase(gen2Utils.MetricTaskTestCase, MetricTaskTestCase):
         mockKey = "unitTestKey"
         with patch.object(self.task, "getInputMetadataKeys",
                           return_value={"unused": mockKey}):
-            metadata = TaskMetadata()
+            metadata = PropertySet()
             metadata[mockKey + "1"] = 42
             metadata[mockKey + "2"] = "Sphere"
             with self.assertRaises(MetricComputationError):
