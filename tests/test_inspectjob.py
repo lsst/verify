@@ -141,7 +141,8 @@ class InspectJobTestCase(unittest.TestCase):
         self.assertNotIn("utterly_ridiculous", mock_stdout.getvalue())
 
     def test_empty(self, mock_stdout):
-        """Test that inspect_job can handle files with neither metrics nor metadata.
+        """Test that inspect_job can handle files with neither metrics nor
+        metadata.
         """
         inspect_job(Job())
         # No specific output expected, so test passes if inspect_job

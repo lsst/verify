@@ -43,7 +43,8 @@ from lsst.verify.tasks import MetricComputationError, MetadataMetricTask, \
 
 
 class TimeMethodMetricConfig(MetadataMetricConfig):
-    """Common config fields for metrics based on `~lsst.utils.timer.timeMethod`.
+    """Common config fields for metrics based on
+    `~lsst.utils.timer.timeMethod`.
 
     These fields let metrics distinguish between different methods that have
     been decorated with `~lsst.utils.timer.timeMethod`.
