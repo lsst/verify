@@ -15,7 +15,7 @@ config.log
 *Lib.py
 tests/.tests
 version.py
-bin/*.py
+bin/*
 examples/*.list
 .coverage
 htmlcov
