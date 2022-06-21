@@ -84,6 +84,7 @@ Script reference
    scripts/gen3_to_job.py
    scripts/inspect_job.py
    scripts/lint_metrics.py
+   scripts/print_metricvalues
 
 .. _lsst.verify-pyapi:
 

@@ -215,7 +215,8 @@ class AbstractMetadataMetricTask(MetricTask):
 
 
 class MetadataMetricTask(AbstractMetadataMetricTask):
-    """A base class for tasks that compute metrics from single metadata objects.
+    """A base class for tasks that compute metrics from single metadata
+    objects.
 
     Parameters
     ----------
