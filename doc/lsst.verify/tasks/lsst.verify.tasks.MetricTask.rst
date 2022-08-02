@@ -2,9 +2,9 @@
 
 .. currentmodule:: lsst.verify.tasks
 
-##############################
-MetricTask (lsst.verify.tasks)
-##############################
+##########
+MetricTask
+##########
 
 ``MetricTask`` is a base class for generating `lsst.verify.Measurement` given input data.
 Each ``MetricTask`` class accepts specific type(s) of datasets and produces measurements for a specific metric or family of metrics.

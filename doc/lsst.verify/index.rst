@@ -121,10 +121,6 @@ Python API reference
    :no-main-docstr:
    :no-inheritance-diagram:
 
-.. automodapi:: lsst.verify.gen2tasks
-   :no-main-docstr:
-   :no-inheritance-diagram:
-
 .. automodapi:: lsst.verify.tasks
    :no-main-docstr:
    :no-inheritance-diagram:
