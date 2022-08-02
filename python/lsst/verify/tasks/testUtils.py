@@ -30,7 +30,6 @@ import lsst.utils.tests
 from lsst.pipe.base import TaskMetadata
 from lsst.dax.apdb import ApdbConfig
 
-import lsst.verify.gen2tasks.testUtils as gen2Utils
 from lsst.verify.tasks import MetricComputationError
 
 
@@ -97,13 +96,13 @@ class MetricTaskTestCase(lsst.utils.tests.TestCase, metaclass=abc.ABCMeta):
             config.validate()
 
 
-class MetadataMetricTestCase(gen2Utils.MetricTaskTestCase, MetricTaskTestCase):
+class MetadataMetricTestCase(MetricTaskTestCase):
     """Unit test base class for tests of `MetadataMetricTask`.
 
     Notes
     -----
     Subclasses must override
-    `~lsst.verify.gen2tasks.MetricTaskTestCase.makeTask` for the concrete task
+    `~lsst.verify.tasks.MetricTaskTestCase.makeTask` for the concrete task
     being tested.
     """
 
@@ -172,13 +171,13 @@ class MetadataMetricTestCase(gen2Utils.MetricTaskTestCase, MetricTaskTestCase):
                             expectedDimensions)
 
 
-class ApdbMetricTestCase(gen2Utils.MetricTaskTestCase, MetricTaskTestCase):
+class ApdbMetricTestCase(MetricTaskTestCase):
     """Unit test base class for tests of `ApdbMetricTask`.
 
     Notes
     -----
     Subclasses must override
-    `~lsst.verify.gen2tasks.MetricTaskTestCase.makeTask` for the concrete task
+    `~lsst.verify.tasks.MetricTaskTestCase.makeTask` for the concrete task
     being tested. Subclasses that use a custom DbLoader should also
     override `makeDbInfo`.
     """
