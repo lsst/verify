@@ -32,7 +32,6 @@ Input datasets
 
 ``metadata``
     The metadata of the top-level command-line task (e.g., ``ProcessCcdTask``, ``ApPipeTask``) being instrumented.
-    Because the metadata produced by each top-level task is a different Butler dataset type, this dataset **must** be explicitly configured when running ``TimingMetricTask`` or a :lsst-task:`~lsst.verify.gen2tasks.MetricsControllerTask` that contains it.
 
 Output datasets
 ---------------
@@ -75,7 +74,7 @@ Examples
    config.target = "apPipe:ccdProcessor.runDataRef"
    task = TimingMetricTask(config=config)
 
-   # config.connections provided for benefit of MetricsControllerTask/Pipeline
+   # config.connections provided for benefit of Pipeline
    # but since we've defined it we might as well use it
    metadata = butler.get(config.connections.metadata)
    processCcdTime = task.run(metadata).measurement

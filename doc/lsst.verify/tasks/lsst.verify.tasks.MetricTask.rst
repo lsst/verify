@@ -10,7 +10,6 @@ MetricTask (lsst.verify.tasks)
 Each ``MetricTask`` class accepts specific type(s) of datasets and produces measurements for a specific metric or family of metrics.
 
 ``MetricTask`` is a `~lsst.pipe.base.PipelineTask` and can be executed as part of pipelines.
-In Gen 2, ``MetricTask`` can be run as a plugin to :lsst-task:`lsst.verify.gen2tasks.MetricsControllerTask`.
 
 .. _lsst.verify.tasks.MetricTask-api:
 
@@ -78,7 +77,7 @@ In general, a ``MetricTask`` may run in three cases:
 #. the task has the data it needs, but cannot compute the metric.
    This could be because the data are corrupted, because the selected algorithm fails, or because the metric is ill-defined given the data.
 
-A ``MetricTask`` must distinguish between these cases so that `~lsst.verify.gen2tasks.MetricsControllerTask` and future calling frameworks can handle them appropriately.
+A ``MetricTask`` must distinguish between these cases so that calling frameworks can handle them appropriately.
 A task for a metric that does not apply to a particular pipeline run (case 2) must return `None` in place of a `~lsst.verify.Measurement`.
 A task that cannot give a valid result (case 3) must raise `~lsst.verify.tasks.MetricComputationError`.
 
@@ -86,14 +85,3 @@ In grey areas, developers should choose a ``MetricTask``'s behavior based on whe
 For example, :lsst-task:`~lsst.verify.tasks.commonMetrics.TimingMetricTask` accepts top-level task metadata as input, but returns `None` if it can't find metadata for the subtask it is supposed to time.
 While the input dataset is available, the subtask metadata are most likely missing because the subtask was never run, making the situation equivalent to case 2.
 On the other hand, metadata with nonsense values falls squarely under case 3.
-
-.. _lsst.verify.tasks.MetricTask-indepth-register:
-
-Registration
-------------
-
-The most common way to run ``MetricTask`` in Gen 2 is as plugins to :lsst-task:`~lsst.verify.gen2tasks.MetricsControllerTask`.
-Most ``MetricTask`` classes should use the `register` decorator to assign a plugin name.
-
-Because of implementation limitations, each registered name may appear at most once in `MetricsControllerConfig`.
-If you expect to need multiple instances of the same ``MetricTask`` class (typically when the same class can compute multiple metrics), it must have the `registerMultiple` decorator instead.
