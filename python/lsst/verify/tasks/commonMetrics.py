@@ -37,7 +37,6 @@ import astropy.units as u
 import lsst.pex.config as pexConfig
 
 from lsst.verify import Measurement, Datum
-from lsst.verify.gen2tasks.metricRegistry import registerMultiple
 from lsst.verify.tasks import MetricComputationError, MetadataMetricTask, \
     MetadataMetricConfig
 
@@ -85,7 +84,6 @@ class TimeMethodMetricConfig(MetadataMetricConfig):
 TimingMetricConfig = TimeMethodMetricConfig
 
 
-@registerMultiple("timing")
 class TimingMetricTask(MetadataMetricTask):
     """A Task that computes a wall-clock time using metadata produced by the
     `lsst.utils.timer.timeMethod` decorator.
@@ -186,7 +184,6 @@ class TimingMetricTask(MetadataMetricTask):
 MemoryMetricConfig = TimeMethodMetricConfig
 
 
-@registerMultiple("memory")
 class MemoryMetricTask(MetadataMetricTask):
     """A Task that computes the maximum resident set size using metadata
     produced by the `lsst.utils.timer.timeMethod` decorator.

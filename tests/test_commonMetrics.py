@@ -32,10 +32,9 @@ from lsst.pipe.base import Task
 from lsst.utils.timer import timeMethod
 
 from lsst.verify import Measurement, Name
-from lsst.verify.gen2tasks.testUtils import MetricTaskTestCase
 from lsst.verify.tasks import MetricComputationError, TimingMetricTask, \
     MemoryMetricTask
-from lsst.verify.tasks.testUtils import MetadataMetricTestCase
+from lsst.verify.tasks.testUtils import MetricTaskTestCase, MetadataMetricTestCase
 
 
 class DummyTask(Task):
