@@ -51,8 +51,8 @@ class SingleMetadataMetricConnections(
         ``metric``
             Name of the metric, excluding any namespace.
         ``labelName``
-            Pipeline label of the `~lsst.pipe.base.PipelineTask` or name of
-            the `~lsst.pipe.base.CmdLineTask` whose metadata are being read.
+            Pipeline label of the `~lsst.pipe.base.PipelineTask` whose metadata
+            are being read.
     """
     metadata = connectionTypes.Input(
         name="{labelName}_metadata",

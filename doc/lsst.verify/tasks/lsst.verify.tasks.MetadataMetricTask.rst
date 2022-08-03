@@ -34,7 +34,7 @@ Input datasets
 --------------
 
 `metadata``
-    The metadata of the top-level command-line task (e.g., ``ProcessCcdTask``, ``ApPipeTask``) being instrumented.
+    The metadata of the top-level pipeline task (e.g., ``CharacterizeImageTask``, ``DiaPipeTask``) being instrumented.
 
 Output datasets
 ---------------

@@ -46,14 +46,6 @@ Pipeline tasks
    :root: lsst.verify
    :toctree: tasks
 
-.. .. _lsst.verify-command-line-tasks:
-..
-.. Command-line tasks
-.. ------------------
-..
-.. .. lsst-cmdlinetasks::
-..    :root: lsst.verify
-
 .. _lsst.verify-tasks:
 
 Tasks
