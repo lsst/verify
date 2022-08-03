@@ -61,7 +61,6 @@ Subclassing
 ``MetricTask`` is primarily customized using the `~MetricTask.run` method.
 
 The task config should use `lsst.pipe.base.PipelineTaskConnections` to identify input datasets; ``MetricConfig`` handles the output dataset.
-Only the ``name`` and ``multiple`` fields are used in a Gen 2 context.
 
 .. _lsst.verify.tasks.MetricTask-indepth-errors:
 

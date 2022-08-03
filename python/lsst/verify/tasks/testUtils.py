@@ -108,7 +108,8 @@ class MetadataMetricTestCase(MetricTaskTestCase):
 
     @staticmethod
     def _takesScalarMetadata(task):
-        return task.areInputDatasetsScalar(task.config)['metadata']
+        connections = task.config.connections.ConnectionsClass(config=task.config)
+        return not connections.metadata.multiple
 
     def testValidRun(self):
         """Test how run delegates to the abstract methods.
