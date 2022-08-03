@@ -30,7 +30,6 @@ __all__ = ["TimingMetricConfig", "TimingMetricTask",
 
 import resource
 import sys
-import warnings
 
 import astropy.units as u
 
@@ -52,32 +51,6 @@ class TimeMethodMetricConfig(MetadataMetricConfig):
         dtype=str,
         doc="The method to profile, optionally prefixed by one or more tasks "
             "in the format of `lsst.pipe.base.Task.getFullMetadata()`.")
-    metric = pexConfig.Field(
-        dtype=str,
-        optional=True,
-        doc="The fully qualified name of the metric to store the "
-            "profiling information.",
-        deprecated="This field has been replaced by connections.package and "
-                   "connections.metric. It will be removed along "
-                   "with daf_persistence."
-    )
-
-    def validate(self):
-        super().validate()
-
-        if self.metric:
-            if self.metric != self.connections.package \
-                    + "." + self.connections.metric:
-                warnings.warn(
-                    "config.metric is deprecated; set connections.package "
-                    "and connections.metric instead.",
-                    FutureWarning)
-                try:
-                    self.connections.package, self.connections.metric \
-                        = self.metric.split(".")
-                except ValueError:
-                    self.connections.package = ""
-                    self.connections.metric = self.metric
 
 
 # Expose TimingMetricConfig name because config-writers expect it
