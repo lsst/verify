@@ -199,7 +199,7 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
         oldMetadata = newMetadata.copy()
         for key in newMetadata.names(topLevelOnly=False):
             if "__version__" in key:
-                oldMetadata.remove(key)
+                del oldMetadata[key]
 
         result = self.task.run(oldMetadata)
         lsst.pipe.base.testUtils.assertValidOutput(self.task, result)
