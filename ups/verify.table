@@ -5,7 +5,6 @@ setupRequired(pex_config)
 setupRequired(daf_butler)
 setupRequired(pipe_base)
 setupRequired(dax_apdb)
-setupRequired(daf_persistence)
 setupRequired(afw)
 
 # verify_metrics is the default metrics repo and is used in tests
