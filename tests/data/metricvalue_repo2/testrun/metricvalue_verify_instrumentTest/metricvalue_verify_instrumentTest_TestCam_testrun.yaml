@@ -1,0 +1,11 @@
+!<lsst.verify.Measurement>
+blobs:
+- !<lsst.verify.Blob>
+  data: {}
+  identifier: fe6942655f614705a847925864486343
+  name: verify.instrumentTest
+identifier: 17645bde2f924e73808712b2912f9e75
+metric: verify.instrumentTest
+notes: {}
+unit: ''
+value: 3.0

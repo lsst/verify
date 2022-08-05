@@ -1,0 +1,11 @@
+!<lsst.verify.Measurement>
+blobs:
+- !<lsst.verify.Blob>
+  data: {}
+  identifier: a73284f65d8146f7abc9e6223163ea72
+  name: verify.anotherTaskMemory
+identifier: ef3c9b213d6c440398d6fb34f65b028e
+metric: verify.anotherTaskMemory
+notes: {}
+unit: Gbyte
+value: 6.0

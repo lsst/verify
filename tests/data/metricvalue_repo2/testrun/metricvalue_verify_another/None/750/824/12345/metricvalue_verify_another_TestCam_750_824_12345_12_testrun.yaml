@@ -1,0 +1,11 @@
+!<lsst.verify.Measurement>
+blobs:
+- !<lsst.verify.Blob>
+  data: {}
+  identifier: c04f9ffa9da24b71a9b883a215b975f1
+  name: verify.another
+identifier: ca0c46ef845a425889ebc13ae8cc30e7
+metric: verify.another
+notes: {}
+unit: mas
+value: 4.0

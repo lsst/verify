@@ -1,0 +1,11 @@
+!<lsst.verify.Measurement>
+blobs:
+- !<lsst.verify.Blob>
+  data: {}
+  identifier: 31a444d7c97241a49a62422d1fc4bc14
+  name: verify.testingMemory
+identifier: 26962f97b7fd42cf9c24afda75f762a5
+metric: verify.testingMemory
+notes: {}
+unit: Mbyte
+value: 200.0

@@ -1,0 +1,11 @@
+!<lsst.verify.Measurement>
+blobs:
+- !<lsst.verify.Blob>
+  data: {}
+  identifier: a008812660ac4a08bd7643988a7d0a42
+  name: verify.anotherTime
+identifier: 63fc343e20294ec7b21b1e82789569cc
+metric: verify.anotherTime
+notes: {}
+unit: ms
+value: 201.0
