@@ -89,6 +89,8 @@ Python API reference
 .. automodapi:: lsst.verify.bin.dispatchverify
    :no-main-docstr:
 
+.. automodapi:: lsst.verify.extract_metricvalues
+
 .. automodapi:: lsst.verify.jsonmixin
    :no-main-docstr:
    :no-inheritance-diagram:

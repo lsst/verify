@@ -21,6 +21,9 @@
 
 """Tools for loading metric values from a butler and printing them, or from
 two butlers and differencing them.
+
+These functions are used by the
+:doc:`print_metricvalues <scripts/print_metricvalues>` script.
 """
 __all__ = ["load_value", "load_timing", "load_memory",
            "print_metrics", "print_diff_metrics", "load_from_butler"]
