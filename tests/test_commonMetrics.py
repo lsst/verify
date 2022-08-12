@@ -21,7 +21,6 @@
 
 import time
 import unittest
-import warnings
 
 import astropy.units as u
 
@@ -32,10 +31,9 @@ from lsst.pipe.base import Task
 from lsst.utils.timer import timeMethod
 
 from lsst.verify import Measurement, Name
-from lsst.verify.gen2tasks.testUtils import MetricTaskTestCase
 from lsst.verify.tasks import MetricComputationError, TimingMetricTask, \
     MemoryMetricTask
-from lsst.verify.tasks.testUtils import MetadataMetricTestCase
+from lsst.verify.tasks.testUtils import MetricTaskTestCase, MetadataMetricTestCase
 
 
 class DummyTask(Task):
@@ -125,18 +123,6 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         with self.assertRaises(MetricComputationError):
             task.run(metadata)
 
-    def testDeprecated(self):
-        with warnings.catch_warnings(record=True):
-            self.config.metric = "verify.DummyTime"
-        self.config.connections.package = ""
-        self.config.connections.metric = ""
-        with warnings.catch_warnings(record=True) as emitted:
-            self.config.validate()
-            self.assertEqual(len(emitted), 1)
-            self.assertEqual(emitted[0].category, FutureWarning)
-        self.assertEqual(self.config.connections.package, "verify")
-        self.assertEqual(self.config.connections.metric, "DummyTime")
-
 
 class MemoryMetricTestSuite(MetadataMetricTestCase):
     @classmethod
@@ -213,7 +199,7 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
         oldMetadata = newMetadata.copy()
         for key in newMetadata.names(topLevelOnly=False):
             if "__version__" in key:
-                oldMetadata.remove(key)
+                del oldMetadata[key]
 
         result = self.task.run(oldMetadata)
         lsst.pipe.base.testUtils.assertValidOutput(self.task, result)
@@ -226,18 +212,6 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
         newResult = self.task.run(newMetadata)
         self.assertGreater(meas.quantity, 0.0 * u.byte)
         self.assertLessEqual(meas.quantity, newResult.measurement.quantity)
-
-    def testDeprecated(self):
-        with warnings.catch_warnings(record=True):
-            self.config.metric = "verify.DummyMemory"
-        self.config.connections.package = ""
-        self.config.connections.metric = ""
-        with warnings.catch_warnings(record=True) as emitted:
-            self.config.validate()
-            self.assertEqual(len(emitted), 1)
-            self.assertEqual(emitted[0].category, FutureWarning)
-        self.assertEqual(self.config.connections.package, "verify")
-        self.assertEqual(self.config.connections.metric, "DummyMemory")
 
 
 # Hack around unittest's hacky test setup system

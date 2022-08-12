@@ -30,14 +30,12 @@ __all__ = ["TimingMetricConfig", "TimingMetricTask",
 
 import resource
 import sys
-import warnings
 
 import astropy.units as u
 
 import lsst.pex.config as pexConfig
 
 from lsst.verify import Measurement, Datum
-from lsst.verify.gen2tasks.metricRegistry import registerMultiple
 from lsst.verify.tasks import MetricComputationError, MetadataMetricTask, \
     MetadataMetricConfig
 
@@ -53,39 +51,12 @@ class TimeMethodMetricConfig(MetadataMetricConfig):
         dtype=str,
         doc="The method to profile, optionally prefixed by one or more tasks "
             "in the format of `lsst.pipe.base.Task.getFullMetadata()`.")
-    metric = pexConfig.Field(
-        dtype=str,
-        optional=True,
-        doc="The fully qualified name of the metric to store the "
-            "profiling information.",
-        deprecated="This field has been replaced by connections.package and "
-                   "connections.metric. It will be removed along "
-                   "with daf_persistence."
-    )
-
-    def validate(self):
-        super().validate()
-
-        if self.metric:
-            if self.metric != self.connections.package \
-                    + "." + self.connections.metric:
-                warnings.warn(
-                    "config.metric is deprecated; set connections.package "
-                    "and connections.metric instead.",
-                    FutureWarning)
-                try:
-                    self.connections.package, self.connections.metric \
-                        = self.metric.split(".")
-                except ValueError:
-                    self.connections.package = ""
-                    self.connections.metric = self.metric
 
 
 # Expose TimingMetricConfig name because config-writers expect it
 TimingMetricConfig = TimeMethodMetricConfig
 
 
-@registerMultiple("timing")
 class TimingMetricTask(MetadataMetricTask):
     """A Task that computes a wall-clock time using metadata produced by the
     `lsst.utils.timer.timeMethod` decorator.
@@ -186,7 +157,6 @@ class TimingMetricTask(MetadataMetricTask):
 MemoryMetricConfig = TimeMethodMetricConfig
 
 
-@registerMultiple("memory")
 class MemoryMetricTask(MetadataMetricTask):
     """A Task that computes the maximum resident set size using metadata
     produced by the `lsst.utils.timer.timeMethod` decorator.

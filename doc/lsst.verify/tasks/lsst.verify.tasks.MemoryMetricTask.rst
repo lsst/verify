@@ -5,10 +5,10 @@ MemoryMetricTask
 ################
 
 ``MemoryMetricTask`` creates a resident set size `~lsst.verify.Measurement` based on data collected by @\ `~lsst.utils.timer.timeMethod`.
-It reads the raw timing data from the top-level `~lsst.pipe.base.CmdLineTask`'s metadata, which is identified by the task configuration.
+It reads the raw timing data from the top-level `~lsst.pipe.base.PipelineTask`'s metadata, which is identified by the task configuration.
 
-In general, it's only useful to measure this metric for the top-level task being run.
-@\ `~lsst.utils.timer.timeMethod` measures the peak memory usage from process start, so the results for any subtask will be contaminated by previous subtasks run on the same data ID.
+@\ `~lsst.utils.timer.timeMethod` measures the peak memory usage from process start, so the results can be contaminated by previous quanta (different tasks, data IDs, or both) run on the same process.
+Interpret the results with care.
 
 Because @\ `~lsst.utils.timer.timeMethod` gives platform-dependent results, this task may give incorrect results (e.g., units) when run in a distributed system with heterogeneous nodes.
 
@@ -36,8 +36,7 @@ Input datasets
 --------------
 
 ``metadata``
-    The metadata of the top-level command-line task (e.g., ``ProcessCcdTask``, ``ApPipeTask``) being instrumented.
-    Because the metadata produced by each top-level task is a different Butler dataset type, this dataset **must** be explicitly configured when running ``MemoryMetricTask`` or a :lsst-task:`~lsst.verify.gen2tasks.MetricsControllerTask` that contains it.
+    The metadata of the top-level pipeline task (e.g., ``CharacterizeImageTask``, ``DiaPipeTask``) being instrumented.
 
 Output datasets
 ---------------
@@ -80,7 +79,7 @@ Examples
    config.target = "apPipe:ccdProcessor.runDataRef"
    task = MemoryMetricTask(config=config)
 
-   # config.connections provided for benefit of MetricsControllerTask/Pipeline
+   # config.connections provided for benefit of Pipeline
    # but since we've defined it we might as well use it
    metadata = butler.get(config.connections.metadata)
    processCcdTime = task.run(metadata).measurement

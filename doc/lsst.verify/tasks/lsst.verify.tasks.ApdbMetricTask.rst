@@ -36,7 +36,6 @@ Input datasets
 ``dbInfo``
     The Butler dataset from which the database connection can be initialized.
     The type must match the input required by the :lsst-config-field:`~lsst.verify.tasks.apdbMetricTask.ApdbMetricConfig.dbLoader` subtask (default: ``apdb_marker``).
-    If the input is a task config, its name **must** be explicitly configured when running ``ApdbMetricTask`` or a :lsst-task:`~lsst.verify.gen2tasks.MetricsControllerTask` that contains it.
 
 Output datasets
 ---------------

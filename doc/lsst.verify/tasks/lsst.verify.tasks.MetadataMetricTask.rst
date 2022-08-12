@@ -7,9 +7,6 @@ MetadataMetricTask
 ``MetadataMetricTask`` is a base class for generating `~lsst.verify.Measurement`\ s from task metadata of the same granularity.
 The class handles loading metadata and extracting the keys of interest, while subclasses are responsible for creating the `~lsst.verify.Measurement` from the extracted values.
 
-``MetadataMetricTask`` is currently a subclass of `lsst.verify.tasks.MetricTask`.
-It is expected that ``MetadataMetricTask`` can be migrated to the Gen 3 framework without affecting its subclasses.
-
 .. _lsst.verify.tasks.MetadataMetricTask-summary:
 
 Processing summary
@@ -37,8 +34,7 @@ Input datasets
 --------------
 
 `metadata``
-    The metadata of the top-level command-line task (e.g., ``ProcessCcdTask``, ``ApPipeTask``) being instrumented.
-    Because the metadata produced by each top-level task is a different Butler dataset type, this dataset **must** be explicitly configured when running ``MetadataMetricTask`` or a :lsst-task:`~lsst.verify.gen2tasks.MetricsControllerTask` that contains it.
+    The metadata of the top-level pipeline task (e.g., ``CharacterizeImageTask``, ``DiaPipeTask``) being instrumented.
 
 Output datasets
 ---------------
