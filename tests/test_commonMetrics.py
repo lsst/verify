@@ -78,13 +78,6 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         self.assertGreater(meas.quantity, 0.0 * u.second)
         self.assertLess(meas.quantity, 2 * DummyTask.taskLength * u.second)
 
-    def testNoMetric(self):
-        self.config.connections.package = "foo.bar"
-        self.config.connections.metric = "FooBarTime"
-        task = TimingMetricTask(config=self.config)
-        with self.assertRaises(TypeError):
-            task.run(self.scienceTask.getFullMetadata())
-
     def testMissingData(self):
         result = self.task.run(None)
         lsst.pipe.base.testUtils.assertValidOutput(self.task, result)
@@ -154,13 +147,6 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
         self.assertIsInstance(meas, Measurement)
         self.assertEqual(meas.metric_name, self.metric)
         self.assertGreater(meas.quantity, 0.0 * u.byte)
-
-    def testNoMetric(self):
-        self.config.connections.package = "foo.bar"
-        self.config.connections.metric = "FooBarMemory"
-        task = MemoryMetricTask(config=self.config)
-        with self.assertRaises(TypeError):
-            task.run(self.scienceTask.getFullMetadata())
 
     def testMissingData(self):
         result = self.task.run(None)
