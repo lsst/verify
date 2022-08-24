@@ -167,30 +167,41 @@ class Metadata(JsonSerializationMixin):
         return self.__str__()
 
     def keys(self):
-        """Get a `list` of metadata keys.
+        """Get the metadata keys.
 
         Returns
         -------
-        keys : `list` of `str`
-            These keys keys can be used to access metadata values (like a
-            `dict`).
+        keys : `~collections.abc.KeysView` [`str`]
+            The keys that can be used to access metadata values (like a
+            `dict`). Set-like.
         """
-        return [key for key in self]
+        self._refresh_chainmap()
+        return self._chain.keys()
 
     def items(self):
         """Iterate over key-value metadata pairs.
 
         Yields
         ------
-        item : `tuple`
-            A metadata item is a tuple of:
+        item : `~collections.abc.ItemsView`
+            An iterable over metadata items that are a tuple of:
 
             - Key (`str`).
             - Value (object).
         """
         self._refresh_chainmap()
-        for item in self._chain.items():
-            yield item
+        return self._chain.items()
+
+    def values(self):
+        """Iterate over metadata values.
+
+        Returns
+        ------
+        items : `~collections.abc.ValuesView`
+            An iterable over all the values.
+        """
+        self._refresh_chainmap()
+        return self._chain.values()
 
     def update(self, data):
         """Update metadata with key-value pairs from a `dict`-like object.

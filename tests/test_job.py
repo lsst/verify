@@ -108,7 +108,7 @@ class JobTestCase(unittest.TestCase):
         self.assertNotIn('dataset', job.meta)
 
         self.assertEqual(
-            set(job.meta.keys()),
+            job.meta.keys(),
             set(['job-level-key', 'test.PhotRms.note'])
         )
         self.assertEqual(
@@ -116,9 +116,11 @@ class JobTestCase(unittest.TestCase):
             set(['job-level-key', 'test.PhotRms.note'])
         )
         keys = set()
-        for key, value in job.meta.items():
+        for key, _ in job.meta.items():
             keys.add(key)
         self.assertEqual(keys, set(['job-level-key', 'test.PhotRms.note']))
+
+        self.assertEqual(len(job.meta.keys()), len(job.meta.values()))
 
         # Add a new measurement
         m = Measurement('test.PhotMedian', 28.5 * u.mag,
