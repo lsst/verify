@@ -70,9 +70,9 @@ Error Handling
 In general, a ``MetricTask`` may run in three cases:
 
 #. the task can compute the metric without incident.
-#. the task does not have the datasets required to compute the metric.
-   This often happens if the user runs generic metric configurations on arbitrary pipelines, or if they make changes to the pipeline configuration that enable or disable processing steps.
-   More rarely, it can happen when trying to compute diagnostic metrics on incomplete (i.e., failed) pipeline runs.
+#. the task does not have the data required to compute the metric.
+   This can happen with metadata- or table-based metrics if the user runs generic metric configurations on arbitrary pipelines, or if they make changes to the pipeline configuration that enable or disable processing steps.
+   Middleware automatically handles the case where an entire dataset is missing.
 #. the task has the data it needs, but cannot compute the metric.
    This could be because the data are corrupted, because the selected algorithm fails, or because the metric is ill-defined given the data.
 
@@ -82,5 +82,5 @@ A task that cannot give a valid result (case 3) must raise `~lsst.verify.tasks.M
 
 In grey areas, developers should choose a ``MetricTask``'s behavior based on whether the root cause is closer to case 2 or case 3.
 For example, :lsst-task:`~lsst.verify.tasks.commonMetrics.TimingMetricTask` accepts top-level task metadata as input, but returns `None` if it can't find metadata for the subtask it is supposed to time.
-While the input dataset is available, the subtask metadata are most likely missing because the subtask was never run, making the situation equivalent to case 2.
+The subtask metadata are most likely missing because the subtask was never run, making the situation equivalent to case 2.
 On the other hand, metadata with nonsense values falls squarely under case 3.

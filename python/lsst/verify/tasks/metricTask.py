@@ -158,9 +158,7 @@ class MetricTask(pipeBase.PipelineTask, metaclass=abc.ABCMeta):
 
         Notes
         -----
-        All input data must be treated as optional. This maximizes the
-        ``MetricTask``'s usefulness for incomplete pipeline runs or runs with
-        optional processing steps. If a metric cannot be calculated because
+        If a metric cannot be calculated because
         the necessary inputs are missing, the ``MetricTask`` must return `None`
         in place of the measurement.
         """
