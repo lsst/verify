@@ -78,12 +78,6 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         self.assertGreater(meas.quantity, 0.0 * u.second)
         self.assertLess(meas.quantity, 2 * DummyTask.taskLength * u.second)
 
-    def testMissingData(self):
-        result = self.task.run(None)
-        lsst.pipe.base.testUtils.assertValidOutput(self.task, result)
-        meas = result.measurement
-        self.assertIsNone(meas)
-
     def testRunDifferentMethod(self):
         self.config.target = DummyTask._DefaultName + ".runDataRef"
         task = TimingMetricTask(config=self.config)
@@ -147,12 +141,6 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
         self.assertIsInstance(meas, Measurement)
         self.assertEqual(meas.metric_name, self.metric)
         self.assertGreater(meas.quantity, 0.0 * u.byte)
-
-    def testMissingData(self):
-        result = self.task.run(None)
-        lsst.pipe.base.testUtils.assertValidOutput(self.task, result)
-        meas = result.measurement
-        self.assertIsNone(meas)
 
     def testRunDifferentMethod(self):
         self.config.target = DummyTask._DefaultName + ".runDataRef"

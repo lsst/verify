@@ -124,17 +124,14 @@ class MetadataMetricTestCase(MetricTaskTestCase):
 
                 self.task.run(metadata1)
                 mockWorkhorse.assert_called_once_with({"unused": 42})
-                mockWorkhorse.reset_mock()
-                self.task.run(None)
-                mockWorkhorse.assert_called_once_with({"unused": None})
             else:
                 metadata1 = TaskMetadata()
                 metadata1[mockKey] = 42
                 metadata2 = TaskMetadata()
                 metadata2[mockKey] = "Sphere"
-                self.task.run([metadata1, None, metadata2])
+                self.task.run([metadata1, metadata2])
                 mockWorkhorse.assert_called_once_with(
-                    [{"unused": value} for value in [42, None, "Sphere"]])
+                    [{"unused": value} for value in [42, "Sphere"]])
 
     def testAmbiguousRun(self):
         mockKey = "unitTestKey"
@@ -152,11 +149,13 @@ class MetadataMetricTestCase(MetricTaskTestCase):
     def testPassThroughRun(self):
         with patch.object(self.task, "makeMeasurement",
                           side_effect=MetricComputationError):
+            metadata1 = TaskMetadata()
+            metadata1["unitTestKey"] = 42
             with self.assertRaises(MetricComputationError):
                 if self._takesScalarMetadata(self.task):
-                    self.task.run(None)
+                    self.task.run(metadata1)
                 else:
-                    self.task.run([None])
+                    self.task.run([metadata1])
 
     def testDimensionsOverride(self):
         config = self.task.config
