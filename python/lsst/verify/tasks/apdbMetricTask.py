@@ -54,7 +54,7 @@ class ConfigApdbLoader(Task):
 
         Parameters
         ----------
-        config : `lsst.pex.config.Config` or `None`
+        config : `lsst.pex.config.Config`
             A config that may contain a `lsst.dax.apdb.ApdbConfig`.
             Behavior is undefined if there is more than one such member.
 
@@ -64,8 +64,6 @@ class ConfigApdbLoader(Task):
             A `lsst.dax.apdb.Apdb` object or a drop-in replacement, or `None`
             if no `lsst.dax.apdb.ApdbConfig` is present in ``config``.
         """
-        if config is None:
-            return None
         if isinstance(config, ApdbConfig):
             return make_apdb(config)
 
@@ -100,7 +98,7 @@ class ConfigApdbLoader(Task):
 
         Parameters
         ----------
-        configurable : `lsst.pex.config.ConfigurableInstance` or `None`
+        configurable : `lsst.pex.config.ConfigurableInstance`
             A configurable that may contain a `lsst.dax.apdb.ApdbConfig`.
 
         Returns
@@ -109,9 +107,6 @@ class ConfigApdbLoader(Task):
             A `lsst.dax.apdb.Apdb` object or a drop-in replacement, if a
             suitable config exists.
         """
-        if configurable is None:
-            return None
-
         if issubclass(configurable.ConfigClass, ApdbConfig):
             return configurable.apply()
         else:
@@ -122,7 +117,7 @@ class ConfigApdbLoader(Task):
 
         Parameters
         ----------
-        configDict: iterable of `lsst.pex.config.Config` or `None`
+        configDict: iterable of `lsst.pex.config.Config`
             A config iterable that may contain a `lsst.dax.apdb.ApdbConfig`.
 
         Returns
@@ -131,19 +126,17 @@ class ConfigApdbLoader(Task):
             A `lsst.dax.apdb.Apdb` object or a drop-in replacement, if a
             suitable config exists.
         """
-        if configDict:
-            for config in configDict:
-                result = self._getApdb(config)
-                if result:
-                    return result
-        return None
+        for config in configDict:
+            result = self._getApdb(config)
+            if result:
+                return result
 
     def run(self, config):
         """Create a database consistent with a science task config.
 
         Parameters
         ----------
-        config : `lsst.pex.config.Config` or `None`
+        config : `lsst.pex.config.Config`
             A config that should contain a `lsst.dax.apdb.ApdbConfig`.
             Behavior is undefined if there is more than one such member.
 
@@ -181,7 +174,7 @@ class DirectApdbLoader(Task):
 
         Parameters
         ----------
-        config : `lsst.dax.apdb.ApdbConfig` or `None`
+        config : `lsst.dax.apdb.ApdbConfig`
             A config for the database connection.
 
         Returns
@@ -219,6 +212,7 @@ class ApdbMetricConnections(
             "by AP processing.",
         storageClass="Config",
         multiple=True,
+        minimum=1,
         dimensions={"instrument", "visit", "detector"},
     )
     # Replaces MetricConnections.measurement, which is detector-level
@@ -326,11 +320,11 @@ class ApdbMetricTask(MetricTask):
         -----
         This implementation calls
         `~lsst.verify.tasks.ApdbMetricConfig.dbLoader` to acquire a database
-        handle (taking `None` if no input), then passes it and the value of
+        handle, then passes it and the value of
         ``outputDataId`` to `makeMeasurement`. The result of `makeMeasurement`
         is returned to the caller.
         """
-        db = self.dbLoader.run(dbInfo[0] if dbInfo else None).apdb
+        db = self.dbLoader.run(dbInfo[0]).apdb
 
         if db is not None:
             measurement = self.makeMeasurement(db, outputDataId)
