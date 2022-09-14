@@ -26,7 +26,7 @@ import abc
 
 from lsst.pex.config import Config, ConfigurableField, ConfigurableInstance, \
     ConfigDictField, ConfigChoiceField, FieldValidationError
-from lsst.pipe.base import Task, Struct, connectionTypes
+from lsst.pipe.base import NoWorkFound, Task, Struct, connectionTypes
 from lsst.dax.apdb import make_apdb, ApdbConfig
 
 from lsst.verify.tasks import MetricTask, MetricConfig, MetricConnections, \
@@ -286,6 +286,10 @@ class ApdbMetricTask(MetricTask):
         lsst.verify.tasks.MetricComputationError
             Raised if an algorithmic or system error prevents calculation of
             the metric. See `run` for expected behavior.
+        lsst.pipe.base.NoWorkFound
+            Raised if the metric is ill-defined or otherwise inapplicable to
+            the database state. Typically this means that the pipeline step or
+            option being measured was not run.
         """
 
     def run(self, dbInfo, outputDataId={}):
@@ -315,6 +319,10 @@ class ApdbMetricTask(MetricTask):
         lsst.verify.tasks.MetricComputationError
             Raised if an algorithmic or system error prevents calculation of
             the metric.
+        lsst.pipe.base.NoWorkFound
+            Raised if the metric is ill-defined or otherwise inapplicable to
+            the database state. Typically this means that the pipeline step or
+            option being measured was not run.
 
         Notes
         -----
@@ -327,11 +335,9 @@ class ApdbMetricTask(MetricTask):
         db = self.dbLoader.run(dbInfo[0]).apdb
 
         if db is not None:
-            measurement = self.makeMeasurement(db, outputDataId)
+            return Struct(measurement=self.makeMeasurement(db, outputDataId))
         else:
-            measurement = None
-
-        return Struct(measurement=measurement)
+            raise NoWorkFound("No APDB to measure!")
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         """Do Butler I/O to provide in-memory objects for run.
