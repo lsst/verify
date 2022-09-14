@@ -81,10 +81,16 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
     def testRunDifferentMethod(self):
         self.config.target = DummyTask._DefaultName + ".runDataRef"
         task = TimingMetricTask(config=self.config)
-        result = task.run(self.scienceTask.getFullMetadata())
-        lsst.pipe.base.testUtils.assertValidOutput(task, result)
-        meas = result.measurement
-        self.assertIsNone(meas)
+        try:
+            result = task.run(self.scienceTask.getFullMetadata())
+        except lsst.pipe.base.NoWorkFound:
+            # Correct behavior
+            pass
+        else:
+            # Alternative correct behavior
+            lsst.pipe.base.testUtils.assertValidOutput(task, result)
+            meas = result.measurement
+            self.assertIsNone(meas)
 
     def testNonsenseKeys(self):
         metadata = self.scienceTask.getFullMetadata()
@@ -145,10 +151,16 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
     def testRunDifferentMethod(self):
         self.config.target = DummyTask._DefaultName + ".runDataRef"
         task = MemoryMetricTask(config=self.config)
-        result = task.run(self.scienceTask.getFullMetadata())
-        lsst.pipe.base.testUtils.assertValidOutput(task, result)
-        meas = result.measurement
-        self.assertIsNone(meas)
+        try:
+            result = task.run(self.scienceTask.getFullMetadata())
+        except lsst.pipe.base.NoWorkFound:
+            # Correct behavior
+            pass
+        else:
+            # Alternative correct behavior
+            lsst.pipe.base.testUtils.assertValidOutput(task, result)
+            meas = result.measurement
+            self.assertIsNone(meas)
 
     def testBadlyTypedKeys(self):
         metadata = self.scienceTask.getFullMetadata()

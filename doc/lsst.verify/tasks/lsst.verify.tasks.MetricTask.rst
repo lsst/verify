@@ -77,7 +77,7 @@ In general, a ``MetricTask`` may run in three cases:
    This could be because the data are corrupted, because the selected algorithm fails, or because the metric is ill-defined given the data.
 
 A ``MetricTask`` must distinguish between these cases so that calling frameworks can handle them appropriately.
-A task for a metric that does not apply to a particular pipeline run (case 2) must return `None` in place of a `~lsst.verify.Measurement`.
+A task for a metric that does not apply to a particular pipeline run (case 2) must either raise `~lsst.pipe.base.NoWorkFound` or return `None`; it must not return a dummy value or raise a different exception.
 A task that cannot give a valid result (case 3) must raise `~lsst.verify.tasks.MetricComputationError`.
 
 In grey areas, developers should choose a ``MetricTask``'s behavior based on whether the root cause is closer to case 2 or case 3.
