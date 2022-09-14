@@ -256,6 +256,10 @@ class MetadataMetricTask(AbstractMetadataMetricTask):
         lsst.verify.tasks.MetricComputationError
             Raised if an algorithmic or system error prevents calculation of
             the metric. See `run` for expected behavior.
+        lsst.pipe.base.NoWorkFound
+            Raised if the metric is ill-defined or otherwise inapplicable.
+            Typically this means that the pipeline step or option being
+            measured was not run.
         """
 
     def run(self, metadata):
@@ -281,6 +285,10 @@ class MetadataMetricTask(AbstractMetadataMetricTask):
         lsst.verify.tasks.MetricComputationError
             Raised if the strings returned by `getInputMetadataKeys` match
             more than one key in any metadata object.
+        lsst.pipe.base.NoWorkFound
+            Raised if the metric is ill-defined or otherwise inapplicable.
+            Typically this means that the pipeline step or option being
+            measured was not run.
 
         Notes
         -----

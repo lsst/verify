@@ -34,6 +34,7 @@ import sys
 import astropy.units as u
 
 import lsst.pex.config as pexConfig
+from lsst.pipe.base import NoWorkFound
 
 from lsst.verify import Measurement, Datum
 from lsst.verify.tasks import MetricComputationError, MetadataMetricTask, \
@@ -125,13 +126,15 @@ class TimingMetricTask(MetadataMetricTask):
 
         Returns
         -------
-        measurement : `lsst.verify.Measurement` or `None`
+        measurement : `lsst.verify.Measurement`
             The running time of the target method.
 
         Raises
         ------
         lsst.verify.tasks.MetricComputationError
             Raised if the timing metadata are invalid.
+        lsst.pipe.base.NoWorkFound
+            Raised if no matching timing metadata found.
         """
         if timings["StartTime"] is not None or timings["EndTime"] is not None:
             try:
@@ -148,9 +151,7 @@ class TimingMetricTask(MetadataMetricTask):
                     meas.extras["end"] = Datum(timings["EndTimestamp"])
                 return meas
         else:
-            self.log.info("Nothing to do: no timing information for %s found.",
-                          self.config.target)
-            return None
+            raise NoWorkFound(f"Nothing to do: no timing information for {self.config.target} found.")
 
 
 # Expose MemoryMetricConfig name because config-writers expect it
@@ -221,13 +222,15 @@ class MemoryMetricTask(MetadataMetricTask):
 
         Returns
         -------
-        measurement : `lsst.verify.Measurement` or `None`
+        measurement : `lsst.verify.Measurement`
             The maximum memory usage of the target method.
 
         Raises
         ------
         lsst.verify.tasks.MetricComputationError
             Raised if the memory metadata are invalid.
+        lsst.pipe.base.NoWorkFound
+            Raised if no matching memory metadata found.
         """
         if memory["EndMemory"] is not None:
             try:
@@ -242,9 +245,7 @@ class MemoryMetricTask(MetadataMetricTask):
                 meas.notes['estimator'] = 'utils.timer.timeMethod'
                 return meas
         else:
-            self.log.info("Nothing to do: no memory information for %s found.",
-                          self.config.target)
-            return None
+            raise NoWorkFound(f"Nothing to do: no memory information for {self.config.target} found.")
 
     def _addUnits(self, memory, version):
         """Represent memory usage in correct units.
