@@ -283,7 +283,7 @@ class ApdbMetricTask(MetricTask):
 
         Raises
         ------
-        MetricComputationError
+        lsst.verify.tasks.MetricComputationError
             Raised if an algorithmic or system error prevents calculation of
             the metric. See `run` for expected behavior.
         """
@@ -312,7 +312,7 @@ class ApdbMetricTask(MetricTask):
 
         Raises
         ------
-        MetricComputationError
+        lsst.verify.tasks.MetricComputationError
             Raised if an algorithmic or system error prevents calculation of
             the metric.
 

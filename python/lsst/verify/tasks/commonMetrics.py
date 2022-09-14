@@ -130,7 +130,7 @@ class TimingMetricTask(MetadataMetricTask):
 
         Raises
         ------
-        MetricComputationError
+        lsst.verify.tasks.MetricComputationError
             Raised if the timing metadata are invalid.
         """
         if timings["StartTime"] is not None or timings["EndTime"] is not None:
@@ -226,7 +226,7 @@ class MemoryMetricTask(MetadataMetricTask):
 
         Raises
         ------
-        MetricComputationError
+        lsst.verify.tasks.MetricComputationError
             Raised if the memory metadata are invalid.
         """
         if memory["EndMemory"] is not None:
