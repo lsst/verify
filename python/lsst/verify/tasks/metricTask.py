@@ -168,19 +168,13 @@ class MetricTask(pipeBase.PipelineTask, metaclass=abc.ABCMeta):
         """Do Butler I/O to provide in-memory objects for run.
 
         This specialization of runQuantum performs error-handling specific to
-        MetricTasks. Most or all of this functionality may be moved to
-        activators in the future.
+        MetricTasks.
         """
         # Synchronize changes to this method with ApdbMetricTask
-        try:
-            inputs = butlerQC.get(inputRefs)
-            outputs = self.run(**inputs)
-            if outputs.measurement is not None:
-                butlerQC.put(outputs, outputRefs)
-            else:
-                self.log.debug("Skipping measurement of %r on %s "
-                               "as not applicable.", self, inputRefs)
-        except MetricComputationError:
-            self.log.error(
-                "Measurement of %r failed on %s->%s",
-                self, inputRefs, outputRefs, exc_info=True)
+        inputs = butlerQC.get(inputRefs)
+        outputs = self.run(**inputs)
+        if outputs.measurement is not None:
+            butlerQC.put(outputs, outputRefs)
+        else:
+            self.log.debug("Skipping measurement of %r on %s "
+                           "as not applicable.", self, inputRefs)
