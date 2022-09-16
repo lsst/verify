@@ -29,8 +29,7 @@ from lsst.pex.config import Config, ConfigurableField, ConfigurableInstance, \
 from lsst.pipe.base import NoWorkFound, Task, Struct, connectionTypes
 from lsst.dax.apdb import make_apdb, ApdbConfig
 
-from lsst.verify.tasks import MetricTask, MetricConfig, MetricConnections, \
-    MetricComputationError
+from lsst.verify.tasks import MetricTask, MetricConfig, MetricConnections
 
 
 class ConfigApdbLoader(Task):
@@ -344,16 +343,11 @@ class ApdbMetricTask(MetricTask):
 
         This specialization of runQuantum passes the output data ID to `run`.
         """
-        try:
-            inputs = butlerQC.get(inputRefs)
-            outputs = self.run(**inputs,
-                               outputDataId=outputRefs.measurement.dataId)
-            if outputs.measurement is not None:
-                butlerQC.put(outputs, outputRefs)
-            else:
-                self.log.debug("Skipping measurement of %r on %s "
-                               "as not applicable.", self, inputRefs)
-        except MetricComputationError:
-            self.log.error(
-                "Measurement of %r failed on %s->%s",
-                self, inputRefs, outputRefs, exc_info=True)
+        inputs = butlerQC.get(inputRefs)
+        outputs = self.run(**inputs,
+                           outputDataId=outputRefs.measurement.dataId)
+        if outputs.measurement is not None:
+            butlerQC.put(outputs, outputRefs)
+        else:
+            self.log.debug("Skipping measurement of %r on %s "
+                           "as not applicable.", self, inputRefs)
