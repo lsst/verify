@@ -31,7 +31,7 @@ import lsst.daf.butler.tests as butlerTests
 from lsst.pipe.base import Task, Struct, testUtils
 
 from lsst.verify import Measurement
-from lsst.verify.tasks import ApdbMetricTask, MetricComputationError
+from lsst.verify.tasks import ApdbMetricTask
 from lsst.verify.tasks.testUtils import ApdbMetricTestCase
 
 
@@ -155,24 +155,6 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
                 lsst.pipe.base.ButlerQuantumContext, "put") as put:
             testUtils.runTestQuantum(task, butler, quantum, mockRun=False)
             # Should not attempt to write nonexistent data
-            put.assert_not_called()
-
-    def testRunQuantumException(self):
-        class ExceptionalTask(DummyTask):
-            def run(self, *args, **kwargs):
-                raise MetricComputationError()
-
-        config = ExceptionalTask.ConfigClass()
-        config.connections.package = "verify"
-        config.connections.metric = "DummyApdb"
-        task = ExceptionalTask(config=config)
-        butler, quantum, input = self._prepareQuantum(task)
-
-        with unittest.mock.patch.object(
-                lsst.pipe.base.ButlerQuantumContext, "put") as put:
-            testUtils.runTestQuantum(task, butler, quantum, mockRun=False)
-            # Should not propagate MetricComputationError
-            # Should not attempt to write data that was never returned
             put.assert_not_called()
 
 

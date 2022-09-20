@@ -78,19 +78,19 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         self.assertGreater(meas.quantity, 0.0 * u.second)
         self.assertLess(meas.quantity, 2 * DummyTask.taskLength * u.second)
 
-    def testMissingData(self):
-        result = self.task.run(None)
-        lsst.pipe.base.testUtils.assertValidOutput(self.task, result)
-        meas = result.measurement
-        self.assertIsNone(meas)
-
     def testRunDifferentMethod(self):
         self.config.target = DummyTask._DefaultName + ".runDataRef"
         task = TimingMetricTask(config=self.config)
-        result = task.run(self.scienceTask.getFullMetadata())
-        lsst.pipe.base.testUtils.assertValidOutput(task, result)
-        meas = result.measurement
-        self.assertIsNone(meas)
+        try:
+            result = task.run(self.scienceTask.getFullMetadata())
+        except lsst.pipe.base.NoWorkFound:
+            # Correct behavior
+            pass
+        else:
+            # Alternative correct behavior
+            lsst.pipe.base.testUtils.assertValidOutput(task, result)
+            meas = result.measurement
+            self.assertIsNone(meas)
 
     def testNonsenseKeys(self):
         metadata = self.scienceTask.getFullMetadata()
@@ -148,19 +148,19 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
         self.assertEqual(meas.metric_name, self.metric)
         self.assertGreater(meas.quantity, 0.0 * u.byte)
 
-    def testMissingData(self):
-        result = self.task.run(None)
-        lsst.pipe.base.testUtils.assertValidOutput(self.task, result)
-        meas = result.measurement
-        self.assertIsNone(meas)
-
     def testRunDifferentMethod(self):
         self.config.target = DummyTask._DefaultName + ".runDataRef"
         task = MemoryMetricTask(config=self.config)
-        result = task.run(self.scienceTask.getFullMetadata())
-        lsst.pipe.base.testUtils.assertValidOutput(task, result)
-        meas = result.measurement
-        self.assertIsNone(meas)
+        try:
+            result = task.run(self.scienceTask.getFullMetadata())
+        except lsst.pipe.base.NoWorkFound:
+            # Correct behavior
+            pass
+        else:
+            # Alternative correct behavior
+            lsst.pipe.base.testUtils.assertValidOutput(task, result)
+            meas = result.measurement
+            self.assertIsNone(meas)
 
     def testBadlyTypedKeys(self):
         metadata = self.scienceTask.getFullMetadata()

@@ -50,10 +50,6 @@ class ConfigApdbLoaderTestSuite(lsst.utils.tests.TestCase):
     def setUp(self):
         self.task = ConfigApdbLoader()
 
-    def testNoConfig(self):
-        result = self.task.run(None)
-        self.assertIsNone(result.apdb)
-
     def testEmptyConfig(self):
         result = self.task.run(Config())
         self.assertIsNone(result.apdb)

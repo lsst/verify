@@ -26,11 +26,10 @@ import abc
 
 from lsst.pex.config import Config, ConfigurableField, ConfigurableInstance, \
     ConfigDictField, ConfigChoiceField, FieldValidationError
-from lsst.pipe.base import Task, Struct, connectionTypes
+from lsst.pipe.base import NoWorkFound, Task, Struct, connectionTypes
 from lsst.dax.apdb import make_apdb, ApdbConfig
 
-from lsst.verify.tasks import MetricTask, MetricConfig, MetricConnections, \
-    MetricComputationError
+from lsst.verify.tasks import MetricTask, MetricConfig, MetricConnections
 
 
 class ConfigApdbLoader(Task):
@@ -54,7 +53,7 @@ class ConfigApdbLoader(Task):
 
         Parameters
         ----------
-        config : `lsst.pex.config.Config` or `None`
+        config : `lsst.pex.config.Config`
             A config that may contain a `lsst.dax.apdb.ApdbConfig`.
             Behavior is undefined if there is more than one such member.
 
@@ -64,8 +63,6 @@ class ConfigApdbLoader(Task):
             A `lsst.dax.apdb.Apdb` object or a drop-in replacement, or `None`
             if no `lsst.dax.apdb.ApdbConfig` is present in ``config``.
         """
-        if config is None:
-            return None
         if isinstance(config, ApdbConfig):
             return make_apdb(config)
 
@@ -100,7 +97,7 @@ class ConfigApdbLoader(Task):
 
         Parameters
         ----------
-        configurable : `lsst.pex.config.ConfigurableInstance` or `None`
+        configurable : `lsst.pex.config.ConfigurableInstance`
             A configurable that may contain a `lsst.dax.apdb.ApdbConfig`.
 
         Returns
@@ -109,9 +106,6 @@ class ConfigApdbLoader(Task):
             A `lsst.dax.apdb.Apdb` object or a drop-in replacement, if a
             suitable config exists.
         """
-        if configurable is None:
-            return None
-
         if issubclass(configurable.ConfigClass, ApdbConfig):
             return configurable.apply()
         else:
@@ -122,7 +116,7 @@ class ConfigApdbLoader(Task):
 
         Parameters
         ----------
-        configDict: iterable of `lsst.pex.config.Config` or `None`
+        configDict: iterable of `lsst.pex.config.Config`
             A config iterable that may contain a `lsst.dax.apdb.ApdbConfig`.
 
         Returns
@@ -131,19 +125,17 @@ class ConfigApdbLoader(Task):
             A `lsst.dax.apdb.Apdb` object or a drop-in replacement, if a
             suitable config exists.
         """
-        if configDict:
-            for config in configDict:
-                result = self._getApdb(config)
-                if result:
-                    return result
-        return None
+        for config in configDict:
+            result = self._getApdb(config)
+            if result:
+                return result
 
     def run(self, config):
         """Create a database consistent with a science task config.
 
         Parameters
         ----------
-        config : `lsst.pex.config.Config` or `None`
+        config : `lsst.pex.config.Config`
             A config that should contain a `lsst.dax.apdb.ApdbConfig`.
             Behavior is undefined if there is more than one such member.
 
@@ -181,7 +173,7 @@ class DirectApdbLoader(Task):
 
         Parameters
         ----------
-        config : `lsst.dax.apdb.ApdbConfig` or `None`
+        config : `lsst.dax.apdb.ApdbConfig`
             A config for the database connection.
 
         Returns
@@ -219,6 +211,7 @@ class ApdbMetricConnections(
             "by AP processing.",
         storageClass="Config",
         multiple=True,
+        minimum=1,
         dimensions={"instrument", "visit", "detector"},
     )
     # Replaces MetricConnections.measurement, which is detector-level
@@ -289,9 +282,13 @@ class ApdbMetricTask(MetricTask):
 
         Raises
         ------
-        MetricComputationError
+        lsst.verify.tasks.MetricComputationError
             Raised if an algorithmic or system error prevents calculation of
             the metric. See `run` for expected behavior.
+        lsst.pipe.base.NoWorkFound
+            Raised if the metric is ill-defined or otherwise inapplicable to
+            the database state. Typically this means that the pipeline step or
+            option being measured was not run.
         """
 
     def run(self, dbInfo, outputDataId={}):
@@ -318,42 +315,39 @@ class ApdbMetricTask(MetricTask):
 
         Raises
         ------
-        MetricComputationError
+        lsst.verify.tasks.MetricComputationError
             Raised if an algorithmic or system error prevents calculation of
             the metric.
+        lsst.pipe.base.NoWorkFound
+            Raised if the metric is ill-defined or otherwise inapplicable to
+            the database state. Typically this means that the pipeline step or
+            option being measured was not run.
 
         Notes
         -----
         This implementation calls
         `~lsst.verify.tasks.ApdbMetricConfig.dbLoader` to acquire a database
-        handle (taking `None` if no input), then passes it and the value of
+        handle, then passes it and the value of
         ``outputDataId`` to `makeMeasurement`. The result of `makeMeasurement`
         is returned to the caller.
         """
-        db = self.dbLoader.run(dbInfo[0] if dbInfo else None).apdb
+        db = self.dbLoader.run(dbInfo[0]).apdb
 
         if db is not None:
-            measurement = self.makeMeasurement(db, outputDataId)
+            return Struct(measurement=self.makeMeasurement(db, outputDataId))
         else:
-            measurement = None
-
-        return Struct(measurement=measurement)
+            raise NoWorkFound("No APDB to measure!")
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         """Do Butler I/O to provide in-memory objects for run.
 
         This specialization of runQuantum passes the output data ID to `run`.
         """
-        try:
-            inputs = butlerQC.get(inputRefs)
-            outputs = self.run(**inputs,
-                               outputDataId=outputRefs.measurement.dataId)
-            if outputs.measurement is not None:
-                butlerQC.put(outputs, outputRefs)
-            else:
-                self.log.debug("Skipping measurement of %r on %s "
-                               "as not applicable.", self, inputRefs)
-        except MetricComputationError:
-            self.log.error(
-                "Measurement of %r failed on %s->%s",
-                self, inputRefs, outputRefs, exc_info=True)
+        inputs = butlerQC.get(inputRefs)
+        outputs = self.run(**inputs,
+                           outputDataId=outputRefs.measurement.dataId)
+        if outputs.measurement is not None:
+            butlerQC.put(outputs, outputRefs)
+        else:
+            self.log.debug("Skipping measurement of %r on %s "
+                           "as not applicable.", self, inputRefs)

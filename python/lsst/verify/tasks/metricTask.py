@@ -142,7 +142,9 @@ class MetricTask(pipeBase.PipelineTask, metaclass=abc.ABCMeta):
             - ``measurement``: the value of the metric
               (`lsst.verify.Measurement` or `None`). This method is not
               responsible for adding mandatory metadata (e.g., the data ID);
-              this is handled by the caller.
+              this is handled by the caller. `None` may be used to indicate
+              that a metric is undefined or irrelevant instead of raising
+              `~lsst.pipe.base.NoWorkFound`.
 
         Raises
         ------
@@ -154,34 +156,25 @@ class MetricTask(pipeBase.PipelineTask, metaclass=abc.ABCMeta):
             more specific exception describing the root cause.
 
             Not having enough data for a metric to be applicable is not an
-            error, and should not trigger this exception.
-
-        Notes
-        -----
-        All input data must be treated as optional. This maximizes the
-        ``MetricTask``'s usefulness for incomplete pipeline runs or runs with
-        optional processing steps. If a metric cannot be calculated because
-        the necessary inputs are missing, the ``MetricTask`` must return `None`
-        in place of the measurement.
+            error, and should raise ``NoWorkFound`` (see below) instead of
+            this exception.
+        lsst.pipe.base.NoWorkFound
+            Raised if the metric is ill-defined or otherwise inapplicable to
+            the data. Typically this means that the pipeline step or option
+            being measured was not run.
         """
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         """Do Butler I/O to provide in-memory objects for run.
 
         This specialization of runQuantum performs error-handling specific to
-        MetricTasks. Most or all of this functionality may be moved to
-        activators in the future.
+        MetricTasks.
         """
         # Synchronize changes to this method with ApdbMetricTask
-        try:
-            inputs = butlerQC.get(inputRefs)
-            outputs = self.run(**inputs)
-            if outputs.measurement is not None:
-                butlerQC.put(outputs, outputRefs)
-            else:
-                self.log.debug("Skipping measurement of %r on %s "
-                               "as not applicable.", self, inputRefs)
-        except MetricComputationError:
-            self.log.error(
-                "Measurement of %r failed on %s->%s",
-                self, inputRefs, outputRefs, exc_info=True)
+        inputs = butlerQC.get(inputRefs)
+        outputs = self.run(**inputs)
+        if outputs.measurement is not None:
+            butlerQC.put(outputs, outputRefs)
+        else:
+            self.log.debug("Skipping measurement of %r on %s "
+                           "as not applicable.", self, inputRefs)

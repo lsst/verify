@@ -120,10 +120,6 @@ class AbstractMetadataMetricTask(MetricTask):
     -----
     This class should be customized by overriding `getInputMetadataKeys`
     and `run`.
-
-    This class makes no assumptions about how to handle missing data;
-    `run` may be called with `None` values, and is responsible
-    for deciding how to deal with them.
     """
     # Design note: getInputMetadataKeys and MetadataMetricTask.makeMeasurement
     # are overrideable methods rather than subtask(s) to keep the configs for
@@ -180,7 +176,7 @@ class AbstractMetadataMetricTask(MetricTask):
         Parameters
         ----------
         metadata : `lsst.pipe.base.TaskMetadata`
-            A metadata object, assumed not `None`.
+            A metadata object.
         metadataKeys : `dict` [`str`, `str`]
             Keys are arbitrary labels, values are metadata keys (or their
             substrings) in the format of
@@ -229,10 +225,6 @@ class MetadataMetricTask(AbstractMetadataMetricTask):
     -----
     This class should be customized by overriding `getInputMetadataKeys`
     and `makeMeasurement`. You should not need to override `run`.
-
-    This class makes no assumptions about how to handle missing data;
-    `makeMeasurement` may be called with `None` values, and is responsible
-    for deciding how to deal with them.
     """
     # Design note: getInputMetadataKeys and makeMeasurement are overrideable
     # methods rather than subtask(s) to keep the configs for
@@ -264,6 +256,10 @@ class MetadataMetricTask(AbstractMetadataMetricTask):
         lsst.verify.tasks.MetricComputationError
             Raised if an algorithmic or system error prevents calculation of
             the metric. See `run` for expected behavior.
+        lsst.pipe.base.NoWorkFound
+            Raised if the metric is ill-defined or otherwise inapplicable.
+            Typically this means that the pipeline step or option being
+            measured was not run.
         """
 
     def run(self, metadata):
@@ -271,7 +267,7 @@ class MetadataMetricTask(AbstractMetadataMetricTask):
 
         Parameters
         ----------
-        metadata : `lsst.pipe.base.TaskMetadata` or `None`
+        metadata : `lsst.pipe.base.TaskMetadata`
             A metadata object for the unit of science processing to use for
             this metric, or a collection of such objects if this task combines
             many units of processing into a single metric.
@@ -289,6 +285,10 @@ class MetadataMetricTask(AbstractMetadataMetricTask):
         lsst.verify.tasks.MetricComputationError
             Raised if the strings returned by `getInputMetadataKeys` match
             more than one key in any metadata object.
+        lsst.pipe.base.NoWorkFound
+            Raised if the metric is ill-defined or otherwise inapplicable.
+            Typically this means that the pipeline step or option being
+            measured was not run.
 
         Notes
         -----
@@ -299,9 +299,6 @@ class MetadataMetricTask(AbstractMetadataMetricTask):
         """
         metadataKeys = self.getInputMetadataKeys(self.config)
 
-        if metadata is not None:
-            data = self.extractMetadata(metadata, metadataKeys)
-        else:
-            data = {dataName: None for dataName in metadataKeys}
+        data = self.extractMetadata(metadata, metadataKeys)
 
         return Struct(measurement=self.makeMeasurement(data))

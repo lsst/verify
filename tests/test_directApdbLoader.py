@@ -38,10 +38,6 @@ class DirectApdbLoaderTestSuite(lsst.utils.tests.TestCase):
     def setUp(self):
         self.task = DirectApdbLoader()
 
-    def testNoConfig(self):
-        result = self.task.run(None)
-        self.assertIsNone(result.apdb)
-
     def testValidConfig(self):
         result = self.task.run(self._dummyApdbConfig())
         self.assertIsInstance(result.apdb, Apdb)
