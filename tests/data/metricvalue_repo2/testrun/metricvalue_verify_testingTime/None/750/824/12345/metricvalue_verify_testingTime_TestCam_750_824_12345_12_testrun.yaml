@@ -1,0 +1,11 @@
+!<lsst.verify.Measurement>
+blobs:
+- !<lsst.verify.Blob>
+  data: {}
+  identifier: f41669fdc5de47338a91955e87066b40
+  name: verify.testingTime
+identifier: 63e5089c753a4ba4b83e0f6c18326ae8
+metric: verify.testingTime
+notes: {}
+unit: s
+value: 19.0

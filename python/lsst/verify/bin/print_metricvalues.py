@@ -21,6 +21,9 @@
 
 """Summarize measured metric values in one butler repo, or difference values
 between two repos.
+
+This tool is built on the `~lsst.verify.extract_metricvalues` module, which
+can be used to investigate metrics within e.g. a notebook environment.
 """
 __all__ = ["main", "build_argparser"]
 

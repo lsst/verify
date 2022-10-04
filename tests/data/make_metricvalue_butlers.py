@@ -33,8 +33,16 @@ def add_metricvalues(butler, plus):
     adding ``plus`` to the values that are stored (to allow different repos to
     have different Measurement values).
     """
-    dimensions = {"instrument", "visit", "detector"}
     storageClass = "MetricValue"
+
+    # a metric that only depends on instrument
+    dimensions = {"instrument"}
+    addDatasetType(butler, "metricvalue_verify_instrumentTest", dimensions, storageClass)
+    value = Measurement("verify.instrumentTest", (2 + plus)*u.dimensionless_unscaled)
+    butler.put(value, "metricvalue_verify_instrumentTest", {"instrument": "TestCam"}, run=collection)
+
+    # The rest are detector+visit metrics
+    dimensions = {"instrument", "visit", "detector"}
     dataIds = [{"instrument": "TestCam", "visit": 12345, "detector": 12},
                {"instrument": "TestCam", "visit": 54321, "detector": 25},
                {"instrument": "TestCam", "visit": 54321, "detector": 12}]

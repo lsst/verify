@@ -1,0 +1,11 @@
+!<lsst.verify.Measurement>
+blobs:
+- !<lsst.verify.Blob>
+  data: {}
+  identifier: 103891af4d88476db0b3160a524501a9
+  name: verify.other
+identifier: 2dc58ef55cd64457bffe3ed174c94e16
+metric: verify.other
+notes: {}
+unit: ct
+value: 9.0

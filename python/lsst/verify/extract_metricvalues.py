@@ -21,6 +21,9 @@
 
 """Tools for loading metric values from a butler and printing them, or from
 two butlers and differencing them.
+
+These functions are used by the
+:doc:`print_metricvalues <scripts/print_metricvalues>` script.
 """
 __all__ = ["load_value", "load_timing", "load_memory",
            "print_metrics", "print_diff_metrics", "load_from_butler"]
@@ -43,7 +46,8 @@ def print_metrics(butler, kind, *, data_id_keys=None,
         for example: ``("detector", "visit")``.
     data_id_restriction : `dict`, optional
         Only include values whose dataId matches these key:value pairs;
-        for example: ``{"detector": 50}``.
+        for example: ``{"detector": 50}``. If a metric does not use a key, it
+        is not included.
     verbose : `bool`, optional
         Print extra information when loading values.
 
@@ -96,7 +100,8 @@ def print_diff_metrics(butler1, butler2, data_id_keys=None, verbose=False):
         Butlers to load values to difference from.
     data_id_keys : `collection` [`str`], optional
         List of Butler dataId keys to restrict the printed output to;
-        for example: ``("detector", "visit")``.
+        for example: ``("detector", "visit")``. If a metric does not use all of
+        of these keys, it is printed with default formatting.
     verbose : `bool`, optional
         Print extra information when loading values, and about failures.
     """
@@ -149,7 +154,7 @@ def _match_data_id(data_id, data_id_restriction):
     if data_id_restriction is None:
         return True
     for key, value in data_id_restriction.items():
-        if not (data_id[key] == value):
+        if key not in data_id or (data_id[key] != value):
             return False
     return True
 
@@ -157,11 +162,17 @@ def _match_data_id(data_id, data_id_restriction):
 def _data_id_label(data_id, keys):
     """Return a string label for this data_id, optionally restricting the
     output to only certain key:value pairs.
+
+    If any of the specified keys are not in the data_id, this will return the
+    default data_id formatting.
     """
-    if keys is not None:
-        return ', '.join(f"{key}: {data_id[key]}" for key in keys)
-    else:
+    if keys is None:
         return data_id
+
+    if not set(keys).issubset(set(data_id)):
+        return data_id
+
+    return ', '.join(f"{key}: {data_id[key]}" for key in keys)
 
 
 def load_value(butler, verbose=False):

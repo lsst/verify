@@ -73,7 +73,7 @@ class ExtractMetricvaluesTest(unittest.TestCase):
         butler = lsst.daf.butler.Butler(self.repo1, collections="testrun")
 
         result = extract_metricvalues.load_value(butler)
-        self.assertEqual(len(result.keys()), 6)
+        self.assertEqual(len(result.keys()), 7)
         for value in result.values():
             self.assertNotIn("Time", value.metric_name.metric)
             self.assertNotIn("Memory", value.metric_name.metric)
@@ -127,14 +127,14 @@ class ExtractMetricvaluesTest(unittest.TestCase):
         # default call with no kwargs
         contained = "{instrument: 'TestCam', detector: 25, visit: 54321, ...}"
         last = "verify.testing: 42.0"
-        check_stdout("value", 9, last, contained)
+        check_stdout("value", 11, last, contained)
 
         # restrict the number of items returned to only the last detector
         check_stdout("value", 3, last, contained, data_id_restriction={"detector": 25})
 
         # only print part of the dataIds
         contained = "detector: 25, visit: 54321"
-        check_stdout("value", 9, last, contained, data_id_keys=("detector", "visit"))
+        check_stdout("value", 11, last, contained, data_id_keys=("detector", "visit"))
 
         # Get the timings instead
         contained = "{instrument: 'TestCam', detector: 25, visit: 54321, ...}"
@@ -157,7 +157,7 @@ class ExtractMetricvaluesTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "Cannot handle kind=blah"):
             extract_metricvalues.print_metrics(butler, "blah")
 
-    def test_print_diff_values(self):
+    def test_print_diff_metrics(self):
         butler1 = lsst.daf.butler.Butler(self.repo1, collections="testrun")
         butler2 = lsst.daf.butler.Butler(self.repo2, collections="testrun")
 
@@ -182,14 +182,14 @@ class ExtractMetricvaluesTest(unittest.TestCase):
                 self.assertEqual(last_line, result[-1])
             return result
 
-        last_line = "Number of metrics that are the same in both runs: 0 / 6"
-        result = check_stdout(10, last_line)
+        last_line = "Number of metrics that are the same in both runs: 0 / 7"
+        result = check_stdout(12, last_line)
         expect = "{instrument: 'TestCam', detector: 12, visit: 12345, ...}"
         self.assertIn(expect, result)
         expect = "verify.another: 1.0 mas / 3.0 mas"
         self.assertIn(expect, result)
 
-        result = check_stdout(10, last_line, data_id_keys=("detector", "visit"))
+        result = check_stdout(12, last_line, data_id_keys=("detector", "visit"))
         expect = "detector: 12, visit: 12345"
         self.assertIn(expect, result)
         expect = "verify.another: 1.0 mas / 3.0 mas"

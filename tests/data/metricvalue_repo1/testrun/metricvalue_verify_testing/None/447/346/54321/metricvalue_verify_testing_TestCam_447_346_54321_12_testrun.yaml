@@ -1,0 +1,11 @@
+!<lsst.verify.Measurement>
+blobs:
+- !<lsst.verify.Blob>
+  data: {}
+  identifier: 0010a4350eec420bb4d9b7539cf3dc6d
+  name: verify.testing
+identifier: 78e0ee0807f1414ba30da059cec57b11
+metric: verify.testing
+notes: {}
+unit: ''
+value: 5.0
