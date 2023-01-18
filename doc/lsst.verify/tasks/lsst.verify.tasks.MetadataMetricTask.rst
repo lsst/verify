@@ -35,6 +35,7 @@ Input datasets
 
 `metadata``
     The metadata of the top-level pipeline task (e.g., ``CharacterizeImageTask``, ``DiaPipeTask``) being instrumented.
+    This connection is usually configured indirectly through the ``labelName`` template as ``"{labelName}_metadata"``.
 
 Output datasets
 ---------------

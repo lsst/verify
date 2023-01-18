@@ -32,6 +32,7 @@ Input datasets
 
 ``metadata``
     The metadata of the top-level pipeline task (e.g., ``CharacterizeImageTask``, ``DiaPipeTask``) being instrumented.
+    This connection is usually configured indirectly through the ``labelName`` template as ``"{labelName}_metadata"``.
 
 Output datasets
 ---------------
@@ -68,10 +69,10 @@ Examples
    from lsst.verify.tasks import TimingMetricTask
 
    config = TimingMetricTask.ConfigClass()
-   config.connections.metadata = "apPipe_metadata"
-   config.connections.package = "pipe_tasks"
-   cofig.connections.metric = "ProcessCcdTime"
-   config.target = "apPipe:ccdProcessor.runDataRef"
+   config.connections.labelName = "diaPipe"
+   config.connections.package = "ap_association"
+   cofig.connections.metric = "DiaForcedSourceTime"
+   config.target = "diaPipe:diaForcedSource.run"
    task = TimingMetricTask(config=config)
 
    # config.connections provided for benefit of Pipeline
