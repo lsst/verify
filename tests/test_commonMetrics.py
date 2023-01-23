@@ -32,7 +32,7 @@ from lsst.utils.timer import timeMethod
 
 from lsst.verify import Measurement, Name
 from lsst.verify.tasks import MetricComputationError, TimingMetricTask, \
-    MemoryMetricTask
+    CpuTimingMetricTask, MemoryMetricTask
 from lsst.verify.tasks.testUtils import MetricTaskTestCase, MetadataMetricTestCase
 
 
@@ -81,6 +81,75 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         config = self._standardConfig()
         config.target = DummyTask._DefaultName + ".runDataRef"
         task = TimingMetricTask(config=config)
+        try:
+            result = task.run(self.scienceTask.getFullMetadata())
+        except lsst.pipe.base.NoWorkFound:
+            # Correct behavior
+            pass
+        else:
+            # Alternative correct behavior
+            lsst.pipe.base.testUtils.assertValidOutput(task, result)
+            meas = result.measurement
+            self.assertIsNone(meas)
+
+    def testNonsenseKeys(self):
+        metadata = self.scienceTask.getFullMetadata()
+        startKeys = [key
+                     for key in metadata.paramNames(topLevelOnly=False)
+                     if "StartCpuTime" in key]
+        for key in startKeys:
+            del metadata[key]
+
+        with self.assertRaises(MetricComputationError):
+            self.task.run(metadata)
+
+    def testBadlyTypedKeys(self):
+        metadata = self.scienceTask.getFullMetadata()
+        endKeys = [key
+                   for key in metadata.paramNames(topLevelOnly=False)
+                   if "EndCpuTime" in key]
+        for key in endKeys:
+            metadata[key] = str(float(metadata[key]))
+
+        with self.assertRaises(MetricComputationError):
+            self.task.run(metadata)
+
+
+class CpuTimingMetricTestSuite(MetadataMetricTestCase):
+    @classmethod
+    def makeTask(cls):
+        return CpuTimingMetricTask(config=cls._standardConfig())
+
+    @staticmethod
+    def _standardConfig():
+        config = CpuTimingMetricTask.ConfigClass()
+        config.connections.labelName = DummyTask._DefaultName
+        config.target = DummyTask._DefaultName + ".run"
+        config.connections.package = "verify"
+        config.connections.metric = "DummyCpuTime"
+        return config
+
+    def setUp(self):
+        super().setUp()
+        self.metric = Name("verify.DummyCpuTime")
+
+        self.scienceTask = DummyTask()
+        self.scienceTask.run()
+
+    def testValid(self):
+        result = self.task.run(self.scienceTask.getFullMetadata())
+        lsst.pipe.base.testUtils.assertValidOutput(self.task, result)
+        meas = result.measurement
+
+        self.assertIsInstance(meas, Measurement)
+        self.assertEqual(meas.metric_name, self.metric)
+        self.assertGreater(meas.quantity, 0.0 * u.second)
+        self.assertLess(meas.quantity, 2 * DummyTask.taskLength * u.second)
+
+    def testRunDifferentMethod(self):
+        config = self._standardConfig()
+        config.target = DummyTask._DefaultName + ".runDataRef"
+        task = CpuTimingMetricTask(config=config)
         try:
             result = task.run(self.scienceTask.getFullMetadata())
         except lsst.pipe.base.NoWorkFound:

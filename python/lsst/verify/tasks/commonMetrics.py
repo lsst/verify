@@ -25,6 +25,7 @@
 """
 
 __all__ = ["TimingMetricConfig", "TimingMetricTask",
+           "CpuTimingMetricConfig", "CpuTimingMetricTask",
            "MemoryMetricConfig", "MemoryMetricTask",
            ]
 
@@ -136,6 +137,108 @@ class TimingMetricTask(MetadataMetricTask):
         lsst.pipe.base.NoWorkFound
             Raised if no matching timing metadata found.
         """
+        # Use or, not and, so that unpaired keys raise MetricComputationError.
+        if timings["StartTime"] is not None or timings["EndTime"] is not None:
+            try:
+                totalTime = timings["EndTime"] - timings["StartTime"]
+            except TypeError:
+                raise MetricComputationError("Invalid metadata")
+            else:
+                meas = Measurement(self.config.metricName,
+                                   totalTime * u.second)
+                meas.notes["estimator"] = "utils.timer.timeMethod"
+                if timings["StartTimestamp"]:
+                    meas.extras["start"] = Datum(timings["StartTimestamp"])
+                if timings["EndTimestamp"]:
+                    meas.extras["end"] = Datum(timings["EndTimestamp"])
+                return meas
+        else:
+            raise NoWorkFound(f"Nothing to do: no timing information for {self.config.target} found.")
+
+
+# Expose CpuTimingMetricConfig name because config-writers expect it
+CpuTimingMetricConfig = TimeMethodMetricConfig
+
+
+class CpuTimingMetricTask(MetadataMetricTask):
+    """A Task that computes a CPU time using metadata produced by the
+    `lsst.utils.timer.timeMethod` decorator.
+
+    Parameters
+    ----------
+    args
+    kwargs
+        Constructor parameters are the same as for
+        `lsst.verify.tasks.MetricTask`.
+    """
+
+    ConfigClass = CpuTimingMetricConfig
+    _DefaultName = "cpuTimingMetric"
+
+    @classmethod
+    def getInputMetadataKeys(cls, config):
+        """Get search strings for the metadata.
+
+        Parameters
+        ----------
+        config : ``cls.ConfigClass``
+            Configuration for this task.
+
+        Returns
+        -------
+        keys : `dict`
+            A dictionary of keys, optionally prefixed by one or more tasks in
+            the format of `lsst.pipe.base.Task.getFullMetadata()`.
+
+             ``"StartTime"``
+                 The key for when the target method started (`str`).
+             ``"EndTime"``
+                 The key for when the target method ended (`str`).
+             ``"StartTimestamp"``
+                 The key for an ISO 8601-compliant text string where the target
+                 method started (`str`).
+             ``"EndTimestamp"``
+                 The key for an ISO 8601-compliant text string where the target
+                 method ended (`str`).
+        """
+        keyBase = config.target
+        return {"StartTime": keyBase + "StartCpuTime",
+                "EndTime": keyBase + "EndCpuTime",
+                "StartTimestamp": keyBase + "StartUtc",
+                "EndTimestamp": keyBase + "EndUtc",
+                }
+
+    def makeMeasurement(self, timings):
+        """Compute a wall-clock measurement from metadata provided by
+        `lsst.utils.timer.timeMethod`.
+
+        Parameters
+        ----------
+        timings : `dict` [`str`, any]
+            A representation of the metadata passed to `run`. The `dict` has
+            the following keys:
+
+             ``"StartTime"``
+                 The time the target method started (`float` or `None`).
+             ``"EndTime"``
+                 The time the target method ended (`float` or `None`).
+             ``"StartTimestamp"``, ``"EndTimestamp"``
+                 The start and end timestamps, in an ISO 8601-compliant format
+                 (`str` or `None`).
+
+        Returns
+        -------
+        measurement : `lsst.verify.Measurement`
+            The running time of the target method.
+
+        Raises
+        ------
+        lsst.verify.tasks.MetricComputationError
+            Raised if the timing metadata are invalid.
+        lsst.pipe.base.NoWorkFound
+            Raised if no matching timing metadata found.
+        """
+        # Use or, not and, so that unpaired keys raise MetricComputationError.
         if timings["StartTime"] is not None or timings["EndTime"] is not None:
             try:
                 totalTime = timings["EndTime"] - timings["StartTime"]
