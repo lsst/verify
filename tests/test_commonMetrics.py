@@ -96,7 +96,7 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         metadata = self.scienceTask.getFullMetadata()
         startKeys = [key
                      for key in metadata.paramNames(topLevelOnly=False)
-                     if "StartCpuTime" in key]
+                     if "StartUtc" in key]
         for key in startKeys:
             del metadata[key]
 
@@ -107,9 +107,9 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         metadata = self.scienceTask.getFullMetadata()
         endKeys = [key
                    for key in metadata.paramNames(topLevelOnly=False)
-                   if "EndCpuTime" in key]
+                   if "EndUtc" in key]
         for key in endKeys:
-            metadata[key] = str(float(metadata[key]))
+            metadata[key] = 42
 
         with self.assertRaises(MetricComputationError):
             self.task.run(metadata)
@@ -145,6 +145,12 @@ class CpuTimingMetricTestSuite(MetadataMetricTestCase):
         self.assertEqual(meas.metric_name, self.metric)
         self.assertGreater(meas.quantity, 0.0 * u.second)
         self.assertLess(meas.quantity, 2 * DummyTask.taskLength * u.second)
+
+        # CPU time should be less than wall-clock time.
+        wallClock = TimingMetricTask(config=TimingMetricTestSuite._standardConfig())
+        wallResult = wallClock.run(self.scienceTask.getFullMetadata())
+        # Include 0.1% margin for almost-equal values.
+        self.assertLess(meas.quantity, 1.001 * wallResult.measurement.quantity)
 
     def testRunDifferentMethod(self):
         config = self._standardConfig()

@@ -29,6 +29,7 @@ __all__ = ["TimingMetricConfig", "TimingMetricTask",
            "MemoryMetricConfig", "MemoryMetricTask",
            ]
 
+from datetime import datetime
 import resource
 import sys
 
@@ -89,10 +90,6 @@ class TimingMetricTask(MetadataMetricTask):
             A dictionary of keys, optionally prefixed by one or more tasks in
             the format of `lsst.pipe.base.Task.getFullMetadata()`.
 
-             ``"StartTime"``
-                 The key for when the target method started (`str`).
-             ``"EndTime"``
-                 The key for when the target method ended (`str`).
              ``"StartTimestamp"``
                  The key for an ISO 8601-compliant text string where the target
                  method started (`str`).
@@ -101,9 +98,7 @@ class TimingMetricTask(MetadataMetricTask):
                  method ended (`str`).
         """
         keyBase = config.target
-        return {"StartTime": keyBase + "StartCpuTime",
-                "EndTime": keyBase + "EndCpuTime",
-                "StartTimestamp": keyBase + "StartUtc",
+        return {"StartTimestamp": keyBase + "StartUtc",
                 "EndTimestamp": keyBase + "EndUtc",
                 }
 
@@ -117,13 +112,12 @@ class TimingMetricTask(MetadataMetricTask):
             A representation of the metadata passed to `run`. The `dict` has
             the following keys:
 
-             ``"StartTime"``
-                 The time the target method started (`float` or `None`).
-             ``"EndTime"``
-                 The time the target method ended (`float` or `None`).
-             ``"StartTimestamp"``, ``"EndTimestamp"``
-                 The start and end timestamps, in an ISO 8601-compliant format
-                 (`str` or `None`).
+             ``"StartTimestamp"``
+                 The time the target method started, in an ISO 8601-compliant
+                 format (`str` or `None`).
+             ``"EndTimestamp"``
+                 The time the target method ended, in an ISO 8601-compliant
+                 format (`str` or `None`).
 
         Returns
         -------
@@ -138,19 +132,19 @@ class TimingMetricTask(MetadataMetricTask):
             Raised if no matching timing metadata found.
         """
         # Use or, not and, so that unpaired keys raise MetricComputationError.
-        if timings["StartTime"] is not None or timings["EndTime"] is not None:
+        if timings["StartTimestamp"] is not None or timings["EndTimestamp"] is not None:
             try:
-                totalTime = timings["EndTime"] - timings["StartTime"]
-            except TypeError:
+                startTime = datetime.fromisoformat(timings["StartTimestamp"])
+                endTime = datetime.fromisoformat(timings["EndTimestamp"])
+            except (TypeError, ValueError):
                 raise MetricComputationError("Invalid metadata")
             else:
+                totalTime = (endTime - startTime).total_seconds()
                 meas = Measurement(self.config.metricName,
                                    totalTime * u.second)
                 meas.notes["estimator"] = "utils.timer.timeMethod"
-                if timings["StartTimestamp"]:
-                    meas.extras["start"] = Datum(timings["StartTimestamp"])
-                if timings["EndTimestamp"]:
-                    meas.extras["end"] = Datum(timings["EndTimestamp"])
+                meas.extras["start"] = Datum(timings["StartTimestamp"])
+                meas.extras["end"] = Datum(timings["EndTimestamp"])
                 return meas
         else:
             raise NoWorkFound(f"Nothing to do: no timing information for {self.config.target} found.")
