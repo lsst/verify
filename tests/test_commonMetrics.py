@@ -62,7 +62,6 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
 
     def setUp(self):
         super().setUp()
-        self.config = TimingMetricTestSuite._standardConfig()
         self.metric = Name("verify.DummyTime")
 
         self.scienceTask = DummyTask()
@@ -79,8 +78,9 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         self.assertLess(meas.quantity, 2 * DummyTask.taskLength * u.second)
 
     def testRunDifferentMethod(self):
-        self.config.target = DummyTask._DefaultName + ".runDataRef"
-        task = TimingMetricTask(config=self.config)
+        config = self._standardConfig()
+        config.target = DummyTask._DefaultName + ".runDataRef"
+        task = TimingMetricTask(config=config)
         try:
             result = task.run(self.scienceTask.getFullMetadata())
         except lsst.pipe.base.NoWorkFound:
@@ -100,9 +100,8 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         for key in startKeys:
             del metadata[key]
 
-        task = TimingMetricTask(config=self.config)
         with self.assertRaises(MetricComputationError):
-            task.run(metadata)
+            self.task.run(metadata)
 
     def testBadlyTypedKeys(self):
         metadata = self.scienceTask.getFullMetadata()
@@ -112,9 +111,8 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         for key in endKeys:
             metadata[key] = str(float(metadata[key]))
 
-        task = TimingMetricTask(config=self.config)
         with self.assertRaises(MetricComputationError):
-            task.run(metadata)
+            self.task.run(metadata)
 
 
 class MemoryMetricTestSuite(MetadataMetricTestCase):
@@ -133,7 +131,6 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
 
     def setUp(self):
         super().setUp()
-        self.config = self._standardConfig()
         self.metric = Name("verify.DummyMemory")
 
         self.scienceTask = DummyTask()
@@ -149,8 +146,9 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
         self.assertGreater(meas.quantity, 0.0 * u.byte)
 
     def testRunDifferentMethod(self):
-        self.config.target = DummyTask._DefaultName + ".runDataRef"
-        task = MemoryMetricTask(config=self.config)
+        config = self._standardConfig()
+        config.target = DummyTask._DefaultName + ".runDataRef"
+        task = MemoryMetricTask(config=config)
         try:
             result = task.run(self.scienceTask.getFullMetadata())
         except lsst.pipe.base.NoWorkFound:
@@ -170,9 +168,8 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
         for key in endKeys:
             metadata[key] = str(float(metadata[key]))
 
-        task = MemoryMetricTask(config=self.config)
         with self.assertRaises(MetricComputationError):
-            task.run(metadata)
+            self.task.run(metadata)
 
     def testOldMetadata(self):
         """Test compatibility with version 0 metadata
