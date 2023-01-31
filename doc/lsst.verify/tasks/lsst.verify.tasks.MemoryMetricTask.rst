@@ -37,6 +37,7 @@ Input datasets
 
 ``metadata``
     The metadata of the top-level pipeline task (e.g., ``CharacterizeImageTask``, ``DiaPipeTask``) being instrumented.
+    This connection is usually configured indirectly through the ``labelName`` template as ``"{labelName}_metadata"``.
 
 Output datasets
 ---------------
@@ -73,10 +74,10 @@ Examples
    from lsst.verify.tasks import MemoryMetricTask
 
    config = MemoryMetricTask.ConfigClass()
-   config.connections.metadata = "apPipe_metadata"
-   config.connections.package = "pipe_tasks"
-   cofig.connections.metric = "ProcessCcdMemory"
-   config.target = "apPipe:ccdProcessor.runDataRef"
+   config.connections.labelName = "diaPipe"
+   config.connections.package = "ap_association"
+   cofig.connections.metric = "DiaForcedSourceMemory"
+   config.target = "diaPipe:diaForcedSource.run"
    task = MemoryMetricTask(config=config)
 
    # config.connections provided for benefit of Pipeline

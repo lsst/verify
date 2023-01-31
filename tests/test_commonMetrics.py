@@ -32,7 +32,7 @@ from lsst.utils.timer import timeMethod
 
 from lsst.verify import Measurement, Name
 from lsst.verify.tasks import MetricComputationError, TimingMetricTask, \
-    MemoryMetricTask
+    CpuTimingMetricTask, MemoryMetricTask
 from lsst.verify.tasks.testUtils import MetricTaskTestCase, MetadataMetricTestCase
 
 
@@ -62,7 +62,6 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
 
     def setUp(self):
         super().setUp()
-        self.config = TimingMetricTestSuite._standardConfig()
         self.metric = Name("verify.DummyTime")
 
         self.scienceTask = DummyTask()
@@ -79,8 +78,84 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         self.assertLess(meas.quantity, 2 * DummyTask.taskLength * u.second)
 
     def testRunDifferentMethod(self):
-        self.config.target = DummyTask._DefaultName + ".runDataRef"
-        task = TimingMetricTask(config=self.config)
+        config = self._standardConfig()
+        config.target = DummyTask._DefaultName + ".runDataRef"
+        task = TimingMetricTask(config=config)
+        try:
+            result = task.run(self.scienceTask.getFullMetadata())
+        except lsst.pipe.base.NoWorkFound:
+            # Correct behavior
+            pass
+        else:
+            # Alternative correct behavior
+            lsst.pipe.base.testUtils.assertValidOutput(task, result)
+            meas = result.measurement
+            self.assertIsNone(meas)
+
+    def testNonsenseKeys(self):
+        metadata = self.scienceTask.getFullMetadata()
+        startKeys = [key
+                     for key in metadata.paramNames(topLevelOnly=False)
+                     if "StartUtc" in key]
+        for key in startKeys:
+            del metadata[key]
+
+        with self.assertRaises(MetricComputationError):
+            self.task.run(metadata)
+
+    def testBadlyTypedKeys(self):
+        metadata = self.scienceTask.getFullMetadata()
+        endKeys = [key
+                   for key in metadata.paramNames(topLevelOnly=False)
+                   if "EndUtc" in key]
+        for key in endKeys:
+            metadata[key] = 42
+
+        with self.assertRaises(MetricComputationError):
+            self.task.run(metadata)
+
+
+class CpuTimingMetricTestSuite(MetadataMetricTestCase):
+    @classmethod
+    def makeTask(cls):
+        return CpuTimingMetricTask(config=cls._standardConfig())
+
+    @staticmethod
+    def _standardConfig():
+        config = CpuTimingMetricTask.ConfigClass()
+        config.connections.labelName = DummyTask._DefaultName
+        config.target = DummyTask._DefaultName + ".run"
+        config.connections.package = "verify"
+        config.connections.metric = "DummyCpuTime"
+        return config
+
+    def setUp(self):
+        super().setUp()
+        self.metric = Name("verify.DummyCpuTime")
+
+        self.scienceTask = DummyTask()
+        self.scienceTask.run()
+
+    def testValid(self):
+        result = self.task.run(self.scienceTask.getFullMetadata())
+        lsst.pipe.base.testUtils.assertValidOutput(self.task, result)
+        meas = result.measurement
+
+        self.assertIsInstance(meas, Measurement)
+        self.assertEqual(meas.metric_name, self.metric)
+        self.assertGreater(meas.quantity, 0.0 * u.second)
+        self.assertLess(meas.quantity, 2 * DummyTask.taskLength * u.second)
+
+        # CPU time should be less than wall-clock time.
+        wallClock = TimingMetricTask(config=TimingMetricTestSuite._standardConfig())
+        wallResult = wallClock.run(self.scienceTask.getFullMetadata())
+        # Include 0.1% margin for almost-equal values.
+        self.assertLess(meas.quantity, 1.001 * wallResult.measurement.quantity)
+
+    def testRunDifferentMethod(self):
+        config = self._standardConfig()
+        config.target = DummyTask._DefaultName + ".runDataRef"
+        task = CpuTimingMetricTask(config=config)
         try:
             result = task.run(self.scienceTask.getFullMetadata())
         except lsst.pipe.base.NoWorkFound:
@@ -100,9 +175,8 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         for key in startKeys:
             del metadata[key]
 
-        task = TimingMetricTask(config=self.config)
         with self.assertRaises(MetricComputationError):
-            task.run(metadata)
+            self.task.run(metadata)
 
     def testBadlyTypedKeys(self):
         metadata = self.scienceTask.getFullMetadata()
@@ -112,9 +186,8 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         for key in endKeys:
             metadata[key] = str(float(metadata[key]))
 
-        task = TimingMetricTask(config=self.config)
         with self.assertRaises(MetricComputationError):
-            task.run(metadata)
+            self.task.run(metadata)
 
 
 class MemoryMetricTestSuite(MetadataMetricTestCase):
@@ -133,7 +206,6 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
 
     def setUp(self):
         super().setUp()
-        self.config = self._standardConfig()
         self.metric = Name("verify.DummyMemory")
 
         self.scienceTask = DummyTask()
@@ -149,8 +221,9 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
         self.assertGreater(meas.quantity, 0.0 * u.byte)
 
     def testRunDifferentMethod(self):
-        self.config.target = DummyTask._DefaultName + ".runDataRef"
-        task = MemoryMetricTask(config=self.config)
+        config = self._standardConfig()
+        config.target = DummyTask._DefaultName + ".runDataRef"
+        task = MemoryMetricTask(config=config)
         try:
             result = task.run(self.scienceTask.getFullMetadata())
         except lsst.pipe.base.NoWorkFound:
@@ -170,9 +243,8 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
         for key in endKeys:
             metadata[key] = str(float(metadata[key]))
 
-        task = MemoryMetricTask(config=self.config)
         with self.assertRaises(MetricComputationError):
-            task.run(metadata)
+            self.task.run(metadata)
 
     def testOldMetadata(self):
         """Test compatibility with version 0 metadata
