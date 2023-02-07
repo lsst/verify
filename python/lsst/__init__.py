@@ -19,11 +19,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-try:
-    # verify does not formally use on lsstimport, but we still attempt
-    # to import it for compatiblity with the lsst Stack.
-    import lsstimport
-except ImportError:
-    pass
 import pkgutil
+
 __path__ = pkgutil.extend_path(__path__, __name__)
