@@ -124,7 +124,7 @@ def inspect_job(job):
         if (measurement.quantity.value < 1e-2):
             pretty_quantity = '{0.value:0.2e} {0.unit}'.format(measurement.quantity)
         else:
-            pretty_quantity = '{0.value:0.2f} {0.unit}'.format(measurement.quantity)
+            pretty_quantity = measurement.quantity.round(4)
         if measurement.notes:
             prefix = str(measurement.metric_name) + "."
             # Raw representation of measurement.notes hard to read
