@@ -46,9 +46,9 @@ class InspectJobTestCase(unittest.TestCase):
                                        u.meter,
                                        tags=["vital"]))
         self.job.measurements.insert(Measurement("foo.fancymetric",
-                                                 2.0 * u.meter))
+                                                 2.00 * u.meter))
         self.job.measurements.insert(Measurement("foo.fanciermetric",
-                                                 3.5 * u.second))
+                                                 3.50 * u.second))
         self.job.measurements["foo.fanciermetric"].notes["fanciness"] \
             = "moderate"
         self.job.measurements.insert(Measurement("foo.fanciestmetric",
