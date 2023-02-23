@@ -249,7 +249,11 @@ class Measurement(JsonSerializationMixin):
         rep : `str`
             String representation.
         """
-        return '{0.value:0.1f} {0.unit:latex_inline}'.format(self.quantity)
+        # If the value is less than 0.01, represent in scientific notation
+        if (self.quantity.value < 1e-2):
+            return '{0.value:0.2e} {0.unit:latex_inline}'.format(self.quantity)
+        else:
+            return '{0.value:0.2f} {0.unit:latex_inline}'.format(self.quantity)
 
     @property
     def description(self):
