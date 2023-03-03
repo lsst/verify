@@ -263,7 +263,7 @@ def load_from_butler(butler, query, reject_suffix=None, verbose=False):
         # We only want one of each, so we need findFirst.
         datasets = set(butler.registry.queryDatasets(metric, findFirst=True))
         for dataset in datasets:
-            value = butler.getDirect(dataset)
+            value = butler.get(dataset)
             data_ids.add(dataset.dataId)
             result[(dataset.dataId, metric.name)] = value
 
