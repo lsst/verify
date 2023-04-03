@@ -116,9 +116,8 @@ class JobReporter:
                 collections=self.collection,
                 findFirst=True))
             for ref in datasetRefs:
-                # getDirect skips dataset resolution; ref is guaranteed to
-                # be valid.
-                m = self.butler.getDirect(ref)
+                # Ref is guaranteed to be valid.
+                m = self.butler.get(ref)
                 # make the name the same as what SQuaSH Expects
                 m.metric_name = metric
 
