@@ -73,19 +73,15 @@ class SingleMetadataMetricConnections(
         """
         super().__init__(config=config)
         if config and config.metadataDimensions != self.metadata.dimensions:
-            # Hack, but only way to get a connection without fixed dimensions
-            newMetadata = connectionTypes.Input(
+            self.dimensions.clear()
+            self.dimensions.update(config.metadataDimensions)
+            self.metadata = connectionTypes.Input(
                 name=self.metadata.name,
                 doc=self.metadata.doc,
                 storageClass=self.metadata.storageClass,
-                dimensions=config.metadataDimensions,
+                dimensions=frozenset(config.metadataDimensions),
                 multiple=self.metadata.multiple,
             )
-            self.metadata = newMetadata
-            # Registry must match actual connections
-            self.allConnections['metadata'] = self.metadata
-            # Task requires that quantum dimensions match input dimensions
-            self.dimensions = config.metadataDimensions
 
 
 class MetadataMetricConfig(
