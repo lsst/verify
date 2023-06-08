@@ -62,7 +62,7 @@ class ConfigApdbLoaderTestSuite(lsst.utils.tests.TestCase):
         typemap = {"foo": Config, "bar": ApdbConfig}
 
         class TestConfig(Config):
-            field = ConfigChoiceField(typemap=typemap, doc="")
+            field = ConfigChoiceField(typemap=typemap, doc="test")
 
         config = TestConfig()
         config.field = "foo"
@@ -75,7 +75,7 @@ class ConfigApdbLoaderTestSuite(lsst.utils.tests.TestCase):
         typemap = {"foo": Config, "bar": ApdbSqlConfig}
 
         class TestConfig(Config):
-            field = ConfigChoiceField(typemap=typemap, doc="")
+            field = ConfigChoiceField(typemap=typemap, doc="test")
 
         config = TestConfig()
         config.field = "bar"
@@ -89,7 +89,7 @@ class ConfigApdbLoaderTestSuite(lsst.utils.tests.TestCase):
         typemap = {"foo": Config, "bar": ApdbSqlConfig}
 
         class TestConfig(Config):
-            field = ConfigChoiceField(typemap=typemap, doc="", multi=True)
+            field = ConfigChoiceField(typemap=typemap, doc="test", multi=True)
 
         config = TestConfig()
         config.field = {"bar", "foo"}
@@ -101,7 +101,7 @@ class ConfigApdbLoaderTestSuite(lsst.utils.tests.TestCase):
         registry = self._dummyRegistry()
 
         class TestConfig(Config):
-            field = RegistryField(registry=registry, doc="")
+            field = RegistryField(registry=registry, doc="test")
 
         config = TestConfig()
         config.field = "foo"
@@ -112,7 +112,7 @@ class ConfigApdbLoaderTestSuite(lsst.utils.tests.TestCase):
         registry = self._dummyRegistry()
 
         class TestConfig(Config):
-            field = RegistryField(registry=registry, doc="")
+            field = RegistryField(registry=registry, doc="test")
 
         config = TestConfig()
         config.field = "bar"
@@ -124,7 +124,7 @@ class ConfigApdbLoaderTestSuite(lsst.utils.tests.TestCase):
         registry = self._dummyRegistry()
 
         class TestConfig(Config):
-            field = RegistryField(registry=registry, doc="", multi=True)
+            field = RegistryField(registry=registry, doc="test", multi=True)
 
         config = TestConfig()
         config.field = {"bar", "foo"}
@@ -137,14 +137,14 @@ class ConfigApdbLoaderTestSuite(lsst.utils.tests.TestCase):
         # very useful for ApdbConfig and subclasses.
         class TestConfig(Config):
             field = ConfigField(dtype=ApdbSqlConfig,
-                                default=self._dummyApdbConfig(), doc="")
+                                default=self._dummyApdbConfig(), doc="test")
 
         result = self.task.run(TestConfig())
         self.assertIsInstance(result.apdb, Apdb)
 
     def testConfigurableField(self):
         class TestConfig(Config):
-            field = ConfigurableField(target=ApdbSql, doc="")
+            field = ConfigurableField(target=ApdbSql, doc="test")
 
         config = TestConfig()
         config.field = self._dummyApdbConfig()
@@ -155,7 +155,7 @@ class ConfigApdbLoaderTestSuite(lsst.utils.tests.TestCase):
     def testConfigurableFieldRetarget(self):
         # Initally set to abstract target, has to be re-targeted before use.
         class TestConfig(Config):
-            field = ConfigurableField(target=Apdb, doc="")
+            field = ConfigurableField(target=Apdb, doc="test")
 
         config = TestConfig()
         config.field.retarget(ApdbSql)
@@ -166,7 +166,7 @@ class ConfigApdbLoaderTestSuite(lsst.utils.tests.TestCase):
 
     def testConfigDictFieldUnSelected(self):
         class TestConfig(Config):
-            field = ConfigDictField(keytype=int, itemtype=ApdbConfig, doc="")
+            field = ConfigDictField(keytype=int, itemtype=ApdbConfig, doc="test")
 
         result = self.task.run(TestConfig())
         self.assertIsNone(result.apdb)
@@ -176,7 +176,7 @@ class ConfigApdbLoaderTestSuite(lsst.utils.tests.TestCase):
         # not very useful for ApdbConfig and subclasses.
         class TestConfig(Config):
             field = ConfigDictField(keytype=int, itemtype=ApdbSqlConfig,
-                                    doc="")
+                                    doc="test")
 
         config = TestConfig()
         config.field = {42: self._dummyApdbConfig()}
@@ -187,20 +187,20 @@ class ConfigApdbLoaderTestSuite(lsst.utils.tests.TestCase):
         # Note: ConfigField does not support polymorphic types and it is not
         # very useful for ApdbConfig and subclasses.
         class TestConfig(Config):
-            field1 = Field(dtype=int, doc="")
+            field1 = Field(dtype=int, doc="test")
             field2 = ConfigField(dtype=ApdbSqlConfig,
-                                 default=self._dummyApdbConfig(), doc="")
-            field3 = Field(dtype=str, doc="")
+                                 default=self._dummyApdbConfig(), doc="test")
+            field3 = Field(dtype=str, doc="test")
 
         result = self.task.run(TestConfig())
         self.assertIsInstance(result.apdb, Apdb)
 
     def testNestedConfigs(self):
         class InnerConfig(Config):
-            field = ConfigurableField(target=ApdbSql, doc="")
+            field = ConfigurableField(target=ApdbSql, doc="test")
 
         class TestConfig(Config):
-            field = ConfigField(dtype=InnerConfig, doc="")
+            field = ConfigField(dtype=InnerConfig, doc="test")
 
         config = TestConfig()
         config.field.field = self._dummyApdbConfig()
