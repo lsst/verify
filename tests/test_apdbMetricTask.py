@@ -135,7 +135,7 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
         # Did output data ID get passed to DummyTask.run?
         expectedId = lsst.daf.butler.DataCoordinate.standardize(
             {"instrument": self.CAMERA_ID},
-            universe=butler.registry.dimensions)
+            universe=butler.dimensions)
         run.assert_called_once_with(
             dbInfo=[input],
             outputDataId=expectedId)
