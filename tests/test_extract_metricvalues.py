@@ -186,13 +186,13 @@ class ExtractMetricvaluesTest(unittest.TestCase):
         result = check_stdout(12, last_line)
         expect = "{instrument: 'TestCam', detector: 12, visit: 12345, ...}"
         self.assertIn(expect, result)
-        expect = "verify.another: 1.0 mas / 3.0 mas"
+        expect = "verify.another: 4.0 mas - 3.0 mas = 1.0 mas"
         self.assertIn(expect, result)
 
         result = check_stdout(12, last_line, data_id_keys=("detector", "visit"))
         expect = "detector: 12, visit: 12345"
         self.assertIn(expect, result)
-        expect = "verify.another: 1.0 mas / 3.0 mas"
+        expect = "verify.another: 4.0 mas - 3.0 mas = 1.0 mas"
         self.assertIn(expect, result)
 
 
