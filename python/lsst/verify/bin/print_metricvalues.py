@@ -72,7 +72,13 @@ def main():
     else:
         collection2 = args.collection2 if args.collection2 is not None else args.collection
         butler2 = lsst.daf.butler.Butler(args.repo2, collections=collection2)
-        print(f"Showing difference of {args.repo2}#{collection2} - {args.repo}#{args.collection}")
+        print("Printed values are `repo2 - repo1 = delta`, where:")
+        print(f"repo2 = {args.repo2}#{collection2}")
+        print(f"repo1 = {args.repo}#{args.collection}")
+        if args.repo2 == args.repo:
+            print(f"delta = ({collection2}) - ({args.collection})")
+        else:
+            print(f"delta = ({args.repo2}) - ({args.repo})")
         extract_metricvalues.print_diff_metrics(butler,
                                                 butler2,
                                                 data_id_keys=args.data_id_keys,

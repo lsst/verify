@@ -127,7 +127,7 @@ def print_diff_metrics(butler1, butler2, data_id_keys=None, verbose=False):
 
         delta = value2.quantity - value1.quantity
         if delta != 0 or verbose:
-            print(f"{value1.datum.label}: {delta} / {value1.quantity}")
+            print(f"{value1.datum.label}: {value2.quantity} - {value1.quantity} = {delta}")
         if delta == 0:
             same += 1
 
