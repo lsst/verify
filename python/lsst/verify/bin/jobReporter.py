@@ -2,8 +2,8 @@ import argparse
 import json
 
 from lsst.verify import Job, MetricSet
-from lsst.daf.butler import Butler, FileTemplate
-
+from lsst.daf.butler import Butler
+from lsst.daf.butler.datastore.file_templates import FileTemplate
 
 __all__ = ["main", "JobReporter", "build_argparser"]
 
