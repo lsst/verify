@@ -55,7 +55,7 @@ def main(repository, collection, metrics_package, spec, dataset_name):
 
 
 def make_key(ref):
-    names = sorted(ref.dataId.names)
+    names = sorted(ref.dataId.dimensions.required)
     names.append('run')  # "run" must be in the template
     key_tmpl = '_'.join(['{' + el + '}' for el in names])
     file_tmpl = FileTemplate(key_tmpl)
@@ -122,7 +122,7 @@ class JobReporter:
                 m.metric_name = metric
 
                 # queryDatasets guarantees ref.dataId.hasFull()
-                dataId = ref.dataId.full.byName()
+                dataId = dict(ref.dataId.mapping)
                 key = make_key(ref)
 
                 # For backward-compatibility with Gen 2 SQuaSH uploads

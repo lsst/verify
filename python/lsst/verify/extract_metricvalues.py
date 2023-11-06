@@ -144,8 +144,8 @@ def print_diff_metrics(butler1, butler2, data_id_keys=None, verbose=False):
         print("Run with verbose mode (-v) for more info.")
         if verbose:
             print("Full DataCoordinates for the first key of each result, to compare schemas:")
-            print(keys1[0][0].full)
-            print(keys2[0][0].full)
+            print(keys1[0][0])
+            print(keys2[0][0])
 
 
 def _match_data_id(data_id, data_id_restriction):
@@ -167,10 +167,10 @@ def _data_id_label(data_id, keys):
     default data_id formatting.
     """
     if keys is None:
-        return data_id
+        return data_id.required
 
-    if not set(keys).issubset(set(data_id)):
-        return data_id
+    if not set(keys).issubset(data_id.required.keys()):
+        return data_id.required
 
     return ', '.join(f"{key}: {data_id[key]}" for key in keys)
 
