@@ -125,7 +125,7 @@ class ExtractMetricvaluesTest(unittest.TestCase):
                 self.assertIn(contained, result)
 
         # default call with no kwargs
-        contained = "{instrument: 'TestCam', detector: 25, visit: 54321, ...}"
+        contained = "{instrument: 'TestCam', detector: 25, visit: 54321}"
         last = "verify.testing: 42.0"
         check_stdout("value", 11, last, contained)
 
@@ -137,7 +137,7 @@ class ExtractMetricvaluesTest(unittest.TestCase):
         check_stdout("value", 11, last, contained, data_id_keys=("detector", "visit"))
 
         # Get the timings instead
-        contained = "{instrument: 'TestCam', detector: 25, visit: 54321, ...}"
+        contained = "{instrument: 'TestCam', detector: 25, visit: 54321}"
         last = "verify.testingTime: 19.0 s"
         check_stdout("timing", 6, last, contained)
 
@@ -146,7 +146,7 @@ class ExtractMetricvaluesTest(unittest.TestCase):
         check_stdout("timing", 6, last, contained, data_id_keys=("detector", "visit"))
 
         # Get the memory values instead
-        contained = "{instrument: 'TestCam', detector: 25, visit: 54321, ...}"
+        contained = "{instrument: 'TestCam', detector: 25, visit: 54321}"
         last = "verify.testingMemory: 190.73 Mibyte"
         check_stdout("memory", 6, last, contained)
 
@@ -184,7 +184,7 @@ class ExtractMetricvaluesTest(unittest.TestCase):
 
         last_line = "Number of metrics that are the same in both runs: 0 / 7"
         result = check_stdout(12, last_line)
-        expect = "{instrument: 'TestCam', detector: 12, visit: 12345, ...}"
+        expect = "{instrument: 'TestCam', detector: 12, visit: 12345}"
         self.assertIn(expect, result)
         expect = "verify.another: 4.0 mas - 3.0 mas = 1.0 mas"
         self.assertIn(expect, result)
