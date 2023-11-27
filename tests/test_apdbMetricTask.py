@@ -115,7 +115,7 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
             "detector": self.CHIP_ID,
         }
 
-        butler = butlerTests.makeTestCollection(self.repo)
+        butler = butlerTests.makeTestCollection(self.repo, uniqueId=self.id())
         # task.config not persistable if it refers to a local class
         # We don't actually use the persisted config, so just make a new one
         info = task.ConfigClass()
