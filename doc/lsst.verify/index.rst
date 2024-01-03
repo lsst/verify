@@ -119,4 +119,8 @@ Python API reference
    :no-main-docstr:
    :no-inheritance-diagram:
 
+.. automodapi:: lsst.verify.timer
+   :no-main-docstr:
+   :no-inheritance-diagram:
+
 .. _SQUASH: https://squash.lsst.codes
