@@ -26,7 +26,25 @@ import time
 
 import astropy.units as u
 
+from .datum import Datum
 from .measurement import Measurement
+
+
+def _epoch_to_iso(seconds):
+    """Convert a time in seconds since Unix epoch to an ISO 8601 timestamp.
+
+    Parameters
+    ----------
+    seconds : `float`
+        The number of seconds since the Unix epoch.
+
+    Returns
+    -------
+    timestamp : `str`
+        The input time represented as a timestamp.
+    """
+    iso_format = "%Y-%m-%dT%H:%M:%SZ"
+    return time.strftime(iso_format, time.gmtime(seconds))
 
 
 @contextmanager
@@ -46,3 +64,7 @@ def time_this_to_measurement(measurement: Measurement):
     finally:
         end = time.time()
         measurement.quantity = (end - start) * u.second
+        # Same metadata as provided by TimingMetricTask
+        measurement.notes["estimator"] = "verify.timer.time_this_to_measurement"
+        measurement.extras["start"] = Datum(_epoch_to_iso(start))
+        measurement.extras["end"] = Datum(_epoch_to_iso(end))
