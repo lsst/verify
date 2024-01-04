@@ -152,7 +152,7 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
         butler, quantum, input = self._prepareQuantum(task)
 
         with unittest.mock.patch.object(
-                lsst.pipe.base.ButlerQuantumContext, "put") as put:
+                lsst.pipe.base.QuantumContext, "put") as put:
             testUtils.runTestQuantum(task, butler, quantum, mockRun=False)
             # Should not attempt to write nonexistent data
             put.assert_not_called()
