@@ -254,8 +254,8 @@ class MemoryMetricTestSuite(MetadataMetricTestCase):
         old-style metadata.
         """
         newMetadata = self.scienceTask.getFullMetadata()
-        oldMetadata = newMetadata.copy()
-        for key in newMetadata.names(topLevelOnly=False):
+        oldMetadata = newMetadata.model_copy()
+        for key in newMetadata.names():
             if "__version__" in key:
                 del oldMetadata[key]
 
