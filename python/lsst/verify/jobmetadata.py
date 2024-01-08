@@ -196,7 +196,7 @@ class Metadata(JsonSerializationMixin):
         """Iterate over metadata values.
 
         Returns
-        ------
+        -------
         items : `~collections.abc.ValuesView`
             An iterable over all the values.
         """
