@@ -19,24 +19,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import shutil
+import tempfile
 import unittest
 
 import lsst.utils.tests
-from lsst.dax.apdb import Apdb, ApdbSqlConfig
+from lsst.dax.apdb import Apdb, ApdbSql
 
 from lsst.verify.tasks import DirectApdbLoader
 
 
 class DirectApdbLoaderTestSuite(lsst.utils.tests.TestCase):
 
-    @staticmethod
-    def _dummyApdbConfig():
-        config = ApdbSqlConfig()
-        config.db_url = "sqlite://"     # in-memory DB
-        return config
+    def _dummyApdbConfig(self):
+        return ApdbSql.init_database(db_url=self.db_url)
 
     def setUp(self):
+        self.tempdir = tempfile.mkdtemp()
+        self.db_url = f"sqlite:///{self.tempdir}/apdb.sqlite3"
         self.task = DirectApdbLoader()
+
+    def tearDown(self):
+        shutil.rmtree(self.tempdir, ignore_errors=True)
 
     def testValidConfig(self):
         result = self.task.run(self._dummyApdbConfig())

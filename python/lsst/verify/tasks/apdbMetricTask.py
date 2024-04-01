@@ -27,7 +27,7 @@ import abc
 from lsst.pex.config import Config, ConfigurableField, ConfigurableInstance, \
     ConfigDictField, ConfigChoiceField, FieldValidationError
 from lsst.pipe.base import NoWorkFound, Task, Struct, connectionTypes
-from lsst.dax.apdb import make_apdb, ApdbConfig
+from lsst.dax.apdb import Apdb, ApdbConfig
 
 from lsst.verify.tasks import MetricTask, MetricConfig, MetricConnections
 
@@ -64,7 +64,7 @@ class ConfigApdbLoader(Task):
             if no `lsst.dax.apdb.ApdbConfig` is present in ``config``.
         """
         if isinstance(config, ApdbConfig):
-            return make_apdb(config)
+            return Apdb.from_config(config)
 
         for field in config.values():
             if isinstance(field, ConfigurableInstance):
@@ -184,7 +184,7 @@ class DirectApdbLoader(Task):
             ``apdb``
                 A database configured the same way as in ``config``.
         """
-        return Struct(apdb=(make_apdb(config) if config else None))
+        return Struct(apdb=(Apdb.from_config(config) if config else None))
 
 
 class ApdbMetricConnections(
