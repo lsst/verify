@@ -19,6 +19,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import shutil
+import tempfile
 import unittest
 
 import lsst.utils.tests
@@ -41,14 +43,16 @@ class ConfigApdbLoaderTestSuite(lsst.utils.tests.TestCase):
         registry.register("bar", ApdbSql, ConfigClass=ApdbSqlConfig)
         return registry
 
-    @staticmethod
-    def _dummyApdbConfig():
-        config = ApdbSqlConfig()
-        config.db_url = "sqlite://"     # in-memory DB
-        return config
+    def _dummyApdbConfig(self):
+        return ApdbSql.init_database(db_url=self.db_url)
 
     def setUp(self):
+        self.tempdir = tempfile.mkdtemp()
+        self.db_url = f"sqlite:///{self.tempdir}/apdb.sqlite3"
         self.task = ConfigApdbLoader()
+
+    def tearDown(self):
+        shutil.rmtree(self.tempdir, ignore_errors=True)
 
     def testEmptyConfig(self):
         result = self.task.run(Config())
