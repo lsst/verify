@@ -30,7 +30,7 @@ Contributing
 ============
 
 ``lsst.verify`` is developed at https://github.com/lsst/verify.
-You can find Jira issues for this module under the `verify <https://jira.lsstcorp.org/issues/?jql=project%20%3D%20DM%20AND%20component%20%3D%20verify>`_ component.
+You can find Jira issues for this module under the `verify <https://rubinobs.atlassian.net/issues/?jql=project%20%3D%20DM%20AND%20component%20%3D%20verify>`_ component.
 
 .. _lsst.verify-command-line-taskref:
 
