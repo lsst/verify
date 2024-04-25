@@ -73,6 +73,7 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
 
         # makeTestRepo called in setUpClass because it's *very* slow
         cls.root = tempfile.mkdtemp()
+        cls.addClassCleanup(shutil.rmtree, cls.root, ignore_errors=True)
         cls.repo = butlerTests.makeTestRepo(cls.root, {
             "instrument": [cls.CAMERA_ID],
             "visit": [cls.VISIT_ID],
@@ -93,11 +94,6 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
             connections.dbInfo.name,
             connections.dbInfo.dimensions,
             connections.dbInfo.storageClass)
-
-    @classmethod
-    def tearDownClass(cls):
-        shutil.rmtree(cls.root, ignore_errors=True)
-        super().tearDownClass()
 
     def setUp(self):
         super().setUp()
