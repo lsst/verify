@@ -221,9 +221,10 @@ class ApdbMetricTestCase(MetricTaskTestCase):
     # TODO: remove on DM-43419
     def testConfigApdbRead(self):
         config = self.taskClass.ConfigClass()
-        config.doReadMarker = True
-        config.freeze()
-        config.validate()
+        with self.assertWarns(FutureWarning):
+            config.doReadMarker = True
+            config.freeze()
+            config.validate()
 
     # TODO: remove on DM-43419
     def testConfigApdbFileOk(self):

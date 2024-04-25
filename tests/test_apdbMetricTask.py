@@ -27,8 +27,9 @@ import astropy.units as u
 
 import lsst.utils.tests
 from lsst.pex.config import Config
+import lsst.dax.apdb as daxApdb
 import lsst.daf.butler.tests as butlerTests
-from lsst.pipe.base import Task, Struct, testUtils
+from lsst.pipe.base import Struct, testUtils
 
 from lsst.verify import Measurement
 from lsst.verify.tasks import ApdbMetricTask
@@ -51,14 +52,9 @@ class DummyTask(ApdbMetricTask):
 class Gen3ApdbTestSuite(ApdbMetricTestCase):
     @classmethod
     def makeTask(cls):
-        class MockDbLoader(Task):
-            ConfigClass = Config
-
-            def run(self, _):
-                return Struct(apdb=unittest.mock.Mock())
-
         config = DummyTask.ConfigClass()
-        config.dbLoader.retarget(MockDbLoader)
+        config.doReadMarker = False
+        config.apdb_config_url = cls.config_file.name
         config.connections.package = "verify"
         config.connections.metric = "DummyApdb"
         return DummyTask(config=config)
@@ -66,6 +62,11 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+
+        apdb_config = daxApdb.ApdbSql.init_database(db_url="sqlite://")
+        cls.config_file = tempfile.NamedTemporaryFile()
+        cls.addClassCleanup(cls.config_file.close)
+        apdb_config.save(cls.config_file.name)
 
         cls.CAMERA_ID = "NotACam"
         cls.VISIT_ID = 42
@@ -112,9 +113,7 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
         }
 
         butler = butlerTests.makeTestCollection(self.repo, uniqueId=self.id())
-        # task.config not persistable if it refers to a local class
-        # We don't actually use the persisted config, so just make a new one
-        info = task.ConfigClass()
+        info = Config()
         butler.put(info, "apdb_marker", detectorId)
 
         quantum = testUtils.makeQuantum(
@@ -142,6 +141,8 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
                 return Struct(measurement=None)
 
         config = NoneTask.ConfigClass()
+        config.doReadMarker = False
+        config.apdb_config_url = self.config_file.name
         config.connections.package = "verify"
         config.connections.metric = "DummyApdb"
         task = NoneTask(config=config)

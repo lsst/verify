@@ -23,6 +23,9 @@ __all__ = ["ApdbMetricTask", "ApdbMetricConfig", "ConfigApdbLoader",
            "DirectApdbLoader", "ApdbMetricConnections"]
 
 import abc
+import warnings
+
+from deprecated.sphinx import deprecated
 
 from lsst.pex.config import Config, ConfigurableField, Field, ConfigurableInstance, \
     ConfigDictField, ConfigChoiceField, FieldValidationError
@@ -32,6 +35,9 @@ from lsst.dax.apdb import Apdb, ApdbConfig
 from lsst.verify.tasks import MetricTask, MetricConfig, MetricConnections
 
 
+@deprecated(reason="APDB loaders have been replaced by ``ApdbMetricConfig.apdb_config_url``. "
+                   "Will be removed after v28.",
+            version="v28.0", category=FutureWarning)
 class ConfigApdbLoader(Task):
     """A Task that takes a science task config and returns the corresponding
     Apdb object.
@@ -232,7 +238,9 @@ class ApdbMetricConfig(MetricConfig,
         target=DirectApdbLoader,
         doc="Task for loading a database from ``dbInfo``. Its run method must "
         "take one object of the dataset type indicated by ``dbInfo`` and return "
-        "a Struct with an 'apdb' member. Ignored if ``doReadMarker`` is unset."
+        "a Struct with an 'apdb' member. Ignored if ``doReadMarker`` is unset.",
+        deprecated="This field has been replaced by ``apdb_config_url``; set "
+                   "``doReadMarker=False`` to use it. Will be removed after v28.",
     )
     apdb_config_url = Field(
         dtype=str,
@@ -267,6 +275,13 @@ class ApdbMetricConfig(MetricConfig,
             raise ValueError(f"metric name {self.connections.metric} must "
                              "not contain periods; use connections.package "
                              "instead")
+
+        if self.doReadMarker:
+            warnings.warn("The encoding of config information in apdbMarker is "
+                          "deprecated, replaced by ``apdb_config_url``; set "
+                          "``doReadMarker=False`` to use it. ``apdb_config_url`` "
+                          "will be required after v28.",
+                          FutureWarning)
 
 
 class ApdbMetricTask(MetricTask):
