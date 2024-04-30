@@ -27,6 +27,7 @@ import unittest.mock
 from unittest.mock import patch
 
 import lsst.utils.tests
+import lsst.pex.config as pexConfig
 from lsst.pipe.base import TaskMetadata
 from lsst.dax.apdb import ApdbConfig
 
@@ -216,3 +217,28 @@ class ApdbMetricTestCase(MetricTaskTestCase):
             info = self.makeDbInfo()
             with self.assertRaises(MetricComputationError):
                 self.task.run([info])
+
+    # TODO: remove on DM-43419
+    def testConfigApdbRead(self):
+        config = self.taskClass.ConfigClass()
+        with self.assertWarns(FutureWarning):
+            config.doReadMarker = True
+            config.freeze()
+            config.validate()
+
+    # TODO: remove on DM-43419
+    def testConfigApdbFileOk(self):
+        config = self.taskClass.ConfigClass()
+        config.doReadMarker = False
+        config.apdb_config_url = "some/file/path.yaml"
+        config.freeze()
+        config.validate()
+
+    # TODO: remove on DM-43419
+    def testConfigApdbFileInvalid(self):
+        config = self.taskClass.ConfigClass()
+        config.doReadMarker = False
+        # Don't set apdb_config_url
+        config.freeze()
+        with self.assertRaises(pexConfig.FieldValidationError):
+            config.validate()

@@ -23,8 +23,11 @@ __all__ = ["ApdbMetricTask", "ApdbMetricConfig", "ConfigApdbLoader",
            "DirectApdbLoader", "ApdbMetricConnections"]
 
 import abc
+import warnings
 
-from lsst.pex.config import Config, ConfigurableField, ConfigurableInstance, \
+from deprecated.sphinx import deprecated
+
+from lsst.pex.config import Config, ConfigurableField, Field, ConfigurableInstance, \
     ConfigDictField, ConfigChoiceField, FieldValidationError
 from lsst.pipe.base import NoWorkFound, Task, Struct, connectionTypes
 from lsst.dax.apdb import Apdb, ApdbConfig
@@ -32,6 +35,9 @@ from lsst.dax.apdb import Apdb, ApdbConfig
 from lsst.verify.tasks import MetricTask, MetricConfig, MetricConnections
 
 
+@deprecated(reason="APDB loaders have been replaced by ``ApdbMetricConfig.apdb_config_url``. "
+                   "Will be removed after v28.",
+            version="v28.0", category=FutureWarning)
 class ConfigApdbLoader(Task):
     """A Task that takes a science task config and returns the corresponding
     Apdb object.
@@ -151,6 +157,7 @@ class ConfigApdbLoader(Task):
         return Struct(apdb=self._getApdb(config))
 
 
+# TODO: remove on DM-43419
 class DirectApdbLoader(Task):
     """A Task that takes a Apdb config and returns the corresponding
     Apdb object.
@@ -206,9 +213,9 @@ class ApdbMetricConnections(
     """
     dbInfo = connectionTypes.Input(
         name="apdb_marker",
-        doc="The dataset from which an APDB instance can be constructed by "
-            "`dbLoader`. By default this is assumed to be a marker produced "
-            "by AP processing.",
+        doc="The dataset(s) indicating that AP processing has finished for a "
+            "given data ID. If ``config.doReadMarker`` is set, the datasets "
+            "are also used by ``dbLoader`` to construct an Apdb object.",
         storageClass="Config",
         multiple=True,
         minimum=1,
@@ -227,12 +234,54 @@ class ApdbMetricConfig(MetricConfig,
                        pipelineConnections=ApdbMetricConnections):
     """A base class for APDB metric task configs.
     """
-    dbLoader = ConfigurableField(
+    dbLoader = ConfigurableField(  # TODO: remove on DM-43419
         target=DirectApdbLoader,
-        doc="Task for loading a database from `dbInfo`. Its run method must "
-        "take one object of the dataset type indicated by `dbInfo` and return "
-        "a Struct with an 'apdb' member."
+        doc="Task for loading a database from ``dbInfo``. Its run method must "
+        "take one object of the dataset type indicated by ``dbInfo`` and return "
+        "a Struct with an 'apdb' member. Ignored if ``doReadMarker`` is unset.",
+        deprecated="This field has been replaced by ``apdb_config_url``; set "
+                   "``doReadMarker=False`` to use it. Will be removed after v28.",
     )
+    apdb_config_url = Field(
+        dtype=str,
+        default=None,
+        optional=False,
+        doc="A config file specifying the APDB and its connection parameters, "
+            "typically written by the apdb-cli command-line utility.",
+    )
+    doReadMarker = Field(  # TODO: remove on DM-43419
+        dtype=bool,
+        default=True,
+        doc="Use the ``dbInfo`` input to set up the APDB, instead of the new "
+            "config (``apdb_config_url``). This field is provided for "
+            "backward-compatibility ONLY and will be removed without notice "
+            "after v28.",
+    )
+
+    # TODO: remove on DM-43419
+    def validate(self):
+        # Sidestep Config.validate to avoid validating uninitialized
+        # fields we're not using.
+        skip = {"apdb_config_url"} if self.doReadMarker else set()
+        for name, field in self._fields.items():
+            if name not in skip:
+                field.validate(self)
+
+        # Copied from MetricConfig.validate
+        if "." in self.connections.package:
+            raise ValueError(f"package name {self.connections.package} must "
+                             "not contain periods")
+        if "." in self.connections.metric:
+            raise ValueError(f"metric name {self.connections.metric} must "
+                             "not contain periods; use connections.package "
+                             "instead")
+
+        if self.doReadMarker:
+            warnings.warn("The encoding of config information in apdbMarker is "
+                          "deprecated, replaced by ``apdb_config_url``; set "
+                          "``doReadMarker=False`` to use it. ``apdb_config_url`` "
+                          "will be required after v28.",
+                          FutureWarning)
 
 
 class ApdbMetricTask(MetricTask):
@@ -261,7 +310,8 @@ class ApdbMetricTask(MetricTask):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.makeSubtask("dbLoader")
+        if self.config.doReadMarker:
+            self.makeSubtask("dbLoader")
 
     @abc.abstractmethod
     def makeMeasurement(self, dbHandle, outputDataId):
@@ -331,7 +381,10 @@ class ApdbMetricTask(MetricTask):
         ``outputDataId`` to `makeMeasurement`. The result of `makeMeasurement`
         is returned to the caller.
         """
-        db = self.dbLoader.run(dbInfo[0]).apdb
+        if self.config.doReadMarker:
+            db = self.dbLoader.run(dbInfo[0]).apdb
+        else:
+            db = Apdb.from_uri(self.config.apdb_config_url)
 
         if db is not None:
             return Struct(measurement=self.makeMeasurement(db, outputDataId))

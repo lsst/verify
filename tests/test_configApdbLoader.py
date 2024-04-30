@@ -49,7 +49,8 @@ class ConfigApdbLoaderTestSuite(lsst.utils.tests.TestCase):
     def setUp(self):
         self.tempdir = tempfile.mkdtemp()
         self.db_url = f"sqlite:///{self.tempdir}/apdb.sqlite3"
-        self.task = ConfigApdbLoader()
+        with self.assertWarns(FutureWarning):
+            self.task = ConfigApdbLoader()
 
     def tearDown(self):
         shutil.rmtree(self.tempdir, ignore_errors=True)
