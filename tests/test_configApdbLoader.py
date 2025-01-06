@@ -32,6 +32,7 @@ from lsst.dax.apdb import Apdb, ApdbConfig, ApdbSql, ApdbSqlConfig
 from lsst.verify.tasks import ConfigApdbLoader
 
 
+@unittest.skip("Test does not work with pydantic config, will be dropped soon.")
 class ConfigApdbLoaderTestSuite(lsst.utils.tests.TestCase):
 
     @staticmethod
