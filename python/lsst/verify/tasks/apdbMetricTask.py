@@ -19,179 +19,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["ApdbMetricTask", "ApdbMetricConfig", "ConfigApdbLoader",
-           "DirectApdbLoader", "ApdbMetricConnections"]
+__all__ = ["ApdbMetricTask", "ApdbMetricConfig", "ApdbMetricConnections"]
 
 import abc
-import warnings
 
-from deprecated.sphinx import deprecated
-
-from lsst.pex.config import Config, ConfigurableField, Field, ConfigurableInstance, \
-    ConfigDictField, ConfigChoiceField, FieldValidationError
-from lsst.pipe.base import NoWorkFound, Task, Struct, connectionTypes
-from lsst.dax.apdb import Apdb, ApdbConfig
+from lsst.pex.config import Field
+from lsst.pipe.base import NoWorkFound, Struct, connectionTypes
+from lsst.dax.apdb import Apdb
 
 from lsst.verify.tasks import MetricTask, MetricConfig, MetricConnections
-
-
-@deprecated(reason="APDB loaders have been replaced by ``ApdbMetricConfig.apdb_config_url``. "
-                   "Will be removed after v28.",
-            version="v28.0", category=FutureWarning)
-class ConfigApdbLoader(Task):
-    """A Task that takes a science task config and returns the corresponding
-    Apdb object.
-
-    Parameters
-    ----------
-    *args
-    **kwargs
-        Constructor parameters are the same as for `lsst.pipe.base.Task`.
-    """
-    _DefaultName = "configApdb"
-    ConfigClass = Config
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def _getApdb(self, config):
-        """Extract an Apdb object from an arbitrary task config.
-
-        Parameters
-        ----------
-        config : `lsst.pex.config.Config`
-            A config that may contain a `lsst.dax.apdb.ApdbConfig`.
-            Behavior is undefined if there is more than one such member.
-
-        Returns
-        -------
-        apdb : `lsst.dax.apdb.Apdb`-like or `None`
-            A `lsst.dax.apdb.Apdb` object or a drop-in replacement, or `None`
-            if no `lsst.dax.apdb.ApdbConfig` is present in ``config``.
-        """
-        if isinstance(config, ApdbConfig):
-            return Apdb.from_config(config)
-
-        for field in config.values():
-            if isinstance(field, ConfigurableInstance):
-                result = self._getApdbFromConfigurableField(field)
-                if result:
-                    return result
-            elif isinstance(field, ConfigChoiceField.instanceDictClass):
-                try:
-                    # can't test with hasattr because of non-standard getattr
-                    field.names
-                except FieldValidationError:
-                    result = self._getApdb(field.active)
-                else:
-                    result = self._getApdbFromConfigIterable(field.active)
-                if result:
-                    return result
-            elif isinstance(field, ConfigDictField.DictClass):
-                result = self._getApdbFromConfigIterable(field.values())
-                if result:
-                    return result
-            elif isinstance(field, Config):
-                # Can't test for `ConfigField` more directly than this
-                result = self._getApdb(field)
-                if result:
-                    return result
-        return None
-
-    def _getApdbFromConfigurableField(self, configurable):
-        """Extract an Apdb object from a ConfigurableField.
-
-        Parameters
-        ----------
-        configurable : `lsst.pex.config.ConfigurableInstance`
-            A configurable that may contain a `lsst.dax.apdb.ApdbConfig`.
-
-        Returns
-        -------
-        apdb : `lsst.dax.apdb.Apdb`-like or `None`
-            A `lsst.dax.apdb.Apdb` object or a drop-in replacement, if a
-            suitable config exists.
-        """
-        if issubclass(configurable.ConfigClass, ApdbConfig):
-            return configurable.apply()
-        else:
-            return self._getApdb(configurable.value)
-
-    def _getApdbFromConfigIterable(self, configDict):
-        """Extract an Apdb object from an iterable of configs.
-
-        Parameters
-        ----------
-        configDict: iterable of `lsst.pex.config.Config`
-            A config iterable that may contain a `lsst.dax.apdb.ApdbConfig`.
-
-        Returns
-        -------
-        apdb : `lsst.dax.apdb.Apdb`-like or `None`
-            A `lsst.dax.apdb.Apdb` object or a drop-in replacement, if a
-            suitable config exists.
-        """
-        for config in configDict:
-            result = self._getApdb(config)
-            if result:
-                return result
-
-    def run(self, config):
-        """Create a database consistent with a science task config.
-
-        Parameters
-        ----------
-        config : `lsst.pex.config.Config`
-            A config that should contain a `lsst.dax.apdb.ApdbConfig`.
-            Behavior is undefined if there is more than one such member.
-
-        Returns
-        -------
-        result : `lsst.pipe.base.Struct`
-            Result struct with components:
-
-            ``apdb``
-                A database configured the same way as in ``config``, if one
-                exists (`lsst.dax.apdb.Apdb` or `None`).
-        """
-        return Struct(apdb=self._getApdb(config))
-
-
-# TODO: remove on DM-43419
-class DirectApdbLoader(Task):
-    """A Task that takes a Apdb config and returns the corresponding
-    Apdb object.
-
-    Parameters
-    ----------
-    *args
-    **kwargs
-        Constructor parameters are the same as for `lsst.pipe.base.Task`.
-    """
-
-    _DefaultName = "directApdb"
-    ConfigClass = Config
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def run(self, config):
-        """Create a database from a config.
-
-        Parameters
-        ----------
-        config : `lsst.dax.apdb.ApdbConfig`
-            A config for the database connection.
-
-        Returns
-        -------
-        result : `lsst.pipe.base.Struct`
-            Result struct with components:
-
-            ``apdb``
-                A database configured the same way as in ``config``.
-        """
-        return Struct(apdb=(Apdb.from_config(config) if config else None))
 
 
 class ApdbMetricConnections(
@@ -214,8 +50,7 @@ class ApdbMetricConnections(
     dbInfo = connectionTypes.Input(
         name="apdb_marker",
         doc="The dataset(s) indicating that AP processing has finished for a "
-            "given data ID. If ``config.doReadMarker`` is set, the datasets "
-            "are also used by ``dbLoader`` to construct an Apdb object.",
+            "given data ID.",
         storageClass="Config",
         multiple=True,
         minimum=1,
@@ -234,14 +69,6 @@ class ApdbMetricConfig(MetricConfig,
                        pipelineConnections=ApdbMetricConnections):
     """A base class for APDB metric task configs.
     """
-    dbLoader = ConfigurableField(  # TODO: remove on DM-43419
-        target=DirectApdbLoader,
-        doc="Task for loading a database from ``dbInfo``. Its run method must "
-        "take one object of the dataset type indicated by ``dbInfo`` and return "
-        "a Struct with an 'apdb' member. Ignored if ``doReadMarker`` is unset.",
-        deprecated="This field has been replaced by ``apdb_config_url``; set "
-                   "``doReadMarker=False`` to use it. Will be removed after v28.",
-    )
     apdb_config_url = Field(
         dtype=str,
         default=None,
@@ -249,39 +76,6 @@ class ApdbMetricConfig(MetricConfig,
         doc="A config file specifying the APDB and its connection parameters, "
             "typically written by the apdb-cli command-line utility.",
     )
-    doReadMarker = Field(  # TODO: remove on DM-43419
-        dtype=bool,
-        default=True,
-        doc="Use the ``dbInfo`` input to set up the APDB, instead of the new "
-            "config (``apdb_config_url``). This field is provided for "
-            "backward-compatibility ONLY and will be removed without notice "
-            "after v28.",
-    )
-
-    # TODO: remove on DM-43419
-    def validate(self):
-        # Sidestep Config.validate to avoid validating uninitialized
-        # fields we're not using.
-        skip = {"apdb_config_url"} if self.doReadMarker else set()
-        for name, field in self._fields.items():
-            if name not in skip:
-                field.validate(self)
-
-        # Copied from MetricConfig.validate
-        if "." in self.connections.package:
-            raise ValueError(f"package name {self.connections.package} must "
-                             "not contain periods")
-        if "." in self.connections.metric:
-            raise ValueError(f"metric name {self.connections.metric} must "
-                             "not contain periods; use connections.package "
-                             "instead")
-
-        if self.doReadMarker:
-            warnings.warn("The encoding of config information in apdbMarker is "
-                          "deprecated, replaced by ``apdb_config_url``; set "
-                          "``doReadMarker=False`` to use it. ``apdb_config_url`` "
-                          "will be required after v28.",
-                          FutureWarning)
 
 
 class ApdbMetricTask(MetricTask):
@@ -299,19 +93,7 @@ class ApdbMetricTask(MetricTask):
     This class should be customized by overriding `makeMeasurement`. You
     should not need to override `run`.
     """
-    # Design note: makeMeasurement is an overrideable method rather than a
-    # subtask to keep the configs for `MetricsControllerTask` as simple as
-    # possible. This was judged more important than ensuring that no
-    # implementation details of MetricTask can leak into
-    # application-specific code.
-
     ConfigClass = ApdbMetricConfig
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        if self.config.doReadMarker:
-            self.makeSubtask("dbLoader")
 
     @abc.abstractmethod
     def makeMeasurement(self, dbHandle, outputDataId):
@@ -381,10 +163,7 @@ class ApdbMetricTask(MetricTask):
         ``outputDataId`` to `makeMeasurement`. The result of `makeMeasurement`
         is returned to the caller.
         """
-        if self.config.doReadMarker:
-            db = self.dbLoader.run(dbInfo[0]).apdb
-        else:
-            db = Apdb.from_uri(self.config.apdb_config_url)
+        db = Apdb.from_uri(self.config.apdb_config_url)
 
         if db is not None:
             return Struct(measurement=self.makeMeasurement(db, outputDataId))

@@ -53,7 +53,6 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
     @classmethod
     def makeTask(cls):
         config = DummyTask.ConfigClass()
-        config.doReadMarker = False
         config.apdb_config_url = cls.config_file.name
         config.connections.package = "verify"
         config.connections.metric = "DummyApdb"
@@ -141,7 +140,6 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
                 return Struct(measurement=None)
 
         config = NoneTask.ConfigClass()
-        config.doReadMarker = False
         config.apdb_config_url = self.config_file.name
         config.connections.package = "verify"
         config.connections.metric = "DummyApdb"
