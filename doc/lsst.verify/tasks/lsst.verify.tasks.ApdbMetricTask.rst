@@ -14,8 +14,7 @@ Processing summary
 
 ``ApdbMetricTask`` runs this sequence of operations:
 
-#. Load the dataset indicated by ``dbInfo`` (default: one or more ``apdb_marker`` datasets).
-#. Generate an `~lsst.dax.apdb.Apdb` object by calling the :lsst-config-field:`~lsst.verify.tasks.apdbMetricTask.ApdbMetricConfig.dbLoader` subtask (default: :lsst-task:`~lsst.verify.tasks.apdbMetricTask.DirectApdbLoader`).
+#. Generate an `~lsst.dax.apdb.Apdb` object from the config in :lsst-config-field:`~lsst.verify.tasks.apdbMetricTask.ApdbMetricConfig.apdb_config_url`.
 #. Process the database by passing it to the customizable `~lsst.verify.tasks.apdbMetricTask.ApdbMetricTask.makeMeasurement` method, and return the `~lsst.verify.Measurement`.
 
 .. _lsst.verify.tasks.ApdbMetricTask-api:
@@ -34,8 +33,8 @@ Input datasets
 --------------
 
 ``dbInfo``
-    The Butler dataset from which the database connection can be initialized.
-    The type must match the input required by the :lsst-config-field:`~lsst.verify.tasks.apdbMetricTask.ApdbMetricConfig.dbLoader` subtask (default: ``apdb_marker``).
+    A Butler dataset whose presence guarantees the APDB has been updated.
+    The dataset itself is never used.
 
 Output datasets
 ---------------
