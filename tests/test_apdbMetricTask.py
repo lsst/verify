@@ -62,9 +62,11 @@ class Gen3ApdbTestSuite(ApdbMetricTestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        apdb_config = daxApdb.ApdbSql.init_database(db_url="sqlite://")
+        sqlite_file = tempfile.NamedTemporaryFile()
+        cls.addClassCleanup(sqlite_file.close)
         cls.config_file = tempfile.NamedTemporaryFile()
         cls.addClassCleanup(cls.config_file.close)
+        apdb_config = daxApdb.ApdbSql.init_database(db_url=f"sqlite:///{sqlite_file.name}")
         apdb_config.save(cls.config_file.name)
 
         cls.CAMERA_ID = "NotACam"
