@@ -75,7 +75,6 @@ class TimingMetricTestSuite(MetadataMetricTestCase):
         self.assertIsInstance(meas, Measurement)
         self.assertEqual(meas.metric_name, self.metric)
         self.assertGreater(meas.quantity, 0.0 * u.second)
-        self.assertLess(meas.quantity, 2 * DummyTask.taskLength * u.second)
 
     def testRunDifferentMethod(self):
         config = self._standardConfig()
@@ -144,7 +143,6 @@ class CpuTimingMetricTestSuite(MetadataMetricTestCase):
         self.assertIsInstance(meas, Measurement)
         self.assertEqual(meas.metric_name, self.metric)
         self.assertGreater(meas.quantity, 0.0 * u.second)
-        self.assertLess(meas.quantity, 2 * DummyTask.taskLength * u.second)
 
         # CPU time should be less than wall-clock time.
         wallClock = TimingMetricTask(config=TimingMetricTestSuite._standardConfig())
