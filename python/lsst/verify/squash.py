@@ -96,7 +96,6 @@ def get_default_timeout():
     timeout : `float`
         Default timeout setting, in seconds.
     """
-    global _TIMEOUT
     return _TIMEOUT
 
 
@@ -109,7 +108,6 @@ def get_default_api_version():
     version : `str`
         API version. For example, ``'1.0'``.
     """
-    global _API_VERSION
     return _API_VERSION
 
 
