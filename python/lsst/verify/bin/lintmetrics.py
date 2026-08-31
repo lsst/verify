@@ -35,7 +35,6 @@ __all__ = ('main',)
 
 import argparse
 
-from lsst.utils import getPackageDir
 from lsst.verify import MetricSet, SpecificationSet
 
 
@@ -48,10 +47,10 @@ def build_argparser():
         The argument parser that defines the ``lint_metrics.py`` command-line
         interface.
     """
-    try:
-        default_metrics_package_dir = getPackageDir('verify_metrics')
-    except LookupError:
-        default_metrics_package_dir = None
+    # Default to the ``verify_metrics`` EUPS package expressed as a URI so
+    # that no direct EUPS path lookup is required here; MetricSet /
+    # SpecificationSet resolve this via lsst.resources.
+    default_metrics_package_dir = 'eups://verify_metrics/'
 
     parser = argparse.ArgumentParser(
         description=__doc__,
