@@ -27,6 +27,7 @@ import re
 
 from astropy.table import Table
 
+from lsst.resources import ResourcePath
 from lsst.utils import getPackageDir
 
 from .errors import SpecificationResolutionError
@@ -156,15 +157,19 @@ class SpecificationSet(JsonSerializationMixin):
         """
         try:
             # Try an EUPS package name
-            package_dir = getPackageDir(package_name_or_path)
+            getPackageDir(package_name_or_path)
         except LookupError:
-            # Try as a filesystem path instead
-            package_dir = package_name_or_path
-        finally:
-            package_dir = os.path.abspath(package_dir)
+            # Try as a filesystem path (or URI) instead
+            package_dir = ResourcePath(package_name_or_path,
+                                       forceDirectory=True,
+                                       forceAbsolute=True)
+        else:
+            package_dir = ResourcePath(
+                'eups://{0}/'.format(package_name_or_path),
+                forceDirectory=True)
 
-        specs_dirname = os.path.join(package_dir, 'specs')
-        if not os.path.isdir(specs_dirname):
+        specs_dirname = package_dir.join('specs', forceDirectory=True)
+        if not specs_dirname.exists():
             message = 'Specifications directory {0} not found'
             raise OSError(message.format(specs_dirname))
 
@@ -175,11 +180,12 @@ class SpecificationSet(JsonSerializationMixin):
             package_names = [subset]
         else:
             # Load specifications for each 'package' within specs/
-            package_names = os.listdir(specs_dirname)
+            _, package_names, _ = next(specs_dirname.walk())
 
         for name in package_names:
-            package_specs_dirname = os.path.join(specs_dirname, name)
-            if not os.path.isdir(package_specs_dirname):
+            package_specs_dirname = specs_dirname.join(name,
+                                                       forceDirectory=True)
+            if not package_specs_dirname.exists():
                 continue
             instance._load_package_dir(package_specs_dirname)
 
@@ -223,21 +229,20 @@ class SpecificationSet(JsonSerializationMixin):
         return instance
 
     def _load_package_dir(self, package_specs_dirname):
-        yaml_extensions = ('.yaml', '.yml')
-        package_specs_dirname = os.path.abspath(package_specs_dirname)
+        package_specs_dirname = ResourcePath(package_specs_dirname,
+                                             forceDirectory=True,
+                                             forceAbsolute=True)
 
         all_docs = []
 
-        for (root_dir, _, filenames) in os.walk(package_specs_dirname):
-            for filename in filenames:
-                if os.path.splitext(filename)[-1] not in yaml_extensions:
-                    continue
-                filename = os.path.join(root_dir, filename)
-                spec_docs, partial_docs = SpecificationSet._load_yaml_file(
-                    filename,
-                    package_specs_dirname)
-                all_docs.extend(partial_docs)
-                all_docs.extend(spec_docs)
+        yaml_files = ResourcePath.findFileResources(
+            [package_specs_dirname], file_filter=r'.*\.(yaml|yml)$')
+        for filename in yaml_files:
+            spec_docs, partial_docs = SpecificationSet._load_yaml_file(
+                filename,
+                package_specs_dirname)
+            all_docs.extend(partial_docs)
+            all_docs.extend(spec_docs)
 
         # resolve inheritance and Specification* instances when possible
         while len(all_docs) > 0:
@@ -326,30 +331,33 @@ class SpecificationSet(JsonSerializationMixin):
         # Ensure paths are absolute so we can make relative paths and
         # determine the package name from the last directory component of
         # the package_dirname.
-        package_dirname = os.path.abspath(package_dirname)
-        yaml_file_path = os.path.abspath(yaml_file_path)
+        package_dirname = ResourcePath(package_dirname,
+                                       forceDirectory=True,
+                                       forceAbsolute=True)
+        yaml_file_path = ResourcePath(yaml_file_path, forceAbsolute=True)
 
-        if not os.path.isdir(package_dirname):
+        if not package_dirname.exists():
             message = 'Specification package directory {0!r} not found.'
             raise OSError(message.format(package_dirname))
-        if not os.path.isfile(yaml_file_path):
+        if not yaml_file_path.exists():
             message = 'Specification YAML file {0!r} not found.'
             raise OSError(message.format(yaml_file_path))
 
         # Name of the stack package these specifcation belong to, based
-        # on our metrics/specification package directory structure.
-        package_name = package_dirname.split(os.path.sep)[-1]
+        # on our metrics/specification package directory structure. This is
+        # the final directory component of the package specs directory.
+        package_name = os.path.split(
+            package_dirname.path.removesuffix('/'))[-1]
 
         # path identifier used in names for partials does not have an
-        # extension, and must have '/' directory separators.
-        yaml_id = os.path.relpath(yaml_file_path,
-                                  start=package_dirname)
+        # extension, and uses '/' directory separators (as produced by
+        # ResourcePath.relative_to).
+        yaml_id = yaml_file_path.relative_to(package_dirname)
         yaml_id = os.path.splitext(yaml_id)[0]
-        yaml_id = '/'.join(yaml_id.split(os.path.sep))
 
         spec_docs = []
         partial_docs = []
-        with open(yaml_file_path) as stream:
+        with yaml_file_path.open() as stream:
             parsed_docs = load_all_ordered_yaml(stream)
 
             for doc in parsed_docs:
