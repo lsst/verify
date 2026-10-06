@@ -165,7 +165,7 @@ class SpecificationSet(JsonSerializationMixin):
                                        forceAbsolute=True)
         else:
             package_dir = ResourcePath(
-                'eups://{0}/'.format(package_name_or_path),
+                f"eups://{package_name_or_path}/",
                 forceDirectory=True)
 
         specs_dirname = package_dir.join('specs', forceDirectory=True)

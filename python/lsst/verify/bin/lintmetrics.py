@@ -60,7 +60,8 @@ def build_argparser():
         default=default_metrics_package_dir,
         type=str,
         nargs='?',
-        help="Filepath of the metrics package to be checked.")
+        help="Resource path of the metrics package to be checked, "
+             "default: %(default)s")
     return parser
 
 
