@@ -23,7 +23,6 @@ __all__ = ['MetricSet']
 from astropy.table import Table
 
 from lsst.resources import ResourcePath
-from lsst.utils import getPackageDir
 from .jsonmixin import JsonSerializationMixin
 from .metric import Metric
 from .naming import Name
@@ -90,18 +89,23 @@ class MetricSet(JsonSerializationMixin):
         file that **is not** contained in a metrics package,
         use `load_single_package` instead.
         """
-        try:
-            # Try an EUPS package name
-            getPackageDir(package_name_or_path)
-        except LookupError:
-            # Try as a filesystem path (or URI) instead
+        # A bare name (no "/") may be an EUPS package, expressed as an
+        # ``eups://`` URI so that resolution is handled by lsst.resources
+        # without a direct EUPS lookup here. Anything containing a "/" is a
+        # filesystem path or URI; such values would produce an empty netloc
+        # (and a ValueError) if forced into an ``eups://`` URI, so skip the
+        # EUPS attempt for them.
+        package_dir = None
+        if "/" not in package_name_or_path:
+            eups_dir = ResourcePath(f"eups://{package_name_or_path}/",
+                                    forceDirectory=True)
+            if eups_dir.exists():
+                package_dir = eups_dir
+        if package_dir is None:
+            # Fall back to a filesystem path (or URI) instead.
             package_dir = ResourcePath(package_name_or_path,
                                        forceDirectory=True,
                                        forceAbsolute=True)
-        else:
-            package_dir = ResourcePath(
-                'eups://{0}/'.format(package_name_or_path),
-                forceDirectory=True)
 
         metrics_dirname = package_dir.join('metrics', forceDirectory=True)
         if not metrics_dirname.exists():
@@ -112,8 +116,7 @@ class MetricSet(JsonSerializationMixin):
 
         if subset is not None:
             # Load only a single package's YAML file
-            metrics_yaml_paths = [metrics_dirname.join(
-                '{0}.yaml'.format(subset))]
+            metrics_yaml_paths = [metrics_dirname.join(f"{subset}.yaml")]
         else:
             # Load all package's YAML files (top level only)
             _, _, filenames = next(
