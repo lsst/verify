@@ -5,6 +5,7 @@ setupRequired(daf_butler)
 setupRequired(pipe_base)
 setupRequired(dax_apdb)
 setupRequired(afw)
+setupRequired(resources)
 
 # verify_metrics is the default metrics repo and is used in tests
 setupRequired(verify_metrics)

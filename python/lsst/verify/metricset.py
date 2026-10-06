@@ -20,12 +20,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 __all__ = ['MetricSet']
 
-import os
-import glob
-
 from astropy.table import Table
 
-from lsst.utils import getPackageDir
+from lsst.resources import ResourcePath
 from .jsonmixin import JsonSerializationMixin
 from .metric import Metric
 from .naming import Name
@@ -92,17 +89,26 @@ class MetricSet(JsonSerializationMixin):
         file that **is not** contained in a metrics package,
         use `load_single_package` instead.
         """
-        try:
-            # Try an EUPS package name
-            package_dir = getPackageDir(package_name_or_path)
-        except LookupError:
-            # Try as a filesystem path instead
-            package_dir = package_name_or_path
-        finally:
-            package_dir = os.path.abspath(package_dir)
+        # A bare name (no "/") may be an EUPS package, expressed as an
+        # ``eups://`` URI so that resolution is handled by lsst.resources
+        # without a direct EUPS lookup here. Anything containing a "/" is a
+        # filesystem path or URI; such values would produce an empty netloc
+        # (and a ValueError) if forced into an ``eups://`` URI, so skip the
+        # EUPS attempt for them.
+        package_dir = None
+        if "/" not in package_name_or_path:
+            eups_dir = ResourcePath(f"eups://{package_name_or_path}/",
+                                    forceDirectory=True)
+            if eups_dir.exists():
+                package_dir = eups_dir
+        if package_dir is None:
+            # Fall back to a filesystem path (or URI) instead.
+            package_dir = ResourcePath(package_name_or_path,
+                                       forceDirectory=True,
+                                       forceAbsolute=True)
 
-        metrics_dirname = os.path.join(package_dir, 'metrics')
-        if not os.path.isdir(metrics_dirname):
+        metrics_dirname = package_dir.join('metrics', forceDirectory=True)
+        if not metrics_dirname.exists():
             message = 'Metrics directory {0} not found'
             raise OSError(message.format(metrics_dirname))
 
@@ -110,12 +116,13 @@ class MetricSet(JsonSerializationMixin):
 
         if subset is not None:
             # Load only a single package's YAML file
-            metrics_yaml_paths = [os.path.join(metrics_dirname,
-                                               '{0}.yaml'.format(subset))]
+            metrics_yaml_paths = [metrics_dirname.join(f"{subset}.yaml")]
         else:
-            # Load all package's YAML files
-            metrics_yaml_paths = glob.glob(os.path.join(metrics_dirname,
-                                                        '*.yaml'))
+            # Load all package's YAML files (top level only)
+            _, _, filenames = next(
+                metrics_dirname.walk(file_filter=r'.*\.yaml$'))
+            metrics_yaml_paths = [metrics_dirname.join(name)
+                                  for name in filenames]
 
         for metrics_yaml_path in metrics_yaml_paths:
             new_metrics = MetricSet._load_metrics_yaml(metrics_yaml_path)
@@ -152,11 +159,11 @@ class MetricSet(JsonSerializationMixin):
     @staticmethod
     def _load_metrics_yaml(metrics_yaml_path):
         # package name is inferred from YAML file name (by definition)
-        metrics_yaml_path = os.path.abspath(metrics_yaml_path)
-        package_name = os.path.splitext(os.path.basename(metrics_yaml_path))[0]
+        metrics_yaml_path = ResourcePath(metrics_yaml_path, forceAbsolute=True)
+        package_name = metrics_yaml_path.updatedExtension('').basename()
 
         metrics = []
-        with open(metrics_yaml_path) as f:
+        with metrics_yaml_path.open() as f:
             yaml_doc = load_ordered_yaml(f)
             for metric_name, metric_doc in yaml_doc.items():
                 name = Name(package=package_name, metric=metric_name)
