@@ -1,3 +1,3 @@
 # -*- python -*-
 from lsst.sconsUtils import scripts
-scripts.BasicSConstruct("verify", disableCc=True)
+scripts.BasicSConstruct("verify", disableCc=True, noCfgFile=True)
